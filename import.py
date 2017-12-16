@@ -12,6 +12,7 @@ import GarminSqlite
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+#logger.setLevel(logging.DEBUG)
 
 
 class GarminFitData():
@@ -46,20 +47,13 @@ class GarminFitData():
     def write_monitoring_info(self, db):
         monitoring_info = Fit.MonitoringInfoOutputData(self.fitfiles)
         for entry in monitoring_info.fields():
-            logger.info("Entry: " + repr(entry))
-            if 'activity_type' in entry:
-                activity_type = GarminSqlite.ActivityType.find_or_create(db, {'name' : entry['activity_type']})
-                entry['activity_type_id'] = activity_type.id
             GarminSqlite.MonitoringInfo.find_or_create(db, entry)
 
     def write_monitoring(self, db):
         monitoring = Fit.MonitoringOutputData(self.fitfiles)
         entries = monitoring.fields()
         for entry in entries:
-            logger.info("Entry: " + repr(entry))
-            if 'activity_type' in entry:
-                activity_type = GarminSqlite.ActivityType.find_or_create(db, {'name' : entry['activity_type']})
-                entry['activity_type_id'] = activity_type.id
+            logger.debug("Entry: " + repr(entry))
             GarminSqlite.Monitoring.create(db, entry)
         logger.info("Wrote %d entries" % len(entries))
 

@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import logging
+import os, logging
 
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import *
@@ -35,48 +35,88 @@ class DBObject():
         return (timedelta.days * 3600) + timedelta.seconds
 
     @classmethod
+    def filename_from_pathname(cls, pathname):
+        return os.path.basename(pathname)
+
+    @classmethod
     def _filter_columns(cls, values_dict):
-        return { key : value for key, value in values_dict.items() if key in cls.__dict__}
+        filtered_cols = { key : value for key, value in values_dict.items() if key in cls.__dict__}
+        if len(filtered_cols) != len(values_dict):
+            logger.debug("filtered some cols for %s from %s" % (cls.__tablename__, repr(values_dict)))
+        return filtered_cols
 
     @classmethod
     def _translate_columns(cls, values_dict):
-        filtered_values_dict = cls._filter_columns(values_dict)
         if len(cls.col_translations) == 0:
-            logger.debug("translate_columns: done %s" % repr(filtered_values_dict))
-            return filtered_values_dict
-        logger.debug("translate_columns: doing %s" % repr(filtered_values_dict))
-        return { key : (cls.col_translations[key](value) if key in cls.col_translations else value) for key, value in filtered_values_dict.items()}
+            return values_dict
+        return {
+            key :
+            (cls.col_translations[key](value) if key in cls.col_translations else value)
+            for key, value in values_dict.items()
+        }
+
+    @classmethod
+    def _translate_column(cls, col_name, col_value):
+        if len(cls.col_translations) == 0:
+            return col_value
+        return (cls.col_translations[col_name](col_value) if col_name in cls.col_translations else col_value)
+
+    @classmethod
+    def _rewrite_columns(cls, db, values_dict):
+        if len(cls.col_rewrites) == 0:
+            return values_dict
+        return {
+            (cls.col_rewrites[key][0] if key in cls.col_rewrites else key) :
+            (cls.col_rewrites[key][1](db, value) if key in cls.col_rewrites else value)
+            for key, value in values_dict.items()
+        }
+
+    @classmethod
+    def _rewrite_column(cls, db, col_name, col_value):
+        if len(cls.col_rewrites) == 0:
+            return col_value
+        return (cls.col_rewrites[col_name][1](db, col_value) if col_name in cls.col_rewrites else col_value)
 
     @classmethod
     def find(cls, db, col_value):
-        logger.debug("find where %s == %s" % (cls.find_col, str(col_value)))
-        return db.session().query(cls).filter(cls.find_col == col_value).all()
+        name = cls.find_col.name
+        value = cls._translate_column(name, (cls._rewrite_column(db, name, col_value)))
+        return db.session().query(cls).filter(cls.find_col == value).all()
 
     @classmethod
     def find_one(cls, db, col_value):
-        logger.debug("find_one where %s == %s" % (cls.find_col, str(col_value)))
         rows = cls.find(db, col_value)
         if len(rows) == 1:
             return rows[0]
         return None
 
     @classmethod
+    def find_or_create_id(cls, db, col_value):
+        instance = cls.find_one(db, col_value)
+        if instance is None:
+            cls.create(db, {cls.find_col.name : col_value})
+            instance = cls.find_one(db, col_value)
+        return instance.id
+
+    @classmethod
     def create(cls, db, values_dict):
-        logger.debug("create %s" % repr(values_dict))
         session = db.session()
-        session.add(cls(**cls._translate_columns(values_dict)))
-#        session.add(cls(**cls._filter_columns(values_dict)))
+        session.add(cls(**cls._translate_columns(cls._filter_columns(cls._rewrite_columns(db, values_dict)))))
         session.commit()
 
     @classmethod
     def find_or_create(cls, db, values_dict):
-        logger.debug("find_or_create %s" % repr(values_dict))
         instance = cls.find_one(db, values_dict[cls.find_col.name])
         if instance is None:
             cls.create(db, values_dict)
             instance = cls.find_one(db, values_dict[cls.find_col.name])
-        logger.info("find_or_create return %s" % repr(instance))
         return instance
+
+    def __repr__(self):
+        classname = self.__class__.__name__
+        col_name = cls.find_col.name
+        col_value = self.__dict__[col_name]
+        return ("<%s(timestamp=%s %s=%s)>" % (classname, col.name, col_value))
 
 
 class Device(DB.Base, DBObject):
@@ -90,10 +130,20 @@ class Device(DB.Base, DBObject):
 
     find_col = synonym("serial_number")
     col_translations = {}
+    col_rewrites = {}
 
-    def __repr__(self):
-        return ("<Device(timestamp=%s manufacturer='%s' garmin_product='%s' serial_number='%s' hardware_version='%s')>"
-            % (self.timestamp, self.manufacturer, self.garmin_product, self.serial_number, self.hardware_version))
+
+class File(DB.Base, DBObject):
+    __tablename__ = 'files'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+
+    find_col = synonym("name")
+    col_translations = {
+        'name' : DBObject.filename_from_pathname
+    }
+    col_rewrites = {}
 
 
 class ActivityType(DB.Base, DBObject):
@@ -104,9 +154,7 @@ class ActivityType(DB.Base, DBObject):
 
     find_col = synonym("name")
     col_translations = {}
-
-    def __repr__(self):
-        return "<ActivityType(id='%d' name='%s')>" % (self.id, self.name)
+    col_rewrites = {}
 
 
 class DeviceInfo(DB.Base, DBObject):
@@ -114,26 +162,24 @@ class DeviceInfo(DB.Base, DBObject):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
-    filename = Column(String)
+    file_id = Column(Integer, ForeignKey('files.id'))
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
     software_version = Column(String)
     cum_operating_time = Column(Integer)
-    batery_voltage = Column(String)
+    battery_voltage = Column(String)
 
     find_col = synonym("timestamp")
     col_translations = {}
-
-    def __repr__(self):
-        return ("<DeviceInfo(id=%d timestamp=%s filename='%s' serial_number=%d software_version='%s' cum_operating_time=%s batery_voltage='%s')>" 
-            % (self.id, str(self.timestamp), self.filename, self.serial_number, self.software_version,
-                str(self.cum_operating_time), self.batery_voltage))
+    col_rewrites = {
+        'filename' : ('file_id', File.find_or_create_id)
+    }
 
 
 class MonitoringInfo(DB.Base, DBObject):
     __tablename__ = 'monitoring_info'
 
     timestamp = Column(DateTime, primary_key=True)
-    filename = Column(String)
+    file_id = Column(Integer, ForeignKey('files.id'))
     activity_type_id = Column(Integer, ForeignKey('activity_type.id'))
     resting_metabolic_rate = Column(Integer)
     cycles_to_distance = Column(FLOAT)
@@ -141,11 +187,10 @@ class MonitoringInfo(DB.Base, DBObject):
 
     find_col = synonym("timestamp")
     col_translations = {}
-
-    def __repr__(self):
-        return ("<MonitoringInfo(timestamp=%s filename='%s' activity_type_id=%d resting_metabolic_rate=%d cycles_to_distance=%f cycles_to_calories=%f)>"
-            % (str(self.timestamp), self.filename, self.activity_type_id, self.resting_metabolic_rate,
-               self.cycles_to_distance, self.cycles_to_calories))
+    col_rewrites = {
+        'filename' : ('file_id', File.find_or_create_id),
+        'activity_type' : ('activity_type_id', ActivityType.find_or_create_id)
+    }
 
 
 class Monitoring(DB.Base, DBObject):
@@ -155,14 +200,23 @@ class Monitoring(DB.Base, DBObject):
     timestamp = Column(DateTime)
     activity_type_id = Column(Integer, ForeignKey('activity_type.id'))
     heart_rate = Column(Integer)
+
     intensity = Column(Integer)
+    intensity_mins = Column(Integer)
+    moderate_activity = Column(Integer)
+    vigorous_activity = Column(Integer)
+
+    ascent = Column(Integer)
+    descent = Column(Integer)
+    ascent_floors = Column(Integer)
+    descent_floors = Column(Integer)
 
     cum_ascent = Column(Integer)
     cum_descent = Column(Integer)
     cum_ascent_floors = Column(Integer)
     cum_descent_floors = Column(Integer)
 
-    duration = Column(Interval)
+    duration = Column(Integer)
     distance = Column(Integer)
     cum_active_time = Column(Integer)
     active_calories = Column(Integer)
@@ -173,14 +227,11 @@ class Monitoring(DB.Base, DBObject):
 
     find_col = synonym("timestamp")
     col_translations = {
+        'moderate_activity' : DBObject.timedelta_to_secs,
+        'vigorous_activity' : DBObject.timedelta_to_secs,
+        'duration' : DBObject.timedelta_to_secs,
         'cum_active_time' : DBObject.timedelta_to_secs
     }
-
-    @classmethod
-    def translate_columns(cls, values_dict):
-        filtered_values_dict = DBObject.filter_columns(values_dict)
-        return DBObject.filter_columns(values_dict)
-
-    def __repr__(self):
-        return ("<MonitoringInfo(timestamp=%s activity_type_id=%s heart_rate=%s intensity=%s)>"
-            % (str(self.timestamp), str(self.activity_type_id), str(self.heart_rate), str(self.intensity)))
+    col_rewrites = {
+        'activity_type' : ('activity_type_id', ActivityType.find_or_create_id)
+    }
