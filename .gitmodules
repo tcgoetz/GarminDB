@@ -1,0 +1,3 @@
+[submodule "Fit"]
+	path = Fit
+	url = git@github.com:tcgoetz/Fit.git
