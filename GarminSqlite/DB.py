@@ -213,8 +213,6 @@ class Monitoring(DB.Base, DBObject):
 
     cum_ascent = Column(Integer)
     cum_descent = Column(Integer)
-    cum_ascent_floors = Column(Integer)
-    cum_descent_floors = Column(Integer)
 
     duration = Column(Integer)
     distance = Column(Integer)

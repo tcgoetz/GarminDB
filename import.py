@@ -78,7 +78,7 @@ def main(argv):
     english_units = False
     input_dir = None
     input_file = None
-    output_file = ''
+    database = None
 
     try:
         opts, args = getopt.getopt(argv,"d:ei:o:", ["english", "input_dir=", "input_file=","database="])
