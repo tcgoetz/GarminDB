@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import os, logging
+import os, logging, datetime
 
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import *
@@ -43,6 +43,8 @@ class DBObject():
         filtered_cols = { key : value for key, value in values_dict.items() if key in cls.__dict__}
         if len(filtered_cols) != len(values_dict):
             logger.debug("filtered some cols for %s from %s" % (cls.__tablename__, repr(values_dict)))
+        if len(filtered_cols) == 0:
+            raise ValueError("filtered all cols from %s" % (cls.__tablename__, repr(values_dict)))
         return filtered_cols
 
     @classmethod
@@ -99,10 +101,20 @@ class DBObject():
         return instance.id
 
     @classmethod
-    def create(cls, db, values_dict):
+    def _create(cls, db, values_dict):
+        non_none_values = 0
+        for value in values_dict.values():
+            if value is not None:
+                non_none_values += 1
+        if non_none_values < cls.min_row_values:
+            raise ValueError("None row values: %s" % repr(values_dict))
         session = db.session()
-        session.add(cls(**cls._translate_columns(cls._filter_columns(cls._rewrite_columns(db, values_dict)))))
+        session.add(cls(**values_dict))
         session.commit()
+
+    @classmethod
+    def create(cls, db, values_dict):
+        return cls._create(db, cls._translate_columns(cls._filter_columns(cls._rewrite_columns(db, values_dict))))
 
     @classmethod
     def find_or_create(cls, db, values_dict):
@@ -111,6 +123,36 @@ class DBObject():
             cls.create(db, values_dict)
             instance = cls.find_one(db, values_dict[cls.find_col.name])
         return instance
+
+    @classmethod
+    def row_to_int(cls, row):
+        return int(row[0])
+
+    @classmethod
+    def rows_to_ints(cls, rows):
+        return [cls.row_to_int(row) for row in rows]
+
+    @classmethod
+    def row_to_month(cls, row):
+        return datetime.date(1900, int(row[0]), 1).strftime("%b")
+
+    @classmethod
+    def rows_to_months(cls, rows):
+        return [cls.row_to_month(row) for row in rows]
+
+    @classmethod
+    def get_years(cls, db):
+        return cls.rows_to_ints(db.session().query(func.strftime("%Y", cls.timestamp)).distinct().all())
+
+    @classmethod
+    def get_months(cls, db, year):
+        return cls.rows_to_months(db.session().query(func.strftime("%m", cls.timestamp))
+            .filter(func.strftime("%Y", cls.timestamp) == year).distinct().all())
+
+    @classmethod
+    def get_days(cls, db, year):
+        return cls.rows_to_ints(db.session().query(func.strftime("%j", cls.timestamp))
+            .filter(func.strftime("%Y", cls.timestamp) == year).distinct().all())
 
     def __repr__(self):
         classname = self.__class__.__name__
@@ -131,6 +173,7 @@ class Device(DB.Base, DBObject):
     find_col = synonym("serial_number")
     col_translations = {}
     col_rewrites = {}
+    min_row_values = 2
 
 
 class File(DB.Base, DBObject):
@@ -144,6 +187,7 @@ class File(DB.Base, DBObject):
         'name' : DBObject.filename_from_pathname
     }
     col_rewrites = {}
+    min_row_values = 1
 
 
 class ActivityType(DB.Base, DBObject):
@@ -155,6 +199,7 @@ class ActivityType(DB.Base, DBObject):
     find_col = synonym("name")
     col_translations = {}
     col_rewrites = {}
+    min_row_values = 1
 
 
 class DeviceInfo(DB.Base, DBObject):
@@ -173,6 +218,7 @@ class DeviceInfo(DB.Base, DBObject):
     col_rewrites = {
         'filename' : ('file_id', File.find_or_create_id)
     }
+    min_row_values = 3
 
 
 class MonitoringInfo(DB.Base, DBObject):
@@ -191,6 +237,7 @@ class MonitoringInfo(DB.Base, DBObject):
         'filename' : ('file_id', File.find_or_create_id),
         'activity_type' : ('activity_type_id', ActivityType.find_or_create_id)
     }
+    min_row_values = 3
 
 
 class Monitoring(DB.Base, DBObject):
@@ -233,3 +280,4 @@ class Monitoring(DB.Base, DBObject):
     col_rewrites = {
         'activity_type' : ('activity_type_id', ActivityType.find_or_create_id)
     }
+    min_row_values = 2

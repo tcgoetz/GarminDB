@@ -53,8 +53,10 @@ class GarminFitData():
         monitoring = Fit.MonitoringOutputData(self.fitfiles)
         entries = monitoring.fields()
         for entry in entries:
-            logger.debug("Entry: " + repr(entry))
-            GarminSqlite.Monitoring.create(db, entry)
+            try:
+                GarminSqlite.Monitoring.create(db, entry)
+            except Exception as e: 
+                logger.info("Exeption '%s' on entry: %s" % (str(e), repr(entry)))
         logger.info("Wrote %d entries" % len(entries))
 
     def write_device_data(self, db):
