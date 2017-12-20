@@ -40,6 +40,8 @@ class DaysSummary(MonitoringSummaryDB.Base, DBObject):
     hr_avg = Column(Integer)
     hr_min = Column(Integer)
     hr_max = Column(Integer)
+    moderate_activity_mins = Column(Integer)
+    vigorous_activity_mins = Column(Integer)
     steps = Column(Integer)
     floors = Column(Integer)
 

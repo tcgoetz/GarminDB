@@ -38,7 +38,7 @@ class ActivityType(MonitoringDB.Base, DBObject):
     __tablename__ = 'activity_type'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String, unique=True)
 
     _relational_mappings = {}
     col_translations = {}
@@ -58,7 +58,7 @@ class DeviceInfo(MonitoringDB.Base, DBObject):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
-    file_id = Column(Integer)
+    file_id = Column(Integer, unique=True)
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
     software_version = Column(String)
     cum_operating_time = Column(Integer)
@@ -77,7 +77,7 @@ class MonitoringInfo(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_info'
 
     timestamp = Column(DateTime, primary_key=True)
-    file_id = Column(Integer)
+    file_id = Column(Integer, unique=True)
     activity_type_id = Column(Integer, ForeignKey('activity_type.id'))
     resting_metabolic_rate = Column(Integer)
     cycles_to_distance = Column(FLOAT)
@@ -97,8 +97,7 @@ class MonitoringInfo(MonitoringDB.Base, DBObject):
 class MonitoringHeartRate(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_hr'
 
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime)
+    timestamp = Column(DateTime, primary_key=True)
     heart_rate = Column(Integer)
 
     __table_args__ = (
@@ -114,7 +113,7 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
-    def get_daily_hr_stats(cls, db, day_ts):
+    def get_daily_stats(cls, db, day_ts):
         end_ts = day_ts + datetime.timedelta(1)
         stats = {
             'day' : day_ts,
@@ -128,9 +127,7 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
 class MonitoringIntensityMins(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_intensity_mins'
 
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime)
-
+    timestamp = Column(DateTime, primary_key=True)
     moderate_activity_mins = Column(Integer)
     vigorous_activity_mins = Column(Integer)
 
@@ -147,7 +144,7 @@ class MonitoringIntensityMins(MonitoringDB.Base, DBObject):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
-    def get_daily_intensity_mins_stats(cls, db, day_ts):
+    def get_daily_stats(cls, db, day_ts):
         end_ts = day_ts + datetime.timedelta(1)
         stats = {
             'day' : day_ts,
@@ -164,10 +161,8 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
-
     ascent = Column(Integer)
     descent = Column(Integer)
-
     cum_ascent = Column(Integer)
     cum_descent = Column(Integer)
 
@@ -184,11 +179,11 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
-    def get_daily_floors_stats(cls, db, day_ts):
+    def get_daily_stats(cls, db, day_ts):
         end_ts = day_ts + datetime.timedelta(1)
         stats = {
             'day' : day_ts,
-            'floors' : cls.get_col_max(db, cls.cum_ascent, day_ts, end_ts) / feet_to_floors,
+            'floors' : cls.get_col_max(db, cls.cum_ascent, day_ts, end_ts) / cls.feet_to_floors,
         }
         return stats
 
@@ -226,7 +221,7 @@ class Monitoring(MonitoringDB.Base, DBObject):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
-    def get_daily_steps_stats(cls, db, day_ts):
+    def get_daily_stats(cls, db, day_ts):
         end_ts = day_ts + datetime.timedelta(1)
         stats = {
             'day' : day_ts,

@@ -48,8 +48,11 @@ class Analyze():
             days = GarminSqlite.MonitoringHeartRate.get_days(self.mondb, year)
             for day in days:
                 day_ts = datetime.datetime(year, 1, 1) + datetime.timedelta(day - 1)
-                hr_stats = GarminSqlite.MonitoringHeartRate.get_daily_hr_stats(self.mondb, day_ts)
-                GarminSqlite.DaysSummary.create_or_update(self.sumdb, hr_stats)
+                stats = GarminSqlite.MonitoringHeartRate.get_daily_stats(self.mondb, day_ts)
+                stats.update(GarminSqlite.MonitoringClimb.get_daily_stats(self.mondb, day_ts))
+                stats.update(GarminSqlite.MonitoringIntensityMins.get_daily_stats(self.mondb, day_ts))
+                stats.update(GarminSqlite.Monitoring.get_daily_stats(self.mondb, day_ts))
+                GarminSqlite.DaysSummary.create_or_update(self.sumdb, stats)
 
 
 def usage(program):

@@ -4,19 +4,25 @@
 # copyright Tom Goetz
 #
 
-import os, logging, datetime
+import os, logging, datetime, time
 
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import *
+from sqlalchemy.exc import *
 from sqlalchemy.orm import *
 
 
 logger = logging.getLogger(__name__)
-#logger.setLevel(logging.INFO)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
+#logger.setLevel(logging.DEBUG)
 
 
 class DB():
+    max_commit_attempts = 7
+    commit_errors = 0
+    max_query_attempts = max_commit_attempts
+    query_errors = 0
+
     def __init__(self, filename, debug=False):
         url = "sqlite:///" + filename
         self.engine = create_engine(url, echo=debug)
@@ -25,12 +31,56 @@ class DB():
     def session(self):
         return self.session_maker()
 
-
-class DBObject():
+    @classmethod
+    def commit(cls, session):
+        attempts = 0
+        while attempts < DB.max_commit_attempts:
+            try:
+                session.commit()
+                session.close()
+                return
+            except OperationalError as e:
+                logger.error("Exeption '%s' on commit" % str(e))
+                session.rollback()
+                attempts += 1
+                cls.commit_errors += 1
+                time.sleep(attempts)
+                continue
+            break
+        raise IOError("Failed to commit")
 
     @classmethod
-    def timedelta_to_secs(cls, timedelta):
-        return (timedelta.days * 3600) + timedelta.seconds
+    def query_one_or_none(cls, query):
+        attempts = 0
+        while attempts < DB.max_query_attempts:
+            try:
+                return query.one_or_none()
+            except OperationalError as e:
+                logger.error("Exeption '%s' on query" % str(e))
+                attempts += 1
+                cls.query_errors += 1
+                time.sleep(attempts)
+                continue
+            break
+        raise IOError("Failed to query")
+
+    @classmethod
+    def query_all(cls, query):
+        attempts = 0
+        while attempts < DB.max_query_attempts:
+            try:
+                return query.all()
+            except OperationalError as e:
+                logger.error("Exeption '%s' on query" % str(e))
+                attempts += 1
+                cls.query_errors += 1
+                time.sleep(attempts)
+                continue
+            break
+        raise IOError("Failed to query")
+
+
+class DBObject():
 
     @classmethod
     def filename_from_pathname(cls, pathname):
@@ -89,12 +139,12 @@ class DBObject():
     @classmethod
     def find(cls, db, values_dict):
         logger.debug("%s::find %s" % (cls.__name__, repr(values_dict)))
-        return cls._find(db.session(), values_dict).all()
+        return DB.query_all(cls._find(db.session(), values_dict))
 
     @classmethod
     def find_one(cls, db, values_dict):
         logger.debug("%s::find_one %s" % (cls.__name__, repr(values_dict)))
-        return cls._find(db.session(), values_dict).one_or_none()
+        return DB.query_one_or_none(cls._find(db.session(), values_dict))
 
     @classmethod
     def find_id(cls, db, values_dict):
@@ -124,7 +174,7 @@ class DBObject():
             raise ValueError("None row values: %s" % repr(values_dict))
         session = db.session()
         session.add(cls(**cls._filter_columns(cls.relational_mappings(db, values_dict))))
-        session.commit()
+        DB.commit(session)
 
     @classmethod
     def create(cls, db, values_dict):
@@ -148,7 +198,7 @@ class DBObject():
             for key, value in translated_dict.items():
                 if key in cls.__dict__:
                     found[key] = value
-            session.commit()
+            DB.commit(session)
         return found
 
     @classmethod
