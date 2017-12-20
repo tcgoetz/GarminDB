@@ -117,8 +117,8 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
         end_ts = day_ts + datetime.timedelta(1)
         stats = {
             'day' : day_ts,
-            'hr_avg' : cls.get_col_avg(db, cls.heart_rate, day_ts, end_ts),
-            'hr_min' : cls.get_col_min(db, cls.heart_rate, day_ts, end_ts),
+            'hr_avg' : cls.get_col_avg(db, cls.heart_rate, day_ts, end_ts, True),
+            'hr_min' : cls.get_col_min(db, cls.heart_rate, day_ts, end_ts, True),
             'hr_max' : cls.get_col_max(db, cls.heart_rate, day_ts, end_ts),
         }
         return stats
@@ -146,10 +146,18 @@ class MonitoringIntensityMins(MonitoringDB.Base, DBObject):
     @classmethod
     def get_daily_stats(cls, db, day_ts):
         end_ts = day_ts + datetime.timedelta(1)
+        moderate_activity_mins = cls.get_col_sum(db, cls.moderate_activity_mins, day_ts, end_ts)
+        vigorous_activity_mins = cls.get_col_sum(db, cls.vigorous_activity_mins, day_ts, end_ts)
+        intensity_mins = 0
+        if moderate_activity_mins:
+            intensity_mins += moderate_activity_mins
+        if vigorous_activity_mins:
+            intensity_mins += vigorous_activity_mins * 2
         stats = {
             'day' : day_ts,
-            'moderate_activity_mins' : cls.get_col_sum(db, cls.moderate_activity_mins, day_ts, end_ts),
-            'vigorous_activity_mins' : cls.get_col_sum(db, cls.vigorous_activity_mins, day_ts, end_ts),
+            'intensity_mins' : intensity_mins,
+            'moderate_activity_mins' : moderate_activity_mins,
+            'vigorous_activity_mins' : vigorous_activity_mins,
         }
         return stats
 

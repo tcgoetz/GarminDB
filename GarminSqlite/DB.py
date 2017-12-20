@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 
 
 class DB():
-    max_commit_attempts = 7
+    max_commit_attempts = 15
     commit_errors = 0
     max_query_attempts = max_commit_attempts
     query_errors = 0
@@ -27,9 +27,15 @@ class DB():
         url = "sqlite:///" + filename
         self.engine = create_engine(url, echo=debug)
         self.session_maker = sessionmaker(bind=self.engine)
+        self._query_session = None
 
     def session(self):
         return self.session_maker()
+
+    def query_session(self):
+        if self._query_session is None:
+            self._query_session = self.session()
+        return self._query_session
 
     @classmethod
     def commit(cls, session):
@@ -40,9 +46,9 @@ class DB():
                 session.close()
                 return
             except OperationalError as e:
-                logger.error("Exeption '%s' on commit" % str(e))
-                session.rollback()
                 attempts += 1
+                logger.error("Exeption '%s' on commit %s attempt %d" % (str(e), str(session), attempts))
+                session.rollback()
                 cls.commit_errors += 1
                 time.sleep(attempts)
                 continue
@@ -56,8 +62,8 @@ class DB():
             try:
                 return query.one_or_none()
             except OperationalError as e:
-                logger.error("Exeption '%s' on query" % str(e))
                 attempts += 1
+                logger.error("Exeption '%s' on query %s attempt %d" % (str(e), str(query), attempts))
                 cls.query_errors += 1
                 time.sleep(attempts)
                 continue
@@ -71,8 +77,8 @@ class DB():
             try:
                 return query.all()
             except OperationalError as e:
-                logger.error("Exeption '%s' on query" % str(e))
                 attempts += 1
+                logger.error("Exeption '%s' on query %s attempt %d" % (str(e), str(query), attempts))
                 cls.query_errors += 1
                 time.sleep(attempts)
                 continue
@@ -139,12 +145,12 @@ class DBObject():
     @classmethod
     def find(cls, db, values_dict):
         logger.debug("%s::find %s" % (cls.__name__, repr(values_dict)))
-        return DB.query_all(cls._find(db.session(), values_dict))
+        return DB.query_all(cls._find(db.query_session(), values_dict))
 
     @classmethod
     def find_one(cls, db, values_dict):
         logger.debug("%s::find_one %s" % (cls.__name__, repr(values_dict)))
-        return DB.query_one_or_none(cls._find(db.session(), values_dict))
+        return DB.query_one_or_none(cls._find(db.query_session(), values_dict))
 
     @classmethod
     def find_id(cls, db, values_dict):
@@ -245,40 +251,27 @@ class DBObject():
             .filter(extract('year', cls.timestamp) == str(year)).distinct().all())
 
     @classmethod
-    def get_col_avg(cls, db, col, start_ts, end_ts):
-        return (
-            db.session().query(func.avg(col))
-                .filter(cls.timestamp >= start_ts)
-                .filter(cls.timestamp < end_ts)
-                .one()[0]
-        )
+    def get_col_func(cls, db, col, func, start_ts, end_ts, ignore_zero=False):
+        query = db.session().query(func(col)).filter(cls.timestamp >= start_ts).filter(cls.timestamp < end_ts)
+        if ignore_zero:
+            query = query.filter(col != 0)
+        return query.one()[0]
 
     @classmethod
-    def get_col_min(cls, db, col, start_ts, end_ts):
-        return (
-            db.session().query(func.min(col))
-                .filter(cls.timestamp >= start_ts)
-                .filter(cls.timestamp < end_ts)
-                .one()[0]
-        )
+    def get_col_avg(cls, db, col, start_ts, end_ts, ignore_zero=False):
+        return cls.get_col_func(db, col, func.avg, start_ts, end_ts, ignore_zero)
+
+    @classmethod
+    def get_col_min(cls, db, col, start_ts, end_ts, ignore_zero=False):
+        return cls.get_col_func(db, col, func.min, start_ts, end_ts, ignore_zero)
 
     @classmethod
     def get_col_max(cls, db, col, start_ts, end_ts):
-        return (
-            db.session().query(func.max(col))
-                .filter(cls.timestamp >= start_ts)
-                .filter(cls.timestamp < end_ts)
-                .one()[0]
-        )
+        return cls.get_col_func(db, col, func.max, start_ts, end_ts, False)
 
     @classmethod
     def get_col_sum(cls, db, col, start_ts, end_ts):
-        return (
-            db.session().query(func.sum(col))
-                .filter(cls.timestamp >= start_ts)
-                .filter(cls.timestamp < end_ts)
-                .one()[0]
-        )
+        return cls.get_col_func(db, col, func.sum, start_ts, end_ts, False)
 
     def __repr__(self):
         classname = self.__class__.__name__

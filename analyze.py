@@ -32,15 +32,16 @@ class Analyze():
 
     def get_days(self, year):
         days = GarminSqlite.MonitoringHeartRate.get_days(self.mondb, year)
-        if len(days) > 0:
+        days_count = len(days)
+        if days_count > 0:
             first_day = days[0]
             last_day = days[-1]
             span = last_day - first_day + 1
         else:
             span = 0
-        GarminSqlite.Summary.create_or_update(self.sumdb, {'name' : year + '_days', 'value' : len(days)})
+        GarminSqlite.Summary.create_or_update(self.sumdb, {'name' : year + '_days', 'value' : days_count})
         GarminSqlite.Summary.create_or_update(self.sumdb, {'name' : year + '_days_span', 'value' : span})
-        print "%s Days (%d vs %d): %s" % (year, len(days), span, str(days))
+        print "%s Days (%d vs %d): %s" % (year, days_count, span, str(days))
 
     def summary(self):
         years = GarminSqlite.MonitoringHeartRate.get_years(self.mondb)
