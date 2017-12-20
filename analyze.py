@@ -16,45 +16,64 @@ logger.setLevel(logging.INFO)
 
 class Analyze():
 
-    def __init__(self, database):
-        self.db = GarminSqlite.DB(database)
+    def __init__(self, dbpath):
+        self.mondb = GarminSqlite.MonitoringDB(dbpath)
+        self.sumdb = GarminSqlite.MonitoringSummaryDB(dbpath)
 
     def get_years(self):
-        years = GarminSqlite.Monitoring.get_years(self.db)
+        years = GarminSqlite.MonitoringHeartRate.get_years(self.mondb)
+        GarminSqlite.Summary.create_or_update(self.sumdb, {'name' : 'years', 'value' : len(years)})
         print "Years (%d): %s" % (len(years), str(years))
 
     def get_months(self, year):
-        months = GarminSqlite.Monitoring.get_months(self.db, year)
+        months = GarminSqlite.MonitoringHeartRate.get_month_names(self.mondb, year)
+        GarminSqlite.Summary.create_or_update(self.sumdb, {'name' : year + '_months', 'value' : len(months)})
         print "%s Months (%d): %s" % (year, len(months) , str(months))
 
     def get_days(self, year):
-        days = GarminSqlite.Monitoring.get_days(self.db, year)
-        first_day = days[0]
-        last_day = days[-1]
-        print "%s Days (%d vs %d): %s" % (year, len(days), last_day - first_day + 1, str(days))
+        days = GarminSqlite.MonitoringHeartRate.get_days(self.mondb, year)
+        if len(days) > 0:
+            first_day = days[0]
+            last_day = days[-1]
+            span = last_day - first_day + 1
+        else:
+            span = 0
+        GarminSqlite.Summary.create_or_update(self.sumdb, {'name' : year + '_days', 'value' : len(days)})
+        GarminSqlite.Summary.create_or_update(self.sumdb, {'name' : year + '_days_span', 'value' : span})
+        print "%s Days (%d vs %d): %s" % (year, len(days), span, str(days))
+
+    def summary(self):
+        years = GarminSqlite.MonitoringHeartRate.get_years(self.mondb)
+        for year in years:
+            days = GarminSqlite.MonitoringHeartRate.get_days(self.mondb, year)
+            for day in days:
+                day_ts = datetime.datetime(year, 1, 1) + datetime.timedelta(day - 1)
+                hr_stats = GarminSqlite.MonitoringHeartRate.get_daily_hr_stats(self.mondb, day_ts)
+                GarminSqlite.DaysSummary.create_or_update(self.sumdb, hr_stats)
 
 
 def usage(program):
-    print '%s -d <database> -m ...' % program
+    print '%s -d <dbpath> -m ...' % program
     sys.exit()
 
 def main(argv):
-    database = None
+    dbpath = None
     years = False
     months = None
     days = None
+    summary = False
 
     try:
-        opts, args = getopt.getopt(argv,"d:i:m:y", ["database=", "days=", "months=", "years"])
+        opts, args = getopt.getopt(argv,"d:i:m:sy", ["dbpath=", "days=", "months=", "years", "summary"])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
     for opt, arg in opts:
         if opt == '-h':
             usage(sys.argv[0])
-        elif opt in ("-d", "--database"):
-            logging.debug("DB file: %s" % arg)
-            database = arg
+        elif opt in ("-d", "--dbpath"):
+            logging.debug("DB path: %s" % arg)
+            dbpath = arg
         elif opt in ("-y", "--years"):
             logging.debug("Years")
             years = True
@@ -64,19 +83,23 @@ def main(argv):
         elif opt in ("-d", "--days"):
             logging.debug("Days")
             days = arg
+        elif opt in ("-s", "--summary"):
+            logging.debug("Summary")
+            summary = True
 
-    if not database:
+    if not dbpath:
         print "Missing arguments:"
         usage(sys.argv[0])
 
-    analyze = Analyze(database)
+    analyze = Analyze(dbpath)
     if years:
         analyze.get_years()
     if months:
         analyze.get_months(months)
     if days:
         analyze.get_days(days)
-
+    if summary:
+        analyze.summary()
 
 if __name__ == "__main__":
     main(sys.argv[1:])

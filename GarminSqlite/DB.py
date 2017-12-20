@@ -10,18 +10,16 @@ from sqlalchemy import *
 from sqlalchemy.ext.declarative import *
 from sqlalchemy.orm import *
 
+
 logger = logging.getLogger(__name__)
 #logger.setLevel(logging.INFO)
 logger.setLevel(logging.DEBUG)
 
 
 class DB():
-    Base = declarative_base()
-
     def __init__(self, filename, debug=False):
         url = "sqlite:///" + filename
         self.engine = create_engine(url, echo=debug)
-        DB.Base.metadata.create_all(self.engine)
         self.session_maker = sessionmaker(bind=self.engine)
 
     def session(self):
@@ -39,13 +37,33 @@ class DBObject():
         return os.path.basename(pathname)
 
     @classmethod
+    def __filter_columns(cls, values_dict):
+        return { key : value for key, value in values_dict.items() if key in cls.__dict__}
+
+    @classmethod
     def _filter_columns(cls, values_dict):
-        filtered_cols = { key : value for key, value in values_dict.items() if key in cls.__dict__}
+        filtered_cols = cls.__filter_columns(values_dict)
         if len(filtered_cols) != len(values_dict):
             logger.debug("filtered some cols for %s from %s" % (cls.__tablename__, repr(values_dict)))
         if len(filtered_cols) == 0:
-            raise ValueError("filtered all cols from %s" % (cls.__tablename__, repr(values_dict)))
+            raise ValueError("%s: filtered all cols for %s from %s" %
+                (cls.__name__, cls.__tablename__, repr(values_dict)))
         return filtered_cols
+
+    @classmethod
+    def matches(cls, values_dict):
+        filtered_cols = cls.__filter_columns(values_dict)
+        return len(filtered_cols) >= cls.min_row_values
+
+    @classmethod
+    def relational_mappings(cls, db, values_dict):
+        if len(cls._relational_mappings) == 0:
+            return values_dict
+        return {
+            (cls._relational_mappings[key][0] if key in cls._relational_mappings else key) :
+            (cls._relational_mappings[key][1](db, value) if key in cls._relational_mappings else value)
+            for key, value in values_dict.items()
+        }
 
     @classmethod
     def _translate_columns(cls, values_dict):
@@ -64,44 +82,40 @@ class DBObject():
         return (cls.col_translations[col_name](col_value) if col_name in cls.col_translations else col_value)
 
     @classmethod
-    def _rewrite_columns(cls, db, values_dict):
-        if len(cls.col_rewrites) == 0:
-            return values_dict
-        return {
-            (cls.col_rewrites[key][0] if key in cls.col_rewrites else key) :
-            (cls.col_rewrites[key][1](db, value) if key in cls.col_rewrites else value)
-            for key, value in values_dict.items()
-        }
+    def _find(cls, session, values_dict):
+        logger.debug("%s::_find %s" % (cls.__name__, repr(values_dict)))
+        return cls.find_query(session, cls._translate_columns(values_dict))
 
     @classmethod
-    def _rewrite_column(cls, db, col_name, col_value):
-        if len(cls.col_rewrites) == 0:
-            return col_value
-        return (cls.col_rewrites[col_name][1](db, col_value) if col_name in cls.col_rewrites else col_value)
+    def find(cls, db, values_dict):
+        logger.debug("%s::find %s" % (cls.__name__, repr(values_dict)))
+        return cls._find(db.session(), values_dict).all()
 
     @classmethod
-    def find(cls, db, col_value):
-        name = cls.find_col.name
-        value = cls._translate_column(name, (cls._rewrite_column(db, name, col_value)))
-        return db.session().query(cls).filter(cls.find_col == value).all()
+    def find_one(cls, db, values_dict):
+        logger.debug("%s::find_one %s" % (cls.__name__, repr(values_dict)))
+        return cls._find(db.session(), values_dict).one_or_none()
 
     @classmethod
-    def find_one(cls, db, col_value):
-        rows = cls.find(db, col_value)
-        if len(rows) == 1:
-            return rows[0]
+    def find_id(cls, db, values_dict):
+        logger.debug("%s::find_id %s" % (cls.__name__, repr(values_dict)))
+        instance = cls.find_one(db, values_dict)
+        if instance is not None:
+            return instance.id
         return None
 
     @classmethod
-    def find_or_create_id(cls, db, col_value):
-        instance = cls.find_one(db, col_value)
+    def find_or_create_id(cls, db, values_dict):
+        logger.debug("%s::find_or_create_id %s" % (cls.__name__, repr(values_dict)))
+        instance = cls.find_one(db, values_dict)
         if instance is None:
-            cls.create(db, {cls.find_col.name : col_value})
-            instance = cls.find_one(db, col_value)
+            cls.create(db, values_dict)
+            instance = cls.find_one(db, values_dict)
         return instance.id
 
     @classmethod
     def _create(cls, db, values_dict):
+        logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
         non_none_values = 0
         for value in values_dict.values():
             if value is not None:
@@ -109,19 +123,41 @@ class DBObject():
         if non_none_values < cls.min_row_values:
             raise ValueError("None row values: %s" % repr(values_dict))
         session = db.session()
-        session.add(cls(**values_dict))
+        session.add(cls(**cls._filter_columns(cls.relational_mappings(db, values_dict))))
         session.commit()
 
     @classmethod
     def create(cls, db, values_dict):
-        return cls._create(db, cls._translate_columns(cls._filter_columns(cls._rewrite_columns(db, values_dict))))
+        return cls._create(db, cls._translate_columns(values_dict))
 
     @classmethod
     def find_or_create(cls, db, values_dict):
-        instance = cls.find_one(db, values_dict[cls.find_col.name])
+        instance = cls.find_one(db, values_dict)
         if instance is None:
             cls.create(db, values_dict)
-            instance = cls.find_one(db, values_dict[cls.find_col.name])
+            instance = cls.find_one(db, values_dict)
+        return instance
+
+    @classmethod
+    def update(cls, db, values_dict):
+        logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
+        session = db.session()
+        found = cls._find(session, values_dict).one_or_none()
+        if found:
+            translated_dict = cls._translate_columns(values_dict)
+            for key, value in translated_dict.items():
+                if key in cls.__dict__:
+                    found[key] = value
+            session.commit()
+        return found
+
+    @classmethod
+    def create_or_update(cls, db, values_dict):
+        logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
+        instance = cls.update(db, values_dict)
+        if instance is None:
+            cls.create(db, values_dict)
+            instance = cls.find_one(db, values_dict)
         return instance
 
     @classmethod
@@ -142,17 +178,57 @@ class DBObject():
 
     @classmethod
     def get_years(cls, db):
-        return cls.rows_to_ints(db.session().query(func.strftime("%Y", cls.timestamp)).distinct().all())
+        return cls.rows_to_ints(db.session().query(extract('year', cls.timestamp)).distinct().all())
 
     @classmethod
     def get_months(cls, db, year):
-        return cls.rows_to_months(db.session().query(func.strftime("%m", cls.timestamp))
-            .filter(func.strftime("%Y", cls.timestamp) == year).distinct().all())
+          return (db.session().query(extract('month', cls.timestamp))
+              .filter(extract('year', cls.timestamp) == str(year)).distinct().all())
+
+    @classmethod
+    def get_month_names(cls, db, year):
+          return cls.rows_to_months(cls.get_months(db, year))
 
     @classmethod
     def get_days(cls, db, year):
         return cls.rows_to_ints(db.session().query(func.strftime("%j", cls.timestamp))
-            .filter(func.strftime("%Y", cls.timestamp) == year).distinct().all())
+            .filter(extract('year', cls.timestamp) == str(year)).distinct().all())
+
+    @classmethod
+    def get_col_avg(cls, db, col, start_ts, end_ts):
+        return (
+            db.session().query(func.avg(col))
+                .filter(cls.timestamp >= start_ts)
+                .filter(cls.timestamp < end_ts)
+                .one()[0]
+        )
+
+    @classmethod
+    def get_col_min(cls, db, col, start_ts, end_ts):
+        return (
+            db.session().query(func.min(col))
+                .filter(cls.timestamp >= start_ts)
+                .filter(cls.timestamp < end_ts)
+                .one()[0]
+        )
+
+    @classmethod
+    def get_col_max(cls, db, col, start_ts, end_ts):
+        return (
+            db.session().query(func.max(col))
+                .filter(cls.timestamp >= start_ts)
+                .filter(cls.timestamp < end_ts)
+                .one()[0]
+        )
+
+    @classmethod
+    def get_col_sum(cls, db, col, start_ts, end_ts):
+        return (
+            db.session().query(func.sum(col))
+                .filter(cls.timestamp >= start_ts)
+                .filter(cls.timestamp < end_ts)
+                .one()[0]
+        )
 
     def __repr__(self):
         classname = self.__class__.__name__
@@ -160,124 +236,3 @@ class DBObject():
         col_value = self.__dict__[col_name]
         return ("<%s(timestamp=%s %s=%s)>" % (classname, col.name, col_value))
 
-
-class Device(DB.Base, DBObject):
-    __tablename__ = 'devices'
-
-    serial_number = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime)
-    manufacturer = Column(String)
-    garmin_product = Column(String)
-    hardware_version = Column(String)
-
-    find_col = synonym("serial_number")
-    col_translations = {}
-    col_rewrites = {}
-    min_row_values = 2
-
-
-class File(DB.Base, DBObject):
-    __tablename__ = 'files'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True)
-
-    find_col = synonym("name")
-    col_translations = {
-        'name' : DBObject.filename_from_pathname
-    }
-    col_rewrites = {}
-    min_row_values = 1
-
-
-class ActivityType(DB.Base, DBObject):
-    __tablename__ = 'activity_type'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-
-    find_col = synonym("name")
-    col_translations = {}
-    col_rewrites = {}
-    min_row_values = 1
-
-
-class DeviceInfo(DB.Base, DBObject):
-    __tablename__ = 'device_info'
-
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime)
-    file_id = Column(Integer, ForeignKey('files.id'))
-    serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
-    software_version = Column(String)
-    cum_operating_time = Column(Integer)
-    battery_voltage = Column(String)
-
-    find_col = synonym("timestamp")
-    col_translations = {}
-    col_rewrites = {
-        'filename' : ('file_id', File.find_or_create_id)
-    }
-    min_row_values = 3
-
-
-class MonitoringInfo(DB.Base, DBObject):
-    __tablename__ = 'monitoring_info'
-
-    timestamp = Column(DateTime, primary_key=True)
-    file_id = Column(Integer, ForeignKey('files.id'))
-    activity_type_id = Column(Integer, ForeignKey('activity_type.id'))
-    resting_metabolic_rate = Column(Integer)
-    cycles_to_distance = Column(FLOAT)
-    cycles_to_calories = Column(FLOAT)
-
-    find_col = synonym("timestamp")
-    col_translations = {}
-    col_rewrites = {
-        'filename' : ('file_id', File.find_or_create_id),
-        'activity_type' : ('activity_type_id', ActivityType.find_or_create_id)
-    }
-    min_row_values = 3
-
-
-class Monitoring(DB.Base, DBObject):
-    __tablename__ = 'monitoring'
-
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime)
-    activity_type_id = Column(Integer, ForeignKey('activity_type.id'))
-    heart_rate = Column(Integer)
-
-    intensity = Column(Integer)
-    intensity_mins = Column(Integer)
-    moderate_activity = Column(Integer)
-    vigorous_activity = Column(Integer)
-
-    ascent = Column(Integer)
-    descent = Column(Integer)
-    ascent_floors = Column(Integer)
-    descent_floors = Column(Integer)
-
-    cum_ascent = Column(Integer)
-    cum_descent = Column(Integer)
-
-    duration = Column(Integer)
-    distance = Column(Integer)
-    cum_active_time = Column(Integer)
-    active_calories = Column(Integer)
-
-    steps = Column(Integer)
-    strokes = Column(Integer)
-    cycles = Column(Integer)
-
-    find_col = synonym("timestamp")
-    col_translations = {
-        'moderate_activity' : DBObject.timedelta_to_secs,
-        'vigorous_activity' : DBObject.timedelta_to_secs,
-        'duration' : DBObject.timedelta_to_secs,
-        'cum_active_time' : DBObject.timedelta_to_secs
-    }
-    col_rewrites = {
-        'activity_type' : ('activity_type_id', ActivityType.find_or_create_id)
-    }
-    min_row_values = 2
