@@ -21,7 +21,8 @@ deps:
 clean:
 	rm -rf *.pyc
 	rm -rf Fit/*.pyc
-	rm -rf GarminSqlite/*.pyc
+	rm -rf HealthDB/*.pyc
+	rm -rf GarminDB/*.pyc
 
 TEST_DB_PATH=/tmp/DBs
 test_monitoring_clean:
@@ -30,22 +31,22 @@ test_monitoring_clean:
 TEST_FIT_FILE_DIR=$(HEALTH_DATA_DIR)/TestFitFiles
 test_monitoring_file: $(DB_DIR)
 	mkdir -p $(TEST_DB_PATH)
-#	python import.py -e --input_file "$(TEST_FIT_FILE_DIR)/15053994801.fit" --dbpath $(TEST_DB_PATH)
-	python import.py -e --input_file "$(TEST_FIT_FILE_DIR)/15044952621.fit" --dbpath $(TEST_DB_PATH)
-#	python import.py -e --input_dir "$(TEST_FIT_FILE_DIR)" --dbpath $(TEST_DB_PATH)
-	python analyze.py --dbpath $(TEST_DB_PATH) --years --months 2017 --days 2017 --summary
+#	python import_fit.py -e --input_file "$(TEST_FIT_FILE_DIR)/15053994801.fit" --dbpath $(TEST_DB_PATH)
+	python import_fit.py -e --input_file "$(TEST_FIT_FILE_DIR)/15044952621.fit" --dbpath $(TEST_DB_PATH)
+#	python import_fit.py -e --input_dir "$(TEST_FIT_FILE_DIR)" --dbpath $(TEST_DB_PATH)
+	python analyze_garmin.py --dbpath $(TEST_DB_PATH) --years --months 2017 --days 2017 --summary
 
 clean_monitoring:
 	rm -f $(DB_DIR)/garmin_monitoring.db
 
 import_monitoring: $(DB_DIR)
-	python import.py -e --input_dir "$(MONITORING_FIT_FILES_DIR)" --dbpath $(DB_DIR)
+	python import_fit.py -e --input_dir "$(MONITORING_FIT_FILES_DIR)" --dbpath $(DB_DIR)
 
 clean_summary:
 	rm -f $(DB_DIR)/garmin_monitoring_summary.db
 
 summary:
-	python analyze.py --dbpath $(DB_DIR) --years --months 2017 --days 2017 --summary
+	python analyze_garmin.py --dbpath $(DB_DIR) --years --months 2017 --days 2017 --summary
 
 EPOCH=$(shell date +'%s')
 backup: $(BACKUP_DIR)

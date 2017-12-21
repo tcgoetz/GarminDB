@@ -8,7 +8,7 @@ import os, sys, getopt, re, string, logging, datetime, traceback
 
 
 import Fit
-import GarminSqlite
+import GarminDB
 
 
 logger = logging.getLogger(__name__)
@@ -52,27 +52,27 @@ class GarminFitData():
 
     def write_garmin(self, garmindb, english_units):
         if english_units:
-            GarminSqlite.Attributes.find_or_create(garmindb, {'name' : 'units', 'value' : 'english'})
+            GarminDB.Attributes.find_or_create(garmindb, {'name' : 'units', 'value' : 'english'})
         else:
             GarminSqlite.Attributes.find_or_create(garmindb, {'name' : 'units', 'value' : 'metric'})
         for file in self.fitfiles:
-            GarminSqlite.File.find_or_create(garmindb, {'name' : file.filename, 'type' : file.type()})
+            GarminDB.File.find_or_create(garmindb, {'name' : file.filename, 'type' : file.type()})
 
     def write_monitoring_info(self, garmindb, mondb):
         monitoring_info = Fit.MonitoringInfoOutputData(self.fitfiles)
         for entry in monitoring_info.fields():
-            entry['file_id'] = GarminSqlite.File.find_id(garmindb, {'name' : entry['filename']})
-            GarminSqlite.MonitoringInfo.find_or_create(mondb, entry)
+            entry['file_id'] = GarminDB.File.find_id(garmindb, {'name' : entry['filename']})
+            GarminDB.MonitoringInfo.find_or_create(mondb, entry)
 
     def write_monitoring_entry(self, mondb, entry):
-        if GarminSqlite.MonitoringHeartRate.matches(entry):
-            GarminSqlite.MonitoringHeartRate.find_or_create(mondb, entry)
-        elif GarminSqlite.MonitoringIntensityMins.matches(entry):
-            GarminSqlite.MonitoringIntensityMins.find_or_create(mondb, entry)
-        elif GarminSqlite.MonitoringClimb.matches(entry):
-            GarminSqlite.MonitoringClimb.find_or_create(mondb, entry)
+        if GarminDB.MonitoringHeartRate.matches(entry):
+            GarminDB.MonitoringHeartRate.find_or_create(mondb, entry)
+        elif GarminDB.MonitoringIntensityMins.matches(entry):
+            GarminDB.MonitoringIntensityMins.find_or_create(mondb, entry)
+        elif GarminDB.MonitoringClimb.matches(entry):
+            GarminDB.MonitoringClimb.find_or_create(mondb, entry)
         else:
-            GarminSqlite.Monitoring.find_or_create(mondb, entry)
+            GarminDB.Monitoring.find_or_create(mondb, entry)
 
     def write_monitoring(self, mondb):
         monitoring = Fit.MonitoringOutputData(self.fitfiles)
@@ -88,16 +88,16 @@ class GarminFitData():
     def write_device_data(self, garmindb, mondb):
         device_data = Fit.DeviceOutputData(self.fitfiles)
         for entry in device_data.fields():
-            GarminSqlite.Device.find_or_create(mondb, entry)
+            GarminDB.Device.find_or_create(mondb, entry)
 
-            entry['file_id'] = GarminSqlite.File.find_id(garmindb, {'name' : entry['filename']})
-            GarminSqlite.DeviceInfo.find_or_create(mondb, entry)
+            entry['file_id'] = GarminDB.File.find_id(garmindb, {'name' : entry['filename']})
+            GarminDB.DeviceInfo.find_or_create(mondb, entry)
 
     def process_files(self, dbpath):
-        garmindb = GarminSqlite.GarminDB(dbpath, self.debug)
+        garmindb = GarminDB.GarminDB(dbpath, self.debug)
         self.write_garmin(garmindb, self.english_units)
 
-        mondb = GarminSqlite.MonitoringDB(dbpath, self.debug)
+        mondb = GarminDB.MonitoringDB(dbpath, self.debug)
         self.write_device_data(garmindb, mondb)
         self.write_monitoring_info(garmindb, mondb)
         self.write_monitoring(mondb)

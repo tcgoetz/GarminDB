@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-from DB import *
+from HealthDB import *
 
 
 class MonitoringDB(DB):
