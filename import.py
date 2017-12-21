@@ -12,14 +12,18 @@ import GarminSqlite
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-#logger.setLevel(logging.DEBUG)
 
 
 class GarminFitData():
 
-    def __init__(self, input_file, input_dir, english_units):
+    def __init__(self, input_file, input_dir, english_units, debug):
         self.english_units = english_units
+        self.debug = debug
+        if debug:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.DEBUG)
+
         self.fitfiles = []
 
         if input_file:
@@ -89,11 +93,11 @@ class GarminFitData():
             entry['file_id'] = GarminSqlite.File.find_id(garmindb, {'name' : entry['filename']})
             GarminSqlite.DeviceInfo.find_or_create(mondb, entry)
 
-    def process_files(self, dbpath, debug):
-        garmindb = GarminSqlite.GarminDB(dbpath, debug)
+    def process_files(self, dbpath):
+        garmindb = GarminSqlite.GarminDB(dbpath, self.debug)
         self.write_garmin(garmindb, self.english_units)
 
-        mondb = GarminSqlite.MonitoringDB(dbpath, debug)
+        mondb = GarminSqlite.MonitoringDB(dbpath, self.debug)
         self.write_device_data(garmindb, mondb)
         self.write_monitoring_info(garmindb, mondb)
         self.write_monitoring(mondb)
@@ -135,9 +139,9 @@ def main(argv):
         print "Missing arguments:"
         usage(sys.argv[0])
 
-    gd = GarminFitData(input_file, input_dir, english_units)
+    gd = GarminFitData(input_file, input_dir, english_units, debug)
     if gd.fit_file_count() > 0:
-        gd.process_files(dbpath, debug)
+        gd.process_files(dbpath)
 
 
 if __name__ == "__main__":

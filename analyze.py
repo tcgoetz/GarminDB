@@ -27,17 +27,18 @@ class Analyze():
             self.english_units = False
 
     def get_years(self):
-        years = GarminSqlite.MonitoringHeartRate.get_years(self.mondb)
+        years = GarminSqlite.Monitoring.get_years(self.mondb)
         GarminSqlite.Summary.create_or_update(self.sumdb, {'name' : 'years', 'value' : len(years)})
         print "Years (%d): %s" % (len(years), str(years))
 
     def get_months(self, year):
-        months = GarminSqlite.MonitoringHeartRate.get_month_names(self.mondb, year)
+        months = GarminSqlite.Monitoring.get_month_names(self.mondb, year)
         GarminSqlite.Summary.create_or_update(self.sumdb, {'name' : year + '_months', 'value' : len(months)})
         print "%s Months (%d): %s" % (year, len(months) , str(months))
 
     def get_days(self, year):
-        days = GarminSqlite.MonitoringHeartRate.get_days(self.mondb, year)
+        year_int = int(year)
+        days = GarminSqlite.Monitoring.get_days(self.mondb, year)
         days_count = len(days)
         if days_count > 0:
             first_day = days[0]
@@ -47,12 +48,19 @@ class Analyze():
             span = 0
         GarminSqlite.Summary.create_or_update(self.sumdb, {'name' : year + '_days', 'value' : days_count})
         GarminSqlite.Summary.create_or_update(self.sumdb, {'name' : year + '_days_span', 'value' : span})
-        print "%s Days (%d vs %d): %s" % (year, days_count, span, str(days))
+        print "%d Days (%d vs %d): %s" % (year_int, days_count, span, str(days))
+        for index in xrange(days_count - 1):
+            day = int(days[index])
+            next_day = int(days[index + 1])
+            if next_day != day + 1:
+                day_str = str(GarminSqlite.day_of_the_year_to_datetime(year_int, day))
+                next_day_str = str(GarminSqlite.day_of_the_year_to_datetime(year_int, next_day))
+                print "Days gap between %d (%s) and %d (%s)" % (day, day_str, next_day, next_day_str)
 
     def summary(self):
-        years = GarminSqlite.MonitoringHeartRate.get_years(self.mondb)
+        years = GarminSqlite.Monitoring.get_years(self.mondb)
         for year in years:
-            days = GarminSqlite.MonitoringHeartRate.get_days(self.mondb, year)
+            days = GarminSqlite.Monitoring.get_days(self.mondb, year)
             for day in days:
                 day_ts = datetime.datetime(year, 1, 1) + datetime.timedelta(day - 1)
                 stats = GarminSqlite.MonitoringHeartRate.get_daily_stats(self.mondb, day_ts)

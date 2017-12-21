@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 #logger.setLevel(logging.DEBUG)
 
+def day_of_the_year_to_datetime(year, day):
+    return datetime.datetime(year, 1, 1) + datetime.timedelta(day - 1)
+
 
 class DB():
     max_commit_attempts = 15
