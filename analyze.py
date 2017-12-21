@@ -17,8 +17,14 @@ logger.setLevel(logging.INFO)
 class Analyze():
 
     def __init__(self, dbpath):
+        self.garmindb = GarminSqlite.GarminDB(dbpath)
         self.mondb = GarminSqlite.MonitoringDB(dbpath)
         self.sumdb = GarminSqlite.MonitoringSummaryDB(dbpath)
+        units = GarminSqlite.Attributes.find_one(self.garmindb, {'name' : 'units'})
+        if units.value == 'english':
+            self.english_units = True
+        else:
+            self.english_units = False
 
     def get_years(self):
         years = GarminSqlite.MonitoringHeartRate.get_years(self.mondb)
@@ -50,14 +56,14 @@ class Analyze():
             for day in days:
                 day_ts = datetime.datetime(year, 1, 1) + datetime.timedelta(day - 1)
                 stats = GarminSqlite.MonitoringHeartRate.get_daily_stats(self.mondb, day_ts)
-                stats.update(GarminSqlite.MonitoringClimb.get_daily_stats(self.mondb, day_ts))
+                stats.update(GarminSqlite.MonitoringClimb.get_daily_stats(self.mondb, day_ts, self.english_units))
                 stats.update(GarminSqlite.MonitoringIntensityMins.get_daily_stats(self.mondb, day_ts))
                 stats.update(GarminSqlite.Monitoring.get_daily_stats(self.mondb, day_ts))
                 GarminSqlite.DaysSummary.create_or_update(self.sumdb, stats)
             for week_starting_day in xrange(1, 365, 7):
                 day_ts = datetime.datetime(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
                 stats = GarminSqlite.MonitoringHeartRate.get_weekly_stats(self.mondb, day_ts)
-                stats.update(GarminSqlite.MonitoringClimb.get_weekly_stats(self.mondb, day_ts))
+                stats.update(GarminSqlite.MonitoringClimb.get_weekly_stats(self.mondb, day_ts, self.english_units))
                 stats.update(GarminSqlite.MonitoringIntensityMins.get_weekly_stats(self.mondb, day_ts))
                 stats.update(GarminSqlite.Monitoring.get_weekly_stats(self.mondb, day_ts))
                 GarminSqlite.WeeksSummary.create_or_update(self.sumdb, stats)

@@ -16,6 +16,23 @@ class GarminDB(DB):
         GarminDB.Base.metadata.create_all(self.engine)
 
 
+class Attributes(GarminDB.Base, DBObject):
+    __tablename__ = 'attributes'
+
+    name = Column(String, primary_key=True)
+    value = Column(String)
+
+    _relational_mappings = {}
+    col_translations = {
+        'value' : str,
+    }
+    min_row_values = 2
+
+    @classmethod
+    def find_query(cls, session, values_dict):
+        return  session.query(cls).filter(cls.name == values_dict['name'])
+
+
 class FileType(GarminDB.Base, DBObject):
     __tablename__ = 'file_types'
 

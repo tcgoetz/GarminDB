@@ -186,6 +186,7 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_climb'
 
     feet_to_floors = 10
+    meters_to_floors = 3
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
@@ -207,26 +208,26 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
-    def get_stats(cls, db, start_ts, end_ts):
+    def get_stats(cls, db, start_ts, end_ts, english_units=False):
         cum_ascent = cls.get_col_max(db, cls.cum_ascent, start_ts, end_ts)
         if cum_ascent:
-            floors = cum_ascent / cls.feet_to_floors
+            if english_units:
+                floors = cum_ascent / cls.feet_to_floors
+            else:
+                floors = cum_ascent / cls.meters_to_floors
         else:
             floors = 0
-        stats = {
-            'floors' : floors
-        }
-        return stats
+        return { 'floors' : floors }
 
     @classmethod
-    def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
+    def get_daily_stats(cls, db, day_ts, english_units=False):
+        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1), english_units)
         stats['day'] = day_ts
         return stats
 
     @classmethod
-    def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
+    def get_weekly_stats(cls, db, first_day_ts, english_units=False):
+        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7), english_units)
         stats['first_day'] = first_day_ts
         return stats
 
@@ -265,10 +266,7 @@ class Monitoring(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
-        stats = {
-            'steps' : cls.get_col_max(db, cls.steps, start_ts, end_ts),
-        }
-        return stats
+        return { 'steps' : cls.get_col_max(db, cls.steps, start_ts, end_ts) }
 
     @classmethod
     def get_daily_stats(cls, db, day_ts):

@@ -31,14 +31,14 @@ test_monitoring_clean:
 TEST_MONITORING_FILE=10036777080.fit
 test_monitoring_file: $(DB_DIR)
 	mkdir -p $(TEST_DB_PATH)
-	python import.py --input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_MONITORING_FILE)" --dbpath $(TEST_DB_PATH)
+	python import.py -e --input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_MONITORING_FILE)" --dbpath $(TEST_DB_PATH)
 	python analyze.py --dbpath $(TEST_DB_PATH) --years --months 2017 --days 2017 --summary
 
 clean_monitoring:
 	rm -f $(DB_DIR)/garmin_monitoring.db
 
 import_monitoring: $(DB_DIR)
-	python import.py --input_dir "$(MONITORING_FIT_FILES_DIR)" --dbpath $(DB_DIR)
+	python import.py -e --input_dir "$(MONITORING_FIT_FILES_DIR)" --dbpath $(DB_DIR)
 
 clean_summary:
 	rm -f $(DB_DIR)/garmin_monitoring_summary.db

@@ -19,6 +19,7 @@ logger.setLevel(logging.INFO)
 class GarminFitData():
 
     def __init__(self, input_file, input_dir, english_units):
+        self.english_units = english_units
         self.fitfiles = []
 
         if input_file:
@@ -45,7 +46,11 @@ class GarminFitData():
     def fit_file_count(self):
         return len(self.fitfiles)
 
-    def write_files(self, garmindb):
+    def write_garmin(self, garmindb, english_units):
+        if english_units:
+            GarminSqlite.Attributes.find_or_create(garmindb, {'name' : 'units', 'value' : 'english'})
+        else:
+            GarminSqlite.Attributes.find_or_create(garmindb, {'name' : 'units', 'value' : 'metric'})
         for file in self.fitfiles:
             GarminSqlite.File.find_or_create(garmindb, {'name' : file.filename, 'type' : file.type()})
 
@@ -86,7 +91,7 @@ class GarminFitData():
 
     def process_files(self, dbpath, debug):
         garmindb = GarminSqlite.GarminDB(dbpath, debug)
-        self.write_files(garmindb)
+        self.write_garmin(garmindb, self.english_units)
 
         mondb = GarminSqlite.MonitoringDB(dbpath, debug)
         self.write_device_data(garmindb, mondb)
@@ -114,9 +119,9 @@ def main(argv):
         if opt == '-h':
             usage(sys.argv[0])
         elif opt in ("-t", "--trace"):
-            english_units = True
-        elif opt in ("-e", "--english"):
             debug = True
+        elif opt in ("-e", "--english"):
+            english_units = True
         elif opt in ("-d", "--input_dir"):
             input_dir = arg
         elif opt in ("-i", "--input_file"):
