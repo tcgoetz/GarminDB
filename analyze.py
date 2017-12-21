@@ -54,6 +54,13 @@ class Analyze():
                 stats.update(GarminSqlite.MonitoringIntensityMins.get_daily_stats(self.mondb, day_ts))
                 stats.update(GarminSqlite.Monitoring.get_daily_stats(self.mondb, day_ts))
                 GarminSqlite.DaysSummary.create_or_update(self.sumdb, stats)
+            for week_starting_day in xrange(1, 365, 7):
+                day_ts = datetime.datetime(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
+                stats = GarminSqlite.MonitoringHeartRate.get_weekly_stats(self.mondb, day_ts)
+                stats.update(GarminSqlite.MonitoringClimb.get_weekly_stats(self.mondb, day_ts))
+                stats.update(GarminSqlite.MonitoringIntensityMins.get_weekly_stats(self.mondb, day_ts))
+                stats.update(GarminSqlite.Monitoring.get_weekly_stats(self.mondb, day_ts))
+                GarminSqlite.WeeksSummary.create_or_update(self.sumdb, stats)
 
 
 def usage(program):
