@@ -88,6 +88,21 @@ class DB():
             break
         raise IOError("Failed to query")
 
+    @classmethod
+    def query_scalar(cls, query):
+        attempts = 0
+        while attempts < DB.max_query_attempts:
+            try:
+                return query.scalar()
+            except OperationalError as e:
+                attempts += 1
+                logger.error("Exeption '%s' on query %s attempt %d" % (str(e), str(query), attempts))
+                cls.query_errors += 1
+                time.sleep(attempts)
+                continue
+            break
+        raise IOError("Failed to query")
+
 
 class DBObject():
 
@@ -241,7 +256,7 @@ class DBObject():
 
     @classmethod
     def get_months(cls, db, year):
-          return (db.session().query(extract('month', cls.timestamp))
+          return (db.query_session().query(extract('month', cls.timestamp))
               .filter(extract('year', cls.timestamp) == str(year)).distinct().all())
 
     @classmethod
@@ -255,7 +270,7 @@ class DBObject():
 
     @classmethod
     def get_col_func(cls, db, col, func, start_ts, end_ts, ignore_zero=False):
-        query = db.session().query(func(col)).filter(cls.timestamp >= start_ts).filter(cls.timestamp < end_ts)
+        query = db.query_session().query(func(col)).filter(cls.timestamp >= start_ts).filter(cls.timestamp < end_ts)
         if ignore_zero:
             query = query.filter(col != 0)
         return query.one()[0]
@@ -275,6 +290,17 @@ class DBObject():
     @classmethod
     def get_col_sum(cls, db, col, start_ts, end_ts):
         return cls.get_col_func(db, col, func.sum, start_ts, end_ts, False)
+
+    @classmethod
+    def get_col_sum_of_max_per_day(cls, db, col, start_ts, end_ts):
+        max_daily_query = (
+            db.query_session().query(func.max(col).label('maxes'))
+                .filter(cls.timestamp >= start_ts)
+                .filter(cls.timestamp < end_ts)
+                .group_by(func.strftime("%j", cls.timestamp))
+        )
+        sum_of_maxes = db.query_session().query(func.sum(max_daily_query.subquery().columns.maxes))
+        return DB.query_scalar(sum_of_maxes)
 
     def __repr__(self):
         classname = self.__class__.__name__

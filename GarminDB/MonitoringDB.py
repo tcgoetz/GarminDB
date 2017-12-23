@@ -128,9 +128,15 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
         return stats
 
     @classmethod
-    def get_weekly_stats(cls, db, start_day_ts):
-        stats = cls.get_stats(db, start_day_ts, start_day_ts + datetime.timedelta(7))
-        stats['day'] = start_day_ts
+    def get_weekly_stats(cls, db, first_day_ts):
+        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats['first_day'] = first_day_ts
+        return stats
+
+    @classmethod
+    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
+        stats = cls.get_stats(db, first_day_ts, last_day_ts)
+        stats['first_day'] = first_day_ts
         return stats
 
 
@@ -154,9 +160,9 @@ class MonitoringIntensityMins(MonitoringDB.Base, DBObject):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
-    def get_stats(cls, db, start_ts, end_ts):
-        moderate_activity_mins = cls.get_col_sum(db, cls.moderate_activity_mins, start_ts, end_ts)
-        vigorous_activity_mins = cls.get_col_sum(db, cls.vigorous_activity_mins, start_ts, end_ts)
+    def get_stats(cls, db, func, start_ts, end_ts):
+        moderate_activity_mins = func(db, cls.moderate_activity_mins, start_ts, end_ts)
+        vigorous_activity_mins = func(db, cls.vigorous_activity_mins, start_ts, end_ts)
         intensity_mins = 0
         if moderate_activity_mins:
             intensity_mins += moderate_activity_mins
@@ -171,14 +177,20 @@ class MonitoringIntensityMins(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
+        stats = cls.get_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1))
         stats['first_day'] = day_ts,
         return stats
 
     @classmethod
-    def get_weekly_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(7))
-        stats['first_day'] = day_ts,
+    def get_weekly_stats(cls, db, first_day_ts):
+        stats = cls.get_stats(db,cls.get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats['first_day'] = first_day_ts,
+        return stats
+
+    @classmethod
+    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
+        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
+        stats['first_day'] = first_day_ts,
         return stats
 
 
@@ -208,8 +220,8 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
-    def get_stats(cls, db, start_ts, end_ts, english_units=False):
-        cum_ascent = cls.get_col_max(db, cls.cum_ascent, start_ts, end_ts)
+    def get_stats(cls, db, func, start_ts, end_ts, english_units=False):
+        cum_ascent = func(db, cls.cum_ascent, start_ts, end_ts)
         if cum_ascent:
             if english_units:
                 floors = cum_ascent / cls.feet_to_floors
@@ -221,13 +233,19 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_daily_stats(cls, db, day_ts, english_units=False):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1), english_units)
+        stats = cls.get_stats(db, cls.get_col_max, day_ts, day_ts + datetime.timedelta(1), english_units)
         stats['day'] = day_ts
         return stats
 
     @classmethod
     def get_weekly_stats(cls, db, first_day_ts, english_units=False):
-        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7), english_units)
+        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7), english_units)
+        stats['first_day'] = first_day_ts
+        return stats
+
+    @classmethod
+    def get_monthly_stats(cls, db, first_day_ts, last_day_ts, english_units=False):
+        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, last_day_ts, english_units)
         stats['first_day'] = first_day_ts
         return stats
 
@@ -265,17 +283,23 @@ class Monitoring(MonitoringDB.Base, DBObject):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
-    def get_stats(cls, db, start_ts, end_ts):
-        return { 'steps' : cls.get_col_max(db, cls.steps, start_ts, end_ts) }
+    def get_stats(cls, db, func, start_ts, end_ts):
+        return { 'steps' : func(db, cls.steps, start_ts, end_ts) }
 
     @classmethod
     def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
+        stats = cls.get_stats(db, cls.get_col_max, day_ts, day_ts + datetime.timedelta(1))
         stats['day'] = day_ts
         return stats
 
     @classmethod
     def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats['first_day'] = first_day_ts
+        return stats
+
+    @classmethod
+    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
+        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
         stats['first_day'] = first_day_ts
         return stats

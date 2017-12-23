@@ -36,8 +36,8 @@ test_monitoring_clean:
 TEST_FIT_FILE_DIR=$(HEALTH_DATA_DIR)/TestFitFiles
 test_monitoring_file: $(TEST_DB_PATH)
 #	python import_garmin_fit.py -e --input_file "$(TEST_FIT_FILE_DIR)/15053994801.fit" --dbpath $(TEST_DB_PATH)
-	python import_garmin_fit.py -e --input_file "$(TEST_FIT_FILE_DIR)/15044952621.fit" --dbpath $(TEST_DB_PATH)
-#	python import_garmin_fit.py -e --input_dir "$(TEST_FIT_FILE_DIR)" --dbpath $(TEST_DB_PATH)
+#	python import_garmin_fit.py -e --input_file "$(TEST_FIT_FILE_DIR)/15044952621.fit" --dbpath $(TEST_DB_PATH)
+	python import_garmin_fit.py -e --input_dir "$(TEST_FIT_FILE_DIR)" --dbpath $(TEST_DB_PATH)
 	python analyze_garmin.py --dbpath $(TEST_DB_PATH) --years --months 2017 --days 2017 --summary
 
 clean_monitoring:
@@ -46,7 +46,7 @@ clean_monitoring:
 import_monitoring: $(DB_DIR)
 	python import_garmin_fit.py -e --input_dir "$(MONITORING_FIT_FILES_DIR)" --dbpath $(DB_DIR)
 
-clean_summary:
+clean_garmin_summary:
 	rm -f $(DB_DIR)/garmin_monitoring_summary.db
 
 garmin_summary:

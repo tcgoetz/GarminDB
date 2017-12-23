@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, string, logging, datetime
+import os, sys, getopt, re, string, logging, datetime, calendar
 
 import HealthDB
 import GarminDB
@@ -76,6 +76,15 @@ class Analyze():
                 stats.update(GarminDB.MonitoringIntensityMins.get_weekly_stats(self.mondb, day_ts))
                 stats.update(GarminDB.Monitoring.get_weekly_stats(self.mondb, day_ts))
                 GarminDB.WeeksSummary.create_or_update(self.sumdb, stats)
+            for month in xrange(1, 12):
+                start_day_ts = datetime.datetime(year, month, 1)
+                end_day_ts = datetime.datetime(year, month, calendar.monthrange(year, month)[1])
+                stats = GarminDB.MonitoringHeartRate.get_monthly_stats(self.mondb, start_day_ts, end_day_ts)
+                stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.mondb,
+                                                                        start_day_ts, end_day_ts, self.english_units))
+                stats.update(GarminDB.MonitoringIntensityMins.get_monthly_stats(self.mondb, start_day_ts, end_day_ts))
+                stats.update(GarminDB.Monitoring.get_monthly_stats(self.mondb, start_day_ts, end_day_ts))
+                GarminDB.MonthsSummary.create_or_update(self.sumdb, stats)
 
 
 def usage(program):
