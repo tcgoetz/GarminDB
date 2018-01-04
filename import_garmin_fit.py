@@ -37,14 +37,10 @@ class GarminFitData():
 
     def dir_to_fit_files(self, input_dir):
         file_names = []
-
         for file in os.listdir(input_dir):
             match = re.search('.*\.fit', file)
             if match:
                 file_names.append(input_dir + "/" + file)
-
-        logger.debug(file_names)
-
         return file_names
 
     def fit_file_count(self):
