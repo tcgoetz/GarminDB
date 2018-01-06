@@ -25,6 +25,7 @@ class DB():
     commit_errors = 0
     max_query_attempts = max_commit_attempts
     query_errors = 0
+    file_suffix = '.db'
 
     def __init__(self, filename, debug=False):
         url = "sqlite:///" + filename

@@ -2,6 +2,7 @@
 HEALTH_DATA_DIR=$(HOME)/HealthData
 FIT_FILE_DIR=$(HEALTH_DATA_DIR)/FitFiles
 FITBIT_FILE_DIR=$(HEALTH_DATA_DIR)/FitBitFiles
+MSHEALTH_FILE_DIR=$(HEALTH_DATA_DIR)/MSHealth
 DB_DIR=$(HEALTH_DATA_DIR)/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 
@@ -66,6 +67,15 @@ import_fitbit_file: $(DB_DIR)
 
 clean_fitbit:
 	rm -f $(DB_DIR)/fitbit.db
+
+
+import_mshealth_file: $(DB_DIR)
+	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20151230_20161004.csv" --dbpath $(DB_DIR)
+	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20160101_20161231.csv" --dbpath $(DB_DIR)
+	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20170101_20170226.csv" --dbpath $(DB_DIR)
+
+clean_mshealth:
+	rm -f $(DB_DIR)/mshealth.db
 
 
 EPOCH=$(shell date +'%s')
