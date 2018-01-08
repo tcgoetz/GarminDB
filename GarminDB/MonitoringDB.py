@@ -110,7 +110,7 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
 
     @classmethod
     def find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
+        return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
@@ -178,7 +178,7 @@ class MonitoringIntensityMins(MonitoringDB.Base, DBObject):
     @classmethod
     def get_daily_stats(cls, db, day_ts):
         stats = cls.get_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1))
-        stats['first_day'] = day_ts,
+        stats['day'] = day_ts,
         return stats
 
     @classmethod

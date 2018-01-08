@@ -162,6 +162,11 @@ class DBObject():
         return cls.find_query(session, cls._translate_columns(values_dict))
 
     @classmethod
+    def _update(cls, session, values_dict):
+        logger.debug("%s::_update %s" % (cls.__name__, repr(values_dict)))
+        return cls.find_query(session, values_dict).update(values_dict)
+
+    @classmethod
     def find(cls, db, values_dict):
         logger.debug("%s::find %s" % (cls.__name__, repr(values_dict)))
         return DB.query_all(cls._find(db.query_session(), values_dict))
@@ -214,22 +219,9 @@ class DBObject():
         return instance
 
     @classmethod
-    def update(cls, db, values_dict):
-        logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
-        session = db.session()
-        found = cls._find(session, values_dict).one_or_none()
-        if found:
-            translated_dict = cls._translate_columns(values_dict)
-            for key, value in translated_dict.items():
-                if key in cls.__dict__:
-                    found[key] = value
-            DB.commit(session)
-        return found
-
-    @classmethod
     def create_or_update(cls, db, values_dict):
         logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
-        instance = cls.update(db, values_dict)
+        instance = cls._update(db.query_session(), values_dict)
         if instance is None:
             cls.create(db, values_dict)
             instance = cls.find_one(db, values_dict)

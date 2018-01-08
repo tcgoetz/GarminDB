@@ -33,66 +33,45 @@ class Summary(MonitoringSummaryDB.Base, DBObject):
         return  session.query(cls).filter(cls.name == values_dict['name'])
 
 
-class MonthsSummary(MonitoringSummaryDB.Base, DBObject):
+class SummaryBase(DBObject):
+    hr_avg = Column(Integer)
+    hr_min = Column(Integer)
+    hr_max = Column(Integer)
+    intensity_mins = Column(Integer)
+    moderate_activity_mins = Column(Integer)
+    vigorous_activity_mins = Column(Integer)
+    steps = Column(Integer)
+    floors = Column(Integer)
+
+    _relational_mappings = {}
+    col_translations = {}
+    min_row_values = 1
+
+
+class MonthsSummary(MonitoringSummaryDB.Base, SummaryBase):
     __tablename__ = 'months_summary'
 
     first_day = Column(Date, primary_key=True)
-    hr_avg = Column(Integer)
-    hr_min = Column(Integer)
-    hr_max = Column(Integer)
-    intensity_mins = Column(Integer)
-    moderate_activity_mins = Column(Integer)
-    vigorous_activity_mins = Column(Integer)
-    steps = Column(Integer)
-    floors = Column(Integer)
-
-    _relational_mappings = {}
-    col_translations = {}
-    min_row_values = 1
 
     @classmethod
     def find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.first_day == values_dict['first_day'])
 
 
-class WeeksSummary(MonitoringSummaryDB.Base, DBObject):
+class WeeksSummary(MonitoringSummaryDB.Base, SummaryBase):
     __tablename__ = 'weeks_summary'
 
     first_day = Column(Date, primary_key=True)
-    hr_avg = Column(Integer)
-    hr_min = Column(Integer)
-    hr_max = Column(Integer)
-    intensity_mins = Column(Integer)
-    moderate_activity_mins = Column(Integer)
-    vigorous_activity_mins = Column(Integer)
-    steps = Column(Integer)
-    floors = Column(Integer)
-
-    _relational_mappings = {}
-    col_translations = {}
-    min_row_values = 1
 
     @classmethod
     def find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.first_day == values_dict['first_day'])
 
 
-class DaysSummary(MonitoringSummaryDB.Base, DBObject):
+class DaysSummary(MonitoringSummaryDB.Base, SummaryBase):
     __tablename__ = 'days_summary'
 
     day = Column(Date, primary_key=True)
-    hr_avg = Column(Integer)
-    hr_min = Column(Integer)
-    hr_max = Column(Integer)
-    intensity_mins = Column(Integer)
-    moderate_activity_mins = Column(Integer)
-    vigorous_activity_mins = Column(Integer)
-    steps = Column(Integer)
-    floors = Column(Integer)
-
-    _relational_mappings = {}
-    col_translations = {}
-    min_row_values = 1
 
     @classmethod
     def find_query(cls, session, values_dict):

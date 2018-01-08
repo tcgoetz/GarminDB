@@ -56,6 +56,7 @@ clean_garmin_summary:
 
 garmin_summary:
 	python analyze_garmin.py --dbpath $(DB_DIR) --years --months 2017 --days 2017 --summary
+	python analyze_garmin.py --dbpath $(DB_DIR) --years --months 2018 --days 2018 --summary
 
 new_garmin: import_new_monitoring clean_garmin_summary garmin_summary
 
