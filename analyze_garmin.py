@@ -63,22 +63,22 @@ class Analyze():
         for year in years:
             days = GarminDB.Monitoring.get_days(self.mondb, year)
             for day in days:
-                day_ts = datetime.datetime(year, 1, 1) + datetime.timedelta(day - 1)
+                day_ts = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
                 stats = GarminDB.MonitoringHeartRate.get_daily_stats(self.mondb, day_ts)
                 stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.mondb, day_ts, self.english_units))
                 stats.update(GarminDB.MonitoringIntensityMins.get_daily_stats(self.mondb, day_ts))
                 stats.update(GarminDB.Monitoring.get_daily_stats(self.mondb, day_ts))
                 GarminDB.DaysSummary.create_or_update(self.sumdb, stats)
             for week_starting_day in xrange(1, 365, 7):
-                day_ts = datetime.datetime(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
+                day_ts = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
                 stats = GarminDB.MonitoringHeartRate.get_weekly_stats(self.mondb, day_ts)
                 stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.mondb, day_ts, self.english_units))
                 stats.update(GarminDB.MonitoringIntensityMins.get_weekly_stats(self.mondb, day_ts))
                 stats.update(GarminDB.Monitoring.get_weekly_stats(self.mondb, day_ts))
                 GarminDB.WeeksSummary.create_or_update(self.sumdb, stats)
             for month in xrange(1, 12):
-                start_day_ts = datetime.datetime(year, month, 1)
-                end_day_ts = datetime.datetime(year, month, calendar.monthrange(year, month)[1])
+                start_day_ts = datetime.date(year, month, 1)
+                end_day_ts = datetime.date(year, month, calendar.monthrange(year, month)[1])
                 stats = GarminDB.MonitoringHeartRate.get_monthly_stats(self.mondb, start_day_ts, end_day_ts)
                 stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.mondb,
                                                                         start_day_ts, end_day_ts, self.english_units))

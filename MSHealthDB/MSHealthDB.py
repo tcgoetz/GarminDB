@@ -29,7 +29,7 @@ class Attributes(MSHealthDB.Base, DBObject):
     min_row_values = 2
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.name == values_dict['name'])
 
 
@@ -79,5 +79,5 @@ class DaysSummary(MSHealthDB.Base, DBObject):
     min_row_values = 1
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.day == values_dict['day'])

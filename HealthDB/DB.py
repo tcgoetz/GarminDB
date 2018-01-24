@@ -29,6 +29,7 @@ class DB():
 
     def __init__(self, filename, debug=False):
         url = "sqlite:///" + filename
+        logger.debug("DB %s debug %s " % (url, str(debug)))
         self.engine = create_engine(url, echo=debug)
         self.session_maker = sessionmaker(bind=self.engine)
         self._query_session = None
@@ -107,13 +108,15 @@ class DB():
 
 class DBObject():
 
+    _updateable_fields = []
+
     @classmethod
     def filename_from_pathname(cls, pathname):
         return os.path.basename(pathname)
 
     @classmethod
     def __filter_columns(cls, values_dict):
-        return { key : value for key, value in values_dict.items() if key in cls.__dict__}
+        return { key : value for key, value in values_dict.iteritems() if key in cls.__dict__}
 
     @classmethod
     def _filter_columns(cls, values_dict):
@@ -121,8 +124,7 @@ class DBObject():
         if len(filtered_cols) != len(values_dict):
             logger.debug("filtered some cols for %s from %s" % (cls.__tablename__, repr(values_dict)))
         if len(filtered_cols) == 0:
-            raise ValueError("%s: filtered all cols for %s from %s" %
-                (cls.__name__, cls.__tablename__, repr(values_dict)))
+            raise ValueError("%s: filtered all cols for %s from %s" % (cls.__name__, cls.__tablename__, repr(values_dict)))
         return filtered_cols
 
     @classmethod
@@ -137,7 +139,7 @@ class DBObject():
         return {
             (cls._relational_mappings[key][0] if key in cls._relational_mappings else key) :
             (cls._relational_mappings[key][1](db, value) if key in cls._relational_mappings else value)
-            for key, value in values_dict.items()
+            for key, value in values_dict.iteritems()
         }
 
     @classmethod
@@ -147,7 +149,7 @@ class DBObject():
         return {
             key :
             (cls.col_translations[key](value) if key in cls.col_translations else value)
-            for key, value in values_dict.items()
+            for key, value in values_dict.iteritems()
         }
 
     @classmethod
@@ -157,24 +159,36 @@ class DBObject():
         return (cls.col_translations[col_name](col_value) if col_name in cls.col_translations else col_value)
 
     @classmethod
-    def _find(cls, session, values_dict):
+    def find_query(cls, session, values_dict):
         logger.debug("%s::_find %s" % (cls.__name__, repr(values_dict)))
-        return cls.find_query(session, cls._translate_columns(values_dict))
+        return cls._find_query(session, cls._translate_columns(values_dict))
 
     @classmethod
-    def _update(cls, session, values_dict):
-        logger.debug("%s::_update %s" % (cls.__name__, repr(values_dict)))
-        return cls.find_query(session, values_dict).update(values_dict)
+    def find_all(cls, db, values_dict):
+        logger.debug("%s::find_all %s" % (cls.__name__, repr(values_dict)))
+        return DB.query_all(cls.find_query(db.query_session(), values_dict))
 
     @classmethod
-    def find(cls, db, values_dict):
-        logger.debug("%s::find %s" % (cls.__name__, repr(values_dict)))
-        return DB.query_all(cls._find(db.query_session(), values_dict))
+    def _find_one(cls, session, values_dict):
+        logger.debug("%s::_find_one %s" % (cls.__name__, repr(values_dict)))
+        return DB.query_one_or_none(cls.find_query(session, values_dict))
 
     @classmethod
     def find_one(cls, db, values_dict):
         logger.debug("%s::find_one %s" % (cls.__name__, repr(values_dict)))
-        return DB.query_one_or_none(cls._find(db.query_session(), values_dict))
+        return DB.query_one_or_none(cls.find_query(db.query_session(), values_dict))
+
+    @classmethod
+    def update_statement(cls, session, values_dict):
+        logger.debug("%s::_update %s" % (cls.__name__, repr(values_dict)))
+        return cls.find_query(session, values_dict).update(values_dict)
+
+    @classmethod
+    def update_one(cls, db, values_dict):
+        logger.debug("%s::update_one %s" % (cls.__name__, repr(values_dict)))
+        session = db.session()
+        cls.update_statement(session, values_dict)
+        return DB.commit(session)
 
     @classmethod
     def find_id(cls, db, values_dict):
@@ -185,16 +199,7 @@ class DBObject():
         return None
 
     @classmethod
-    def find_or_create_id(cls, db, values_dict):
-        logger.debug("%s::find_or_create_id %s" % (cls.__name__, repr(values_dict)))
-        instance = cls.find_one(db, values_dict)
-        if instance is None:
-            cls.create(db, values_dict)
-            instance = cls.find_one(db, values_dict)
-        return instance.id
-
-    @classmethod
-    def _create(cls, db, values_dict):
+    def _create(cls, db, session, values_dict):
         logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
         non_none_values = 0
         for value in values_dict.values():
@@ -202,29 +207,48 @@ class DBObject():
                 non_none_values += 1
         if non_none_values < cls.min_row_values:
             raise ValueError("None row values: %s" % repr(values_dict))
-        session = db.session()
-        session.add(cls(**cls._filter_columns(cls.relational_mappings(db, values_dict))))
-        DB.commit(session)
-
-    @classmethod
-    def create(cls, db, values_dict):
-        return cls._create(db, cls._translate_columns(values_dict))
-
-    @classmethod
-    def find_or_create(cls, db, values_dict):
-        instance = cls.find_one(db, values_dict)
-        if instance is None:
-            cls.create(db, values_dict)
-            instance = cls.find_one(db, values_dict)
+        instance = cls(**cls._filter_columns(cls.relational_mappings(db, values_dict)))
+        session.add(instance)
         return instance
 
     @classmethod
-    def create_or_update(cls, db, values_dict):
-        logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
-        instance = cls._update(db.query_session(), values_dict)
+    def create(cls, db, values_dict):
+        session = db.session()
+        cls._create(db, session, values_dict)
+        DB.commit(session)
+
+    @classmethod
+    def find_or_create(cls, db, values_dict):
+        logger.debug("%s::find_or_create %s" % (cls.__name__, repr(values_dict)))
+        session = db.query_session()
+        instance = cls._find_one(session, values_dict)
         if instance is None:
-            cls.create(db, values_dict)
-            instance = cls.find_one(db, values_dict)
+            instance = cls._create(db, session, values_dict)
+        DB.commit(session)
+        return instance
+
+    @classmethod
+    def find_or_create_id(cls, db, values_dict):
+        logger.debug("%s::find_or_create_id %s" % (cls.__name__, repr(values_dict)))
+        instance = cls.find_or_create(db, values_dict)
+        if instance is None:
+            return None
+        return instance.id
+
+    def update(self, values_dict):
+        for field in self._updateable_fields:
+            self.__dict__[field] = values_dict[field]
+
+    @classmethod
+    def create_or_update(cls, db, values_dict):
+        logger.debug("%s::create_or_update %s" % (cls.__name__, repr(values_dict)))
+        session = db.query_session()
+        instance = cls._find_one(session, values_dict)
+        if instance is None:
+            instance = cls._create(db, session, values_dict)
+        else:
+            instance.update(values_dict)
+        DB.commit(session)
         return instance
 
     @classmethod
@@ -299,5 +323,5 @@ class DBObject():
         classname = self.__class__.__name__
         col_name = cls.find_col.name
         col_value = self.__dict__[col_name]
-        return ("<%s(timestamp=%s %s=%s)>" % (classname, col.name, col_value))
+        return ("<%s(%s=%s)>" % (classname, col.name, col_value))
 

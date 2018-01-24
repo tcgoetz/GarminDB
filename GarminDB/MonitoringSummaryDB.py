@@ -12,7 +12,8 @@ class MonitoringSummaryDB(DB):
     db_name = 'garmin_monitoring_summary.db'
 
     def __init__(self, db_path, debug=False):
-        DB.__init__(self, db_path + "/" + MonitoringSummaryDB.db_name)
+        logger.info("DB path %s debug %s " % (db_path, str(debug)))
+        DB.__init__(self, db_path + "/" + MonitoringSummaryDB.db_name, debug)
         MonitoringSummaryDB.Base.metadata.create_all(self.engine)
 
 
@@ -27,9 +28,10 @@ class Summary(MonitoringSummaryDB.Base, DBObject):
         'value' : str,
     }
     min_row_values = 2
+    _updateable_fields = []
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.name == values_dict['name'])
 
 
@@ -46,6 +48,7 @@ class SummaryBase(DBObject):
     _relational_mappings = {}
     col_translations = {}
     min_row_values = 1
+    _updateable_fields = ['hr_avg', 'hr_min', 'hr_max', 'intensity_mins', 'moderate_activity_mins', 'vigorous_activity_mins', 'steps', 'floors']
 
 
 class MonthsSummary(MonitoringSummaryDB.Base, SummaryBase):
@@ -54,7 +57,7 @@ class MonthsSummary(MonitoringSummaryDB.Base, SummaryBase):
     first_day = Column(Date, primary_key=True)
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.first_day == values_dict['first_day'])
 
 
@@ -64,7 +67,7 @@ class WeeksSummary(MonitoringSummaryDB.Base, SummaryBase):
     first_day = Column(Date, primary_key=True)
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.first_day == values_dict['first_day'])
 
 
@@ -74,7 +77,7 @@ class DaysSummary(MonitoringSummaryDB.Base, SummaryBase):
     day = Column(Date, primary_key=True)
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.day == values_dict['day'])
 
 

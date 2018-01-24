@@ -60,7 +60,7 @@ garmin_summary:
 
 new_garmin: import_new_monitoring clean_garmin_summary garmin_summary
 
-clean_garmin: clean_summary clean_monitoring
+clean_garmin: clean_garmin_summary clean_monitoring
 
 
 import_fitbit_file: $(DB_DIR)

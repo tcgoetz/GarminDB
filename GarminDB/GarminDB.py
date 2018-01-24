@@ -27,9 +27,10 @@ class Attributes(GarminDB.Base, DBObject):
         'value' : str,
     }
     min_row_values = 2
+    _updateable_fields = ['value']
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.name == values_dict['name'])
 
 
@@ -44,7 +45,7 @@ class FileType(GarminDB.Base, DBObject):
     min_row_values = 1
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.name == values_dict['name'])
 
     @classmethod
@@ -68,6 +69,5 @@ class File(GarminDB.Base, DBObject):
     min_row_values = 1
 
     @classmethod
-    def find_query(cls, session, values_dict):
-        logger.debug("%s::find_query %s" % (cls.__name__, repr(values_dict)))
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.name == values_dict['name'])

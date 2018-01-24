@@ -30,7 +30,7 @@ class Device(MonitoringDB.Base, DBObject):
     min_row_values = 2
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.serial_number == values_dict['serial_number'])
 
 
@@ -45,7 +45,7 @@ class ActivityType(MonitoringDB.Base, DBObject):
     min_row_values = 1
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.name == values_dict['name'])
 
     @classmethod
@@ -69,7 +69,7 @@ class DeviceInfo(MonitoringDB.Base, DBObject):
     min_row_values = 3
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
 
@@ -90,7 +90,7 @@ class MonitoringInfo(MonitoringDB.Base, DBObject):
     min_row_values = 3
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
 
@@ -109,7 +109,7 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
     min_row_values = 2
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
@@ -156,7 +156,7 @@ class MonitoringIntensityMins(MonitoringDB.Base, DBObject):
     min_row_values = 2
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
@@ -216,7 +216,7 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
     min_row_values = 2
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
@@ -279,7 +279,7 @@ class Monitoring(MonitoringDB.Base, DBObject):
     min_row_values = 2
 
     @classmethod
-    def find_query(cls, session, values_dict):
+    def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
