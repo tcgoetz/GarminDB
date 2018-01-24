@@ -32,6 +32,9 @@ TEST_DB_PATH=/tmp/DBs
 $(TEST_DB_PATH):
 	mkdir -p $(TEST_DB_PATH)
 
+#
+# Garmin
+#
 test_monitoring_clean:
 	rm -rf $(TEST_DB_PATH)
 
@@ -62,7 +65,9 @@ new_garmin: import_new_monitoring clean_garmin_summary garmin_summary
 
 clean_garmin: clean_garmin_summary clean_monitoring
 
-
+#
+# FitBit
+#
 import_fitbit_file: $(DB_DIR)
 	python import_fitbit_csv.py -e --input_file "$(FITBIT_FILE_DIR)/2015_fitbit_all.csv" --dbpath $(DB_DIR)
 
@@ -72,7 +77,9 @@ clean_fitbit:
 fitbit_summary:
 	python analyze_fitbit.py --dbpath $(DB_DIR) --years --months 2015 --days 2015 --summary
 
-
+#
+# MS Health
+#
 import_mshealth_file: $(DB_DIR)
 	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20151230_20161004.csv" --dbpath $(DB_DIR)
 	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20160101_20161231.csv" --dbpath $(DB_DIR)
@@ -80,6 +87,10 @@ import_mshealth_file: $(DB_DIR)
 
 clean_mshealth:
 	rm -f $(DB_DIR)/mshealth.db
+
+mshealth_summary:
+	python analyze_mshealth.py --dbpath $(DB_DIR) --years --months 2015 --days 2015 --summary
+	python analyze_mshealth.py --dbpath $(DB_DIR) --years --months 2016 --days 2016 --summary
 
 
 EPOCH=$(shell date +'%s')
