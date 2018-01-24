@@ -69,6 +69,9 @@ import_fitbit_file: $(DB_DIR)
 clean_fitbit:
 	rm -f $(DB_DIR)/fitbit.db
 
+fitbit_summary:
+	python analyze_fitbit.py --dbpath $(DB_DIR) --years --months 2015 --days 2015 --summary
+
 
 import_mshealth_file: $(DB_DIR)
 	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20151230_20161004.csv" --dbpath $(DB_DIR)

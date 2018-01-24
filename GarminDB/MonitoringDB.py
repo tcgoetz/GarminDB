@@ -25,8 +25,6 @@ class Device(MonitoringDB.Base, DBObject):
     garmin_product = Column(String)
     hardware_version = Column(String)
 
-    _relational_mappings = {}
-    col_translations = {}
     min_row_values = 2
 
     @classmethod
@@ -40,8 +38,6 @@ class ActivityType(MonitoringDB.Base, DBObject):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
 
-    _relational_mappings = {}
-    col_translations = {}
     min_row_values = 1
 
     @classmethod
@@ -64,8 +60,6 @@ class DeviceInfo(MonitoringDB.Base, DBObject):
     cum_operating_time = Column(Integer)
     battery_voltage = Column(String)
 
-    _relational_mappings = {}
-    col_translations = {}
     min_row_values = 3
 
     @classmethod
@@ -86,7 +80,6 @@ class MonitoringInfo(MonitoringDB.Base, DBObject):
     _relational_mappings = {
         'activity_type' : ('activity_type_id', ActivityType.get_id)
     }
-    col_translations = {}
     min_row_values = 3
 
     @classmethod
@@ -104,8 +97,6 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
         UniqueConstraint("timestamp", "heart_rate"),
     )
 
-    _relational_mappings = {}
-    col_translations = {}
     min_row_values = 2
 
     @classmethod
@@ -151,8 +142,6 @@ class MonitoringIntensityMins(MonitoringDB.Base, DBObject):
         UniqueConstraint("timestamp", "moderate_activity_mins", "vigorous_activity_mins"),
     )
 
-    _relational_mappings = {}
-    col_translations = {}
     min_row_values = 2
 
     @classmethod
@@ -211,8 +200,6 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
         UniqueConstraint("timestamp", "ascent", "descent", "cum_ascent", "cum_descent"),
     )
 
-    _relational_mappings = {}
-    col_translations = {}
     min_row_values = 2
 
     @classmethod
@@ -272,10 +259,10 @@ class Monitoring(MonitoringDB.Base, DBObject):
         UniqueConstraint("timestamp", "activity_type_id", "intensity", "duration"),
     )
 
+    time_col = synonym("timestamp")
     _relational_mappings = {
         'activity_type' : ('activity_type_id', ActivityType.get_id)
     }
-    col_translations = {}
     min_row_values = 2
 
     @classmethod

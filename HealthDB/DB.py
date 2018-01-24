@@ -109,6 +109,8 @@ class DB():
 class DBObject():
 
     _updateable_fields = []
+    _relational_mappings = {}
+    col_translations = {}
 
     @classmethod
     def filename_from_pathname(cls, pathname):
@@ -269,12 +271,11 @@ class DBObject():
 
     @classmethod
     def get_years(cls, db):
-        return cls.rows_to_ints(db.session().query(extract('year', cls.timestamp)).distinct().all())
+        return cls.rows_to_ints(db.session().query(extract('year', cls.time_col)).distinct().all())
 
     @classmethod
     def get_months(cls, db, year):
-          return (db.query_session().query(extract('month', cls.timestamp))
-              .filter(extract('year', cls.timestamp) == str(year)).distinct().all())
+          return (db.query_session().query(extract('month', cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
 
     @classmethod
     def get_month_names(cls, db, year):
@@ -282,12 +283,11 @@ class DBObject():
 
     @classmethod
     def get_days(cls, db, year):
-        return cls.rows_to_ints(db.session().query(func.strftime("%j", cls.timestamp))
-            .filter(extract('year', cls.timestamp) == str(year)).distinct().all())
+        return cls.rows_to_ints(db.session().query(func.strftime("%j", cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
 
     @classmethod
     def get_col_func(cls, db, col, func, start_ts, end_ts, ignore_zero=False):
-        query = db.query_session().query(func(col)).filter(cls.timestamp >= start_ts).filter(cls.timestamp < end_ts)
+        query = db.query_session().query(func(col)).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
         if ignore_zero:
             query = query.filter(col != 0)
         return query.one()[0]

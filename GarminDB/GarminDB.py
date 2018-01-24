@@ -22,7 +22,6 @@ class Attributes(GarminDB.Base, DBObject):
     name = Column(String, primary_key=True)
     value = Column(String)
 
-    _relational_mappings = {}
     col_translations = {
         'value' : str,
     }
@@ -40,8 +39,6 @@ class FileType(GarminDB.Base, DBObject):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
 
-    _relational_mappings = {}
-    col_translations = {}
     min_row_values = 1
 
     @classmethod
