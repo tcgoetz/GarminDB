@@ -20,6 +20,12 @@ $(BACKUP_DIR):
 
 deps:
 	sudo pip install sqlalchemy
+	sudo pip install selenium
+
+clean_deps:
+	sudo pip uninstall sqlalchemy
+	sudo pip uninstall selenium
+
 
 clean:
 	rm -rf *.pyc

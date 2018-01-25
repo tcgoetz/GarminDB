@@ -108,6 +108,7 @@ class DB():
 
 class DBObject():
 
+    # defaults, overridden by subclasses
     _updateable_fields = []
     _relational_mappings = {}
     col_translations = {}
