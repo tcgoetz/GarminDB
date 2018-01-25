@@ -38,8 +38,9 @@ class Scrape():
         fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/zip")
         fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream")
         fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/x-zip-compressed")
+        geckodriver = os.getcwd() + "/bin/geckodriver"
         logger.info("Creating driver")
-        self.browser = webdriver.Firefox(firefox_profile=fp)
+        self.browser = webdriver.Firefox(firefox_profile=fp, executable_path=geckodriver)
 
     def load_page(self, url):
         logger.info("load_page: " + url)
@@ -98,7 +99,7 @@ class Scrape():
         button = dropdown.find_element_by_class_name("btn-export-original")
         logger.info("clicking button")
         button.click()
-        time.sleep(10)
+        time.sleep(5)
 
     def browse_daily_page(self, profile_name, date):
         logger.info("browse_daily_page: %s %s" % (profile_name, repr(date)))
@@ -130,6 +131,7 @@ class Scrape():
 
 def usage(program):
     print '%s -d <date> -n <days> -u <username> -p <password> [-m <outdir>]' % program
+    print '  -m <outdir> fetches the daily monitoring FIT files for each day specified, unzips them, and puts them in <outdit>'
     sys.exit()
 
 def main(argv):

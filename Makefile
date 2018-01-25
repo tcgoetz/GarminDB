@@ -9,8 +9,14 @@ BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/2017_Monitoring
 MEW_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/Incoming
 
+BIN_DIR=$(PWD)/bin
 
-TEST_DB=/tmp/test.db
+TEST_DB=$(TMPDIR)/test.db
+
+OS := $(shell uname -s)
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 
 $(DB_DIR):
 	mkdir -p $(DB_DIR)
@@ -18,7 +24,17 @@ $(DB_DIR):
 $(BACKUP_DIR):
 	mkdir -p $(BACKUP_DIR)
 
-deps:
+GECKO_DRIVER_URL=https://github.com/mozilla/geckodriver/releases/download/v0.19.1/
+ifeq ($(OS), Darwin)
+	GECKO_DRIVER_FILE=geckodriver-v0.19.1-macos.tar.gz
+endif
+install_geckodriver: $(BIN_DIR)
+	curl -L $(GECKO_DRIVER_URL)/$(GECKO_DRIVER_FILE) | tar -C $(BIN_DIR) -x -z -f -
+
+clean_geckodriver:
+	rm -f $(BIN_DIR)/geckodriver*
+
+deps: install_geckodriver
 	sudo pip install sqlalchemy
 	sudo pip install selenium
 
