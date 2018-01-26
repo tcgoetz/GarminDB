@@ -12,6 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
+import GarminDB
 
 
 logging.basicConfig(level=logging.INFO)
@@ -130,19 +131,22 @@ class Scrape():
 
 
 def usage(program):
-    print '%s -d <date> -n <days> -u <username> -p <password> [-m <outdir>]' % program
-    print '  -m <outdir> fetches the daily monitoring FIT files for each day specified, unzips them, and puts them in <outdit>'
+    print '%s -d [<date> -n <days> | -l <path to dbs>] -u <username> -p <password> [-m <outdir>]' % program
+    print '  -d <date> -n <days> fetch n days of monitoring data starting at date'
+    print '  -l <dbpath> check the garmin DB and find out what the most recent date is and fetch monitoring data from that date on'
+    print '  -m <outdir> fetches the daily monitoring FIT files for each day specified, unzips them, and puts them in outdit'
     sys.exit()
 
 def main(argv):
     date = None
     days = None
+    latest = False
     username = None
     password = None
     monitoring = None
 
     try:
-        opts, args = getopt.getopt(argv,"d:n:m:u:p:", ["date=", "days=", "username=", "password=", "monitoring="])
+        opts, args = getopt.getopt(argv,"d:n:l:m:u:p:", ["date=", "days=", "username=", "password=", "latest=", "monitoring="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -155,6 +159,9 @@ def main(argv):
         elif opt in ("-n", "--days"):
             logger.debug("Days: " + arg)
             days = int(arg)
+        elif opt in ("-l", "--latest"):
+            logger.debug("Latest: " + arg)
+            latest = arg
         elif opt in ("-u", "--username"):
             logger.debug("USername: " + arg)
             username = arg
@@ -165,13 +172,22 @@ def main(argv):
             logger.debug("Monitoring: " + arg)
             monitoring = arg
 
-    if not date or not days or not username or not password or not monitoring:
+    if ((not date or not days) and not latest) or not username or not password or not monitoring:
         print "Missing arguments:"
         usage(sys.argv[0])
 
+    if latest:
+        mondb = GarminDB.MonitoringDB(latest)
+        # start from the day after the last day in the DB
+        timestamp = GarminDB.Monitoring.latest_timestamp(mondb) + datetime.timedelta(1)
+        days = (datetime.datetime.now() - timestamp).days
+        date = timestamp.date()
+        logger.info("Latest day in DB: %s (%d)" % (str(date), days))
+
     scrape = Scrape()
     scrape.login(username, password)
-    if monitoring:
+
+    if monitoring and days > 0:
         scrape.get_monitoring(date, days)
         scrape.unzip_monitoring(monitoring)
 

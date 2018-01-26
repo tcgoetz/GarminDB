@@ -6,7 +6,8 @@ MSHEALTH_FILE_DIR=$(HEALTH_DATA_DIR)/MSHealth
 DB_DIR=$(HEALTH_DATA_DIR)/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 
-MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/2017_Monitoring
+OLD_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/2017_Monitoring
+MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/2018_Monitoring
 MEW_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/Incoming
 
 BIN_DIR=$(PWD)/bin
@@ -62,19 +63,23 @@ test_monitoring_clean:
 
 TEST_FIT_FILE_DIR=$(HEALTH_DATA_DIR)/TestFitFiles
 test_monitoring_file: $(TEST_DB_PATH)
-#	python import_garmin_fit.py -e --input_file "$(TEST_FIT_FILE_DIR)/15053994801.fit" --dbpath $(TEST_DB_PATH)
 #	python import_garmin_fit.py -e --input_file "$(TEST_FIT_FILE_DIR)/15044952621.fit" --dbpath $(TEST_DB_PATH)
 	python import_garmin_fit.py -e --input_dir "$(TEST_FIT_FILE_DIR)" --dbpath $(TEST_DB_PATH)
-	python analyze_garmin.py --dbpath $(TEST_DB_PATH) --years --months 2017 --days 2017 --summary
+	python analyze_garmin.py --dbpath $(TEST_DB_PATH) --years --months 2018 --days 2017 --summary
 
 clean_monitoring:
 	rm -f $(DB_DIR)/garmin_monitoring.db
 
 import_monitoring: $(DB_DIR)
+	python import_garmin_fit.py -e --input_dir "$(OLD_MONITORING_FIT_FILES_DIR)" --dbpath $(DB_DIR)
 	python import_garmin_fit.py -e --input_dir "$(MONITORING_FIT_FILES_DIR)" --dbpath $(DB_DIR)
 
-import_new_monitoring: $(DB_DIR)
+scrape_monitoring: $(DB_DIR)
+	python scrape_garmin.py -l $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
+
+import_new_monitoring: # scrape_monitoring
 	python import_garmin_fit.py -e --input_dir "$(MEW_MONITORING_FIT_FILES_DIR)" --dbpath $(DB_DIR)
+	mv $(MEW_MONITORING_FIT_FILES_DIR)/*.fit $(MONITORING_FIT_FILES_DIR)/.
 
 clean_garmin_summary:
 	rm -f $(DB_DIR)/garmin_monitoring_summary.db

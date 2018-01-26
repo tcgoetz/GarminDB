@@ -76,8 +76,10 @@ class GarminFitData():
         for entry in entries:
             try:
                 self.write_monitoring_entry(mondb, entry)
-            except Exception as e: 
-                logger.info("Exeption on entry: %s" % repr(entry))
+            except ValueError as e:
+                logger.info("ValueError on entry: %s" % repr(entry))
+            except Exception as e:
+                logger.info("Exception on entry: %s" % repr(entry))
                 raise
         logger.info("Wrote %d entries" % len(entries))
 

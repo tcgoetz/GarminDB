@@ -97,6 +97,7 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
         UniqueConstraint("timestamp", "heart_rate"),
     )
 
+    time_col = synonym("timestamp")
     min_row_values = 2
 
     @classmethod
@@ -142,6 +143,7 @@ class MonitoringIntensityMins(MonitoringDB.Base, DBObject):
         UniqueConstraint("timestamp", "moderate_activity_mins", "vigorous_activity_mins"),
     )
 
+    time_col = synonym("timestamp")
     min_row_values = 2
 
     @classmethod
@@ -200,6 +202,7 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
         UniqueConstraint("timestamp", "ascent", "descent", "cum_ascent", "cum_descent"),
     )
 
+    time_col = synonym("timestamp")
     min_row_values = 2
 
     @classmethod
@@ -290,3 +293,7 @@ class Monitoring(MonitoringDB.Base, DBObject):
         stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
         stats['first_day'] = first_day_ts
         return stats
+
+    @classmethod
+    def latest_timestamp(cls, db):
+        return cls.get_col_max(db, cls.timestamp)

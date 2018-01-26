@@ -204,13 +204,14 @@ class DBObject():
     @classmethod
     def _create(cls, db, session, values_dict):
         logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
+        converted_values = cls._filter_columns(cls._translate_columns(cls.relational_mappings(db, values_dict)))
         non_none_values = 0
-        for value in values_dict.values():
+        for value in converted_values.values():
             if value is not None:
                 non_none_values += 1
         if non_none_values < cls.min_row_values:
             raise ValueError("None row values: %s" % repr(values_dict))
-        instance = cls(**cls._filter_columns(cls.relational_mappings(db, values_dict)))
+        instance = cls(**converted_values)
         session.add(instance)
         return instance
 
@@ -223,16 +224,16 @@ class DBObject():
     @classmethod
     def find_or_create(cls, db, values_dict):
         logger.debug("%s::find_or_create %s" % (cls.__name__, repr(values_dict)))
-        session = db.query_session()
-        instance = cls._find_one(session, values_dict)
+        instance = cls.find_one(db, values_dict)
         if instance is None:
-            instance = cls._create(db, session, values_dict)
-        DB.commit(session)
+            cls.create(db, values_dict)
+            instance = cls.find_one(db, values_dict)
         return instance
 
     @classmethod
     def find_or_create_id(cls, db, values_dict):
         logger.debug("%s::find_or_create_id %s" % (cls.__name__, repr(values_dict)))
+        logger.info("%s::find_or_create_id %s" % (cls.__name__, repr(values_dict)))
         instance = cls.find_or_create(db, values_dict)
         if instance is None:
             return None
@@ -252,7 +253,7 @@ class DBObject():
         else:
             instance.update(values_dict)
         DB.commit(session)
-        return instance
+        return cls.find_one(db, values_dict)
 
     @classmethod
     def row_to_int(cls, row):
@@ -287,8 +288,12 @@ class DBObject():
         return cls.rows_to_ints(db.session().query(func.strftime("%j", cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
 
     @classmethod
-    def get_col_func(cls, db, col, func, start_ts, end_ts, ignore_zero=False):
-        query = db.query_session().query(func(col)).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
+    def get_col_func(cls, db, col, func, start_ts=None, end_ts=None, ignore_zero=False):
+        query = db.query_session().query(func(col))
+        if start_ts is not None:
+            query = query.filter(cls.time_col >= start_ts)
+        if end_ts is not None:
+            query = query.filter(cls.time_col < end_ts)
         if ignore_zero:
             query = query.filter(col != 0)
         return query.one()[0]
@@ -302,7 +307,7 @@ class DBObject():
         return cls.get_col_func(db, col, func.min, start_ts, end_ts, ignore_zero)
 
     @classmethod
-    def get_col_max(cls, db, col, start_ts, end_ts):
+    def get_col_max(cls, db, col, start_ts=None, end_ts=None):
         return cls.get_col_func(db, col, func.max, start_ts, end_ts, False)
 
     @classmethod

@@ -6,6 +6,10 @@
 
 from HealthDB import *
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+#logger.setLevel(logging.DEBUG)
+
 
 class GarminDB(DB):
     Base = declarative_base()
@@ -43,10 +47,12 @@ class FileType(GarminDB.Base, DBObject):
 
     @classmethod
     def _find_query(cls, session, values_dict):
+        logger.debug("%s::_find_query %s" % (cls.__name__, repr(values_dict)))
         return  session.query(cls).filter(cls.name == values_dict['name'])
 
     @classmethod
     def get_id(cls, db, name):
+        logger.debug("%s::get_id %s" % (cls.__name__, name))
         return cls.find_or_create_id(db, {'name' : name})
 
 
