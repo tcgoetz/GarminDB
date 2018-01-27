@@ -85,7 +85,7 @@ scrape_weight: $(DB_DIR)
 	python scrape_garmin.py -l $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD)  -w "$(DB_DIR)"
 
 clean_garmin_summary:
-	rm -f $(DB_DIR)/garmin_monitoring_summary.db
+	rm -f $(DB_DIR)/garmin_summary.db
 
 garmin_summary:
 	python analyze_garmin.py --dbpath $(DB_DIR) --years --months 2017 --days 2017 --summary

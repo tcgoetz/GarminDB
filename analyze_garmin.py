@@ -20,7 +20,7 @@ class Analyze():
     def __init__(self, dbpath):
         self.garmindb = GarminDB.GarminDB(dbpath)
         self.mondb = GarminDB.MonitoringDB(dbpath)
-        self.monsumdb = GarminDB.MonitoringSummaryDB(dbpath)
+        self.garminsumdb = GarminDB.GarminSummaryDB(dbpath)
         self.sumdb = HealthDB.SummaryDB(dbpath)
         units = GarminDB.Attributes.find_one(self.garmindb, {'name' : 'units'})
         if units.value == 'english':
@@ -30,12 +30,12 @@ class Analyze():
 
     def get_years(self):
         years = GarminDB.Monitoring.get_years(self.mondb)
-        GarminDB.Summary.create_or_update(self.monsumdb, {'name' : 'years', 'value' : len(years)})
+        GarminDB.Summary.create_or_update(self.garminsumdb, {'name' : 'years', 'value' : len(years)})
         print "Years (%d): %s" % (len(years), str(years))
 
     def get_months(self, year):
         months = GarminDB.Monitoring.get_month_names(self.mondb, year)
-        GarminDB.Summary.create_or_update(self.monsumdb, {'name' : year + '_months', 'value' : len(months)})
+        GarminDB.Summary.create_or_update(self.garminsumdb, {'name' : year + '_months', 'value' : len(months)})
         print "%s Months (%d): %s" % (year, len(months) , str(months))
 
     def get_days(self, year):
@@ -48,8 +48,8 @@ class Analyze():
             span = last_day - first_day + 1
         else:
             span = 0
-        GarminDB.Summary.create_or_update(self.monsumdb, {'name' : year + '_days', 'value' : days_count})
-        GarminDB.Summary.create_or_update(self.monsumdb, {'name' : year + '_days_span', 'value' : span})
+        GarminDB.Summary.create_or_update(self.garminsumdb, {'name' : year + '_days', 'value' : days_count})
+        GarminDB.Summary.create_or_update(self.garminsumdb, {'name' : year + '_days_span', 'value' : span})
         print "%d Days (%d vs %d): %s" % (year_int, days_count, span, str(days))
         for index in xrange(days_count - 1):
             day = int(days[index])
@@ -66,28 +66,30 @@ class Analyze():
             for day in days:
                 day_ts = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
                 stats = GarminDB.MonitoringHeartRate.get_daily_stats(self.mondb, day_ts)
+                stats.update(GarminDB.Weight.get_daily_stats(self.garmindb, day_ts))
                 stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.mondb, day_ts, self.english_units))
                 stats.update(GarminDB.MonitoringIntensityMins.get_daily_stats(self.mondb, day_ts))
                 stats.update(GarminDB.Monitoring.get_daily_stats(self.mondb, day_ts))
-                GarminDB.DaysSummary.create_or_update(self.monsumdb, stats)
+                GarminDB.DaysSummary.create_or_update(self.garminsumdb, stats)
                 HealthDB.DaysSummary.create_or_update(self.sumdb, stats)
             for week_starting_day in xrange(1, 365, 7):
                 day_ts = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
                 stats = GarminDB.MonitoringHeartRate.get_weekly_stats(self.mondb, day_ts)
+                stats.update(GarminDB.Weight.get_weekly_stats(self.garmindb, day_ts))
                 stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.mondb, day_ts, self.english_units))
                 stats.update(GarminDB.MonitoringIntensityMins.get_weekly_stats(self.mondb, day_ts))
                 stats.update(GarminDB.Monitoring.get_weekly_stats(self.mondb, day_ts))
-                GarminDB.WeeksSummary.create_or_update(self.monsumdb, stats)
+                GarminDB.WeeksSummary.create_or_update(self.garminsumdb, stats)
                 HealthDB.WeeksSummary.create_or_update(self.sumdb, stats)
             for month in xrange(1, 12):
                 start_day_ts = datetime.date(year, month, 1)
                 end_day_ts = datetime.date(year, month, calendar.monthrange(year, month)[1])
                 stats = GarminDB.MonitoringHeartRate.get_monthly_stats(self.mondb, start_day_ts, end_day_ts)
-                stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.mondb,
-                                                                        start_day_ts, end_day_ts, self.english_units))
+                stats.update(GarminDB.Weight.get_monthly_stats(self.garmindb, start_day_ts, end_day_ts))
+                stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.mondb, start_day_ts, end_day_ts, self.english_units))
                 stats.update(GarminDB.MonitoringIntensityMins.get_monthly_stats(self.mondb, start_day_ts, end_day_ts))
                 stats.update(GarminDB.Monitoring.get_monthly_stats(self.mondb, start_day_ts, end_day_ts))
-                GarminDB.MonthsSummary.create_or_update(self.monsumdb, stats)
+                GarminDB.MonthsSummary.create_or_update(self.garminsumdb, stats)
                 HealthDB.MonthsSummary.create_or_update(self.sumdb, stats)
 
 
