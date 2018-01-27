@@ -325,6 +325,10 @@ class DBObject():
         sum_of_maxes = db.query_session().query(func.sum(max_daily_query.subquery().columns.maxes))
         return DB.query_scalar(sum_of_maxes)
 
+    @classmethod
+    def latest_time(cls, db):
+        return cls.get_col_max(db, cls.time_col)
+
     def __repr__(self):
         classname = self.__class__.__name__
         col_name = cls.find_col.name

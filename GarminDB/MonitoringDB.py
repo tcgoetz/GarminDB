@@ -294,6 +294,3 @@ class Monitoring(MonitoringDB.Base, DBObject):
         stats['first_day'] = first_day_ts
         return stats
 
-    @classmethod
-    def latest_timestamp(cls, db):
-        return cls.get_col_max(db, cls.timestamp)

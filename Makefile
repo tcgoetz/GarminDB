@@ -81,6 +81,9 @@ import_new_monitoring: # scrape_monitoring
 	python import_garmin_fit.py -e --input_dir "$(MEW_MONITORING_FIT_FILES_DIR)" --dbpath $(DB_DIR)
 	mv $(MEW_MONITORING_FIT_FILES_DIR)/*.fit $(MONITORING_FIT_FILES_DIR)/.
 
+scrape_weight: $(DB_DIR)
+	python scrape_garmin.py -l $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD)  -w "$(DB_DIR)"
+
 clean_garmin_summary:
 	rm -f $(DB_DIR)/garmin_monitoring_summary.db
 

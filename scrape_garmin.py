@@ -27,6 +27,7 @@ class Scrape():
     garmin_connect_modern_url = garmin_connect_base_url + "/modern"
     garmin_connect_daily_url = garmin_connect_modern_url + "/dailySummary/timeline"
     garmin_connect_daily_user_base_url = garmin_connect_modern_url + "/daily-summary"
+    garmin_connect_weight_base_url = garmin_connect_modern_url + "/weight"
 
     def __init__(self):
         self.temp_dir = tempfile.mkdtemp()
@@ -42,6 +43,9 @@ class Scrape():
         geckodriver = os.getcwd() + "/bin/geckodriver"
         logger.info("Creating driver")
         self.browser = webdriver.Firefox(firefox_profile=fp, executable_path=geckodriver)
+
+    def __del__(self):
+        self.browser.close()
 
     def load_page(self, url):
         logger.info("load_page: " + url)
@@ -65,19 +69,40 @@ class Scrape():
         submit_button = parent.find_element_by_id(id)
         submit_button.click()
 
+    def click_by_xpath(self, parent, xpath):
+        logger.info("click_by_xpath: " + xpath)
+        submit_button = parent.find_element_by_xpath(xpath)
+        submit_button.click()
+
+    def dump_elements(self, elements):
+        for element in elements:
+            logger.info("<%s class='%s'>%s</%s>" % (element.tag_name, element.get_attribute("class"),  element.text, element.tag_name))
+
+    def dump_children(self, element):
+        logger.info("dump_children: %s" % (repr(element)))
+        self.dump_elements(element.find_elements_by_xpath(".//*"))
+
     def dump_children_by_tag(self, element, tag):
-        child_elements = element.find_elements_by_tag_name(tag)
-        for child_element in child_elements:
-            print repr(child_element.get_attribute("class"))
+        logger.info("dump_children_by_tag: %s -> %s" % (repr(element), tag))
+        self.dump_elements(element.find_elements_by_tag_name(tag))
+
+    def get_children_by_tag(self, element, tag):
+        logger.info("dump_children_by_tag: %s -> %s" % (repr(element), tag))
+        return element.find_elements_by_tag_name(tag)
 
     def wait_for_id(self, driver, time_s, id):
         logger.info("Waiting for: " + id)
         return WebDriverWait(driver, time_s).until(EC.presence_of_element_located((By.ID, id)))
 
-    def __del__(self):
-        self.browser.close()
+    def wait_for_xpath(self, driver, time_s, xpath):
+        logger.info("Waiting for: " + xpath)
+        return WebDriverWait(driver, time_s).until(EC.presence_of_element_located((By.XPATH, xpath)))
 
-    def get_profile_name(self, url):
+    def wait_for_pagecontainer(self, driver, time_s):
+        logger.info("wait_for_pagecontainer: ")
+        return self.wait_for_xpath(driver, time_s, "//div[@id='pageContainer']")
+
+    def get_profile_name(self, driver, url):
         try:
             return re.search('modern/daily-summary/(.+)/\d{4}-\d{2}-\d{2}/timeline', url).group(1)
         except AttributeError:
@@ -106,17 +131,17 @@ class Scrape():
         logger.info("browse_daily_page: %s %s" % (profile_name, repr(date)))
         daily_url = self.garmin_connect_daily_user_base_url + ("/%s/%s/timeline" % (profile_name, date.strftime("%Y-%m-%d")))
         self.load_page(daily_url)
-        page_container = self.wait_for_id(self.browser, 10, "pageContainer")
+        page_container = self.wait_for_pagecontainer(self.browser, 10)
         self.save_monitoring(page_container)
 
     def get_monitoring(self, date, days):
         logger.info("get_monitoring: %s : %d" % (str(date), days))
-        self.load_page(self.garmin_connect_daily_url)
-
-        page_container = self.wait_for_id(self.browser, 10, "pageContainer")
-        daily_user_url = self.browser.current_url
-        logger.info("User daily: " + daily_user_url)
-        profile_name = self.get_profile_name(daily_user_url)
+        profile_name = self.browser.execute_script('return App.displayName')
+        # self.load_page(self.garmin_connect_daily_url)
+        # page_container = self.wait_for_pagecontainer(self.browser, 10)
+        # daily_user_url = self.browser.current_url
+        # logger.info("User daily: " + daily_user_url)
+        # profile_name = self.get_profile_name(daily_user_url)
         logger.info("Profile name: " + profile_name)
         for day in xrange(0, days):
             day_date = date + datetime.timedelta(day)
@@ -129,12 +154,51 @@ class Scrape():
             monitoring_files_zip.extractall(outdir)
             monitoring_files_zip.close()
 
+    def get_weight_year(self, page_container):
+        self.click_by_id(page_container, "lastYearLinkId")
+        time.sleep(2)
+        page_container = self.wait_for_pagecontainer(self.browser, 10)
+        chart_div = page_container.find_element_by_xpath("//div[@data-highcharts-chart]")
+        chart_number = chart_div.get_attribute('data-highcharts-chart')
+        data = self.browser.execute_script('return Highcharts.charts[' + chart_number + '].series[0].options.data')
+        points = []
+        for entry in data:
+            x = None
+            if isinstance(entry, list):
+                x = entry[0]
+                y = entry[1]
+            elif isinstance(entry, dict):
+                x = entry['x']
+                y = entry['y']
+            else:
+                print "Unknown type: " + repr(entry)
+            point = {'timestamp' : datetime.datetime.fromtimestamp(x / 1000), 'weight' : y}
+            points.append(point)
+        # first and last points are the ends of the graph and not valid, remove them
+        del points[0]
+        del points[-1]
+        return points
+
+    def get_weight(self, date, days):
+        logger.info("get_weight: %s : %d" % (str(date), days))
+        points = []
+        self.load_page(self.garmin_connect_weight_base_url)
+        while True:
+            page_container = self.wait_for_pagecontainer(self.browser, 10)
+            new_points = self.get_weight_year(page_container)
+            points += new_points
+            if len(new_points) == 0 or new_points[0]['timestamp'].date() < date:
+                break
+            self.click_by_xpath(page_container, "//button[@class='icon-arrow-left']")
+        return points
+
 
 def usage(program):
-    print '%s -d [<date> -n <days> | -l <path to dbs>] -u <username> -p <password> [-m <outdir>]' % program
+    print '%s -d [<date> -n <days> | -l <path to dbs>] -u <username> -p <password> [-m <outdir> | -w <outdir>]' % program
     print '  -d <date> -n <days> fetch n days of monitoring data starting at date'
     print '  -l <dbpath> check the garmin DB and find out what the most recent date is and fetch monitoring data from that date on'
     print '  -m <outdir> fetches the daily monitoring FIT files for each day specified, unzips them, and puts them in outdit'
+    print '  -w <outdir> fetches the daily weight data for each day specified and puts them in outdit'
     sys.exit()
 
 def main(argv):
@@ -144,9 +208,10 @@ def main(argv):
     username = None
     password = None
     monitoring = None
+    weight = None
 
     try:
-        opts, args = getopt.getopt(argv,"d:n:l:m:u:p:", ["date=", "days=", "username=", "password=", "latest=", "monitoring="])
+        opts, args = getopt.getopt(argv,"d:n:l:m:u:p:w:", ["date=", "days=", "username=", "password=", "latest=", "monitoring=", "weight="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -171,17 +236,28 @@ def main(argv):
         elif opt in ("-m", "--monitoring"):
             logger.debug("Monitoring: " + arg)
             monitoring = arg
+        elif opt in ("-w", "--weight"):
+            logger.debug("Weight: " + arg)
+            weight = arg
 
-    if ((not date or not days) and not latest) or not username or not password or not monitoring:
+    if ((not date or not days) and not latest) or not username or not password or (not monitoring and not weight):
         print "Missing arguments:"
         usage(sys.argv[0])
 
     if latest:
-        mondb = GarminDB.MonitoringDB(latest)
-        # start from the day after the last day in the DB
-        timestamp = GarminDB.Monitoring.latest_timestamp(mondb) + datetime.timedelta(1)
-        days = (datetime.datetime.now() - timestamp).days
-        date = timestamp.date()
+        if monitoring:
+            mondb = GarminDB.MonitoringDB(latest)
+            last_ts = GarminDB.Monitoring.latest_time(mondb)
+        elif weight:
+            garmindb = GarminDB.GarminDB(latest)
+            last_ts = GarminDB.Weight.latest_time(garmindb)
+        if last_ts is None:
+            start_ts = datetime.datetime.now() - datetime.timedelta(365 * 2)
+        else:
+            # start from the day after the last day in the DB
+            start_ts = last_ts + datetime.timedelta(1)
+            days = (datetime.datetime.now() - start_ts).days
+        date = start_ts.date()
         logger.info("Latest day in DB: %s (%d)" % (str(date), days))
 
     scrape = Scrape()
@@ -190,6 +266,13 @@ def main(argv):
     if monitoring and days > 0:
         scrape.get_monitoring(date, days)
         scrape.unzip_monitoring(monitoring)
+
+    if weight and days > 0:
+        points = scrape.get_weight(date, days)
+        garmindb = GarminDB.GarminDB(weight)
+        for point in points:
+            logger.debug("Inserting: " + repr(point))
+            GarminDB.Weight.create_or_update(garmindb, point)
 
 
 if __name__ == "__main__":
