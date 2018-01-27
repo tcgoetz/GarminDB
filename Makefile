@@ -43,7 +43,6 @@ clean_deps:
 	sudo pip uninstall sqlalchemy
 	sudo pip uninstall selenium
 
-
 clean:
 	rm -rf *.pyc
 	rm -rf Fit/*.pyc
@@ -54,6 +53,14 @@ clean:
 TEST_DB_PATH=/tmp/DBs
 $(TEST_DB_PATH):
 	mkdir -p $(TEST_DB_PATH)
+
+EPOCH=$(shell date +'%s')
+backup: $(BACKUP_DIR)
+	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
+
+clean_summary:
+	rm -f $(DB_DIR)/summary.db
+
 
 #
 # Garmin
@@ -95,6 +102,7 @@ new_garmin: import_new_monitoring clean_garmin_summary garmin_summary
 
 clean_garmin: clean_garmin_summary clean_monitoring
 
+
 #
 # FitBit
 #
@@ -107,13 +115,17 @@ clean_fitbit:
 fitbit_summary:
 	python analyze_fitbit.py --dbpath $(DB_DIR) --years --months 2015 --days 2015 --summary
 
+
 #
 # MS Health
 #
 import_mshealth_file: $(DB_DIR)
-	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20151230_20161004.csv" --dbpath $(DB_DIR)
-	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20160101_20161231.csv" --dbpath $(DB_DIR)
-	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20170101_20170226.csv" --dbpath $(DB_DIR)
+	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20151230_20161004.csv" --dbpath $(DB_DIR) -m
+	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20160101_20161231.csv" --dbpath $(DB_DIR) -m
+	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20170101_20170226.csv" --dbpath $(DB_DIR) -m
+
+import_healthvault_file: $(DB_DIR)
+	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/HealthVault_Weight_20150106_20160315.csv" --dbpath $(DB_DIR) -v
 
 clean_mshealth:
 	rm -f $(DB_DIR)/mshealth.db
@@ -121,8 +133,3 @@ clean_mshealth:
 mshealth_summary:
 	python analyze_mshealth.py --dbpath $(DB_DIR) --years --months 2015 --days 2015 --summary
 	python analyze_mshealth.py --dbpath $(DB_DIR) --years --months 2016 --days 2016 --summary
-
-
-EPOCH=$(shell date +'%s')
-backup: $(BACKUP_DIR)
-	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)

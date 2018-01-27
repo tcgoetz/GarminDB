@@ -50,6 +50,12 @@ class FitBitData():
         return meters
 
     @classmethod
+    def map_kgs(cls, english_units, meters):
+        if english_units:
+            return float(meters) * 2.20462
+        return meters
+
+    @classmethod
     def convert_cols(cls, english_units, csv_col_dict):
         cols_map = {
             'sleep-minutesAwake': ('awake_mins', FitBitData.map_identity),
@@ -65,7 +71,7 @@ class FitBitData():
             'sleep-efficiency': ('sleep_efficiency', FitBitData.map_identity),
             'sleep-timeInBed': ('in_bed_mins', FitBitData.map_identity),
             'activities-minutesVeryActive': ('very_active_mins', FitBitData.map_identity),
-            'body-weight': ('weight', FitBitData.map_identity),
+            'body-weight': ('weight', FitBitData.map_kgs),
             'activities-minutesSedentary': ('sedentary_mins', FitBitData.map_identity),
             'activities-elevation': ('elevation', FitBitData.map_meters),
             'activities-minutesLightlyActive': ('lightly_active_mins', FitBitData.map_identity),

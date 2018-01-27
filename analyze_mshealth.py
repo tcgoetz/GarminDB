@@ -55,15 +55,37 @@ class Analyze():
             for day in days:
                 day_ts = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
                 stats = MSHealthDB.DaysSummary.get_daily_stats(self.mshealthdb, day_ts)
+                stats.update(MSHealthDB.MSVaultWeight.get_daily_stats(self.mshealthdb, day_ts))
                 HealthDB.DaysSummary.create_or_update(self.sumdb, stats)
             for week_starting_day in xrange(1, 365, 7):
                 day_ts = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
                 stats = MSHealthDB.DaysSummary.get_weekly_stats(self.mshealthdb, day_ts)
+                stats.update(MSHealthDB.MSVaultWeight.get_weekly_stats(self.mshealthdb, day_ts))
                 HealthDB.WeeksSummary.create_or_update(self.sumdb, stats)
             for month in xrange(1, 12):
                 start_day_ts = datetime.date(year, month, 1)
                 end_day_ts = datetime.date(year, month, calendar.monthrange(year, month)[1])
                 stats = MSHealthDB.DaysSummary.get_monthly_stats(self.mshealthdb, start_day_ts, end_day_ts)
+                stats.update(MSHealthDB.MSVaultWeight.get_monthly_stats(self.mshealthdb, start_day_ts, end_day_ts))
+                HealthDB.MonthsSummary.create_or_update(self.sumdb, stats)
+        years = MSHealthDB.MSVaultWeight.get_years(self.mshealthdb)
+        for year in years:
+            days = MSHealthDB.MSVaultWeight.get_days(self.mshealthdb, year)
+            for day in days:
+                day_ts = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
+                stats = MSHealthDB.DaysSummary.get_daily_stats(self.mshealthdb, day_ts)
+                stats.update(MSHealthDB.MSVaultWeight.get_daily_stats(self.mshealthdb, day_ts))
+                HealthDB.DaysSummary.create_or_update(self.sumdb, stats)
+            for week_starting_day in xrange(1, 365, 7):
+                day_ts = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
+                stats = MSHealthDB.DaysSummary.get_weekly_stats(self.mshealthdb, day_ts)
+                stats.update(MSHealthDB.MSVaultWeight.get_weekly_stats(self.mshealthdb, day_ts))
+                HealthDB.WeeksSummary.create_or_update(self.sumdb, stats)
+            for month in xrange(1, 12):
+                start_day_ts = datetime.date(year, month, 1)
+                end_day_ts = datetime.date(year, month, calendar.monthrange(year, month)[1])
+                stats = MSHealthDB.DaysSummary.get_monthly_stats(self.mshealthdb, start_day_ts, end_day_ts)
+                stats.update(MSHealthDB.MSVaultWeight.get_monthly_stats(self.mshealthdb, start_day_ts, end_day_ts))
                 HealthDB.MonthsSummary.create_or_update(self.sumdb, stats)
 
 

@@ -93,10 +93,20 @@ class DaysSummary(FitBitDB.Base, DBObject):
         return { 'steps' : func(db, cls.steps, start_ts, end_ts) }
 
     @classmethod
+    def get_weight_stats(cls, db, start_ts, end_ts):
+        stats = {
+            'weight_avg' : cls.get_col_avg(db, cls.weight, start_ts, end_ts, True),
+            'weight_min' : cls.get_col_min(db, cls.weight, start_ts, end_ts, True),
+            'weight_max' : cls.get_col_max(db, cls.weight, start_ts, end_ts),
+        }
+        return stats
+
+    @classmethod
     def get_daily_stats(cls, db, day_ts):
         stats = cls.get_activity_mins_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1))
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1)))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1)))
+        stats.update(cls.get_weight_stats(db, day_ts, day_ts + datetime.timedelta(1)))
         stats['day'] = day_ts
         return stats
 
@@ -105,6 +115,7 @@ class DaysSummary(FitBitDB.Base, DBObject):
         stats = cls.get_activity_mins_stats(db,cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7))
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7)))
+        stats.update(cls.get_weight_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats['first_day'] = first_day_ts
         return stats
 
@@ -113,6 +124,7 @@ class DaysSummary(FitBitDB.Base, DBObject):
         stats = cls.get_activity_mins_stats(db, cls.get_col_sum, first_day_ts, last_day_ts)
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
+        stats.update(cls.get_weight_stats(db, first_day_ts, last_day_ts))
         stats['first_day'] = first_day_ts
         return stats
 

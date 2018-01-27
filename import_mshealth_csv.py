@@ -10,7 +10,10 @@ import csv
 import MSHealthDB
 
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+#logger.setLevel(logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class MSHealthData():
@@ -109,9 +112,66 @@ class MSHealthData():
                     MSHealthDB.DaysSummary.find_or_create(mshealthdb, db_entry)
 
 
+class MSVaultData():
+
+    def __init__(self, input_file, english_units, debug):
+        self.english_units = english_units
+        self.debug = debug
+        if debug:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.DEBUG)
+
+        self.input_file = input_file
+
+    @classmethod
+    def map_weight(cls, english_units, value):
+        m = re.search(r"(\d{2,3}\.\d{2}) .*", value)
+        if m:
+            logger.debug("Matched weight: " + m.group(1))
+            return m.group(1)
+        else:
+            logger.debug("Unmatched weight: " + value)
+            return value
+
+    @classmethod
+    def map_date(cls, english_units, date_string):
+        try:
+            return datetime.datetime.strptime(date_string, "%m/%d/%y %H:%M")
+        except Exception as e:
+            try:
+                return datetime.datetime.strptime(date_string, "%m/%d/%y")
+            except Exception as e:
+                return None
+
+    @classmethod
+    def convert_cols(cls, english_units, csv_col_dict):
+        cols_map = {
+            'Date': ('timestamp', MSVaultData.map_date),
+            'Weight': ('weight', MSVaultData.map_weight),
+        }
+        return {
+            (cols_map[key][0] if key in cols_map else key) :
+            (cols_map[key][1](english_units, value) if key in cols_map else value)
+            for key, value in csv_col_dict.items()
+        }
+
+    def process_files(self, dbpath):
+        mshealthdb = MSHealthDB.MSHealthDB(dbpath, self.debug)
+
+        if self.input_file:
+            logger.info("Reading file: " + self.input_file)
+            with open(self.input_file) as csv_file:
+                read_csv = csv.DictReader(csv_file, delimiter=',')
+                for row in read_csv:
+                    db_entry = self.convert_cols(self.english_units, row)
+                    logger.debug("%s  -> %s" % (repr(row), repr(db_entry)))
+                    MSHealthDB.MSVaultWeight.find_or_create(mshealthdb, db_entry)
+
+
 
 def usage(program):
-    print '%s -o <dbpath> -i <inputfile> ...' % program
+    print '%s -o <dbpath> -i <inputfile> [-m | -v]' % program
     sys.exit()
 
 def main(argv):
@@ -119,32 +179,48 @@ def main(argv):
     english_units = False
     input_file = None
     dbpath = None
+    mshealth = False
+    healthvault = False
 
     try:
-        opts, args = getopt.getopt(argv,"ei:o:", ["trace", "english", "input_file=","dbpath="])
+        opts, args = getopt.getopt(argv,"hei:o:mv", ["help", "trace", "english", "input_file=", "dbpath=", "mshealth", "healthvault"])
     except getopt.GetoptError:
+        print "Bad argument"
         usage(sys.argv[0])
 
     for opt, arg in opts:
         if opt == '-h':
             usage(sys.argv[0])
         elif opt in ("-t", "--trace"):
+            logger.info("Trace:")
             debug = True
         elif opt in ("-e", "--english"):
+            logger.info("English:")
             english_units = True
         elif opt in ("-i", "--input_file"):
-            logging.debug("Input File: %s" % arg)
+            logger.info("Input File: %s" % arg)
             input_file = arg
         elif opt in ("-o", "--dbpath"):
-            logging.debug("DB path: %s" % arg)
+            logger.info("DB path: %s" % arg)
             dbpath = arg
+        elif opt in ("-m", "--mshealth"):
+            logger.info("MSHeath:")
+            mshealth = True
+        elif opt in ("-v", "--healthvault"):
+            logger.info("HealthVault:")
+            healthvault = True
 
     if not input_file or not dbpath:
         print "Missing arguments:"
         usage(sys.argv[0])
 
-    msd = MSHealthData(input_file, english_units, debug)
-    msd.process_files(dbpath)
+    if mshealth:
+        msd = MSHealthData(input_file, english_units, debug)
+        msd.process_files(dbpath)
+
+    if healthvault:
+        mshv = MSVaultData(input_file, english_units, debug)
+        mshv.process_files(dbpath)
 
 
 if __name__ == "__main__":

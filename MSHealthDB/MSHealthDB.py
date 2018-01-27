@@ -140,3 +140,45 @@ class DaysSummary(MSHealthDB.Base, DBObject):
         stats['first_day'] = first_day_ts
         return stats
 
+
+
+class MSVaultWeight(MSHealthDB.Base, DBObject):
+    __tablename__ = 'weight'
+
+    timestamp = Column(DateTime, primary_key=True, unique=True)
+    weight = Column(Integer)
+
+    time_col = synonym("timestamp")
+    min_row_values = 2
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
+
+    @classmethod
+    def get_stats(cls, db, start_ts, end_ts):
+        stats = {
+            'weight_avg' : cls.get_col_avg(db, cls.weight, start_ts, end_ts, True),
+            'weight_min' : cls.get_col_min(db, cls.weight, start_ts, end_ts, True),
+            'weight_max' : cls.get_col_max(db, cls.weight, start_ts, end_ts),
+        }
+        return stats
+
+    @classmethod
+    def get_daily_stats(cls, db, day_ts):
+        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
+        stats['day'] = day_ts
+        return stats
+
+    @classmethod
+    def get_weekly_stats(cls, db, first_day_ts):
+        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats['first_day'] = first_day_ts
+        return stats
+
+    @classmethod
+    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
+        stats = cls.get_stats(db, first_day_ts, last_day_ts)
+        stats['first_day'] = first_day_ts
+        return stats
+
