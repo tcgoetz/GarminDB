@@ -102,13 +102,14 @@ class Scrape():
         logger.info("wait_for_pagecontainer: ")
         return self.wait_for_xpath(driver, time_s, "//div[@id='pageContainer']")
 
-    def get_profile_name(self, driver, url):
-        try:
-            return re.search('modern/daily-summary/(.+)/\d{4}-\d{2}-\d{2}/timeline', url).group(1)
-        except AttributeError:
-            raise AttributeError("profile name not found")
+    def get_profile_name(self, driver):
+        logger.info("get_profile_name: ")
+        profile_name = driver.execute_script('return App.displayName')
+        logger.info("Profile name: " + profile_name)
+        return profile_name
 
     def login(self, username, password):
+        logger.info("login: %s %s" % (username, password))
         self.load_page(self.garmin_connect_login_url)
         self.switch_frame_by_id(self.browser, "gauth-widget-frame-gauth-widget")
         self.fill_field_by_id(self.browser, "username", username)
@@ -136,13 +137,11 @@ class Scrape():
 
     def get_monitoring(self, date, days):
         logger.info("get_monitoring: %s : %d" % (str(date), days))
-        profile_name = self.browser.execute_script('return App.displayName')
-        # self.load_page(self.garmin_connect_daily_url)
-        # page_container = self.wait_for_pagecontainer(self.browser, 10)
+        self.load_page(self.garmin_connect_daily_url)
+        page_container = self.wait_for_pagecontainer(self.browser, 10)
         # daily_user_url = self.browser.current_url
         # logger.info("User daily: " + daily_user_url)
-        # profile_name = self.get_profile_name(daily_user_url)
-        logger.info("Profile name: " + profile_name)
+        profile_name = self.get_profile_name(self.browser)
         for day in xrange(0, days):
             day_date = date + datetime.timedelta(day)
             self.browse_daily_page(profile_name, day_date)

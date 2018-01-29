@@ -84,7 +84,7 @@ import_monitoring: $(DB_DIR)
 scrape_monitoring: $(DB_DIR)
 	python scrape_garmin.py -l $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
 
-import_new_monitoring: # scrape_monitoring
+import_new_monitoring: scrape_monitoring
 	python import_garmin_fit.py -e --input_dir "$(MEW_MONITORING_FIT_FILES_DIR)" --dbpath $(DB_DIR)
 	mv $(MEW_MONITORING_FIT_FILES_DIR)/*.fit $(MONITORING_FIT_FILES_DIR)/.
 
