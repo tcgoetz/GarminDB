@@ -251,22 +251,22 @@ def main(argv):
             garmindb = GarminDB.GarminDB(latest)
             last_ts = GarminDB.Weight.latest_time(garmindb)
         if last_ts is None:
-            start_ts = datetime.datetime.now() - datetime.timedelta(365 * 2)
+            date = datetime.datetime.now().date() - datetime.timedelta(365 * 2)
         else:
             # start from the day after the last day in the DB
-            start_ts = last_ts + datetime.timedelta(1)
-            days = (datetime.datetime.now() - start_ts).days
-        date = start_ts.date()
+            date = last_ts.date() + datetime.timedelta(1)
+            days = (datetime.datetime.now().date() - date).days
         logger.info("Latest day in DB: %s (%d)" % (str(date), days))
 
-    scrape = Scrape()
-    scrape.login(username, password)
-
     if monitoring and days > 0:
+        scrape = Scrape()
+        scrape.login(username, password)
         scrape.get_monitoring(date, days)
         scrape.unzip_monitoring(monitoring)
 
     if weight and days > 0:
+        scrape = Scrape()
+        scrape.login(username, password)
         points = scrape.get_weight(date, days)
         garmindb = GarminDB.GarminDB(weight)
         for point in points:
