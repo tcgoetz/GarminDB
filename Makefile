@@ -15,6 +15,7 @@ BIN_DIR=$(PWD)/bin
 TEST_DB=$(TMPDIR)/test.db
 
 OS := $(shell uname -s)
+ARCH := $(shell uname -p)
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
@@ -28,6 +29,12 @@ $(BACKUP_DIR):
 GECKO_DRIVER_URL=https://github.com/mozilla/geckodriver/releases/download/v0.19.1/
 ifeq ($(OS), Darwin)
 	GECKO_DRIVER_FILE=geckodriver-v0.19.1-macos.tar.gz
+else ifeq ($(OS), Linux)
+	ifeq ($(ARCH), x86_64)
+		GECKO_DRIVER_FILE=geckodriver-v0.19.1-linux64.tar.gz
+	else
+		GECKO_DRIVER_FILE=geckodriver-v0.19.1-linux32.tar.gz
+	endif
 endif
 install_geckodriver: $(BIN_DIR)
 	curl -L $(GECKO_DRIVER_URL)/$(GECKO_DRIVER_FILE) | tar -C $(BIN_DIR) -x -z -f -
