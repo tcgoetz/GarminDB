@@ -17,6 +17,8 @@ TEST_DB=$(TMPDIR)/test.db
 OS := $(shell uname -s)
 ARCH := $(shell uname -p)
 
+all: import_new_monitoring scrape_new_weight garmin_summary
+
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
