@@ -22,4 +22,4 @@ The scripts are automated with Make. The directories where the data files are st
 * Keep you local copy of your weight data up to date by running `make GC_USER={username} GC_PASSWORD={password} scrape_new_weight`.
 * Import your FitBit daily CSV files by downloading them and running `make import_fitbit_file`.
 * Import your Microsoft Health daily CSV files by downloading them and running `make import_mshealth_file`
-* "make backup" to backup your DBs
+* `make backup` to backup your DBs
