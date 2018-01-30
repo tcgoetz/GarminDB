@@ -256,7 +256,7 @@ def main(argv):
             # start from the day after the last day in the DB
             date = last_ts.date() + datetime.timedelta(1)
             days = (datetime.datetime.now().date() - date).days
-        logger.info("Latest day in DB: %s (%d)" % (str(date), days))
+        logger.info("Date range to update according to DB: %s (%d)" % (str(date), days))
 
     if monitoring and days > 0:
         scrape = Scrape()
