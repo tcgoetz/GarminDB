@@ -24,3 +24,7 @@ The scripts are automated with Make. The directories where the data files are st
 * Import your FitBit daily CSV files by downloading them and running `make import_fitbit_file`. I wrote this to get my hsitorical FitBit data into the DB, I do not currently use FitBit and do not plan to do any more work in this area.
 * Import your Microsoft Health daily CSV files by downloading them and running `make import_mshealth_file`
 * `make backup` to backup your DBs. I wrote this to get my hsitorical MS Health data into the DB, I do not currently use MS Health or a MS Band and do not plan to do any more work in this area.
+
+# Notes
+
+* The scripts were developed on OSX. Information or patches that on using these scripts on other platforms are welcome.
