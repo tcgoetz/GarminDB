@@ -30,3 +30,5 @@ The scripts are automated with Make. The directories where the data files are st
 # Notes
 
 * The scripts were developed on OSX. Information or patches that on using these scripts on other platforms are welcome.
+* Running the scripts on Linux should require little or no changes.
+* I'm not sure what it wouldtake to run these scripts on Windows.
