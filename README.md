@@ -1,6 +1,6 @@
 # GarminDB
 
-[Python scripts](https://www.python.org/) for parsing health data into and manipulating data in a [Sqlite](http://sqlite.org/) DB. SQlite is a light weight DB that requires no server.
+[Python scripts](https://www.python.org/) for parsing health data into and manipulating data in a [SQLite](http://sqlite.org/) DB. SQLite is a light weight DB that requires no server.
 
 What they can do:
 * Automatically download Garmin daily monitoring files (all day heart rate, activity, climb/decend, and intensity minutes) from the user's Garmin Connect "Daily Summary" page. (Currently requires a Firefox brwoser be installed)
