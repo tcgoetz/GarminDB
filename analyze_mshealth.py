@@ -10,16 +10,15 @@ import HealthDB
 import MSHealthDB
 
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-#logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__file__)
+
 
 
 class Analyze():
 
-    def __init__(self, dbpath):
-        self.mshealthdb = MSHealthDB.MSHealthDB(dbpath)
-        self.sumdb = HealthDB.SummaryDB(dbpath)
+    def __init__(self, db_params_dict):
+        self.mshealthdb = MSHealthDB.MSHealthDB(db_params_dict)
+        self.sumdb = HealthDB.SummaryDB(db_params_dict)
 
     def days_from_years(self, year):
         sum_days = MSHealthDB.DaysSummary.get_days(self.mshealthdb, year)
@@ -76,27 +75,28 @@ class Analyze():
 
 
 def usage(program):
-    print '%s -d <dbpath> -m ...' % program
+    print '%s --sqlite <sqlite db path> -m ...' % program
     sys.exit()
 
 def main(argv):
-    dbpath = None
+    debug = False
     years = False
     months = None
     days = None
     summary = False
+    db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"d:i:m:sy", ["dbpath=", "days=", "months=", "years", "summary"])
+        opts, args = getopt.getopt(argv,"d:i:m:s:y", ["dbpath=", "days=", "months=", "years", "sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
     for opt, arg in opts:
         if opt == '-h':
             usage(sys.argv[0])
-        elif opt in ("-d", "--dbpath"):
-            logging.debug("DB path: %s" % arg)
-            dbpath = arg
+        elif opt in ("-d", "--debug"):
+            logging.debug("Debug True")
+            debug = True
         elif opt in ("-y", "--years"):
             logging.debug("Years")
             years = True
@@ -106,23 +106,28 @@ def main(argv):
         elif opt in ("-d", "--days"):
             logging.debug("Days")
             days = arg
-        elif opt in ("-s", "--summary"):
-            logging.debug("Summary")
-            summary = True
+        elif opt in ("-s", "--sqlite"):
+            logging.debug("Sqlite DB path: %s" % arg)
+            db_params_dict['db_type'] = 'sqlite'
+            db_params_dict['db_path'] = arg
 
-    if not dbpath:
+    if debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+
+    if not db_params_dict['db_path']:
         print "Missing arguments:"
         usage(sys.argv[0])
 
-    analyze = Analyze(dbpath)
+    analyze = Analyze(db_params_dict)
     if years:
         analyze.get_years()
     if months:
         analyze.get_months(months)
     if days:
         analyze.get_days(days)
-    if summary:
-        analyze.summary()
+    analyze.summary()
 
 if __name__ == "__main__":
     main(sys.argv[1:])

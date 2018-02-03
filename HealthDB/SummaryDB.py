@@ -7,13 +7,16 @@
 from HealthDB import *
 
 
+logger = logging.getLogger(__name__)
+
+
 class SummaryDB(DB):
     Base = declarative_base()
-    db_name = 'summary.db'
+    db_name = 'summary'
 
-    def __init__(self, db_path, debug=False):
-        logger.info("DB path %s debug %s " % (db_path, str(debug)))
-        DB.__init__(self, db_path + "/" + SummaryDB.db_name, debug)
+    def __init__(self, db_params_dict, debug=False):
+        logger.info("SummaryDB: %s debug: %s " % (repr(db_params_dict), str(debug)))
+        DB.__init__(self, db_params_dict, debug)
         SummaryDB.Base.metadata.create_all(self.engine)
 
 

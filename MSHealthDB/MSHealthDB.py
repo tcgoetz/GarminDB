@@ -7,12 +7,16 @@
 from HealthDB import *
 
 
+logger = logging.getLogger(__name__)
+
+
 class MSHealthDB(DB):
     Base = declarative_base()
-    db_name = 'mshealth' + DB.file_suffix
+    db_name = 'mshealth'
 
-    def __init__(self, db_path, debug=False):
-        DB.__init__(self, db_path + "/" + MSHealthDB.db_name, debug)
+    def __init__(self, db_params_dict, debug=False):
+        logger.info("MSHealthDB: %s debug: %s " % (repr(db_params_dict), str(debug)))
+        DB.__init__(self, db_params_dict, debug)
         MSHealthDB.Base.metadata.create_all(self.engine)
 
 

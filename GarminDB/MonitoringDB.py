@@ -7,12 +7,16 @@
 from HealthDB import *
 
 
+logger = logging.getLogger(__name__)
+
+
 class MonitoringDB(DB):
     Base = declarative_base()
-    db_name = 'garmin_monitoring.db'
+    db_name = 'garmin_monitoring'
 
-    def __init__(self, db_path, debug=False):
-        DB.__init__(self, db_path + "/" + MonitoringDB.db_name, debug)
+    def __init__(self, db_params_dict, debug=False):
+        logger.info("MonitoringDB: %s debug: %s " % (repr(db_params_dict), str(debug)))
+        DB.__init__(self, db_params_dict, debug)
         MonitoringDB.Base.metadata.create_all(self.engine)
 
 
@@ -193,10 +197,10 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
-    ascent = Column(Integer)
-    descent = Column(Integer)
-    cum_ascent = Column(Integer)
-    cum_descent = Column(Integer)
+    ascent = Column(Float)
+    descent = Column(Float)
+    cum_ascent = Column(Float)
+    cum_descent = Column(Float)
 
     __table_args__ = (
         UniqueConstraint("timestamp", "ascent", "descent", "cum_ascent", "cum_descent"),
@@ -250,7 +254,7 @@ class Monitoring(MonitoringDB.Base, DBObject):
     intensity = Column(Integer)
 
     duration = Column(Integer)
-    distance = Column(Integer)
+    distance = Column(Float)
     cum_active_time = Column(Integer)
     active_calories = Column(Integer)
 

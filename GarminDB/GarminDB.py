@@ -6,17 +6,17 @@
 
 from HealthDB import *
 
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-#logger.setLevel(logging.DEBUG)
 
 
 class GarminDB(DB):
     Base = declarative_base()
-    db_name = 'garmin.db'
+    db_name = 'garmin'
 
-    def __init__(self, db_path, debug=False):
-        DB.__init__(self, db_path + "/" + GarminDB.db_name, debug)
+    def __init__(self, db_params_dict, debug=False):
+        logger.info("GarminDB: %s debug: %s " % (repr(db_params_dict), str(debug)))
+        DB.__init__(self, db_params_dict, debug)
         GarminDB.Base.metadata.create_all(self.engine)
 
 
@@ -80,7 +80,7 @@ class Weight(GarminDB.Base, DBObject):
     __tablename__ = 'weight'
 
     timestamp = Column(DateTime, primary_key=True, unique=True)
-    weight = Column(Integer)
+    weight = Column(Float)
 
     time_col = synonym("timestamp")
     min_row_values = 2

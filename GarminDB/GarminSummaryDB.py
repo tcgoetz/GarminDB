@@ -7,13 +7,16 @@
 from HealthDB import *
 
 
+logger = logging.getLogger(__name__)
+
+
 class GarminSummaryDB(DB):
     Base = declarative_base()
-    db_name = 'garmin_summary.db'
+    db_name = 'garmin_summary'
 
-    def __init__(self, db_path, debug=False):
-        logger.info("DB path %s debug %s " % (db_path, str(debug)))
-        DB.__init__(self, db_path + "/" + GarminSummaryDB.db_name, debug)
+    def __init__(self, db_params_dict, debug=False):
+        logger.info("GarminSummaryDB: %s debug: %s " % (repr(db_params_dict), str(debug)))
+        DB.__init__(self, db_params_dict, debug)
         GarminSummaryDB.Base.metadata.create_all(self.engine)
 
 
@@ -36,17 +39,17 @@ class Summary(GarminSummaryDB.Base, DBObject):
 
 
 class SummaryBase(DBObject):
-    hr_avg = Column(Integer)
-    hr_min = Column(Integer)
-    hr_max = Column(Integer)
-    weight_avg = Column(Integer)
-    weight_min = Column(Integer)
-    weight_max = Column(Integer)
+    hr_avg = Column(Float)
+    hr_min = Column(Float)
+    hr_max = Column(Float)
+    weight_avg = Column(Float)
+    weight_min = Column(Float)
+    weight_max = Column(Float)
     intensity_mins = Column(Integer)
     moderate_activity_mins = Column(Integer)
     vigorous_activity_mins = Column(Integer)
     steps = Column(Integer)
-    floors = Column(Integer)
+    floors = Column(Float)
 
     _relational_mappings = {}
     col_translations = {}

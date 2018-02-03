@@ -10,10 +10,7 @@ from HealthDB import CsvImporter
 import MSHealthDB
 
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.INFO)
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__file__)
 
 
 class MSHealthData():
@@ -58,14 +55,9 @@ class MSHealthData():
         'Guided_Workout_Total_Seconds': ('guided_workout_secs', CsvImporter.map_integer),
     }
 
-    def __init__(self, input_file, dbpath, english_units, debug):
+    def __init__(self, input_file, db_params_dict, english_units, debug):
         self.english_units = english_units
-        if debug:
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.DEBUG)
-
-        self.mshealthdb = MSHealthDB.MSHealthDB(dbpath, debug)
+        self.mshealthdb = MSHealthDB.MSHealthDB(db_params_dict, debug)
         self.csvimporter = CsvImporter(input_file, self.cols_map, self.write_entry)
 
     def write_entry(self, db_entry):
@@ -77,15 +69,10 @@ class MSHealthData():
 
 class MSVaultData():
 
-    def __init__(self, input_file, dbpath, english_units, debug):
+    def __init__(self, input_file, db_params_dict, english_units, debug):
         self.english_units = english_units
-        if debug:
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.DEBUG)
-
         self.input_file = input_file
-        self.mshealthdb = MSHealthDB.MSHealthDB(dbpath, debug)
+        self.mshealthdb = MSHealthDB.MSHealthDB(db_params_dict, debug)
         cols_map = {
             'Date': ('timestamp', CsvImporter.map_mdy_date),
             'Weight': ('weight', MSVaultData.map_weight),
@@ -117,12 +104,12 @@ def main(argv):
     debug = False
     english_units = False
     input_file = None
-    dbpath = None
+    db_params_dict = {}
     mshealth = False
     healthvault = False
 
     try:
-        opts, args = getopt.getopt(argv,"hei:o:mv", ["help", "trace", "english", "input_file=", "dbpath=", "mshealth", "healthvault"])
+        opts, args = getopt.getopt(argv,"hei:s:mv", ["help", "trace", "english", "input_file=", "sqlite=", "mshealth", "healthvault"])
     except getopt.GetoptError:
         print "Bad argument"
         usage(sys.argv[0])
@@ -139,26 +126,32 @@ def main(argv):
         elif opt in ("-i", "--input_file"):
             logger.info("Input File: %s" % arg)
             input_file = arg
-        elif opt in ("-o", "--dbpath"):
-            logger.info("DB path: %s" % arg)
-            dbpath = arg
         elif opt in ("-m", "--mshealth"):
             logger.info("MSHeath:")
             mshealth = True
         elif opt in ("-v", "--healthvault"):
             logger.info("HealthVault:")
             healthvault = True
+        elif opt in ("-s", "--sqlite"):
+            logging.debug("Sqlite DB path: %s" % arg)
+            db_params_dict['db_type'] = 'sqlite'
+            db_params_dict['db_path'] = arg
 
-    if not input_file or not dbpath:
+    if debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+
+    if not input_file or not (db_params_dict['db_path']):
         print "Missing arguments:"
         usage(sys.argv[0])
 
     if mshealth:
-        msd = MSHealthData(input_file, dbpath, english_units, debug)
+        msd = MSHealthData(input_file, db_params_dict, english_units, debug)
         msd.process_files()
 
     if healthvault:
-        mshv = MSVaultData(input_file, dbpath, english_units, debug)
+        mshv = MSVaultData(input_file, db_params_dict, english_units, debug)
         mshv.process_files()
 
 

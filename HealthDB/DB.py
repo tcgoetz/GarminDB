@@ -13,8 +13,7 @@ from sqlalchemy.orm import *
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-#logger.setLevel(logging.DEBUG)
+
 
 def day_of_the_year_to_datetime(year, day):
     return datetime.datetime(year, 1, 1) + datetime.timedelta(day - 1)
@@ -25,18 +24,21 @@ class DB():
     commit_errors = 0
     max_query_attempts = max_commit_attempts
     query_errors = 0
-    file_suffix = '.db'
 
-    def __init__(self, filename, debug=False, mysql_dict=None):
-        if mysql_dict:
-            url = ("mysql+pymysql://%s:%s@%s/%s" %
-                    (mysql_dict['username'], mysql_dict['password'], mysql_dict['host'], mysql_dict['dbname']))
-        else:
-            url = "sqlite:///" + filename
-        logger.debug("DB %s debug %s " % (url, str(debug)))
-        self.engine = create_engine(url, echo=debug)
+    def __init__(self, db_params_dict, debug=False):
+        logger.debug("DB %s debug %s " % (repr(db_params_dict), str(debug)))
+        url_func = getattr(self, db_params_dict['db_type'] + '_url')
+        self.engine = create_engine(url_func(db_params_dict), echo=debug)
         self.session_maker = sessionmaker(bind=self.engine)
         self._query_session = None
+
+    @classmethod
+    def sqlite_url(cls, db_params_dict):
+        return "sqlite:///" + db_params_dict['db_path'] +  '/' + cls.db_name + '.db'
+
+    @classmethod
+    def mysql_url(cls, db_params_dict):
+        return "mysql+pymysql://%s:%s@%s/%s" % (db_params_dict['db_username'], db_params_dict['db_password'], db_params_dict['db_host'], cls.dbname)
 
     def session(self):
         return self.session_maker()
@@ -237,7 +239,6 @@ class DBObject():
     @classmethod
     def find_or_create_id(cls, db, values_dict):
         logger.debug("%s::find_or_create_id %s" % (cls.__name__, repr(values_dict)))
-        logger.info("%s::find_or_create_id %s" % (cls.__name__, repr(values_dict)))
         instance = cls.find_or_create(db, values_dict)
         if instance is None:
             return None
@@ -250,13 +251,11 @@ class DBObject():
     @classmethod
     def create_or_update(cls, db, values_dict):
         logger.debug("%s::create_or_update %s" % (cls.__name__, repr(values_dict)))
-        session = db.query_session()
-        instance = cls._find_one(session, values_dict)
+        instance = cls.find_one(db, values_dict)
         if instance is None:
-            instance = cls._create(db, session, values_dict)
+            cls.create(db, values_dict)
         else:
-            instance.update(values_dict)
-        DB.commit(session)
+            cls.update_one(db, values_dict)
         return cls.find_one(db, values_dict)
 
     @classmethod

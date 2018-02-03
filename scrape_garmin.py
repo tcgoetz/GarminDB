@@ -15,10 +15,9 @@ from selenium.webdriver.common.keys import Keys
 import GarminDB
 
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.INFO)
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__file__)
+
+
 
 class Scrape():
 
@@ -195,28 +194,32 @@ class Scrape():
 def usage(program):
     print '%s -d [<date> -n <days> | -l <path to dbs>] -u <username> -p <password> [-m <outdir> | -w <outdir>]' % program
     print '  -d <date> -n <days> fetch n days of monitoring data starting at date'
-    print '  -l <dbpath> check the garmin DB and find out what the most recent date is and fetch monitoring data from that date on'
+    print '  -l check the garmin DB and find out what the most recent date is and fetch monitoring data from that date on'
     print '  -m <outdir> fetches the daily monitoring FIT files for each day specified, unzips them, and puts them in outdit'
-    print '  -w <outdir> fetches the daily weight data for each day specified and puts them in outdit'
+    print '  -w  fetches the daily weight data for each day specified and puts them in the DB'
     sys.exit()
 
 def main(argv):
     date = None
     days = None
     latest = False
+    db_params_dict = {}
     username = None
     password = None
     monitoring = None
-    weight = None
+    weight = False
+    debug = False
 
     try:
-        opts, args = getopt.getopt(argv,"d:n:l:m:u:p:w:", ["date=", "days=", "username=", "password=", "latest=", "monitoring=", "weight="])
+        opts, args = getopt.getopt(argv,"d:n:lm:p:s:tu:w", ["debug", "date=", "days=", "username=", "password=", "latest", "monitoring=", "sqlite=", "weight"])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
     for opt, arg in opts:
         if opt == '-h':
             usage(sys.argv[0])
+        elif opt in ("-t", "--debug"):
+            debug = True
         elif opt in ("-d", "--date"):
             logger.debug("Date: " + arg)
             date = datetime.datetime.strptime(arg, "%m/%d/%Y").date()
@@ -224,8 +227,8 @@ def main(argv):
             logger.debug("Days: " + arg)
             days = int(arg)
         elif opt in ("-l", "--latest"):
-            logger.debug("Latest: " + arg)
-            latest = arg
+            logger.debug("Latest" )
+            latest = True
         elif opt in ("-u", "--username"):
             logger.debug("USername: " + arg)
             username = arg
@@ -233,11 +236,20 @@ def main(argv):
             logger.debug("Password: " + arg)
             password = arg
         elif opt in ("-m", "--monitoring"):
-            logger.debug("Monitoring: " + arg)
+            logger.debug("Monitoring: " +arg)
             monitoring = arg
         elif opt in ("-w", "--weight"):
-            logger.debug("Weight: " + arg)
-            weight = arg
+            logger.debug("Weight")
+            weight = True
+        elif opt in ("-s", "--sqlite"):
+            logging.debug("Sqlite DB path: %s" % arg)
+            db_params_dict['db_type'] = 'sqlite'
+            db_params_dict['db_path'] = arg
+
+    if debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
 
     if ((not date or not days) and not latest) or not username or not password or (not monitoring and not weight):
         print "Missing arguments:"
@@ -245,10 +257,10 @@ def main(argv):
 
     if latest:
         if monitoring:
-            mondb = GarminDB.MonitoringDB(latest)
+            mondb = GarminDB.MonitoringDB(db_params_dict)
             last_ts = GarminDB.Monitoring.latest_time(mondb)
         elif weight:
-            garmindb = GarminDB.GarminDB(latest)
+            garmindb = GarminDB.GarminDB(db_params_dict)
             last_ts = GarminDB.Weight.latest_time(garmindb)
         if last_ts is None:
             date = datetime.datetime.now().date() - datetime.timedelta(365 * 2)
@@ -268,7 +280,7 @@ def main(argv):
         scrape = Scrape()
         scrape.login(username, password)
         points = scrape.get_weight(date, days)
-        garmindb = GarminDB.GarminDB(weight)
+        garmindb = GarminDB.GarminDB(db_params_dict)
         for point in points:
             logger.debug("Inserting: " + repr(point))
             GarminDB.Weight.create_or_update(garmindb, point)

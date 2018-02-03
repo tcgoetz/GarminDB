@@ -11,7 +11,7 @@ import Fit
 import GarminDB
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__file__)
 
 
 class GarminFitData():
@@ -19,10 +19,7 @@ class GarminFitData():
     def __init__(self, input_file, input_dir, english_units, debug):
         self.english_units = english_units
         self.debug = debug
-        if debug:
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.DEBUG)
+        logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
 
         self.fitfiles = []
 
@@ -91,18 +88,18 @@ class GarminFitData():
             entry['file_id'] = GarminDB.File.find_id(garmindb, {'name' : entry['filename']})
             GarminDB.DeviceInfo.find_or_create(mondb, entry)
 
-    def process_files(self, dbpath):
-        garmindb = GarminDB.GarminDB(dbpath, self.debug)
+    def process_files(self, db_params_dict):
+        garmindb = GarminDB.GarminDB(db_params_dict, self.debug)
         self.write_garmin(garmindb, self.english_units)
 
-        mondb = GarminDB.MonitoringDB(dbpath, self.debug)
+        mondb = GarminDB.MonitoringDB(db_params_dict, self.debug)
         self.write_device_data(garmindb, mondb)
         self.write_monitoring_info(garmindb, mondb)
         self.write_monitoring(mondb)
 
 
 def usage(program):
-    print '%s -o <dbpath> -i <inputfile> ...' % program
+    print '%s -s <sqlite db path> -i <inputfile> ...' % program
     sys.exit()
 
 def main(argv):
@@ -110,10 +107,10 @@ def main(argv):
     english_units = False
     input_dir = None
     input_file = None
-    dbpath = None
+    db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"d:ei:o:", ["trace", "english", "input_dir=", "input_file=","dbpath="])
+        opts, args = getopt.getopt(argv,"d:ei:s:t", ["trace", "english", "input_dir=", "input_file=","sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -129,17 +126,23 @@ def main(argv):
         elif opt in ("-i", "--input_file"):
             logging.debug("Input File: %s" % arg)
             input_file = arg
-        elif opt in ("-o", "--dbpath"):
-            logging.debug("DB path: %s" % arg)
-            dbpath = arg
+        elif opt in ("-s", "--sqlite"):
+            logging.debug("Sqlite DB path: %s" % arg)
+            db_params_dict['db_type'] = 'sqlite'
+            db_params_dict['db_path'] = arg
 
-    if not (input_file or input_dir) or not dbpath:
+    if debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+
+    if not (input_file or input_dir) or not (db_params_dict['db_path']):
         print "Missing arguments:"
         usage(sys.argv[0])
 
     gd = GarminFitData(input_file, input_dir, english_units, debug)
     if gd.fit_file_count() > 0:
-        gd.process_files(dbpath)
+        gd.process_files(db_params_dict)
 
 
 if __name__ == "__main__":

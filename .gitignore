@@ -100,6 +100,9 @@ ENV/
 # mypy
 .mypy_cache/
 
+*.sublime-project
+*.sublime-workspace
+
 # project specific
 bin/
 

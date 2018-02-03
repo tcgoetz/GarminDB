@@ -10,7 +10,7 @@ from HealthDB import CsvImporter
 import FitBitDB
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__file__)
 
 
 class FitBitData():
@@ -43,14 +43,9 @@ class FitBitData():
         'sleep-awakeningsCount': ('awakenings_count', CsvImporter.map_integer),
     }
 
-    def __init__(self, input_file, dbpath, english_units, debug):
+    def __init__(self, input_file, db_params_dict, english_units, debug):
         self.english_units = english_units
-        if debug:
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.DEBUG)
-
-        self.fitbitdb = FitBitDB.FitBitDB(dbpath, debug)
+        self.fitbitdb = FitBitDB.FitBitDB(db_params_dict, debug)
         self.csvimporter = CsvImporter(input_file, self.cols_map, self.write_entry)
 
     def write_entry(self, db_entry):
@@ -69,32 +64,38 @@ def main(argv):
     debug = False
     english_units = False
     input_file = None
-    dbpath = None
+    db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"ei:o:", ["trace", "english", "input_file=","dbpath="])
+        opts, args = getopt.getopt(argv,"dei:s:", ["debug", "english", "input_file=","sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
     for opt, arg in opts:
         if opt == '-h':
             usage(sys.argv[0])
-        elif opt in ("-t", "--trace"):
+        elif opt in ("-d", "--debug"):
             debug = True
         elif opt in ("-e", "--english"):
             english_units = True
         elif opt in ("-i", "--input_file"):
             logging.debug("Input File: %s" % arg)
             input_file = arg
-        elif opt in ("-o", "--dbpath"):
-            logging.debug("DB path: %s" % arg)
-            dbpath = arg
+        elif opt in ("-s", "--sqlite"):
+            logging.debug("Sqlite DB path: %s" % arg)
+            db_params_dict['db_type'] = 'sqlite'
+            db_params_dict['db_path'] = arg
 
-    if not input_file or not dbpath:
+    if debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+
+    if not input_file or not (db_params_dict['db_path']):
         print "Missing arguments:"
         usage(sys.argv[0])
 
-    fd = FitBitData(input_file, dbpath, english_units, debug)
+    fd = FitBitData(input_file, db_params_dict, english_units, debug)
     fd.process_files()
 
 

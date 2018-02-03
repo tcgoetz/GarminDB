@@ -6,13 +6,16 @@
 
 from HealthDB import *
 
+logger = logging.getLogger(__name__)
+
 
 class FitBitDB(DB):
     Base = declarative_base()
-    db_name = 'fitbit.db'
+    db_name = 'fitbit'
 
-    def __init__(self, db_path, debug=False):
-        DB.__init__(self, db_path + "/" + FitBitDB.db_name, debug)
+    def __init__(self, db_params_dict, debug=False):
+        logger.info("FitBitDB: %s debug: %s " % (repr(db_params_dict), str(debug)))
+        DB.__init__(self, db_params_dict, debug)
         FitBitDB.Base.metadata.create_all(self.engine)
 
 
