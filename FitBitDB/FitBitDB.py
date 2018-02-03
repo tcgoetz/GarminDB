@@ -37,13 +37,13 @@ class DaysSummary(FitBitDB.Base, DBObject):
 
     day = Column(Date, primary_key=True)
     calories_in = Column(Integer)
-    log_water = Column(Integer)
+    log_water = Column(Float)
     calories = Column(Integer)
     calories_bmr = Column(Integer)
     steps = Column(Integer)
-    distance = Column(Integer)
+    distance = Column(Float)
     floors = Column(Integer)
-    elevation = Column(Integer)
+    elevation = Column(Float)
     sedentary_mins = Column(Integer)
     lightly_active_mins = Column(Integer)
     fairly_active_mins = Column(Integer)
@@ -57,8 +57,8 @@ class DaysSummary(FitBitDB.Base, DBObject):
     to_fall_asleep_mins = Column(Integer)
     after_wakeup_mins = Column(Integer)
     sleep_efficiency = Column(Integer)
-    weight = Column(Integer)
-    bmi = Column(Integer)
+    weight = Column(Float)
+    bmi = Column(Float)
 
     time_col = synonym("day")
     min_row_values = 1

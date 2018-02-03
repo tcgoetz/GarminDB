@@ -35,12 +35,12 @@ class Summary(SummaryDB.Base, DBObject):
 
 
 class SummaryBase(DBObject):
-    hr_avg = Column(Integer)
-    hr_min = Column(Integer)
-    hr_max = Column(Integer)
-    weight_avg = Column(Integer)
-    weight_min = Column(Integer)
-    weight_max = Column(Integer)
+    hr_avg = Column(Float)
+    hr_min = Column(Float)
+    hr_max = Column(Float)
+    weight_avg = Column(Float)
+    weight_min = Column(Float)
+    weight_max = Column(Float)
     intensity_mins = Column(Integer)
     moderate_activity_mins = Column(Integer)
     vigorous_activity_mins = Column(Integer)

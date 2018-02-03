@@ -6,7 +6,7 @@
 
 import os, sys, getopt, re, string, logging, datetime, time, traceback
 
-import csv
+from HealthDB import CsvImporter
 import MSHealthDB
 
 
@@ -18,156 +18,95 @@ logging.basicConfig(level=logging.DEBUG)
 
 class MSHealthData():
 
-    def __init__(self, input_file, english_units, debug):
+    cols_map = {
+        'Date': ('day', CsvImporter.map_ymd_date),
+        'Floors_Climbed': ('floors', CsvImporter.map_identity),
+        'Steps': ('steps', CsvImporter.map_integer),
+        'HR_Highest': ('hr_max', CsvImporter.map_integer),
+        'HR_Lowest': ('hr_min', CsvImporter.map_integer),
+        'HR_Average': ('hr_avg', CsvImporter.map_integer),
+        'Calories': ('calories', CsvImporter.map_integer),
+        'Active_Hours': ('active_hours', CsvImporter.map_integer),
+        'Total_Seconds_All_Activities': ('activity_secs', CsvImporter.map_integer),
+        'Total_Calories_All_Activities': ('activity_calories', CsvImporter.map_integer),
+        'Exercise_Events': ('exercise_events', CsvImporter.map_integer),
+        'Exercise_Total_Calories': ('exercise_calories', CsvImporter.map_integer),
+        'Exercise_Total_Seconds': ('exercise_secs', CsvImporter.map_integer),
+        'Total_Miles_Moved': ('miles_moved', CsvImporter.map_float),
+        'Sleep_Events': ('sleep_events', CsvImporter.map_integer),
+        'Sleep_Total_Calories': ('sleep_calories', CsvImporter.map_integer),
+        'Total_Seconds_Slept': ('sleep_secs', CsvImporter.map_integer),
+        'Walk_Events': ('walk_events', CsvImporter.map_integer),
+        'Walk_Total_Seconds': ('walk_secs', CsvImporter.map_integer),
+        'Walk_Total_Calories': ('workout_calories', CsvImporter.map_integer),
+        'Total_Miles_Walked': ('miles_walked', CsvImporter.map_float),
+        'Run_Events': ('run_ewvents', CsvImporter.map_integer),
+        'Run_Total_Calories': ('run_calories', CsvImporter.map_integer),
+        'Run_Total_Seconds': ('run_secs', CsvImporter.map_integer),
+        'Total_Miles_Run': ('miles_run', CsvImporter.map_float),
+        'Total_Miles_Golfed': ('miles_golfed', CsvImporter.map_float),
+        'Golf_Total_Calories': ('golf_calories', CsvImporter.map_integer),
+        'Golf_Events': ('golf_events', CsvImporter.map_integer),
+        'Golf_Total_Seconds': ('golf_secs', CsvImporter.map_integer),
+        'Total_Miles_Biked': ('miles_biked', CsvImporter.map_float),
+        'UV_Exposure_Minutes': ('uv_mins', CsvImporter.map_integer),
+        'Bike_Total_Seconds': ('bike_secs', CsvImporter.map_integer),
+        'Bike_Total_Calories': ('bike_calories', CsvImporter.map_integer),
+        'Bike_Events': ('bike_events', CsvImporter.map_integer),
+        'Guided_Workout_Events': ('guided_workout_events', CsvImporter.map_integer),
+        'Guided_Workout_Total_Calories': ('guided_workout_calories', CsvImporter.map_integer),
+        'Guided_Workout_Total_Seconds': ('guided_workout_secs', CsvImporter.map_integer),
+    }
+
+    def __init__(self, input_file, dbpath, english_units, debug):
         self.english_units = english_units
-        self.debug = debug
         if debug:
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.DEBUG)
 
-        self.input_file = input_file
+        self.mshealthdb = MSHealthDB.MSHealthDB(dbpath, debug)
+        self.csvimporter = CsvImporter(input_file, self.cols_map, self.write_entry)
 
-    @classmethod
-    def map_identity(cls, english_units, value):
-        return value
+    def write_entry(self, db_entry):
+        MSHealthDB.DaysSummary.find_or_create(self.mshealthdb, db_entry)
 
-    @classmethod
-    def map_date(cls, english_units, date_string):
-        try:
-            return datetime.datetime.strptime(date_string, "%Y-%m-%d").date()
-        except Exception as e:
-            return None
-
-    @classmethod
-    def map_time(cls, english_units, time_string):
-        try:
-            return datetime.datetime.strptime(time_string, "%M:%S").time()
-        except Exception as e:
-            return None
-
-    @classmethod
-    def map_meters(cls, english_units, meters):
-        if english_units:
-            return float(meters) * 3.28084
-        return meters
-
-    @classmethod
-    def convert_cols(cls, english_units, csv_col_dict):
-        cols_map = {
-            'Date': ('day', MSHealthData.map_date),
-            'Floors_Climbed': ('floors', MSHealthData.map_identity),
-            'Steps': ('steps', MSHealthData.map_identity),
-            'HR_Highest': ('hr_max', MSHealthData.map_identity),
-            'HR_Lowest': ('hr_min', MSHealthData.map_identity),
-            'HR_Average': ('hr_avg', MSHealthData.map_identity),
-            'Calories': ('calories', MSHealthData.map_identity),
-            'Active_Hours': ('active_hours', MSHealthData.map_identity),
-            'Total_Seconds_All_Activities': ('activity_secs', MSHealthData.map_identity),
-            'Total_Calories_All_Activities': ('activity_calories', MSHealthData.map_identity),
-            'Exercise_Events': ('exercise_events', MSHealthData.map_identity),
-            'Exercise_Total_Calories': ('exercise_calories', MSHealthData.map_identity),
-            'Exercise_Total_Seconds': ('exercise_secs', MSHealthData.map_identity),
-            'Total_Miles_Moved': ('miles_moved', MSHealthData.map_identity),
-            'Sleep_Events': ('sleep_events', MSHealthData.map_identity),
-            'Sleep_Total_Calories': ('sleep_calories', MSHealthData.map_identity),
-            'Total_Seconds_Slept': ('sleep_secs', MSHealthData.map_identity),
-            'Walk_Events': ('walk_events', MSHealthData.map_identity),
-            'Walk_Total_Seconds': ('walk_secs', MSHealthData.map_identity),
-            'Walk_Total_Calories': ('workout_calories', MSHealthData.map_identity),
-            'Total_Miles_Walked': ('miles_walked', MSHealthData.map_identity),
-            'Run_Events': ('run_ewvents', MSHealthData.map_identity),
-            'Run_Total_Calories': ('run_calories', MSHealthData.map_identity),
-            'Run_Total_Seconds': ('run_secs', MSHealthData.map_identity),
-            'Total_Miles_Run': ('miles_run', MSHealthData.map_identity),
-            'Total_Miles_Golfed': ('miles_golfed', MSHealthData.map_identity),
-            'Golf_Total_Calories': ('golf_calories', MSHealthData.map_identity),
-            'Golf_Events': ('golf_events', MSHealthData.map_identity),
-            'Golf_Total_Seconds': ('golf_secs', MSHealthData.map_identity),
-            'Total_Miles_Biked': ('miles_biked', MSHealthData.map_identity),
-            'UV_Exposure_Minutes': ('uv_mins', MSHealthData.map_identity),
-            'Bike_Total_Seconds': ('bike_secs', MSHealthData.map_identity),
-            'Bike_Total_Calories': ('bike_calories', MSHealthData.map_identity),
-            'Bike_Events': ('bike_events', MSHealthData.map_identity),
-            'Guided_Workout_Events': ('guided_workout_events', MSHealthData.map_identity),
-            'Guided_Workout_Total_Calories': ('guided_workout_calories', MSHealthData.map_identity),
-            'Guided_Workout_Total_Seconds': ('guided_workout_secs', MSHealthData.map_identity),
-        }
-        return {
-            (cols_map[key][0] if key in cols_map else key) :
-            (cols_map[key][1](english_units, value) if key in cols_map else value)
-            for key, value in csv_col_dict.items()
-        }
-
-    def process_files(self, dbpath):
-        mshealthdb = MSHealthDB.MSHealthDB(dbpath, self.debug)
-
-        if self.input_file:
-            logger.info("Reading file: " + self.input_file)
-            with open(self.input_file) as csv_file:
-                read_csv = csv.DictReader(csv_file, delimiter=',')
-                for row in read_csv:
-                    db_entry = self.convert_cols(self.english_units, row)
-                    #print "%s  -> %s" % (repr(row), repr(db_entry))
-                    MSHealthDB.DaysSummary.find_or_create(mshealthdb, db_entry)
+    def process_files(self):
+        self.csvimporter.process_file(self.english_units)
 
 
 class MSVaultData():
 
-    def __init__(self, input_file, english_units, debug):
+    def __init__(self, input_file, dbpath, english_units, debug):
         self.english_units = english_units
-        self.debug = debug
         if debug:
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.DEBUG)
 
         self.input_file = input_file
+        self.mshealthdb = MSHealthDB.MSHealthDB(dbpath, debug)
+        cols_map = {
+            'Date': ('timestamp', CsvImporter.map_mdy_date),
+            'Weight': ('weight', MSVaultData.map_weight),
+        }
+        self.csvimporter = CsvImporter(input_file, cols_map, self.write_entry)
+
+    def write_entry(self, db_entry):
+        MSHealthDB.MSVaultWeight.find_or_create(self.mshealthdb, db_entry)
+
+    def process_files(self):
+        self.csvimporter.process_file(self.english_units)
 
     @classmethod
     def map_weight(cls, english_units, value):
         m = re.search(r"(\d{2,3}\.\d{2}) .*", value)
         if m:
             logger.debug("Matched weight: " + m.group(1))
-            return m.group(1)
+            return float(m.group(1))
         else:
             logger.debug("Unmatched weight: " + value)
-            return value
-
-    @classmethod
-    def map_date(cls, english_units, date_string):
-        try:
-            return datetime.datetime.strptime(date_string, "%m/%d/%y %H:%M")
-        except Exception as e:
-            try:
-                return datetime.datetime.strptime(date_string, "%m/%d/%y")
-            except Exception as e:
-                return None
-
-    @classmethod
-    def convert_cols(cls, english_units, csv_col_dict):
-        cols_map = {
-            'Date': ('timestamp', MSVaultData.map_date),
-            'Weight': ('weight', MSVaultData.map_weight),
-        }
-        return {
-            (cols_map[key][0] if key in cols_map else key) :
-            (cols_map[key][1](english_units, value) if key in cols_map else value)
-            for key, value in csv_col_dict.items()
-        }
-
-    def process_files(self, dbpath):
-        mshealthdb = MSHealthDB.MSHealthDB(dbpath, self.debug)
-
-        if self.input_file:
-            logger.info("Reading file: " + self.input_file)
-            with open(self.input_file) as csv_file:
-                read_csv = csv.DictReader(csv_file, delimiter=',')
-                for row in read_csv:
-                    db_entry = self.convert_cols(self.english_units, row)
-                    logger.debug("%s  -> %s" % (repr(row), repr(db_entry)))
-                    MSHealthDB.MSVaultWeight.find_or_create(mshealthdb, db_entry)
-
+            return None
 
 
 def usage(program):
@@ -215,12 +154,12 @@ def main(argv):
         usage(sys.argv[0])
 
     if mshealth:
-        msd = MSHealthData(input_file, english_units, debug)
-        msd.process_files(dbpath)
+        msd = MSHealthData(input_file, dbpath, english_units, debug)
+        msd.process_files()
 
     if healthvault:
-        mshv = MSVaultData(input_file, english_units, debug)
-        mshv.process_files(dbpath)
+        mshv = MSVaultData(input_file, dbpath, english_units, debug)
+        mshv.process_files()
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@
 
 import os, sys, getopt, re, string, logging, datetime, time, traceback
 
-import csv
+from HealthDB import CsvImporter
 import FitBitDB
 
 
@@ -15,92 +15,49 @@ logger = logging.getLogger(__name__)
 
 class FitBitData():
 
-    def __init__(self, input_file, english_units, debug):
+    cols_map = {
+        'sleep-minutesAwake': ('awake_mins', CsvImporter.map_integer),
+        'activities-caloriesBMR': ('calories_bmr', CsvImporter.map_integer),
+        'sleep-minutesToFallAsleep': ('to_fall_asleep_mins', CsvImporter.map_integer),
+        'activities-floors': ('floors', CsvImporter.map_integer),
+        'activities-steps': ('steps', CsvImporter.map_integer),
+        'activities-distance': ('distance', CsvImporter.map_float),
+        'foods-log-caloriesIn': ('calories_in', CsvImporter.map_integer),
+        'activities-activityCalories': ('activities_calories', CsvImporter.map_integer),
+        'sleep-minutesAfterWakeup': ('after_wakeup_mins', CsvImporter.map_integer),
+        'activities-minutesFairlyActive': ('fairly_active_mins', CsvImporter.map_integer),
+        'sleep-efficiency': ('sleep_efficiency', CsvImporter.map_integer),
+        'sleep-timeInBed': ('in_bed_mins', CsvImporter.map_integer),
+        'activities-minutesVeryActive': ('very_active_mins', CsvImporter.map_integer),
+        'body-weight': ('weight', CsvImporter.map_kgs),
+        'activities-minutesSedentary': ('sedentary_mins', CsvImporter.map_integer),
+        'activities-elevation': ('elevation', CsvImporter.map_meters),
+        'activities-minutesLightlyActive': ('lightly_active_mins', CsvImporter.map_integer),
+        'sleep-startTime': ('sleep_start', CsvImporter.map_time),
+        'activities-calories': ('calories', CsvImporter.map_integer),
+        'foods-log-water': ('log_water', CsvImporter.map_float),
+        'sleep-minutesAsleep': ('asleep_mins', CsvImporter.map_integer),
+        'body-bmi': ('bmi', CsvImporter.map_float),
+        'dateTime': ('day', CsvImporter.map_ymd_date),
+        'body-fat': ('body_fat', CsvImporter.map_float),
+        'sleep-awakeningsCount': ('awakenings_count', CsvImporter.map_integer),
+    }
+
+    def __init__(self, input_file, dbpath, english_units, debug):
         self.english_units = english_units
-        self.debug = debug
         if debug:
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.DEBUG)
 
-        self.input_file = input_file
+        self.fitbitdb = FitBitDB.FitBitDB(dbpath, debug)
+        self.csvimporter = CsvImporter(input_file, self.cols_map, self.write_entry)
 
-    @classmethod
-    def map_identity(cls, english_units, value):
-        return value
+    def write_entry(self, db_entry):
+        FitBitDB.DaysSummary.find_or_create(self.fitbitdb, db_entry)
 
-    @classmethod
-    def map_date(cls, english_units, date_string):
-        try:
-            return datetime.datetime.strptime(date_string, "%Y-%m-%d").date()
-        except Exception as e:
-            return None
-
-    @classmethod
-    def map_time(cls, english_units, time_string):
-        try:
-            return datetime.datetime.strptime(time_string, "%M:%S").time()
-        except Exception as e:
-            return None
-
-    @classmethod
-    def map_meters(cls, english_units, meters):
-        if english_units:
-            return float(meters) * 3.28084
-        return meters
-
-    @classmethod
-    def map_kgs(cls, english_units, meters):
-        if english_units:
-            return float(meters) * 2.20462
-        return meters
-
-    @classmethod
-    def convert_cols(cls, english_units, csv_col_dict):
-        cols_map = {
-            'sleep-minutesAwake': ('awake_mins', FitBitData.map_identity),
-            'activities-caloriesBMR': ('calories_bmr', FitBitData.map_identity),
-            'sleep-minutesToFallAsleep': ('to_fall_asleep_mins', FitBitData.map_identity),
-            'activities-floors': ('floors', FitBitData.map_identity),
-            'activities-steps': ('steps', FitBitData.map_identity),
-            'activities-distance': ('distance', FitBitData.map_identity),
-            'foods-log-caloriesIn': ('calories_in', FitBitData.map_identity),
-            'activities-activityCalories': ('activities_calories', FitBitData.map_identity),
-            'sleep-minutesAfterWakeup': ('after_wakeup_mins', FitBitData.map_identity),
-            'activities-minutesFairlyActive': ('fairly_active_mins', FitBitData.map_identity),
-            'sleep-efficiency': ('sleep_efficiency', FitBitData.map_identity),
-            'sleep-timeInBed': ('in_bed_mins', FitBitData.map_identity),
-            'activities-minutesVeryActive': ('very_active_mins', FitBitData.map_identity),
-            'body-weight': ('weight', FitBitData.map_kgs),
-            'activities-minutesSedentary': ('sedentary_mins', FitBitData.map_identity),
-            'activities-elevation': ('elevation', FitBitData.map_meters),
-            'activities-minutesLightlyActive': ('lightly_active_mins', FitBitData.map_identity),
-            'sleep-startTime': ('sleep_start', FitBitData.map_time),
-            'activities-calories': ('calories', FitBitData.map_identity),
-            'foods-log-water': ('log_water', FitBitData.map_identity),
-            'sleep-minutesAsleep': ('asleep_mins', FitBitData.map_identity),
-            'body-bmi': ('bmi', FitBitData.map_identity),
-            'dateTime': ('day', FitBitData.map_date),
-            'body-fat': ('body_fat', FitBitData.map_identity),
-            'sleep-awakeningsCount': ('awakenings_count', FitBitData.map_identity),
-        }
-        return {
-            (cols_map[key][0] if key in cols_map else key) :
-            (cols_map[key][1](english_units, value) if key in cols_map else value)
-            for key, value in csv_col_dict.items()
-        }
-
-    def process_files(self, dbpath):
-        fitbitdb = FitBitDB.FitBitDB(dbpath, self.debug)
-
-        if self.input_file:
-            logger.info("Reading file: " + self.input_file)
-            with open(self.input_file) as csv_file:
-                read_csv = csv.DictReader(csv_file, delimiter=',')
-                for row in read_csv:
-                    db_entry = self.convert_cols(self.english_units, row)
-                    #print "%s  -> %s" % (repr(row), repr(db_entry))
-                    FitBitDB.DaysSummary.find_or_create(fitbitdb, db_entry)
+    def process_files(self):
+        self.csvimporter.process_file(self.english_units)
 
 
 
@@ -137,8 +94,8 @@ def main(argv):
         print "Missing arguments:"
         usage(sys.argv[0])
 
-    fd = FitBitData(input_file, english_units, debug)
-    fd.process_files(dbpath)
+    fd = FitBitData(input_file, dbpath, english_units, debug)
+    fd.process_files()
 
 
 if __name__ == "__main__":

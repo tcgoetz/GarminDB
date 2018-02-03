@@ -27,8 +27,12 @@ class DB():
     query_errors = 0
     file_suffix = '.db'
 
-    def __init__(self, filename, debug=False):
-        url = "sqlite:///" + filename
+    def __init__(self, filename, debug=False, mysql_dict=None):
+        if mysql_dict:
+            url = ("mysql+pymysql://%s:%s@%s/%s" %
+                    (mysql_dict['username'], mysql_dict['password'], mysql_dict['host'], mysql_dict['dbname']))
+        else:
+            url = "sqlite:///" + filename
         logger.debug("DB %s debug %s " % (url, str(debug)))
         self.engine = create_engine(url, echo=debug)
         self.session_maker = sessionmaker(bind=self.engine)
