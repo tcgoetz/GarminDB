@@ -211,7 +211,7 @@ def main(argv):
     debug = False
 
     try:
-        opts, args = getopt.getopt(argv,"d:n:lm:p:s:tu:w", ["debug", "date=", "days=", "username=", "password=", "latest", "monitoring=", "sqlite=", "weight"])
+        opts, args = getopt.getopt(argv,"d:n:lm:p:s:tu:w", ["debug", "date=", "days=", "username=", "password=", "latest", "monitoring=", "mysql=", "sqlite=", "weight"])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -245,13 +245,20 @@ def main(argv):
             logging.debug("Sqlite DB path: %s" % arg)
             db_params_dict['db_type'] = 'sqlite'
             db_params_dict['db_path'] = arg
+        elif opt in ("--mysql"):
+            logging.debug("Mysql DB string: %s" % arg)
+            db_args = arg.split(',')
+            db_params_dict['db_type'] = 'mysql'
+            db_params_dict['db_username'] = db_args[0]
+            db_params_dict['db_password'] = db_args[1]
+            db_params_dict['db_host'] = db_args[2]
 
     if debug:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
 
-    if ((not date or not days) and not latest) or not username or not password or (not monitoring and not weight):
+    if ((not date or not days) and not latest) or not username or not password or (not monitoring and not weight) or len(db_params_dict) == 0:
         print "Missing arguments:"
         usage(sys.argv[0])
 

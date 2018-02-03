@@ -110,7 +110,7 @@ def main(argv):
     db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"d:ei:s:t", ["trace", "english", "input_dir=", "input_file=","sqlite="])
+        opts, args = getopt.getopt(argv,"d:eim::s:t", ["trace", "english", "input_dir=", "input_file=", "mysql=", "sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -130,13 +130,20 @@ def main(argv):
             logging.debug("Sqlite DB path: %s" % arg)
             db_params_dict['db_type'] = 'sqlite'
             db_params_dict['db_path'] = arg
+        elif opt in ("-m", "--mysql"):
+            logging.debug("Mysql DB string: %s" % arg)
+            db_args = arg.split(',')
+            db_params_dict['db_type'] = 'mysql'
+            db_params_dict['db_username'] = db_args[0]
+            db_params_dict['db_password'] = db_args[1]
+            db_params_dict['db_host'] = db_args[2]
 
     if debug:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
 
-    if not (input_file or input_dir) or not (db_params_dict['db_path']):
+    if not (input_file or input_dir) or len(db_params_dict) == 0:
         print "Missing arguments:"
         usage(sys.argv[0])
 
