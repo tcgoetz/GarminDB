@@ -10,6 +10,7 @@ import os, sys, getopt, re, string, logging, datetime, traceback
 import Fit
 import GarminDB
 
+logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__file__)
 
@@ -30,10 +31,7 @@ class GarminFitData():
             logger.info("Reading directory: " + input_dir)
             file_names = self.dir_to_fit_files(input_dir)
             for file_name in file_names:
-                fit_file = Fit.File(file_name, english_units)
-                self.fitfiles.append(fit_file)
-                logger.info("%s message types: %s" % (file_name, fit_file.message_types()))
-
+                self.fitfiles.append(Fit.File(file_name, english_units))
 
     def dir_to_fit_files(self, input_dir):
         file_names = []
@@ -51,60 +49,15 @@ class GarminFitData():
             GarminDB.Attributes.set(garmindb, 'units', 'english')
         else:
             GarminSqlite.Attributes.set(garmindb, 'units', 'metric')
-        for fit_file in self.fitfiles:
-            GarminDB.File.find_or_create(garmindb, {'name' : fit_file.filename, 'type' : fit_file.type()})
-            stress_messages = fit_file['stress_level']
-            if stress_messages:
-                for stress_message in stress_messages:
-                    timestamp = stress_message['stress_level_time'].value()
-                    stress = stress_message['stress_level_value'].value()
-                    GarminDB.Stress.find_or_create(garmindb, {'timestamp' : timestamp, 'stress' : stress})
-
-    def write_monitoring_info(self, garmindb, mondb):
-        monitoring_info = Fit.MonitoringInfoOutputData(self.fitfiles)
-        for entry in monitoring_info.fields():
-            entry['file_id'] = GarminDB.File.find_id(garmindb, {'name' : entry['filename']})
-            GarminDB.MonitoringInfo.find_or_create(mondb, entry)
-
-    def write_monitoring_entry(self, mondb, entry):
-        if GarminDB.MonitoringHeartRate.matches(entry):
-            GarminDB.MonitoringHeartRate.find_or_create(mondb, entry)
-        elif GarminDB.MonitoringIntensityMins.matches(entry):
-            GarminDB.MonitoringIntensityMins.find_or_create(mondb, entry)
-        elif GarminDB.MonitoringClimb.matches(entry):
-            GarminDB.MonitoringClimb.find_or_create(mondb, entry)
-        else:
-            GarminDB.Monitoring.find_or_create(mondb, entry)
-
-    def write_monitoring(self, mondb):
-        monitoring = Fit.MonitoringOutputData(self.fitfiles)
-        entries = monitoring.fields()
-        for entry in entries:
-            try:
-                self.write_monitoring_entry(mondb, entry)
-            except ValueError as e:
-                logger.info("ValueError on entry: %s" % repr(entry))
-            except Exception as e:
-                logger.info("Exception on entry: %s" % repr(entry))
-                raise
-        logger.info("Wrote %d entries" % len(entries))
-
-    def write_device_data(self, garmindb, mondb):
-        device_data = Fit.DeviceOutputData(self.fitfiles)
-        for entry in device_data.fields():
-            GarminDB.Device.find_or_create(mondb, entry)
-
-            entry['file_id'] = GarminDB.File.find_id(garmindb, {'name' : entry['filename']})
-            GarminDB.DeviceInfo.find_or_create(mondb, entry)
+        for file in self.fitfiles:
+            GarminDB.File.find_or_create(garmindb, {'name' : file.filename, 'type' : file.type()})
 
     def process_files(self, db_params_dict):
         garmindb = GarminDB.GarminDB(db_params_dict, self.debug)
         self.write_garmin(garmindb, self.english_units)
 
-        mondb = GarminDB.MonitoringDB(db_params_dict, self.debug)
-        self.write_device_data(garmindb, mondb)
-        self.write_monitoring_info(garmindb, mondb)
-        self.write_monitoring(mondb)
+        activit = GarminDB.ActivitiesDB(db_params_dict, self.debug)
+
 
 
 def usage(program):
@@ -151,9 +104,9 @@ def main(argv):
             db_params_dict['db_host'] = db_args[2]
 
     if debug:
-        logger.setLevel(logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG)
     else:
-        logger.setLevel(logging.INFO)
+        logging.basicConfig(level=logging.INFO)
 
     if not (input_file or input_dir) or len(db_params_dict) == 0:
         print "Missing arguments:"

@@ -10,6 +10,8 @@ OLD_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/2017_Monitoring
 MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/2018_Monitoring
 MEW_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/Incoming
 
+ACTIVITES_FIT_FILES_DIR=$(FIT_FILE_DIR)/Activities
+
 BIN_DIR=$(PWD)/bin
 
 TEST_DB=$(TMPDIR)/test.db
@@ -27,6 +29,12 @@ $(DB_DIR):
 
 $(BACKUP_DIR):
 	mkdir -p $(BACKUP_DIR)
+
+$(MONITORING_FIT_FILES_DIR):
+	mkdir -p $(MONITORING_FIT_FILES_DIR)
+
+$(ACTIVITES_FIT_FILES_DIR):
+	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
 
 GECKO_DRIVER_URL=https://github.com/mozilla/geckodriver/releases/download/v0.19.1/
 ifeq ($(OS), Darwin)
@@ -86,8 +94,8 @@ test_monitoring_file: $(TEST_DB_PATH)
 clean_monitoring:
 	rm -f $(DB_DIR)/garmin_monitoring.db
 
-scrape_monitoring: $(DB_DIR)
-	python scrape_garmin.py -d $(GC_MON_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
+scrape_monitoring: $(DB_DIR) $(MONITORING_FIT_FILES_DIR)
+	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
 
 import_monitoring: $(DB_DIR)
 	python import_garmin_fit.py -e --input_dir "$(OLD_MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR)
@@ -103,10 +111,13 @@ import_new_monitoring: scrape_new_monitoring
 	fi
 
 scrape_weight: $(DB_DIR)
-	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD)  -w "$(DB_DIR)"
+	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD)  -w
 
 scrape_new_weight: $(DB_DIR)
-	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD)  -w "$(DB_DIR)"
+	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD)  -w
+
+import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
+	python import_garmin_activities.py -t -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
 
 clean_garmin_summary:
 	rm -f $(DB_DIR)/garmin_summary.db
@@ -118,6 +129,7 @@ garmin_summary:
 new_garmin: import_new_monitoring clean_garmin_summary garmin_summary
 
 clean_garmin: clean_garmin_summary clean_monitoring
+	rm -f $(DB_DIR)/garmin.db
 
 
 #

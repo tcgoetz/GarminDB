@@ -20,22 +20,8 @@ class GarminSummaryDB(DB):
         GarminSummaryDB.Base.metadata.create_all(self.engine)
 
 
-class Summary(GarminSummaryDB.Base, DBObject):
+class Summary(GarminSummaryDB.Base, KeyValueObject):
     __tablename__ = 'summary'
-
-    name = Column(String, primary_key=True)
-    value = Column(String)
-
-    _relational_mappings = {}
-    col_translations = {
-        'value' : str,
-    }
-    min_row_values = 2
-    _updateable_fields = []
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.name == values_dict['name'])
 
 
 class SummaryBase(DBObject):

@@ -20,7 +20,7 @@ class Analyze():
         self.mondb = GarminDB.MonitoringDB(db_params_dict)
         self.garminsumdb = GarminDB.GarminSummaryDB(db_params_dict)
         self.sumdb = HealthDB.SummaryDB(db_params_dict)
-        units = GarminDB.Attributes.find_one(self.garmindb, {'name' : 'units'})
+        units = GarminDB.Attributes.get(self.garmindb, 'units')
         if units.value == 'english':
             self.english_units = True
         else:
@@ -28,12 +28,12 @@ class Analyze():
 
     def get_years(self):
         years = GarminDB.Monitoring.get_years(self.mondb)
-        GarminDB.Summary.create_or_update(self.garminsumdb, {'name' : 'years', 'value' : len(years)})
+        GarminDB.Summary.set(self.garminsumdb, 'years', len(years))
         print "Years (%d): %s" % (len(years), str(years))
 
     def get_months(self, year):
         months = GarminDB.Monitoring.get_month_names(self.mondb, year)
-        GarminDB.Summary.create_or_update(self.garminsumdb, {'name' : year + '_months', 'value' : len(months)})
+        GarminDB.Summary.set(self.garminsumdb, year + '_months', len(months))
         print "%s Months (%d): %s" % (year, len(months) , str(months))
 
     def get_days(self, year):
@@ -46,8 +46,8 @@ class Analyze():
             span = last_day - first_day + 1
         else:
             span = 0
-        GarminDB.Summary.create_or_update(self.garminsumdb, {'name' : year + '_days', 'value' : days_count})
-        GarminDB.Summary.create_or_update(self.garminsumdb, {'name' : year + '_days_span', 'value' : span})
+        GarminDB.Summary.set(self.garminsumdb, year + '_days', days_count)
+        GarminDB.Summary.set(self.garminsumdb, year + '_days_span', span)
         print "%d Days (%d vs %d): %s" % (year_int, days_count, span, str(days))
         for index in xrange(days_count - 1):
             day = int(days[index])

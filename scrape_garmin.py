@@ -193,7 +193,7 @@ class Scrape():
 
 def usage(program):
     print '%s -d [<date> -n <days> | -l <path to dbs>] -u <username> -p <password> [-m <outdir> | -w <outdir>]' % program
-    print '  -d <date> -n <days> fetch n days of monitoring data starting at date'
+    print '  -d <date ex: 01/21/2018> -n <days> fetch n days of monitoring data starting at date'
     print '  -l check the garmin DB and find out what the most recent date is and fetch monitoring data from that date on'
     print '  -m <outdir> fetches the daily monitoring FIT files for each day specified, unzips them, and puts them in outdit'
     print '  -w  fetches the daily weight data for each day specified and puts them in the DB'
@@ -266,11 +266,15 @@ def main(argv):
         if monitoring:
             mondb = GarminDB.MonitoringDB(db_params_dict)
             last_ts = GarminDB.Monitoring.latest_time(mondb)
+            logger.info("Automatically downloading monitoring data from: " + str(last_ts))
         elif weight:
             garmindb = GarminDB.GarminDB(db_params_dict)
             last_ts = GarminDB.Weight.latest_time(garmindb)
+            logger.info("Automatically downloading weight data from: " + str(last_ts))
         if last_ts is None:
-            date = datetime.datetime.now().date() - datetime.timedelta(365 * 2)
+            days = 365 * 2
+            date = datetime.datetime.now().date() - datetime.timedelta(days)
+            logger.info("Automatic date not found, using: " + str(date))
         else:
             # start from the day after the last day in the DB
             date = last_ts.date() + datetime.timedelta(1)

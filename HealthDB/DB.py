@@ -338,3 +338,27 @@ class DBObject():
         col_value = self.__dict__[col_name]
         return ("<%s(%s=%s)>" % (classname, col.name, col_value))
 
+
+class KeyValueObject(DBObject):
+
+    key = Column(String, primary_key=True)
+    value = Column(String)
+
+    col_translations = {
+        'value' : str,
+    }
+    min_row_values = 2
+    _updateable_fields = ['value']
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return  session.query(cls).filter(cls.key == values_dict['key'])
+
+    @classmethod
+    def get(cls, db, key):
+        return cls.find_one(db, {'key' : key})
+
+    @classmethod
+    def set(cls, db, key, value):
+        return cls.create_or_update(db, {'key' : key, 'value' : value})
+
