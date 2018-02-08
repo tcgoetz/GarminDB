@@ -43,12 +43,52 @@ class FileType(GarminDB.Base, DBObject):
         return cls.find_or_create_id(db, {'name' : name})
 
 
+class Device(GarminDB.Base, DBObject):
+    __tablename__ = 'devices'
+
+    serial_number = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime)
+    manufacturer = Column(String)
+    product = Column(String)
+    hardware_version = Column(String)
+
+    min_row_values = 2
+    _updateable_fields = ['hardware_version']
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return  session.query(cls).filter(cls.serial_number == values_dict['serial_number'])
+
+    @classmethod
+    def get(cls, db, serial_number):
+        return cls.find_id(db, {'serial_number' : serial_number})
+
+
+class DeviceInfo(GarminDB.Base, DBObject):
+    __tablename__ = 'device_info'
+
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime)
+    file_id = Column(Integer, ForeignKey('files.id'))
+    serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
+    software_version = Column(String)
+    cum_operating_time = Column(Integer)
+    battery_voltage = Column(String)
+
+    min_row_values = 3
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
+
+
 class File(GarminDB.Base, DBObject):
     __tablename__ = 'files'
 
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
     type_id = Column(Integer)
+    serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
 
     _relational_mappings = {
         'type' : ('type_id', FileType.get_id)
@@ -61,6 +101,10 @@ class File(GarminDB.Base, DBObject):
     @classmethod
     def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.name == values_dict['name'])
+
+    @classmethod
+    def get(cls, db, name):
+        return cls.find_id(db, {'name' : DBObject.filename_from_pathname(name)})
 
 
 class Weight(GarminDB.Base, DBObject):

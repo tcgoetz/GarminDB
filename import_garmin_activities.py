@@ -8,10 +8,11 @@ import os, sys, getopt, re, string, logging, datetime, traceback
 
 
 import Fit
-import GarminDB
+#import GarminDB
+import FitFileProcessor
 
-logging.basicConfig(level=logging.INFO)
 
+root_logger = logging.getLogger()
 logger = logging.getLogger(__file__)
 
 
@@ -22,18 +23,12 @@ class GarminFitData():
         self.debug = debug
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
 
-        self.fitfiles = []
-
         if input_file:
             logger.info("Reading file: " + input_file)
-            self.fitfiles.append(Fit.File(input_file, english_units))
+            self.file_names = [input_file]
         if input_dir:
             logger.info("Reading directory: " + input_dir)
-            file_names = self.dir_to_fit_files(input_dir)
-            for file_name in file_names:
-                fit_file = Fit.File(file_name, english_units)
-                self.fitfiles.append(fit_file)
-                logger.info("%s message types: %s" % (file_name, fit_file.message_types()))
+            self.file_names = self.dir_to_fit_files(input_dir)
 
     def dir_to_fit_files(self, input_dir):
         file_names = []
@@ -44,22 +39,12 @@ class GarminFitData():
         return file_names
 
     def fit_file_count(self):
-        return len(self.fitfiles)
-
-    def write_garmin(self, garmindb, english_units):
-        if english_units:
-            GarminDB.Attributes.set(garmindb, 'units', 'english')
-        else:
-            GarminSqlite.Attributes.set(garmindb, 'units', 'metric')
-        for file in self.fitfiles:
-            GarminDB.File.find_or_create(garmindb, {'name' : file.filename, 'type' : file.type()})
+        return len(self.file_names)
 
     def process_files(self, db_params_dict):
-        garmindb = GarminDB.GarminDB(db_params_dict, self.debug)
-        self.write_garmin(garmindb, self.english_units)
-
-        activit = GarminDB.ActivitiesDB(db_params_dict, self.debug)
-
+        fp = FitFileProcessor.FitFileProcessor(db_params_dict, self.english_units, self.debug)
+        for file_name in self.file_names:
+            fp.write_file(Fit.File(file_name, self.english_units))
 
 
 def usage(program):
@@ -106,9 +91,9 @@ def main(argv):
             db_params_dict['db_host'] = db_args[2]
 
     if debug:
-        logging.basicConfig(level=logging.DEBUG)
+        root_logger.setLevel(logging.DEBUG)
     else:
-        logging.basicConfig(level=logging.INFO)
+        root_logger.setLevel(logging.INFO)
 
     if not (input_file or input_dir) or len(db_params_dict) == 0:
         print "Missing arguments:"

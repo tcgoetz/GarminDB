@@ -127,6 +127,9 @@ scrape_new_weight: $(DB_DIR)
 import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
 
+clean_activities:
+	rm -f $(DB_DIR)/garmin_activities.db
+
 clean_garmin_summary:
 	rm -f $(DB_DIR)/garmin_summary.db
 

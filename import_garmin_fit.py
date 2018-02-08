@@ -8,9 +8,11 @@ import os, sys, getopt, re, string, logging, datetime, traceback
 
 
 import Fit
-import GarminDB
+#import GarminDB
+import FitFileProcessor
 
 
+root_logger = logging.getLogger()
 logger = logging.getLogger(__file__)
 
 
@@ -21,19 +23,12 @@ class GarminFitData():
         self.debug = debug
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
 
-        self.fitfiles = []
-
         if input_file:
             logger.info("Reading file: " + input_file)
-            self.fitfiles.append(Fit.File(input_file, english_units))
+            self.file_names = [input_file]
         if input_dir:
             logger.info("Reading directory: " + input_dir)
-            file_names = self.dir_to_fit_files(input_dir)
-            for file_name in file_names:
-                fit_file = Fit.File(file_name, english_units)
-                self.fitfiles.append(fit_file)
-                logger.info("%s message types: %s" % (file_name, fit_file.message_types()))
-
+            self.file_names = self.dir_to_fit_files(input_dir)
 
     def dir_to_fit_files(self, input_dir):
         file_names = []
@@ -44,69 +39,13 @@ class GarminFitData():
         return file_names
 
     def fit_file_count(self):
-        return len(self.fitfiles)
-
-    def write_garmin(self, garmindb, english_units):
-        if english_units:
-            GarminDB.Attributes.set(garmindb, 'units', 'english')
-        else:
-            GarminSqlite.Attributes.set(garmindb, 'units', 'metric')
-        for fit_file in self.fitfiles:
-            GarminDB.File.find_or_create(garmindb, {'name' : fit_file.filename, 'type' : fit_file.type()})
-            stress_messages = fit_file['stress_level']
-            if stress_messages:
-                for stress_message in stress_messages:
-                    timestamp = stress_message['stress_level_time'].value()
-                    stress = stress_message['stress_level_value'].value()
-                    GarminDB.Stress.find_or_create(garmindb, {'timestamp' : timestamp, 'stress' : stress})
-
-    def write_monitoring_info(self, garmindb, mondb):
-        monitoring_info = Fit.MonitoringInfoOutputData(self.fitfiles)
-        for entry in monitoring_info.fields():
-            entry['file_id'] = GarminDB.File.find_id(garmindb, {'name' : entry['filename']})
-            GarminDB.MonitoringInfo.find_or_create(mondb, entry)
-
-    def write_monitoring_entry(self, mondb, entry):
-        if GarminDB.MonitoringHeartRate.matches(entry):
-            GarminDB.MonitoringHeartRate.find_or_create(mondb, entry)
-        elif GarminDB.MonitoringIntensityMins.matches(entry):
-            GarminDB.MonitoringIntensityMins.find_or_create(mondb, entry)
-        elif GarminDB.MonitoringClimb.matches(entry):
-            GarminDB.MonitoringClimb.find_or_create(mondb, entry)
-        else:
-            GarminDB.Monitoring.find_or_create(mondb, entry)
-
-    def write_monitoring(self, mondb):
-        for fit_file in self.fitfiles:
-            monitoring_messages = fit_file['monitoring']
-            if monitoring_messages:
-                for message in monitoring_messages:
-                    entry = message.parsed()
-                    try:
-                        self.write_monitoring_entry(mondb, entry)
-                    except ValueError as e:
-                        logger.info("ValueError on entry: %s" % repr(entry))
-                    except Exception as e:
-                        logger.info("Exception on entry: %s" % repr(entry))
-                        raise
-                logger.info("Processed %d entries for %s" % (len(monitoring_messages), fit_file.filename))
-
-    def write_device_data(self, garmindb, mondb):
-        device_data = Fit.DeviceOutputData(self.fitfiles)
-        for entry in device_data.fields():
-            GarminDB.Device.find_or_create(mondb, entry)
-
-            entry['file_id'] = GarminDB.File.find_id(garmindb, {'name' : entry['filename']})
-            GarminDB.DeviceInfo.find_or_create(mondb, entry)
+        return len(self.file_names)
 
     def process_files(self, db_params_dict):
-        garmindb = GarminDB.GarminDB(db_params_dict, self.debug)
-        self.write_garmin(garmindb, self.english_units)
+        fp = FitFileProcessor.FitFileProcessor(db_params_dict, self.english_units, self.debug)
+        for file_name in self.file_names:
+            fp.write_file(Fit.File(file_name, self.english_units))
 
-        mondb = GarminDB.MonitoringDB(db_params_dict, self.debug)
-        self.write_device_data(garmindb, mondb)
-        self.write_monitoring_info(garmindb, mondb)
-        self.write_monitoring(mondb)
 
 
 def usage(program):
@@ -153,12 +92,12 @@ def main(argv):
             db_params_dict['db_host'] = db_args[2]
 
     if debug:
-        logger.setLevel(logging.DEBUG)
+        root_logger.setLevel(logging.DEBUG)
     else:
-        logger.setLevel(logging.INFO)
+        root_logger.setLevel(logging.INFO)
 
     if not (input_file or input_dir) or len(db_params_dict) == 0:
-        print "Missing arguments:"
+        print "Missing or incorrect arguments:"
         usage(sys.argv[0])
 
     gd = GarminFitData(input_file, input_dir, english_units, debug)
