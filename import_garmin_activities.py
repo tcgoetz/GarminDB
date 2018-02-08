@@ -10,7 +10,7 @@ import os, sys, getopt, re, string, logging, datetime, traceback
 import Fit
 import GarminDB
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__file__)
 
@@ -31,7 +31,9 @@ class GarminFitData():
             logger.info("Reading directory: " + input_dir)
             file_names = self.dir_to_fit_files(input_dir)
             for file_name in file_names:
-                self.fitfiles.append(Fit.File(file_name, english_units))
+                fit_file = Fit.File(file_name, english_units)
+                self.fitfiles.append(fit_file)
+                logger.info("%s message types: %s" % (file_name, fit_file.message_types()))
 
     def dir_to_fit_files(self, input_dir):
         file_names = []
