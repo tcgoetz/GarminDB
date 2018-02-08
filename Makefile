@@ -78,6 +78,14 @@ backup: $(BACKUP_DIR)
 clean_summary:
 	rm -f $(DB_DIR)/summary.db
 
+clean_all: clean_mshealth clean_fitbit clean_garmin clean_summary
+
+rebuild_dbs: clean_all import_all summary
+
+import_all: import_mshealth_file import_healthvault_file import_fitbit_file import_monitoring
+
+summary: mshealth_summary fitbit_summary garmin_summary
+
 
 #
 # Garmin

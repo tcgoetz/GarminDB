@@ -77,17 +77,19 @@ class GarminFitData():
             GarminDB.Monitoring.find_or_create(mondb, entry)
 
     def write_monitoring(self, mondb):
-        monitoring = Fit.MonitoringOutputData(self.fitfiles)
-        entries = monitoring.fields()
-        for entry in entries:
-            try:
-                self.write_monitoring_entry(mondb, entry)
-            except ValueError as e:
-                logger.info("ValueError on entry: %s" % repr(entry))
-            except Exception as e:
-                logger.info("Exception on entry: %s" % repr(entry))
-                raise
-        logger.info("Wrote %d entries" % len(entries))
+        for fit_file in self.fitfiles:
+            monitoring_messages = fit_file['monitoring']
+            if monitoring_messages:
+                for message in monitoring_messages:
+                    entry = message.parsed()
+                    try:
+                        self.write_monitoring_entry(mondb, entry)
+                    except ValueError as e:
+                        logger.info("ValueError on entry: %s" % repr(entry))
+                    except Exception as e:
+                        logger.info("Exception on entry: %s" % repr(entry))
+                        raise
+                logger.info("Processed %d entries for %s" % (len(monitoring_messages), fit_file.filename))
 
     def write_device_data(self, garmindb, mondb):
         device_data = Fit.DeviceOutputData(self.fitfiles)
