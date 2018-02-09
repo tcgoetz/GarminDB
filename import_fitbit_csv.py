@@ -98,7 +98,7 @@ def main(argv):
     else:
         logger.setLevel(logging.INFO)
 
-    if not input_file or len(db_params_dict) == 0):
+    if not input_file or len(db_params_dict) == 0:
         print "Missing arguments:"
         usage(sys.argv[0])
 

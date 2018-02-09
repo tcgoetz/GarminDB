@@ -35,10 +35,10 @@ class FitFileProcessor():
             function(fit_file, messages)
             logger.debug("Processed %d %s entries for %s" % (len(messages), message_type, fit_file.filename))
         except AttributeError:
-            logger.warning("No handler for message type %s (%d) from %s" % (message_type, len(messages), fit_file.filename))
+            logger.warning("No handler for message type %s (%d) from %s: %s" % (message_type, len(messages), fit_file.filename, str(messages[0])))
 
     def write_message_types(self, fit_file, message_types):
-        logger.info("%s message types: %s" % (fit_file.filename, message_types))
+        logger.info("%s [%s] message types: %s" % (fit_file.filename, fit_file.type(), message_types))
         #
         # Some ordering is import: 1. create new file entries 2. create new device entries
         #
@@ -75,19 +75,15 @@ class FitFileProcessor():
         for message in file_id_messages:
             self.write_file_id_entry(fit_file, message)
 
-    def write_stress(self, fit_file, stress_messages):
-        for fit_file in self.fitfiles:
-            GarminDB.File.find_or_create(self.garmin_db, {'name' : fit_file.filename, 'type' : fit_file.type()})
-            stress_messages = fit_file['stress_level']
-            if stress_messages:
-                for stress_message in stress_messages:
-                    timestamp = stress_message['stress_level_time'].value()
-                    stress = stress_message['stress_level_value'].value()
-                    GarminDB.Stress.find_or_create(self.garmin_db, {'timestamp' : timestamp, 'stress' : stress})
+    def write_stress_level(self, fit_file, stress_messages):
+        for stress_message in stress_messages:
+            timestamp = stress_message['stress_level_time'].value()
+            stress = stress_message['stress_level_value'].value()
+            GarminDB.Stress.find_or_create(self.garmin_db, {'timestamp' : timestamp, 'stress' : stress})
 
     def write_event(self, fit_file, event_messages):
         for message in event_messages:
-            logger.info("event message: " + repr(message.parsed()))
+            logger.debug("event message: " + repr(message.parsed()))
 
     def write_software(self, fit_file, software_messages):
         for message in software_messages:
