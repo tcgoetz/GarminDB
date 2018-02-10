@@ -24,34 +24,6 @@ class Summary(GarminSummaryDB.Base, KeyValueObject):
     __tablename__ = 'summary'
 
 
-class SummaryBase(DBObject):
-    hr_avg = Column(Float)
-    hr_min = Column(Float)
-    hr_max = Column(Float)
-    weight_avg = Column(Float)
-    weight_min = Column(Float)
-    weight_max = Column(Float)
-    stress_avg = Column(Float)
-    stress_min = Column(Float)
-    stress_max = Column(Float)
-    intensity_mins = Column(Integer)
-    moderate_activity_mins = Column(Integer)
-    vigorous_activity_mins = Column(Integer)
-    steps = Column(Integer)
-    floors = Column(Float)
-
-    _relational_mappings = {}
-    col_translations = {}
-    min_row_values = 1
-    _updateable_fields = [
-        'hr_avg', 'hr_min', 'hr_max',
-        'weight_avg', 'weight_min', 'weight_max',
-        'stress_avg', 'stress_min', 'stress_max',
-        'intensity_mins', 'moderate_activity_mins', 'vigorous_activity_mins',
-        'steps', 'floors'
-    ]
-
-
 class MonthsSummary(GarminSummaryDB.Base, SummaryBase):
     __tablename__ = 'months_summary'
 
@@ -81,4 +53,44 @@ class DaysSummary(GarminSummaryDB.Base, SummaryBase):
     def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.day == values_dict['day'])
 
+
+class RestingHeartRate(GarminSummaryDB.Base, DBObject):
+    __tablename__ = 'resting_hr'
+
+    day = Column(Date, primary_key=True)
+    resting_heart_rate = Column(Float)
+
+    time_col = synonym("day")
+    min_row_values = 2
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.day == values_dict['day'])
+
+    @classmethod
+    def get_stats(cls, db, start_ts, end_ts):
+        stats = {
+            'rhr_avg' : cls.get_col_avg(db, cls.resting_heart_rate, start_ts, end_ts, True),
+            'rhr_min' : cls.get_col_min(db, cls.resting_heart_rate, start_ts, end_ts, True),
+            'rhr_max' : cls.get_col_max(db, cls.resting_heart_rate, start_ts, end_ts),
+        }
+        return stats
+
+    @classmethod
+    def get_daily_stats(cls, db, day_ts):
+        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
+        stats['day'] = day_ts
+        return stats
+
+    @classmethod
+    def get_weekly_stats(cls, db, first_day_ts):
+        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats['first_day'] = first_day_ts
+        return stats
+
+    @classmethod
+    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
+        stats = cls.get_stats(db, first_day_ts, last_day_ts)
+        stats['first_day'] = first_day_ts
+        return stats
 

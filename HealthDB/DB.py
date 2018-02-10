@@ -355,10 +355,49 @@ class KeyValueObject(DBObject):
         return  session.query(cls).filter(cls.key == values_dict['key'])
 
     @classmethod
-    def get(cls, db, key):
-        return cls.find_one(db, {'key' : key})
+    def set(cls, db, key, value):
+        return cls.create_or_update(db, {'key' : key, 'value' : str(value)})
 
     @classmethod
-    def set(cls, db, key, value):
-        return cls.create_or_update(db, {'key' : key, 'value' : value})
+    def get(cls, db, key):
+        try:
+            return cls.find_one(db, {'key' : key}).value
+        except Exception:
+            return None
+
+    @classmethod
+    def get_time(cls, db, key):
+        return datetime.datetime.strptime(cls.get(db, key), "%H:%M:%S").time()
+
+
+class SummaryBase(DBObject):
+    hr_avg = Column(Float)
+    hr_min = Column(Float)
+    hr_max = Column(Float)
+    rhr_avg = Column(Float)
+    rhr_min = Column(Float)
+    rhr_max = Column(Float)
+    weight_avg = Column(Float)
+    weight_min = Column(Float)
+    weight_max = Column(Float)
+    stress_avg = Column(Float)
+    stress_min = Column(Float)
+    stress_max = Column(Float)
+    intensity_mins = Column(Integer)
+    moderate_activity_mins = Column(Integer)
+    vigorous_activity_mins = Column(Integer)
+    steps = Column(Integer)
+    floors = Column(Float)
+
+    _relational_mappings = {}
+    col_translations = {}
+    min_row_values = 1
+    _updateable_fields = [
+        'hr_avg', 'hr_min', 'hr_max',
+        'rhr_avg', 'rhr_min', 'rhr_max',
+        'weight_avg', 'weight_min', 'weight_max',
+        'stress_avg', 'stress_min', 'stress_max',
+        'intensity_mins', 'moderate_activity_mins', 'vigorous_activity_mins',
+        'steps', 'floors'
+    ]
 

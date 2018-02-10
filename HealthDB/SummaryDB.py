@@ -24,25 +24,6 @@ class Summary(SummaryDB.Base, KeyValueObject):
     __tablename__ = 'summary'
 
 
-class SummaryBase(DBObject):
-    hr_avg = Column(Float)
-    hr_min = Column(Float)
-    hr_max = Column(Float)
-    weight_avg = Column(Float)
-    weight_min = Column(Float)
-    weight_max = Column(Float)
-    stress_avg = Column(Float)
-    stress_min = Column(Float)
-    stress_max = Column(Float)
-    intensity_mins = Column(Integer)
-    moderate_activity_mins = Column(Integer)
-    vigorous_activity_mins = Column(Integer)
-    steps = Column(Integer)
-    floors = Column(Integer)
-
-    min_row_values = 1
-
-
 class MonthsSummary(SummaryDB.Base, SummaryBase):
     __tablename__ = 'months_summary'
 

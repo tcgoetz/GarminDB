@@ -10,6 +10,7 @@ import HealthDB
 import GarminDB
 
 
+root_logger = logging.getLogger()
 logger = logging.getLogger(__file__)
 
 
@@ -21,20 +22,24 @@ class Analyze():
         self.garminsumdb = GarminDB.GarminSummaryDB(db_params_dict)
         self.sumdb = HealthDB.SummaryDB(db_params_dict)
         units = GarminDB.Attributes.get(self.garmindb, 'units')
-        if units.value == 'english':
+        if units == 'english':
             self.english_units = True
         else:
             self.english_units = False
 
+    def set_sleep_period(self, sleep_period_start, sleep_period_stop):
+        GarminDB.Attributes.set(self.garmindb, 'sleep_period_start', sleep_period_start)
+        GarminDB.Attributes.set(self.garmindb, 'sleep_period_stop', sleep_period_stop)
+
     def get_years(self):
         years = GarminDB.Monitoring.get_years(self.mondb)
         GarminDB.Summary.set(self.garminsumdb, 'years', len(years))
-        print "Years (%d): %s" % (len(years), str(years))
+        logger.info("Years (%d): %s" % (len(years), str(years)))
 
     def get_months(self, year):
         months = GarminDB.Monitoring.get_month_names(self.mondb, year)
         GarminDB.Summary.set(self.garminsumdb, year + '_months', len(months))
-        print "%s Months (%d): %s" % (year, len(months) , str(months))
+        logger.info("%s Months (%d): %s" % (year, len(months) , str(months)))
 
     def get_days(self, year):
         year_int = int(year)
@@ -48,22 +53,32 @@ class Analyze():
             span = 0
         GarminDB.Summary.set(self.garminsumdb, year + '_days', days_count)
         GarminDB.Summary.set(self.garminsumdb, year + '_days_span', span)
-        print "%d Days (%d vs %d): %s" % (year_int, days_count, span, str(days))
+        logger.info("%d Days (%d vs %d): %s" % (year_int, days_count, span, str(days)))
         for index in xrange(days_count - 1):
             day = int(days[index])
             next_day = int(days[index + 1])
             if next_day != day + 1:
                 day_str = str(HealthDB.day_of_the_year_to_datetime(year_int, day))
                 next_day_str = str(HealthDB.day_of_the_year_to_datetime(year_int, next_day))
-                print "Days gap between %d (%s) and %d (%s)" % (day, day_str, next_day, next_day_str)
+                logger.info("Days gap between %d (%s) and %d (%s)" % (day, day_str, next_day, next_day_str))
+
+    def calculate_resting_heartrate(self, day_date, sleep_period_stop):
+        start_ts = datetime.datetime.combine(day_date, sleep_period_stop)
+        rhr = GarminDB.MonitoringHeartRate.get_resting_heartrate(self.mondb, start_ts)
+        if rhr:
+            GarminDB.RestingHeartRate.create_or_update(self.garminsumdb, {'day' : day_date, 'resting_heart_rate' : rhr})
 
     def summary(self):
+        sleep_period_stop = GarminDB.Attributes.get_time(self.garmindb, 'sleep_period_stop')
+
         years = GarminDB.Monitoring.get_years(self.mondb)
         for year in years:
             days = GarminDB.Monitoring.get_days(self.mondb, year)
             for day in days:
                 day_ts = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
+                self.calculate_resting_heartrate(day_ts, sleep_period_stop)
                 stats = GarminDB.MonitoringHeartRate.get_daily_stats(self.mondb, day_ts)
+                stats.update(GarminDB.RestingHeartRate.get_daily_stats(self.garminsumdb, day_ts))
                 stats.update(GarminDB.Weight.get_daily_stats(self.garmindb, day_ts))
                 stats.update(GarminDB.Stress.get_daily_stats(self.garmindb, day_ts))
                 stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.mondb, day_ts, self.english_units))
@@ -74,6 +89,7 @@ class Analyze():
             for week_starting_day in xrange(1, 365, 7):
                 day_ts = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
                 stats = GarminDB.MonitoringHeartRate.get_weekly_stats(self.mondb, day_ts)
+                stats.update(GarminDB.RestingHeartRate.get_weekly_stats(self.garminsumdb, day_ts))
                 stats.update(GarminDB.Weight.get_weekly_stats(self.garmindb, day_ts))
                 stats.update(GarminDB.Stress.get_weekly_stats(self.garmindb, day_ts))
                 stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.mondb, day_ts, self.english_units))
@@ -85,6 +101,7 @@ class Analyze():
                 start_day_ts = datetime.date(year, month, 1)
                 end_day_ts = datetime.date(year, month, calendar.monthrange(year, month)[1])
                 stats = GarminDB.MonitoringHeartRate.get_monthly_stats(self.mondb, start_day_ts, end_day_ts)
+                stats.update(GarminDB.RestingHeartRate.get_monthly_stats(self.garminsumdb, start_day_ts, end_day_ts))
                 stats.update(GarminDB.Weight.get_monthly_stats(self.garmindb, start_day_ts, end_day_ts))
                 stats.update(GarminDB.Stress.get_monthly_stats(self.garmindb, start_day_ts, end_day_ts))
                 stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.mondb, start_day_ts, end_day_ts, self.english_units))
@@ -104,9 +121,11 @@ def main(argv):
     years = False
     months = None
     days = None
+    sleep_period_start = None
+    sleep_period_stop = None
 
     try:
-        opts, args = getopt.getopt(argv,"d:i:m:ts:y", ["debug", "days=", "months=", "mysql=", "years", "sqlite="])
+        opts, args = getopt.getopt(argv,"d:i:m:ts:y", ["debug", "days=", "months=", "mysql=", "years", "sleep=", "sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -125,6 +144,11 @@ def main(argv):
         elif opt in ("-d", "--days"):
             logging.debug("Days")
             days = arg
+        elif opt in ("-S", "--sleep"):
+            logging.debug("Sleep: " + arg)
+            sleep_args = arg.split(',')
+            sleep_period_start = datetime.datetime.strptime(sleep_args[0], "%H:%M").time()
+            sleep_period_stop = datetime.datetime.strptime(sleep_args[1], "%H:%M").time()
         elif opt in ("-s", "--summary"):
             logging.debug("Summary")
             summary = True
@@ -141,15 +165,17 @@ def main(argv):
             db_params_dict['db_host'] = db_args[2]
 
     if debug:
-        logger.setLevel(logging.DEBUG)
+        root_logger.setLevel(logging.DEBUG)
     else:
-        logger.setLevel(logging.INFO)
+        root_logger.setLevel(logging.INFO)
 
     if len(db_params_dict) == 0:
         print "Missing arguments:"
         usage(sys.argv[0])
 
     analyze = Analyze(db_params_dict)
+    if sleep_period_start and sleep_period_stop:
+        analyze.set_sleep_period(sleep_period_start, sleep_period_stop)
     if years:
         analyze.get_years()
     if months:
