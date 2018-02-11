@@ -16,6 +16,7 @@ logger = logging.getLogger(__file__)
 
 class Analyze():
 
+
     def __init__(self, db_params_dict):
         self.garmindb = GarminDB.GarminDB(db_params_dict)
         self.mondb = GarminDB.MonitoringDB(db_params_dict)
@@ -62,54 +63,101 @@ class Analyze():
                 next_day_str = str(HealthDB.day_of_the_year_to_datetime(year_int, next_day))
                 logger.info("Days gap between %d (%s) and %d (%s)" % (day, day_str, next_day, next_day_str))
 
+    sleep_state = {
+        0 : {'level' : 0, 'name' : 'deep_sleep', 'threshold' : 900},
+        1 : {'level' : 1, 'name' : 'light_sleep', 'threshold' : 300},
+        2 : {'level' : 1, 'name' : 'light_sleep', 'threshold' : 600},
+        3 : {'level' : 2, 'name' : 'awake', 'threshold' : 120},
+        4 : {'level' : 2, 'name' : 'awake', 'threshold' : 120},
+        5 : {'level' : 2, 'name' : 'awake', 'threshold' : 120},
+        6 : {'level' : 2, 'name' : 'awake', 'threshold' : 60},
+        7 : {'level' : 2, 'name' : 'awake', 'threshold' : 60},
+    }
+
+    def is_same_sleep_state(self, intensity1, intensity2):
+        return self.sleep_state[intensity1]['level'] == self.sleep_state[intensity2]['level']
+
+    def calculate_sleep(self, day_date, sleep_period_start, sleep_period_stop):
+        sleep_search_start_ts = datetime.datetime.combine(day_date, sleep_period_start) - datetime.timedelta(0, 0, 0, 0, 0, 2)
+        next_day_date = day_date + datetime.timedelta(1)
+        sleep_search_stop_ts = datetime.datetime.combine(next_day_date, sleep_period_stop) + datetime.timedelta(0, 0, 0, 0, 0, 2)
+        activity = GarminDB.Monitoring.get_activity(self.mondb, sleep_search_start_ts, sleep_search_stop_ts)
+
+        prev_intensity = 3
+        acumulated_intensity = 0
+        prev_sleep_state_ts = sleep_search_stop_ts
+        for index in xrange(len(activity) - 1, 0, -1):
+            (timestamp, intensity) = activity[index]
+            if intensity is not None:
+                if not self.is_same_sleep_state(intensity, prev_intensity):
+                    duration = (prev_sleep_state_ts - timestamp).total_seconds()
+                    if duration >= self.sleep_state[prev_intensity]['threshold']:
+                        GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : timestamp, 'event' : self.sleep_state[prev_intensity]['name'], 'duration' : duration})
+                        prev_intensity = intensity
+                        prev_sleep_state_ts = timestamp
+                    else:
+                        prev_intensity = intensity
+
+
     def calculate_resting_heartrate(self, day_date, sleep_period_stop):
         start_ts = datetime.datetime.combine(day_date, sleep_period_stop)
         rhr = GarminDB.MonitoringHeartRate.get_resting_heartrate(self.mondb, start_ts)
         if rhr:
             GarminDB.RestingHeartRate.create_or_update(self.garminsumdb, {'day' : day_date, 'resting_heart_rate' : rhr})
 
+    def calculate_day_stats(self, day_date):
+        stats = GarminDB.MonitoringHeartRate.get_daily_stats(self.mondb, day_date)
+        stats.update(GarminDB.RestingHeartRate.get_daily_stats(self.garminsumdb, day_date))
+        stats.update(GarminDB.Weight.get_daily_stats(self.garmindb, day_date))
+        stats.update(GarminDB.Stress.get_daily_stats(self.garmindb, day_date))
+        stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.mondb, day_date, self.english_units))
+        stats.update(GarminDB.MonitoringIntensityMins.get_daily_stats(self.mondb, day_date))
+        stats.update(GarminDB.Monitoring.get_daily_stats(self.mondb, day_date))
+        GarminDB.DaysSummary.create_or_update(self.garminsumdb, stats)
+
+    def calculate_week_stats(self, day_date):
+        stats = GarminDB.MonitoringHeartRate.get_weekly_stats(self.mondb, day_date)
+        stats.update(GarminDB.RestingHeartRate.get_weekly_stats(self.garminsumdb, day_date))
+        stats.update(GarminDB.Weight.get_weekly_stats(self.garmindb, day_date))
+        stats.update(GarminDB.Stress.get_weekly_stats(self.garmindb, day_date))
+        stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.mondb, day_date, self.english_units))
+        stats.update(GarminDB.MonitoringIntensityMins.get_weekly_stats(self.mondb, day_date))
+        stats.update(GarminDB.Monitoring.get_weekly_stats(self.mondb, day_date))
+        GarminDB.WeeksSummary.create_or_update(self.garminsumdb, stats)
+        HealthDB.WeeksSummary.create_or_update(self.sumdb, stats)
+
+    def calculate_month_stats(self, start_day_date, end_day_date):
+        stats = GarminDB.MonitoringHeartRate.get_monthly_stats(self.mondb, start_day_date, end_day_date)
+        stats.update(GarminDB.RestingHeartRate.get_monthly_stats(self.garminsumdb, start_day_date, end_day_date))
+        stats.update(GarminDB.Weight.get_monthly_stats(self.garmindb, start_day_date, end_day_date))
+        stats.update(GarminDB.Stress.get_monthly_stats(self.garmindb, start_day_date, end_day_date))
+        stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.mondb, start_day_date, end_day_date, self.english_units))
+        stats.update(GarminDB.MonitoringIntensityMins.get_monthly_stats(self.mondb, start_day_date, end_day_date))
+        stats.update(GarminDB.Monitoring.get_monthly_stats(self.mondb, start_day_date, end_day_date))
+        GarminDB.MonthsSummary.create_or_update(self.garminsumdb, stats)
+        HealthDB.MonthsSummary.create_or_update(self.sumdb, stats)
+
     def summary(self):
+        sleep_period_start = GarminDB.Attributes.get_time(self.garmindb, 'sleep_period_start')
         sleep_period_stop = GarminDB.Attributes.get_time(self.garmindb, 'sleep_period_stop')
 
         years = GarminDB.Monitoring.get_years(self.mondb)
         for year in years:
             days = GarminDB.Monitoring.get_days(self.mondb, year)
             for day in days:
-                day_ts = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
-                self.calculate_resting_heartrate(day_ts, sleep_period_stop)
-                stats = GarminDB.MonitoringHeartRate.get_daily_stats(self.mondb, day_ts)
-                stats.update(GarminDB.RestingHeartRate.get_daily_stats(self.garminsumdb, day_ts))
-                stats.update(GarminDB.Weight.get_daily_stats(self.garmindb, day_ts))
-                stats.update(GarminDB.Stress.get_daily_stats(self.garmindb, day_ts))
-                stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.mondb, day_ts, self.english_units))
-                stats.update(GarminDB.MonitoringIntensityMins.get_daily_stats(self.mondb, day_ts))
-                stats.update(GarminDB.Monitoring.get_daily_stats(self.mondb, day_ts))
-                GarminDB.DaysSummary.create_or_update(self.garminsumdb, stats)
-                HealthDB.DaysSummary.create_or_update(self.sumdb, stats)
-            for week_starting_day in xrange(1, 365, 7):
-                day_ts = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
-                stats = GarminDB.MonitoringHeartRate.get_weekly_stats(self.mondb, day_ts)
-                stats.update(GarminDB.RestingHeartRate.get_weekly_stats(self.garminsumdb, day_ts))
-                stats.update(GarminDB.Weight.get_weekly_stats(self.garmindb, day_ts))
-                stats.update(GarminDB.Stress.get_weekly_stats(self.garmindb, day_ts))
-                stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.mondb, day_ts, self.english_units))
-                stats.update(GarminDB.MonitoringIntensityMins.get_weekly_stats(self.mondb, day_ts))
-                stats.update(GarminDB.Monitoring.get_weekly_stats(self.mondb, day_ts))
-                GarminDB.WeeksSummary.create_or_update(self.garminsumdb, stats)
-                HealthDB.WeeksSummary.create_or_update(self.sumdb, stats)
-            for month in xrange(1, 12):
-                start_day_ts = datetime.date(year, month, 1)
-                end_day_ts = datetime.date(year, month, calendar.monthrange(year, month)[1])
-                stats = GarminDB.MonitoringHeartRate.get_monthly_stats(self.mondb, start_day_ts, end_day_ts)
-                stats.update(GarminDB.RestingHeartRate.get_monthly_stats(self.garminsumdb, start_day_ts, end_day_ts))
-                stats.update(GarminDB.Weight.get_monthly_stats(self.garmindb, start_day_ts, end_day_ts))
-                stats.update(GarminDB.Stress.get_monthly_stats(self.garmindb, start_day_ts, end_day_ts))
-                stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.mondb, start_day_ts, end_day_ts, self.english_units))
-                stats.update(GarminDB.MonitoringIntensityMins.get_monthly_stats(self.mondb, start_day_ts, end_day_ts))
-                stats.update(GarminDB.Monitoring.get_monthly_stats(self.mondb, start_day_ts, end_day_ts))
-                GarminDB.MonthsSummary.create_or_update(self.garminsumdb, stats)
-                HealthDB.MonthsSummary.create_or_update(self.sumdb, stats)
+                day_date = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
+                self.calculate_sleep(day_date, sleep_period_start, sleep_period_stop)
+                self.calculate_resting_heartrate(day_date, sleep_period_stop)
+                self.calculate_day_stats(day_date)
 
+            for week_starting_day in xrange(1, 365, 7):
+                day_date = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
+                self.calculate_week_stats(day_date)
+
+            for month in xrange(1, 12):
+                start_day_date = datetime.date(year, month, 1)
+                end_day_date = datetime.date(year, month, calendar.monthrange(year, month)[1])
+                self.calculate_month_stats(start_day_date, end_day_date)
 
 def usage(program):
     print '%s -s <sqlite db path> -m ...' % program

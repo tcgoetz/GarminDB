@@ -291,6 +291,17 @@ class DBObject():
         return cls.rows_to_ints(db.session().query(func.strftime("%j", cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
 
     @classmethod
+    def get_col(cls, db, col, start_ts=None, end_ts=None, ignore_zero=False):
+        query = db.query_session().query(col)
+        if start_ts is not None:
+            query = query.filter(cls.time_col >= start_ts)
+        if end_ts is not None:
+            query = query.filter(cls.time_col < end_ts)
+        if ignore_zero:
+            query = query.filter(col != 0)
+        return query.all()
+
+    @classmethod
     def get_col_func(cls, db, col, func, start_ts=None, end_ts=None, ignore_zero=False):
         query = db.query_session().query(func(col))
         if start_ts is not None:

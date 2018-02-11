@@ -94,3 +94,19 @@ class RestingHeartRate(GarminSummaryDB.Base, DBObject):
         stats['first_day'] = first_day_ts
         return stats
 
+
+class Sleep(GarminSummaryDB.Base, DBObject):
+    __tablename__ = 'sleep'
+
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, unique=True)
+    event = Column(String)
+    duration = Column(Integer)
+
+    time_col = synonym("timestamp")
+    min_row_values = 2
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
+

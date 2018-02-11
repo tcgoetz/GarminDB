@@ -104,7 +104,6 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
     @classmethod
     def get_resting_heartrate(cls, db, wake_ts):
         start_ts = wake_ts - datetime.timedelta(0, 0, 0, 0, 0, 2)
-        #end_ts = wake_ts + datetime.timedelta(0, 0, 0, 0, 10, 0)
         return cls.get_col_avg(db, cls.heart_rate, start_ts, wake_ts, True)
 
 
@@ -247,6 +246,14 @@ class Monitoring(MonitoringDB.Base, DBObject):
     @classmethod
     def _find_query(cls, session, values_dict):
         return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
+
+    @classmethod
+    def get_activity(cls, db, start_ts, end_ts):
+        return db.query_session().query(cls.timestamp, cls.intensity).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).all()
+
+    @classmethod
+    def get_activity_avg(cls, db, start_ts, end_ts):
+        return cls.get_col_avg(db, cls.intensity, start_ts, end_ts)
 
     @classmethod
     def get_stats(cls, db, func, start_ts, end_ts):
