@@ -13,10 +13,18 @@ import GarminDB
 root_logger = logging.getLogger()
 logger = logging.getLogger(__file__)
 
+class MovingAverageFilter():
+    def __init__(self, factor, initial_value):
+        self.factor1 = factor
+        self.factor2 = 1.0 - factor
+        self.value = initial_value
+
+    def filter(self, input_value)
+        self.value = (self.value * self.factor1) + (input_value * self.factor2)
+        return self.value
+
 
 class Analyze():
-
-
     def __init__(self, db_params_dict):
         self.garmindb = GarminDB.GarminDB(db_params_dict)
         self.mondb = GarminDB.MonitoringDB(db_params_dict)
@@ -94,9 +102,8 @@ class Analyze():
         sleep_search_stop_ts = datetime.datetime.combine(next_day_date, sleep_period_stop) + datetime.timedelta(0, 0, 0, 0, 0, 2)
         activity = GarminDB.Monitoring.get_activity(self.mondb, sleep_search_start_ts, sleep_search_stop_ts)
 
-        last_sample_ts = last_state_ts = sleep_search_stop_ts
-        accumulated_intensity = accumulated_duration = last_intensity = last_duration = 0
-        avg_intensity = None
+        last_sample_ts = sleep_search_stop_ts
+        activity_periods = []
         for index in xrange(len(activity) - 1, 0, -1):
             (timestamp, activity_type_id, intensity) = activity[index]
             duration = (last_sample_ts - timestamp).total_seconds()
@@ -104,19 +111,16 @@ class Analyze():
                 intensity = 8
             elif activity_type_id != stop_act_id:
                 intensity = 9
-            if avg_intensity is not None and not self.is_same_sleep_state(intensity, avg_intensity):
-                state_name = self.sleep_state[avg_intensity]['name']
-                state_duration = (last_state_ts - last_sample_ts).total_seconds()
-                GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : last_sample_ts, 'event' : state_name, 'duration' : state_duration})
-                accumulated_intensity, accumulated_duration, avg_intensity = self.combine_samples(last_intensity, last_duration, intensity, duration)
-                #accumulated_intensity, accumulated_duration, avg_intensity = self.combine_samples(accumulated_intensity * 0.5, accumulated_duration * 0.5, intensity, duration)
-                last_state_ts = last_sample_ts
-            else:
-                accumulated_intensity, accumulated_duration, avg_intensity = self.combine_samples(accumulated_intensity, accumulated_duration, intensity, duration)
+            activity_periods.append((timestamp, intensity, duration))
             last_sample_ts = timestamp
-            last_intensity = intensity
-            last_duration = duration
-        #sys.exit()
+
+        mov_avg_flt = MovingAverageFilter(0.5, 4)
+        for period_index, (timestamp, intensity, duration) in enumerate(activity_periods):
+            for sec_index in xrange(0, duration, 60):
+                output = mov_avg_flt.filter(intensity)
+                output_ts = timestamp + datetime.timedelta(0, sec_index)
+                print repr((output_ts, output))
+        sys.exit()
 
     def calculate_resting_heartrate(self, day_date, sleep_period_stop):
         start_ts = datetime.datetime.combine(day_date, sleep_period_stop)
