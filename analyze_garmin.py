@@ -68,19 +68,25 @@ class Analyze():
         1 : {'level' : 1, 'name' : 'light_sleep', 'threshold' : 120},
         2 : {'level' : 1, 'name' : 'light_sleep', 'threshold' : 240},
         3 : {'level' : 1, 'name' : 'light_sleep', 'threshold' : 360},
-        4 : {'level' : 2, 'name' : 'awake', 'threshold' : 240},
-        5 : {'level' : 2, 'name' : 'awake', 'threshold' : 120},
+        4 : {'level' : 2, 'name' : 'awake', 'threshold' : 60},
+        5 : {'level' : 2, 'name' : 'awake', 'threshold' : 60},
         6 : {'level' : 2, 'name' : 'awake', 'threshold' : 60},
         7 : {'level' : 2, 'name' : 'awake', 'threshold' : 60},
+        8 : {'level' : 3, 'name' : 'active', 'threshold' : 60},
+        9 : {'level' : 4, 'name' : 'very_active', 'threshold' : 60},
     }
 
     def is_same_sleep_state(self, intensity1, intensity2):
         return self.sleep_state[intensity1]['level'] == self.sleep_state[intensity2]['level']
 
-    moving_avg_factor1 = 0.4
-    moving_avg_factor2 = (1.0 - moving_avg_factor1)
+    def combine_samples(self, prev_accumulated_intensity, prev_accumulated_duration, intensity, duration):
+        accumulated_intensity = prev_accumulated_intensity + intensity * duration
+        accumulated_duration = prev_accumulated_duration + duration
+        avg_intensity = round(accumulated_intensity / accumulated_duration)
+        return accumulated_intensity, accumulated_duration, avg_intensity
 
     def calculate_sleep(self, day_date, sleep_period_start, sleep_period_stop):
+        generic_act_id = GarminDB.ActivityType.get_id(self.mondb, 'generic')
         stop_act_id = GarminDB.ActivityType.get_id(self.mondb, 'stop_disable')
 
         sleep_search_start_ts = datetime.datetime.combine(day_date, sleep_period_start) - datetime.timedelta(0, 0, 0, 0, 0, 2)
@@ -88,32 +94,28 @@ class Analyze():
         sleep_search_stop_ts = datetime.datetime.combine(next_day_date, sleep_period_stop) + datetime.timedelta(0, 0, 0, 0, 0, 2)
         activity = GarminDB.Monitoring.get_activity(self.mondb, sleep_search_start_ts, sleep_search_stop_ts)
 
-        prev_intensity = 3
-        prev_sleep_state = self.sleep_state[prev_intensity]['name']
-        prev_sleep_state_ts = last_ts = sleep_search_stop_ts
-        accumulated_intensity = accumulated_duration = 0
+        last_sample_ts = last_state_ts = sleep_search_stop_ts
+        accumulated_intensity = accumulated_duration = last_intensity = last_duration = 0
+        avg_intensity = None
         for index in xrange(len(activity) - 1, 0, -1):
             (timestamp, activity_type_id, intensity) = activity[index]
-            duration = (last_ts - timestamp).total_seconds()
-            if activity_type_id != stop_act_id:
-                #print "Activity: " + str(timestamp) + " : " + str(activity_type_id) + " " + str(duration)
-                intensity = 7
-            accumulated_intensity = (accumulated_intensity * self.moving_avg_factor1) + (intensity * duration * self.moving_avg_factor2)
-            accumulated_duration = (accumulated_duration * self.moving_avg_factor1) + (duration * self.moving_avg_factor2)
-            avg_intensity = round(accumulated_intensity / accumulated_duration)
-            #print "Average: " + str(avg_intensity) + " from " + str(intensity) + " : " + str(duration)
-            sleep_state = self.sleep_state[avg_intensity]['name']
-            if sleep_state != prev_sleep_state:
-                #print "Sleep state change: " + str(timestamp) + " : " + str(avg_intensity)
-                sleep_state_duration = (prev_sleep_state_ts - timestamp).total_seconds()
-                if sleep_state_duration >= self.sleep_state[prev_intensity]['threshold']:
-                    #print "Record: " + str(timestamp) + " : " + prev_sleep_state
-                    GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : timestamp, 'event' : prev_sleep_state, 'duration' : sleep_state_duration})
-                    prev_intensity = intensity
-                    prev_sleep_state = sleep_state
-                    prev_sleep_state_ts = timestamp
-                    accumulated_intensity = accumulated_duration = 0
-            last_ts = timestamp
+            duration = (last_sample_ts - timestamp).total_seconds()
+            if activity_type_id == generic_act_id:
+                intensity = 8
+            elif activity_type_id != stop_act_id:
+                intensity = 9
+            if avg_intensity is not None and not self.is_same_sleep_state(intensity, avg_intensity):
+                state_name = self.sleep_state[avg_intensity]['name']
+                state_duration = (last_state_ts - last_sample_ts).total_seconds()
+                GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : last_sample_ts, 'event' : state_name, 'duration' : state_duration})
+                accumulated_intensity, accumulated_duration, avg_intensity = self.combine_samples(last_intensity, last_duration, intensity, duration)
+                #accumulated_intensity, accumulated_duration, avg_intensity = self.combine_samples(accumulated_intensity * 0.5, accumulated_duration * 0.5, intensity, duration)
+                last_state_ts = last_sample_ts
+            else:
+                accumulated_intensity, accumulated_duration, avg_intensity = self.combine_samples(accumulated_intensity, accumulated_duration, intensity, duration)
+            last_sample_ts = timestamp
+            last_intensity = intensity
+            last_duration = duration
         #sys.exit()
 
     def calculate_resting_heartrate(self, day_date, sleep_period_stop):
