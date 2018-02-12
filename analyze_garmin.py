@@ -78,26 +78,25 @@ class Analyze():
         return self.sleep_state[intensity1]['level'] == self.sleep_state[intensity2]['level']
 
     def calculate_sleep(self, day_date, sleep_period_start, sleep_period_stop):
+        stop_act_id = GarminDB.ActivityType.get_id(self.mondb, 'stop_disable')
+
         sleep_search_start_ts = datetime.datetime.combine(day_date, sleep_period_start) - datetime.timedelta(0, 0, 0, 0, 0, 2)
         next_day_date = day_date + datetime.timedelta(1)
         sleep_search_stop_ts = datetime.datetime.combine(next_day_date, sleep_period_stop) + datetime.timedelta(0, 0, 0, 0, 0, 2)
         activity = GarminDB.Monitoring.get_activity(self.mondb, sleep_search_start_ts, sleep_search_stop_ts)
 
         prev_intensity = 3
-        acumulated_intensity = 0
         prev_sleep_state_ts = sleep_search_stop_ts
         for index in xrange(len(activity) - 1, 0, -1):
-            (timestamp, intensity) = activity[index]
-            if intensity is not None:
-                if not self.is_same_sleep_state(intensity, prev_intensity):
-                    duration = (prev_sleep_state_ts - timestamp).total_seconds()
-                    if duration >= self.sleep_state[prev_intensity]['threshold']:
-                        GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : timestamp, 'event' : self.sleep_state[prev_intensity]['name'], 'duration' : duration})
-                        prev_intensity = intensity
-                        prev_sleep_state_ts = timestamp
-                    else:
-                        prev_intensity = intensity
-
+            (timestamp, activity_type_id, intensity) = activity[index]
+            if activity_type_id != stop_act_id:
+                intensity = 7
+            if not self.is_same_sleep_state(intensity, prev_intensity):
+                duration = (prev_sleep_state_ts - timestamp).total_seconds()
+                if duration >= self.sleep_state[prev_intensity]['threshold']:
+                    GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : timestamp, 'event' : self.sleep_state[prev_intensity]['name'], 'duration' : duration})
+                    prev_sleep_state_ts = timestamp
+                prev_intensity = intensity
 
     def calculate_resting_heartrate(self, day_date, sleep_period_stop):
         start_ts = datetime.datetime.combine(day_date, sleep_period_stop)

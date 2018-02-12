@@ -249,7 +249,7 @@ class Monitoring(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_activity(cls, db, start_ts, end_ts):
-        return db.query_session().query(cls.timestamp, cls.intensity).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).all()
+        return db.query_session().query(cls.timestamp, cls.activity_type_id, cls.intensity).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).all()
 
     @classmethod
     def get_activity_avg(cls, db, start_ts, end_ts):
