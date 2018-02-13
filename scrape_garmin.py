@@ -18,7 +18,6 @@ import GarminDB
 logger = logging.getLogger(__file__)
 
 
-
 class Scrape():
 
     garmin_connect_base_url = "https://connect.garmin.com"
@@ -192,7 +191,7 @@ class Scrape():
 
 
 def usage(program):
-    print '%s -d [<date> -n <days> | -l <path to dbs>] -u <username> -p <password> [-m <outdir> | -w <outdir>]' % program
+    print '%s -d [<date> -n <days> | -l <path to dbs>] -u <username> -p <password> [-m <outdir> | -w ]' % program
     print '  -d <date ex: 01/21/2018> -n <days> fetch n days of monitoring data starting at date'
     print '  -l check the garmin DB and find out what the most recent date is and fetch monitoring data from that date on'
     print '  -m <outdir> fetches the daily monitoring FIT files for each day specified, unzips them, and puts them in outdit'
@@ -258,8 +257,14 @@ def main(argv):
     else:
         logger.setLevel(logging.INFO)
 
-    if ((not date or not days) and not latest) or not username or not password or (not monitoring and not weight) or len(db_params_dict) == 0:
-        print "Missing arguments:"
+    if ((not date or not days) and not latest):
+        print "Missing arguments: specify date and days or latest"
+        usage(sys.argv[0])
+    if not username or not password:
+        print "Missing arguments: need username and password"
+        usage(sys.argv[0])
+    if not monitoring and (not weight or len(db_params_dict) == 0):
+        print "Missing arguments: must specify -m or -w <db params>"
         usage(sys.argv[0])
 
     if latest:
