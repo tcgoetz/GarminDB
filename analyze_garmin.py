@@ -19,9 +19,9 @@ class MovingAverageFilter():
         self.factor2 = 1.0 - factor
         self.value = initial_value
 
-    def filter(self, input_value)
+    def filter(self, input_value):
         self.value = (self.value * self.factor1) + (input_value * self.factor2)
-        return self.value
+        return round(self.value)
 
 
 class Analyze():
@@ -44,14 +44,16 @@ class Analyze():
         years = GarminDB.Monitoring.get_years(self.mondb)
         GarminDB.Summary.set(self.garminsumdb, 'years', len(years))
         logger.info("Years (%d): %s" % (len(years), str(years)))
+        for year in years:
+            self.get_months(year)
+            self.get_days(year)
 
     def get_months(self, year):
         months = GarminDB.Monitoring.get_month_names(self.mondb, year)
-        GarminDB.Summary.set(self.garminsumdb, year + '_months', len(months))
-        logger.info("%s Months (%d): %s" % (year, len(months) , str(months)))
+        GarminDB.Summary.set(self.garminsumdb, str(year) + '_months', len(months))
+        logger.info("%s Months (%s): %s" % (year, len(months) , str(months)))
 
     def get_days(self, year):
-        year_int = int(year)
         days = GarminDB.Monitoring.get_days(self.mondb, year)
         days_count = len(days)
         if days_count > 0:
@@ -60,38 +62,40 @@ class Analyze():
             span = last_day - first_day + 1
         else:
             span = 0
-        GarminDB.Summary.set(self.garminsumdb, year + '_days', days_count)
-        GarminDB.Summary.set(self.garminsumdb, year + '_days_span', span)
-        logger.info("%d Days (%d vs %d): %s" % (year_int, days_count, span, str(days)))
+        GarminDB.Summary.set(self.garminsumdb, str(year) + '_days', days_count)
+        GarminDB.Summary.set(self.garminsumdb, str(year) + '_days_span', span)
+        logger.info("%d Days (%d vs %d): %s" % (year, days_count, span, str(days)))
         for index in xrange(days_count - 1):
             day = int(days[index])
             next_day = int(days[index + 1])
             if next_day != day + 1:
-                day_str = str(HealthDB.day_of_the_year_to_datetime(year_int, day))
-                next_day_str = str(HealthDB.day_of_the_year_to_datetime(year_int, next_day))
+                day_str = str(HealthDB.day_of_the_year_to_datetime(year, day))
+                next_day_str = str(HealthDB.day_of_the_year_to_datetime(year, next_day))
                 logger.info("Days gap between %d (%s) and %d (%s)" % (day, day_str, next_day, next_day_str))
 
     sleep_state = {
-        0 : {'level' : 0, 'name' : 'deep_sleep', 'threshold' : 300},
-        1 : {'level' : 1, 'name' : 'light_sleep', 'threshold' : 120},
-        2 : {'level' : 1, 'name' : 'light_sleep', 'threshold' : 240},
-        3 : {'level' : 1, 'name' : 'light_sleep', 'threshold' : 360},
-        4 : {'level' : 2, 'name' : 'awake', 'threshold' : 60},
-        5 : {'level' : 2, 'name' : 'awake', 'threshold' : 60},
-        6 : {'level' : 2, 'name' : 'awake', 'threshold' : 60},
-        7 : {'level' : 2, 'name' : 'awake', 'threshold' : 60},
-        8 : {'level' : 3, 'name' : 'active', 'threshold' : 60},
-        9 : {'level' : 4, 'name' : 'very_active', 'threshold' : 60},
+        0 : 'deep_sleep',
+        1 : 'light_sleep',
+        2 : 'light_sleep',
+        3 : 'light_sleep',
+        4 : 'awake',
+        5 : 'awake',
+        6 : 'awake',
+        7 : 'awake',
+        8 : 'awake',
+        9 : 'awake',
+        10 : 'awake',
+        11 : 'awake',
+        12 : 'awake',
+        13 : 'awake',
+        14 : 'awake',
+        15 : 'active',
+        16 : 'very_active',
+        17 : 'very_active',
+        18 : 'very_active',
+        19 : 'very_active',
+        20 : 'very_active'
     }
-
-    def is_same_sleep_state(self, intensity1, intensity2):
-        return self.sleep_state[intensity1]['level'] == self.sleep_state[intensity2]['level']
-
-    def combine_samples(self, prev_accumulated_intensity, prev_accumulated_duration, intensity, duration):
-        accumulated_intensity = prev_accumulated_intensity + intensity * duration
-        accumulated_duration = prev_accumulated_duration + duration
-        avg_intensity = round(accumulated_intensity / accumulated_duration)
-        return accumulated_intensity, accumulated_duration, avg_intensity
 
     def calculate_sleep(self, day_date, sleep_period_start, sleep_period_stop):
         generic_act_id = GarminDB.ActivityType.get_id(self.mondb, 'generic')
@@ -102,25 +106,37 @@ class Analyze():
         sleep_search_stop_ts = datetime.datetime.combine(next_day_date, sleep_period_stop) + datetime.timedelta(0, 0, 0, 0, 0, 2)
         activity = GarminDB.Monitoring.get_activity(self.mondb, sleep_search_start_ts, sleep_search_stop_ts)
 
+        initial_intensity = 4
+        last_intensity = initial_intensity
         last_sample_ts = sleep_search_stop_ts
         activity_periods = []
         for index in xrange(len(activity) - 1, 0, -1):
             (timestamp, activity_type_id, intensity) = activity[index]
-            duration = (last_sample_ts - timestamp).total_seconds()
+            duration = int((last_sample_ts - timestamp).total_seconds())
             if activity_type_id == generic_act_id:
-                intensity = 8
+                intensity = 15
             elif activity_type_id != stop_act_id:
-                intensity = 9
-            activity_periods.append((timestamp, intensity, duration))
+                intensity = 20
+            activity_periods.insert(0, (timestamp, last_intensity, duration))
+            last_intensity = intensity
             last_sample_ts = timestamp
 
-        mov_avg_flt = MovingAverageFilter(0.5, 4)
+        prev_sleep_state = self.sleep_state[initial_intensity]
+        prev_sleep_state_ts = sleep_search_start_ts
+        mov_avg_flt = MovingAverageFilter(0.8, initial_intensity)
         for period_index, (timestamp, intensity, duration) in enumerate(activity_periods):
+            #print repr((timestamp, intensity, duration))
             for sec_index in xrange(0, duration, 60):
-                output = mov_avg_flt.filter(intensity)
-                output_ts = timestamp + datetime.timedelta(0, sec_index)
-                print repr((output_ts, output))
-        sys.exit()
+                filtered_intensity = mov_avg_flt.filter(intensity)
+                sleep_state = self.sleep_state[filtered_intensity]
+                if sleep_state != prev_sleep_state:
+                    sleep_state_ts = timestamp + datetime.timedelta(0, sec_index)
+                    duration = int((sleep_state_ts - prev_sleep_state_ts).total_seconds())
+                    #print repr((prev_sleep_state_ts, prev_sleep_state, filtered_intensity, duration))
+                    GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : prev_sleep_state_ts, 'event' : prev_sleep_state, 'duration' : duration})
+                    prev_sleep_state = sleep_state
+                    prev_sleep_state_ts = sleep_state_ts
+        #sys.exit()
 
     def calculate_resting_heartrate(self, day_date, sleep_period_stop):
         start_ts = datetime.datetime.combine(day_date, sleep_period_stop)
@@ -189,14 +205,12 @@ def usage(program):
 def main(argv):
     debug = False
     db_params_dict = {}
-    years = False
-    months = None
-    days = None
+    dates = False
     sleep_period_start = None
     sleep_period_stop = None
 
     try:
-        opts, args = getopt.getopt(argv,"d:i:m:ts:y", ["debug", "days=", "months=", "mysql=", "years", "sleep=", "sqlite="])
+        opts, args = getopt.getopt(argv,"di:ts:", ["debug", "dates", "mysql=", "sleep=", "sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -206,15 +220,9 @@ def main(argv):
         elif opt in ("-t", "--debug"):
             logging.debug("debug: True")
             debug = True
-        elif opt in ("-y", "--years"):
-            logging.debug("Years")
-            years = True
-        elif opt in ("-m", "--months"):
-            logging.debug("Months")
-            months = arg
-        elif opt in ("-d", "--days"):
-            logging.debug("Days")
-            days = arg
+        elif opt in ("-d", "--dates"):
+            logging.debug("Dates")
+            dates = True
         elif opt in ("-S", "--sleep"):
             logging.debug("Sleep: " + arg)
             sleep_args = arg.split(',')
@@ -247,12 +255,8 @@ def main(argv):
     analyze = Analyze(db_params_dict)
     if sleep_period_start and sleep_period_stop:
         analyze.set_sleep_period(sleep_period_start, sleep_period_stop)
-    if years:
+    if dates:
         analyze.get_years()
-    if months:
-        analyze.get_months(months)
-    if days:
-        analyze.get_days(days)
     analyze.summary()
 
 if __name__ == "__main__":
