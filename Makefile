@@ -16,6 +16,9 @@ BIN_DIR=$(PWD)/bin
 
 TEST_DB=$(TMPDIR)/test.db
 
+DEFAULT_SLEEP_START=22:00
+DEFAULT_SLEEP_STOP=06:00
+
 OS := $(shell uname -s)
 ARCH := $(shell uname -p)
 
@@ -80,7 +83,7 @@ clean_summary:
 
 clean_all: clean_mshealth clean_fitbit clean_garmin clean_summary
 
-rebuild_dbs: clean_all import_all summary
+rebuild_dbs: clean_all garmin_config import_all summary
 
 import_all: import_mshealth_file import_healthvault_file import_fitbit_file import_monitoring
 
@@ -101,6 +104,9 @@ test_monitoring_file: $(TEST_DB_PATH)
 
 clean_monitoring:
 	rm -f $(DB_DIR)/garmin_monitoring.db
+
+garmin_config:
+	python analyze_garmin.py -S$(DEFAULT_SLEEP_START),$(DEFAULT_SLEEP_STOP)  --sqlite /Users/tgoetz/HealthData/DBs
 
 scrape_monitoring: $(DB_DIR) $(MONITORING_FIT_FILES_DIR)
 	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
@@ -134,7 +140,7 @@ clean_garmin_summary:
 	rm -f $(DB_DIR)/garmin_summary.db
 
 garmin_summary:
-	python analyze_garmin.py --sqlite $(DB_DIR) --dates
+	python analyze_garmin.py --analyze --dates --sqlite $(DB_DIR)
 
 new_garmin: import_new_monitoring clean_garmin_summary garmin_summary
 

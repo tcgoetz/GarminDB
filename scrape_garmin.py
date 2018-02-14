@@ -235,7 +235,7 @@ def main(argv):
             logger.debug("Password: " + arg)
             password = arg
         elif opt in ("-m", "--monitoring"):
-            logger.debug("Monitoring: " +arg)
+            logger.debug("Monitoring: " + arg)
             monitoring = arg
         elif opt in ("-w", "--weight"):
             logger.debug("Weight")
@@ -277,7 +277,7 @@ def main(argv):
             last_ts = GarminDB.Weight.latest_time(garmindb)
             logger.info("Automatically downloading weight data from: " + str(last_ts))
         if last_ts is None:
-            days = 365 * 2
+            days = 365
             date = datetime.datetime.now().date() - datetime.timedelta(days)
             logger.info("Automatic date not found, using: " + str(date))
         else:
@@ -291,6 +291,7 @@ def main(argv):
         scrape.login(username, password)
         scrape.get_monitoring(date, days)
         scrape.unzip_monitoring(monitoring)
+        logger.info("Saved monitoring files for %s (%d) to %s for processing" % (str(date), days, monitoring))
 
     if weight and days > 0:
         scrape = Scrape()
@@ -300,6 +301,7 @@ def main(argv):
         for point in points:
             logger.debug("Inserting: " + repr(point))
             GarminDB.Weight.create_or_update(garmindb, point)
+        logger.info("DB updated with weight data for %s (%d)" % (str(date), days))
 
 
 if __name__ == "__main__":

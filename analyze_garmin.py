@@ -240,6 +240,7 @@ def usage(program):
     sys.exit()
 
 def main(argv):
+    summary = False
     debug = False
     db_params_dict = {}
     dates = False
@@ -247,13 +248,16 @@ def main(argv):
     sleep_period_stop = None
 
     try:
-        opts, args = getopt.getopt(argv,"di:ts:", ["debug", "dates", "mysql=", "sleep=", "sqlite="])
+        opts, args = getopt.getopt(argv,"adi:tS:s:", ["analyze", "debug", "dates", "mysql=", "sleep=", "sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
     for opt, arg in opts:
         if opt == '-h':
             usage(sys.argv[0])
+        elif opt in ("-a", "--analyze"):
+            logging.debug("analyze: True")
+            summary = True
         elif opt in ("-t", "--debug"):
             logging.debug("debug: True")
             debug = True
@@ -265,9 +269,6 @@ def main(argv):
             sleep_args = arg.split(',')
             sleep_period_start = datetime.datetime.strptime(sleep_args[0], "%H:%M").time()
             sleep_period_stop = datetime.datetime.strptime(sleep_args[1], "%H:%M").time()
-        elif opt in ("-s", "--summary"):
-            logging.debug("Summary")
-            summary = True
         elif opt in ("-s", "--sqlite"):
             logging.debug("Sqlite DB path: %s" % arg)
             db_params_dict['db_type'] = 'sqlite'
@@ -294,7 +295,8 @@ def main(argv):
         analyze.set_sleep_period(sleep_period_start, sleep_period_stop)
     if dates:
         analyze.get_years()
-    analyze.summary()
+    if summary:
+        analyze.summary()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
