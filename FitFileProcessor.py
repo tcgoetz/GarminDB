@@ -220,7 +220,10 @@ class FitFileProcessor():
             'battery_voltage'       : parsed_message.get('battery_voltage', None),
             'software_version'      : parsed_message['software_version'],
         }
-        GarminDB.DeviceInfo.find_or_create(self.garmin_db, device_info)
+        try:
+            GarminDB.DeviceInfo.find_or_create(self.garmin_db, device_info)
+        except Exception as e:
+            logger.warning("Device info message not written: " + repr(parsed_message))
 
 
     def write_device_info(self, fit_file, device_info_messages):
