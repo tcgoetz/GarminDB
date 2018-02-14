@@ -26,6 +26,7 @@ class Scrape():
     garmin_connect_daily_url = garmin_connect_modern_url + "/dailySummary/timeline"
     garmin_connect_daily_user_base_url = garmin_connect_modern_url + "/daily-summary"
     garmin_connect_weight_base_url = garmin_connect_modern_url + "/weight"
+    garmin_connect_activities_url = garmin_connect_modern_url + "/activities"
 
     def __init__(self):
         self.temp_dir = tempfile.mkdtemp()
@@ -188,6 +189,12 @@ class Scrape():
                 break
             self.click_by_xpath(page_container, "//button[@class='icon-arrow-left']")
         return points
+
+    def get_activities(self, date, days):
+        logger.info("get_monitoring: %s : %d" % (str(date), days))
+        self.load_page(self.garmin_connect_activities_url)
+        page_container = self.wait_for_pagecontainer(self.browser, 10)
+        profile_name = self.get_profile_name(self.browser)
 
 
 def usage(program):

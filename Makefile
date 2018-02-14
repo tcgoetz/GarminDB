@@ -6,12 +6,25 @@ ARCH := $(shell uname -p)
 EPOCH=$(shell date +'%s')
 YEAR=$(shell date +'%Y')
 
+#
+# Automatically get the username and pasword
+#
+ifeq ($(OS), Darwin)
+	# Find the username and password from the OSX keychain. Works if you have logged into Garmin Connect from Safari or you manually set it.
+	# If your using iCloud Keychaion, you have to copy the entry from the iCloud keychain to the login keychain using KeychainAccess.app.
+	GC_USER ?= $(shell security find-internet-password -s sso.garmin.com | egrep acct | egrep -o "[A-Za-z]*@[A-Za-z.]*" )
+	GC_PASSWORD ?= $(shell security find-internet-password -s sso.garmin.com -w)
+else
+	# store the username and password in ~/.garmindb.conf ?
+endif
+
 
 HEALTH_DATA_DIR=$(HOME)/HealthData
 FIT_FILE_DIR=$(HEALTH_DATA_DIR)/FitFiles
 FITBIT_FILE_DIR=$(HEALTH_DATA_DIR)/FitBitFiles
 MSHEALTH_FILE_DIR=$(HEALTH_DATA_DIR)/MSHealth
 DB_DIR=$(HEALTH_DATA_DIR)/DBs
+TEST_DB_DIR=/tmp/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/$(YEAR)_Monitoring
 MEW_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/Incoming
@@ -25,6 +38,9 @@ TEST_DB=$(TMPDIR)/test.db
 DEFAULT_SLEEP_START=22:00
 DEFAULT_SLEEP_STOP=06:00
 
+#
+# Master targets
+#
 all: import_new_monitoring scrape_new_weight
 
 setup: update deps
@@ -35,6 +51,28 @@ update: submodules_update
 submodules_update:
 	git submodule init
 	git submodule update
+
+deps: install_geckodriver
+	sudo pip install --upgrade sqlalchemy
+	sudo pip install --upgrade selenium
+
+clean_deps: clean_geckodriver
+	sudo pip uninstall sqlalchemy
+	sudo pip uninstall selenium
+
+clean:
+	rm -rf *.pyc
+	rm -rf Fit/*.pyc
+	rm -rf HealthDB/*.pyc
+	rm -rf GarminDB/*.pyc
+	rm -rf FitBitDB/*.pyc
+
+
+#
+# Manage dependancies for scraping
+#
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 
 GECKO_DRIVER_URL=https://github.com/mozilla/geckodriver/releases/download/v0.19.1/
 ifeq ($(OS), Darwin)
@@ -52,27 +90,19 @@ install_geckodriver: $(BIN_DIR)
 clean_geckodriver:
 	rm -f $(BIN_DIR)/geckodriver*
 
-deps: install_geckodriver
-	sudo pip install --upgrade sqlalchemy
-	sudo pip install --upgrade selenium
 
-clean_deps: clean_geckodriver
-	sudo pip uninstall sqlalchemy
-	sudo pip uninstall selenium
+#
+# Fitness System independant
+#
+SUMMARY_DB=$(DB_DIR)/summary.db
+$(SUMMARY_DB): $(DB_DIR)
 
-clean:
-	rm -rf *.pyc
-	rm -rf Fit/*.pyc
-	rm -rf HealthDB/*.pyc
-	rm -rf GarminDB/*.pyc
-	rm -rf FitBitDB/*.pyc
+rebuild_dbs: clean_dbs fitbit_db mshealth_db garmin_dbs
 
-TEST_DB_PATH=/tmp/DBs
-$(TEST_DB_PATH):
-	mkdir -p $(TEST_DB_PATH)
+clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs clean_summary_db
 
-$(BIN_DIR):
-	mkdir -p $(BIN_DIR)
+clean_summary_db:
+	rm -f $(SUMMARY_DB)
 
 $(DB_DIR):
 	mkdir -p $(DB_DIR)
@@ -80,46 +110,41 @@ $(DB_DIR):
 $(BACKUP_DIR):
 	mkdir -p $(BACKUP_DIR)
 
-$(MONITORING_FIT_FILES_DIR):
-	mkdir -p $(MONITORING_FIT_FILES_DIR)
-
-$(ACTIVITES_FIT_FILES_DIR):
-	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
-
 backup: $(BACKUP_DIR)
 	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
-
-clean_summary:
-	rm -f $(DB_DIR)/summary.db
-
-clean_all: clean_mshealth clean_fitbit clean_garmin clean_summary
-
-rebuild_dbs: clean_all garmin_config import_all summary
-
-import_all: import_mshealth_file import_healthvault_file import_fitbit_file import_monitoring
-
-summary: mshealth_summary fitbit_summary garmin_summary
 
 
 #
 # Garmin
 #
+
+## test monitoring
+$(TEST_DB_DIR):
+	mkdir -p $(TEST_DB_DIR)
+
 test_monitoring_clean:
-	rm -rf $(TEST_DB_PATH)
+	rm -rf $(TEST_DB_DIR)
 
 TEST_FIT_FILE_DIR=$(HEALTH_DATA_DIR)/TestFitFiles
-test_monitoring_file: $(TEST_DB_PATH)
-#	python import_garmin_fit.py -e --input_file "$(TEST_FIT_FILE_DIR)/15044952621.fit" --dbpath $(TEST_DB_PATH)
-	python import_garmin_fit.py -t -e --input_dir "$(TEST_FIT_FILE_DIR)" --sqlite $(TEST_DB_PATH) && \
-	python analyze_garmin.py --analyze --dates  --sqlite $(TEST_DB_PATH)
+test_monitoring_file: $(TEST_DB_DIR)
+#	python import_garmin_fit.py -e --input_file "$(TEST_FIT_FILE_DIR)/15044952621.fit" --dbpath $(TEST_DB_DIR)
+	python import_garmin_fit.py -t -e --input_dir "$(TEST_FIT_FILE_DIR)" --sqlite $(TEST_DB_DIR) && \
+	python analyze_garmin.py --analyze --dates  --sqlite $(TEST_DB_DIR)
 
-clean_monitoring:
-	rm -f $(DB_DIR)/garmin_monitoring.db
+##  monitoring
+GARMIN_MON_DB=$(DB_DIR)/garmin_monitoring.db
+$(GARMIN_MON_DB): $(DB_DIR) import_monitoring
 
-garmin_config:
-	python analyze_garmin.py -S$(DEFAULT_SLEEP_START),$(DEFAULT_SLEEP_STOP)  --sqlite /Users/tgoetz/HealthData/DBs
+clean_monitoring_db:
+	rm -f $(GARMIN_MON_DB)
 
-scrape_monitoring: $(DB_DIR) $(MONITORING_FIT_FILES_DIR)
+$(MONITORING_FIT_FILES_DIR):
+	mkdir -p $(MONITORING_FIT_FILES_DIR)
+
+$(MEW_MONITORING_FIT_FILES_DIR):
+	mkdir -p $(MEW_MONITORING_FIT_FILES_DIR)
+
+scrape_monitoring: $(MEW_MONITORING_FIT_FILES_DIR)
 	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
 
 import_monitoring: $(DB_DIR)
@@ -127,55 +152,87 @@ import_monitoring: $(DB_DIR)
 		python import_garmin_fit.py -e --input_dir "$(MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR); \
 	done
 
-scrape_new_monitoring: $(DB_DIR) $(MONITORING_FIT_FILES_DIR)
+scrape_new_monitoring: $(MEW_MONITORING_FIT_FILES_DIR)
 	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
 
-import_new_monitoring: scrape_new_monitoring
+import_new_monitoring: scrape_new_monitoring $(MONITORING_FIT_FILES_DIR)
 	if ls $(MEW_MONITORING_FIT_FILES_DIR)/*.fit 1> /dev/null 2>&1; then \
 		python import_garmin_fit.py -e --input_dir "$(MEW_MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR) && \
 		mv $(MEW_MONITORING_FIT_FILES_DIR)/*.fit $(MONITORING_FIT_FILES_DIR)/.; \
 	fi
 
+## weight
 scrape_weight: $(DB_DIR)
-	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD)  -w
+	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w
 
 scrape_new_weight: $(DB_DIR)
-	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD)  -w
+	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w
 
-import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	python import_garmin_activities.py -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
+## activities
+GARMIN_ACT_DB=$(DB_DIR)/garmin_activities.db
+$(GARMIN_ACT_DB): $(DB_DIR) import_activities
 
 clean_activities:
-	rm -f $(DB_DIR)/garmin_activities.db
+	rm -f $(GARMIN_ACT_DB)
 
-clean_garmin_summary:
-	rm -f $(DB_DIR)/garmin_summary.db
+$(ACTIVITES_FIT_FILES_DIR):
+	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
+
+import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
+	python import_garmin_activities.py -t -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
+
+## generic garmin
+GARMIN_DB=$(DB_DIR)/garmin.db
+$(GARMIN_DB): $(DB_DIR) garmin_config scrape_new_weight
+
+clean_garmin_dbs: clean_garmin_summary_db clean_monitoring_db
+	rm -f $(GARMIN_DB)
+
+GARMIN_SUM_DB=$(DB_DIR)/garmin_summary.db
+$(GARMIN_SUM_DB): $(DB_DIR) garmin_summary
+
+clean_garmin_summary_db:
+	rm -f $(GARMIN_SUM_DB)
 
 garmin_summary:
 	python analyze_garmin.py --analyze --dates --sqlite $(DB_DIR)
 
-new_garmin: import_new_monitoring clean_garmin_summary garmin_summary
+new_garmin: import_new_monitoring garmin_summary
 
-clean_garmin: clean_garmin_summary clean_monitoring
-	rm -f $(DB_DIR)/garmin.db
+garmin_config:
+	python analyze_garmin.py -S$(DEFAULT_SLEEP_START),$(DEFAULT_SLEEP_STOP)  --sqlite /Users/tgoetz/HealthData/DBs
+
+#garmin_dbs: $(GARMIN_DB) $(GARMIN_MON_DB) $(GARMIN_ACT_DB) $(GARMIN_SUM_DB)
+garmin_dbs: $(GARMIN_DB) $(GARMIN_MON_DB) $(GARMIN_SUM_DB)
 
 
 #
 # FitBit
 #
+FITBIT_DB=$(DB_DIR)/fitbit.db
+$(FITBIT_DB): $(DB_DIR) import_fitbit_file
+
+clean_fitbit_db:
+	rm -f $(FITBIT_DB)
+
 import_fitbit_file: $(DB_DIR)
 	python import_fitbit_csv.py -e --input_file "$(FITBIT_FILE_DIR)/2015_fitbit_all.csv" --sqlite $(DB_DIR)
 
-clean_fitbit:
-	rm -f $(DB_DIR)/fitbit.db
-
-fitbit_summary:
+fitbit_summary: $(FITBIT_DB)
 	python analyze_fitbit.py --sqlite $(DB_DIR) --years --months 2015 --days 2015
+
+fitbit_db: $(FITBIT_DB)
 
 
 #
 # MS Health
 #
+MSHEALTH_DB=$(DB_DIR)/mshealth.db
+$(MSHEALTH_DB): $(DB_DIR) import_mshealth_file import_healthvault_file
+
+clean_mshealth_db:
+	rm -f $(MSHEALTH_DB)
+
 import_mshealth_file: $(DB_DIR)
 	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20151230_20161004.csv" --sqlite $(DB_DIR) -m
 	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20160101_20161231.csv" --sqlite $(DB_DIR) -m
@@ -184,9 +241,8 @@ import_mshealth_file: $(DB_DIR)
 import_healthvault_file: $(DB_DIR)
 	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/HealthVault_Weight_20150106_20160315.csv" --sqlite $(DB_DIR) -v
 
-clean_mshealth:
-	rm -f $(DB_DIR)/mshealth.db
-
-mshealth_summary:
+mshealth_summary: $(MSHEALTH_DB)
 	python analyze_mshealth.py --sqlite $(DB_DIR) --years --months 2015 --days 2015
 	python analyze_mshealth.py --sqlite $(DB_DIR) --years --months 2016 --days 2016
+
+mshealth_db: $(MSHEALTH_DB)
