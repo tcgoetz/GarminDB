@@ -73,70 +73,107 @@ class Analyze():
                 next_day_str = str(HealthDB.day_of_the_year_to_datetime(year, next_day))
                 logger.info("Days gap between %d (%s) and %d (%s)" % (day, day_str, next_day, next_day_str))
 
+    base_awake_intensity = 3
+    base_active_intensity = 10
+
     sleep_state = {
         0 : 'deep_sleep',
         1 : 'light_sleep',
         2 : 'light_sleep',
-        3 : 'light_sleep',
+        3 : 'awake',
         4 : 'awake',
         5 : 'awake',
         6 : 'awake',
         7 : 'awake',
         8 : 'awake',
-        9 : 'awake',
-        10 : 'awake',
-        11 : 'awake',
-        12 : 'awake',
-        13 : 'awake',
-        14 : 'awake',
-        15 : 'active',
+        9 : 'active',
+        10 : 'active',
+        11 : 'active',
+        12 : 'moderately_active',
+        13 : 'moderately_active',
+        14 : 'moderately_active',
+        15 : 'very_active',
         16 : 'very_active',
         17 : 'very_active',
-        18 : 'very_active',
-        19 : 'very_active',
-        20 : 'very_active'
+        18 : 'extremely_active',
+        18 : 'extremely_active',
+        19 : 'extremely_active',
     }
+
+    sleep_state_index = {
+        'deep_sleep' : 0,
+        'light_sleep' : 1,
+        'awake' : 2,
+        'active' : 3,
+        'moderately_active' : 4,
+        'very_active' : 5,
+        'extremely_active' : 6
+    }
+
+    sleep_state_latch_time = {
+        'deep_sleep' : 300,
+        'light_sleep' : 120,
+        'awake' : 60,
+        'active' : 60,
+        'moderately_active' : 60,
+        'very_active' : 60,
+        'extremely_active' : 60
+    }
+
+
+    def sleep_state_change(self, sleep_state_ts, sleep_state, sleep_state_duration):
+        GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : sleep_state_ts, 'event' : sleep_state, 'duration' : sleep_state_duration})
+        if self.bedtime_ts is None:
+            if self.sleep_state_index[sleep_state] <= 1 and sleep_state_duration >= 600:
+                self.bedtime_ts = sleep_state_ts - datetime.timedelta(0, 1)
+        elif self.wake_ts is None:
+            sleep_duration = int((sleep_state_ts - self.bedtime_ts).total_seconds())
+            if self.sleep_state_index[sleep_state] >= 2 and sleep_state_duration >= 600 and sleep_duration >= 7200:
+                self.wake_ts = sleep_state_ts + datetime.timedelta(0, 1)
 
     def calculate_sleep(self, day_date, sleep_period_start, sleep_period_stop):
         generic_act_id = GarminDB.ActivityType.get_id(self.mondb, 'generic')
         stop_act_id = GarminDB.ActivityType.get_id(self.mondb, 'stop_disable')
 
         sleep_search_start_ts = datetime.datetime.combine(day_date, sleep_period_start) - datetime.timedelta(0, 0, 0, 0, 0, 2)
-        next_day_date = day_date + datetime.timedelta(1)
-        sleep_search_stop_ts = datetime.datetime.combine(next_day_date, sleep_period_stop) + datetime.timedelta(0, 0, 0, 0, 0, 2)
+        sleep_search_stop_ts = datetime.datetime.combine(day_date + datetime.timedelta(1), sleep_period_stop) + datetime.timedelta(0, 0, 0, 0, 0, 2)
+
         activity = GarminDB.Monitoring.get_activity(self.mondb, sleep_search_start_ts, sleep_search_stop_ts)
 
-        initial_intensity = 4
+        initial_intensity = self.base_awake_intensity
         last_intensity = initial_intensity
         last_sample_ts = sleep_search_stop_ts
         activity_periods = []
         for index in xrange(len(activity) - 1, 0, -1):
             (timestamp, activity_type_id, intensity) = activity[index]
             duration = int((last_sample_ts - timestamp).total_seconds())
-            if activity_type_id == generic_act_id:
-                intensity = 15
-            elif activity_type_id != stop_act_id:
-                intensity = 20
+            if activity_type_id != stop_act_id:
+                if intensity is None:
+                    intensity = self.base_active_intensity
+                else:
+                    intensity = self.base_active_intensity + (intensity * 2)
             activity_periods.insert(0, (timestamp, last_intensity, duration))
             last_intensity = intensity
             last_sample_ts = timestamp
 
+        self.bedtime_ts = None
+        self.wake_ts = None
         prev_sleep_state = self.sleep_state[initial_intensity]
         prev_sleep_state_ts = sleep_search_start_ts
-        mov_avg_flt = MovingAverageFilter(0.8, initial_intensity)
+        mov_avg_flt = MovingAverageFilter(0.85, initial_intensity)
         for period_index, (timestamp, intensity, duration) in enumerate(activity_periods):
-            #print repr((timestamp, intensity, duration))
             for sec_index in xrange(0, duration, 60):
                 filtered_intensity = mov_avg_flt.filter(intensity)
                 sleep_state = self.sleep_state[filtered_intensity]
-                if sleep_state != prev_sleep_state:
-                    sleep_state_ts = timestamp + datetime.timedelta(0, sec_index)
-                    duration = int((sleep_state_ts - prev_sleep_state_ts).total_seconds())
-                    #print repr((prev_sleep_state_ts, prev_sleep_state, filtered_intensity, duration))
-                    GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : prev_sleep_state_ts, 'event' : prev_sleep_state, 'duration' : duration})
+                current_ts = timestamp + datetime.timedelta(0, sec_index)
+                duration = int((current_ts - prev_sleep_state_ts).total_seconds())
+                if sleep_state != prev_sleep_state and duration >= self.sleep_state_latch_time[prev_sleep_state]:
+                    self.sleep_state_change(prev_sleep_state_ts, prev_sleep_state, duration)
                     prev_sleep_state = sleep_state
-                    prev_sleep_state_ts = sleep_state_ts
-        #sys.exit()
+                    prev_sleep_state_ts = current_ts
+        self.sleep_state_change(prev_sleep_state_ts, prev_sleep_state, duration)
+        GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : self.bedtime_ts, 'event' : 'bed_time', 'duration' : 1})
+        GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : self.wake_ts, 'event' : 'wake_time', 'duration' : 1})
 
     def calculate_resting_heartrate(self, day_date, sleep_period_stop):
         start_ts = datetime.datetime.combine(day_date, sleep_period_stop)
