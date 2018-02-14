@@ -28,8 +28,8 @@ TEST_DB_DIR=/tmp/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/$(YEAR)_Monitoring
 MEW_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/Incoming
-
 ACTIVITES_FIT_FILES_DIR=$(FIT_FILE_DIR)/Activities
+ACTIVITES_TCX_FILES_DIR=$(HEALTH_DATA_DIR)/TcxFiles
 
 BIN_DIR=$(PWD)/bin
 
@@ -172,14 +172,23 @@ scrape_new_weight: $(DB_DIR)
 GARMIN_ACT_DB=$(DB_DIR)/garmin_activities.db
 $(GARMIN_ACT_DB): $(DB_DIR) import_activities
 
-clean_activities:
+clean_activities_db:
 	rm -f $(GARMIN_ACT_DB)
 
 $(ACTIVITES_FIT_FILES_DIR):
 	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
 
+$(ACTIVITES_TCX_FILES_DIR):
+	mkdir -p $(ACTIVITES_TCX_FILES_DIR)
+
 import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -t -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
+
+download_activities: $(ACTIVITES_FIT_FILES_DIR)
+	python garmin-connect-export/gcexport.py -c all -f original --unzip --username $(GC_USER) --password $(GC_PASSWORD) -d "$(ACTIVITES_FIT_FILES_DIR)"
+
+download_activities_tcx: $(ACTIVITES_TCX_FILES_DIR)
+	python garmin-connect-export/gcexport.py -c all -f tcx --unzip --username $(GC_USER) --password $(GC_PASSWORD) -d "$(ACTIVITES_TCX_FILES_DIR)"
 
 ## generic garmin
 GARMIN_DB=$(DB_DIR)/garmin.db
