@@ -35,7 +35,7 @@ class FitFileProcessor():
             function(fit_file, messages)
             logger.debug("Processed %d %s entries for %s" % (len(messages), message_type, fit_file.filename))
         except AttributeError:
-            logger.warning("No handler for message type %s (%d) from %s: %s" % (message_type, len(messages), fit_file.filename, str(messages[0])))
+            logger.debug("No handler for message type %s (%d) from %s: %s" % (message_type, len(messages), fit_file.filename, str(messages[0])))
 
     def write_message_types(self, fit_file, message_types):
         logger.info("%s [%s] message types: %s" % (fit_file.filename, fit_file.type(), message_types))
