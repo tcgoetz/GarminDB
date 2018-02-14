@@ -121,8 +121,8 @@ class FitFileProcessor():
             'max_speed'                         : parsed_message['max_speed'],
             'ascent'                            : parsed_message['total_ascent'],
             'descent'                           : parsed_message['total_descent'],
-            'training_effect'                   : parsed_message['total_training_effect'],
-            'anaerobic_training_effect'         : parsed_message['total_anaerobic_training_effect'],
+            'training_effect'                   : parsed_message.get('total_training_effect', None),
+            'anaerobic_training_effect'         : parsed_message.get('total_anaerobic_training_effect', None)
         }
         GarminDB.Activities.find_or_create(self.garmin_act_db, activity)
 
