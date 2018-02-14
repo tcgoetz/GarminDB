@@ -24,6 +24,8 @@ ARCH := $(shell uname -p)
 
 all: import_new_monitoring scrape_new_weight
 
+setup: update deps
+
 update:
 	git pull --rebase
 
@@ -51,7 +53,7 @@ deps: install_geckodriver
 	sudo pip install sqlalchemy
 	sudo pip install selenium
 
-clean_deps:
+clean_deps: clean_geckodriver
 	sudo pip uninstall sqlalchemy
 	sudo pip uninstall selenium
 
