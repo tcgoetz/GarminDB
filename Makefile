@@ -26,7 +26,7 @@ all: import_new_monitoring scrape_new_weight
 
 setup: update deps
 
-update:
+update: submodules_update
 	git pull --rebase
 
 submodules_update:
