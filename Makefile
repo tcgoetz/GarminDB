@@ -132,7 +132,7 @@ scrape_new_monitoring: $(DB_DIR) $(MONITORING_FIT_FILES_DIR)
 
 import_new_monitoring: scrape_new_monitoring
 	if ls $(MEW_MONITORING_FIT_FILES_DIR)/*.fit 1> /dev/null 2>&1; then \
-		python import_garmin_fit.py -e --input_dir "$(MEW_MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR); \
+		python import_garmin_fit.py -e --input_dir "$(MEW_MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR) && \
 		mv $(MEW_MONITORING_FIT_FILES_DIR)/*.fit $(MONITORING_FIT_FILES_DIR)/.; \
 	fi
 
