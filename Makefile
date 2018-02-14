@@ -1,13 +1,19 @@
 
+
+
+OS := $(shell uname -s)
+ARCH := $(shell uname -p)
+EPOCH=$(shell date +'%s')
+YEAR=$(shell date +'%Y')
+
+
 HEALTH_DATA_DIR=$(HOME)/HealthData
 FIT_FILE_DIR=$(HEALTH_DATA_DIR)/FitFiles
 FITBIT_FILE_DIR=$(HEALTH_DATA_DIR)/FitBitFiles
 MSHEALTH_FILE_DIR=$(HEALTH_DATA_DIR)/MSHealth
 DB_DIR=$(HEALTH_DATA_DIR)/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
-
-OLD_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/2017_Monitoring
-MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/2018_Monitoring
+MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/$(YEAR)_Monitoring
 MEW_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/Incoming
 
 ACTIVITES_FIT_FILES_DIR=$(FIT_FILE_DIR)/Activities
@@ -18,9 +24,6 @@ TEST_DB=$(TMPDIR)/test.db
 
 DEFAULT_SLEEP_START=22:00
 DEFAULT_SLEEP_STOP=06:00
-
-OS := $(shell uname -s)
-ARCH := $(shell uname -p)
 
 all: import_new_monitoring scrape_new_weight
 
@@ -83,7 +86,6 @@ $(MONITORING_FIT_FILES_DIR):
 $(ACTIVITES_FIT_FILES_DIR):
 	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
 
-EPOCH=$(shell date +'%s')
 backup: $(BACKUP_DIR)
 	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
 
@@ -121,10 +123,9 @@ scrape_monitoring: $(DB_DIR) $(MONITORING_FIT_FILES_DIR)
 	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
 
 import_monitoring: $(DB_DIR)
-	if [ -d $(OLD_MONITORING_FIT_FILES_DIR) ]; then \
-		python import_garmin_fit.py -e --input_dir "$(OLD_MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR); \
-	fi
-	python import_garmin_fit.py -e --input_dir "$(MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR)
+	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
+		python import_garmin_fit.py -e --input_dir "$(MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR); \
+	done
 
 scrape_new_monitoring: $(DB_DIR) $(MONITORING_FIT_FILES_DIR)
 	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
