@@ -22,22 +22,14 @@ DEFAULT_SLEEP_STOP=06:00
 OS := $(shell uname -s)
 ARCH := $(shell uname -p)
 
-all: import_new_monitoring scrape_new_weight garmin_summary
+all: import_new_monitoring scrape_new_weight
 
-$(BIN_DIR):
-	mkdir -p $(BIN_DIR)
+update:
+	git pull --rebase
 
-$(DB_DIR):
-	mkdir -p $(DB_DIR)
-
-$(BACKUP_DIR):
-	mkdir -p $(BACKUP_DIR)
-
-$(MONITORING_FIT_FILES_DIR):
-	mkdir -p $(MONITORING_FIT_FILES_DIR)
-
-$(ACTIVITES_FIT_FILES_DIR):
-	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
+submodules_update:
+	git submodule init
+	git submodule update
 
 GECKO_DRIVER_URL=https://github.com/mozilla/geckodriver/releases/download/v0.19.1/
 ifeq ($(OS), Darwin)
@@ -73,6 +65,21 @@ clean:
 TEST_DB_PATH=/tmp/DBs
 $(TEST_DB_PATH):
 	mkdir -p $(TEST_DB_PATH)
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
+
+$(DB_DIR):
+	mkdir -p $(DB_DIR)
+
+$(BACKUP_DIR):
+	mkdir -p $(BACKUP_DIR)
+
+$(MONITORING_FIT_FILES_DIR):
+	mkdir -p $(MONITORING_FIT_FILES_DIR)
+
+$(ACTIVITES_FIT_FILES_DIR):
+	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
 
 EPOCH=$(shell date +'%s')
 backup: $(BACKUP_DIR)

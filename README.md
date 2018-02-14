@@ -17,6 +17,8 @@ Once you have your data in the DB, I recomend using a SQLite browser like [SQLit
 
 The scripts are automated with Make. The directories where the data files are stored is setup for my use and not genralized. You may need to reconfigure the file and directory paths in the makefile variables.
 
+* Run `git clone git@github.com:tcgoetz/GarminDB.git` to check out the base repo.
+* Run `make update` to to checkout any submodules (Fit).
 * Run `make deps` to install Python dependancies needed to run the scripts.
 * Run `make GC_DATE=<date to start scraping monitoring data from> GC_DAYS={number of days of monitoring data to download} GC_USER={username} GC_PASSWORD={password} scrape_monitoring` followed by `make import_monitoring` to start exporting your daily monitoring data. You need to run this at least once to get some data into your DB. The import command in the next line can't calulate the dates to import until there s data in the DB.
 * Keep your Garmin daily monitoring data up to date by running `make GC_USER={username} GC_PASSWORD={password} import_monitoring` which will download monitoring fit files from the day after the last day in the DB and import them.
