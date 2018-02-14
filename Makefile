@@ -50,8 +50,8 @@ clean_geckodriver:
 	rm -f $(BIN_DIR)/geckodriver*
 
 deps: install_geckodriver
-	sudo pip install sqlalchemy
-	sudo pip install selenium
+	sudo pip install --upgrade sqlalchemy
+	sudo pip install --upgrade selenium
 
 clean_deps: clean_geckodriver
 	sudo pip uninstall sqlalchemy
