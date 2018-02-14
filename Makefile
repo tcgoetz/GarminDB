@@ -109,7 +109,7 @@ TEST_FIT_FILE_DIR=$(HEALTH_DATA_DIR)/TestFitFiles
 test_monitoring_file: $(TEST_DB_PATH)
 #	python import_garmin_fit.py -e --input_file "$(TEST_FIT_FILE_DIR)/15044952621.fit" --dbpath $(TEST_DB_PATH)
 	python import_garmin_fit.py -t -e --input_dir "$(TEST_FIT_FILE_DIR)" --sqlite $(TEST_DB_PATH) && \
-	python analyze_garmin.py --sqlite $(TEST_DB_PATH) --years --months 2018 --days 2017
+	python analyze_garmin.py --analyze --dates  --sqlite $(TEST_DB_PATH)
 
 clean_monitoring:
 	rm -f $(DB_DIR)/garmin_monitoring.db
@@ -121,10 +121,12 @@ scrape_monitoring: $(DB_DIR) $(MONITORING_FIT_FILES_DIR)
 	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
 
 import_monitoring: $(DB_DIR)
-	python import_garmin_fit.py -e --input_dir "$(OLD_MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR)
+	if [ -d $(OLD_MONITORING_FIT_FILES_DIR) ]; then \
+		python import_garmin_fit.py -e --input_dir "$(OLD_MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR); \
+	fi
 	python import_garmin_fit.py -e --input_dir "$(MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR)
 
-scrape_new_monitoring: $(DB_DIR)
+scrape_new_monitoring: $(DB_DIR) $(MONITORING_FIT_FILES_DIR)
 	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
 
 import_new_monitoring: scrape_new_monitoring
