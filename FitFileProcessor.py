@@ -57,13 +57,14 @@ class FitFileProcessor():
     #
     def write_file_id_entry(self, fit_file, message):
         parsed_message = message.parsed()
-        device = {
-            'serial_number' : parsed_message['serial_number'],
-            'timestamp' : parsed_message['time_created'],
-            'manufacturer' : parsed_message['manufacturer'],
-            'product' : parsed_message['product'],
-        }
-        GarminDB.Device.find_or_create(self.garmin_db, device)
+        if parsed_message['serial_number'] is not None:
+            device = {
+                'serial_number' : parsed_message['serial_number'],
+                'timestamp' : parsed_message['time_created'],
+                'manufacturer' : parsed_message['manufacturer'],
+                'product' : parsed_message['product'],
+            }
+            GarminDB.Device.find_or_create(self.garmin_db, device)
         file = {
             'name' : fit_file.filename,
             'type' : parsed_message['type'],
@@ -160,6 +161,10 @@ class FitFileProcessor():
         for message in record_messages:
             logger.debug("record message: " + repr(message.parsed()))
 
+    def write_dev_data_id(self, fit_file, dev_data_id_messages):
+        for message in dev_data_id_messages:
+            logger.debug("dev_data_id message: " + repr(message.parsed()))
+
     def write_monitoring_info_entry(self, fit_file, message):
         parsed_message = message.parsed()
         activity_type = parsed_message['activity_type']
@@ -202,29 +207,30 @@ class FitFileProcessor():
 
     def write_device_info_entry(self, fit_file, device_info_message):
         parsed_message = device_info_message.parsed()
-        device = {
-            'serial_number'     : parsed_message['serial_number'],
-            'timestamp'         : parsed_message['timestamp'],
-            'manufacturer'      : parsed_message['manufacturer'],
-            'product'           : parsed_message['product'],
-            'hardware_version'  : parsed_message.get('hardware_version', None),
-        }
-        try:
-            GarminDB.Device.create_or_update(self.garmin_db, device)
-        except ValueError:
-            logger.debug("Message not written: " + repr(parsed_message))
-        device_info = {
-            'file_id'               : GarminDB.File.get(self.garmin_db, fit_file.filename),
-            'serial_number'         : parsed_message['serial_number'],
-            'timestamp'             : parsed_message['timestamp'],
-            'cum_operating_time'    : parsed_message.get('cum_operating_time', None),
-            'battery_voltage'       : parsed_message.get('battery_voltage', None),
-            'software_version'      : parsed_message['software_version'],
-        }
-        try:
-            GarminDB.DeviceInfo.find_or_create(self.garmin_db, device_info)
-        except Exception as e:
-            logger.warning("Device info message not written: " + repr(parsed_message))
+        if parsed_message['serial_number'] is not None:
+            device = {
+                'serial_number'     : parsed_message['serial_number'],
+                'timestamp'         : parsed_message['timestamp'],
+                'manufacturer'      : parsed_message['manufacturer'],
+                'product'           : parsed_message['product'],
+                'hardware_version'  : parsed_message.get('hardware_version', None),
+            }
+            try:
+                GarminDB.Device.create_or_update(self.garmin_db, device)
+            except ValueError:
+                logger.debug("Message not written: " + repr(parsed_message))
+            device_info = {
+                'file_id'               : GarminDB.File.get(self.garmin_db, fit_file.filename),
+                'serial_number'         : parsed_message['serial_number'],
+                'timestamp'             : parsed_message['timestamp'],
+                'cum_operating_time'    : parsed_message.get('cum_operating_time', None),
+                'battery_voltage'       : parsed_message.get('battery_voltage', None),
+                'software_version'      : parsed_message['software_version'],
+            }
+            try:
+                GarminDB.DeviceInfo.find_or_create(self.garmin_db, device_info)
+            except Exception as e:
+                logger.warning("Device info message not written: " + repr(parsed_message))
 
 
     def write_device_info(self, fit_file, device_info_messages):
