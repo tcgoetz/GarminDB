@@ -108,6 +108,7 @@ class FitFileProcessor():
     def write_session_entry(self, fit_file, message):
         parsed_message = message.parsed()
         activity = {
+            'file_id'                           : GarminDB.File.get(self.garmin_db, fit_file.filename),
             'start_time'                        : parsed_message['start_time'],
             'stop_time'                         : parsed_message['timestamp'],
             'sport_type'                        : parsed_message['sport'],

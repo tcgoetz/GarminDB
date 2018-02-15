@@ -44,7 +44,13 @@ class GarminFitData():
     def process_files(self, db_params_dict):
         fp = FitFileProcessor.FitFileProcessor(db_params_dict, self.english_units, self.debug)
         for file_name in self.file_names:
-            fp.write_file(Fit.File(file_name, self.english_units))
+            try:
+                fp.write_file(Fit.File(file_name, self.english_units))
+            except ValueError as e:
+                logger.info("Failed to parse %s: %s" % (file_name, str(e)))
+            except IndexError as e:
+                logger.info("Failed to parse %s: %s" % (file_name, str(e)))
+            #sys.exit()
 
 
 def usage(program):

@@ -42,6 +42,7 @@ class Activities(ActivitiesDB.Base, DBObject):
     __tablename__ = 'activities'
 
     id = Column(Integer, primary_key=True)
+    file_id = Column(Integer)
     start_time = Column(DateTime, unique=True)
     stop_time = Column(DateTime, unique=True)
     cycles = Column(Float)
@@ -51,8 +52,10 @@ class Activities(ActivitiesDB.Base, DBObject):
     max_hr = Column(Integer)
     calories = Column(Integer)
     avg_cadence = Column(Integer)
+    # feet per sec or meters per sec
     avg_speed = Column(Float)
     max_speed = Column(Float)
+    # feet or meters
     ascent = Column(Float)
     descent = Column(Float)
     training_effect = Column(Float)

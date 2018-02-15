@@ -184,7 +184,10 @@ $(ACTIVITES_TCX_FILES_DIR):
 import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -t -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
 
-download_activities: $(ACTIVITES_FIT_FILES_DIR)
+download_new_activities: $(ACTIVITES_FIT_FILES_DIR)
+	python garmin-connect-export/gcexport.py -c 50 -f original --unzip --username $(GC_USER) --password $(GC_PASSWORD) -d "$(ACTIVITES_FIT_FILES_DIR)"
+
+download_all_activities: $(ACTIVITES_FIT_FILES_DIR)
 	python garmin-connect-export/gcexport.py -c all -f original --unzip --username $(GC_USER) --password $(GC_PASSWORD) -d "$(ACTIVITES_FIT_FILES_DIR)"
 
 download_activities_tcx: $(ACTIVITES_TCX_FILES_DIR)
