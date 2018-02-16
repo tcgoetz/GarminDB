@@ -27,7 +27,7 @@ DB_DIR=$(HEALTH_DATA_DIR)/DBs
 TEST_DB_DIR=/tmp/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/$(YEAR)_Monitoring
-MEW_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/Incoming
+MEW_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/Incoming_Monitoring
 ACTIVITES_FIT_FILES_DIR=$(FIT_FILE_DIR)/Activities
 ACTIVITES_TCX_FILES_DIR=$(HEALTH_DATA_DIR)/TcxFiles
 
@@ -185,7 +185,7 @@ import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
 
 download_new_activities: $(ACTIVITES_FIT_FILES_DIR)
-	python garmin-connect-export/gcexport.py -c 50 -f original --unzip --username $(GC_USER) --password $(GC_PASSWORD) -d "$(ACTIVITES_FIT_FILES_DIR)"
+	python garmin-connect-export/gcexport.py -c 10 -f original --unzip --username $(GC_USER) --password $(GC_PASSWORD) -d "$(ACTIVITES_FIT_FILES_DIR)"
 
 download_all_activities: $(ACTIVITES_FIT_FILES_DIR)
 	python garmin-connect-export/gcexport.py -c all -f original --unzip --username $(GC_USER) --password $(GC_PASSWORD) -d "$(ACTIVITES_FIT_FILES_DIR)"
@@ -209,7 +209,7 @@ clean_garmin_summary_db:
 garmin_summary:
 	python analyze_garmin.py --analyze --dates --sqlite $(DB_DIR)
 
-new_garmin: import_new_monitoring garmin_summary
+new_garmin: import_new_monitoring download_new_activities garmin_summary
 
 garmin_config:
 	python analyze_garmin.py -S$(DEFAULT_SLEEP_START),$(DEFAULT_SLEEP_STOP)  --sqlite /Users/tgoetz/HealthData/DBs

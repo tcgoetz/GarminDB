@@ -168,6 +168,7 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
+    # meters or feet
     ascent = Column(Float)
     descent = Column(Float)
     cum_ascent = Column(Float)
