@@ -24,23 +24,38 @@ class Activities(ActivitiesDB.Base, DBObject):
     __tablename__ = 'activities'
 
     id = Column(Integer, primary_key=True)
-    file_id = Column(Integer)
+    name = Column(String)
+    description = Column(String)
     start_time = Column(DateTime, unique=True)
     stop_time = Column(DateTime, unique=True)
-    cycles = Column(Float)
-    laps = Column(Integer)
+    #
+    time = Column(Time)
+    moving_time = Column(Time)
+    #
     sport = Column(String)
     sub_sport = Column(String)
+    # degrees
+    start_lat = Column(Float)
+    start_long = Column(Float)
+    stop_lat = Column(Float)
+    stop_long = Column(Float)
+    # kms or miles
+    distance = Column(Float)
+    cycles = Column(Float)
+    laps = Column(Integer)
     avg_hr = Column(Integer)
     max_hr = Column(Integer)
     calories = Column(Integer)
     avg_cadence = Column(Integer)
-    # feet per sec or meters per sec
+    max_cadence = Column(Integer)
+    # kmph or mph
     avg_speed = Column(Float)
     max_speed = Column(Float)
     # feet or meters
     ascent = Column(Float)
     descent = Column(Float)
+    max_tempature = Column(Float)
+    avg_tempature = Column(Float)
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)
 

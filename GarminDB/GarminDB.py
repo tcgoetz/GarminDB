@@ -24,25 +24,6 @@ class Attributes(GarminDB.Base, KeyValueObject):
     __tablename__ = 'attributes'
 
 
-class FileType(GarminDB.Base, DBObject):
-    __tablename__ = 'file_types'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True)
-
-    min_row_values = 1
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        logger.debug("%s::_find_query %s" % (cls.__name__, repr(values_dict)))
-        return  session.query(cls).filter(cls.name == values_dict['name'])
-
-    @classmethod
-    def get_id(cls, db, name):
-        logger.debug("%s::get_id %s" % (cls.__name__, name))
-        return cls.find_or_create_id(db, {'name' : name})
-
-
 class Device(GarminDB.Base, DBObject):
     __tablename__ = 'devices'
 
@@ -82,18 +63,23 @@ class DeviceInfo(GarminDB.Base, DBObject):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
 
+def gc_id_from_path(pathname):
+    return DBObject.filename_from_pathname(pathname).split('.')[0]
+
+
 class File(GarminDB.Base, DBObject):
     __tablename__ = 'files'
 
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
-    type_id = Column(Integer)
+    type = Column(String)
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
 
-    _relational_mappings = {
-        'type' : ('type_id', FileType.get_id)
+
+    _col_mappings = {
+        'name' : ('id', gc_id_from_path)
     }
-    col_translations = {
+    _col_translations = {
         'name' : DBObject.filename_from_pathname
     }
     min_row_values = 1

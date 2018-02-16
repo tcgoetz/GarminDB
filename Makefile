@@ -197,14 +197,14 @@ download_activities_tcx: $(ACTIVITES_TCX_FILES_DIR)
 GARMIN_DB=$(DB_DIR)/garmin.db
 $(GARMIN_DB): $(DB_DIR) garmin_config scrape_new_weight
 
+clean_garmin_summary_db:
+	rm -f $(GARMIN_SUM_DB)
+
 clean_garmin_dbs: clean_garmin_summary_db clean_monitoring_db clean_activities_db
 	rm -f $(GARMIN_DB)
 
 GARMIN_SUM_DB=$(DB_DIR)/garmin_summary.db
 $(GARMIN_SUM_DB): $(DB_DIR) garmin_summary
-
-clean_garmin_summary_db:
-	rm -f $(GARMIN_SUM_DB)
 
 garmin_summary:
 	python analyze_garmin.py --analyze --dates --sqlite $(DB_DIR)

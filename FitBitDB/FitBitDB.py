@@ -19,20 +19,8 @@ class FitBitDB(DB):
         FitBitDB.Base.metadata.create_all(self.engine)
 
 
-class Attributes(FitBitDB.Base, DBObject):
+class Attributes(FitBitDB.Base, KeyValueObject):
     __tablename__ = 'attributes'
-
-    name = Column(String, primary_key=True)
-    value = Column(String)
-
-    col_translations = {
-        'value' : str,
-    }
-    min_row_values = 2
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.name == values_dict['name'])
 
 
 class DaysSummary(FitBitDB.Base, DBObject):

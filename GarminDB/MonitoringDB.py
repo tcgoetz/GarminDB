@@ -227,12 +227,12 @@ class Monitoring(MonitoringDB.Base, DBObject):
 
     duration = Column(Integer)
     distance = Column(Float)
-    cum_active_time = Column(Integer)
+    cum_active_time = Column(Time)
     active_calories = Column(Integer)
 
     steps = Column(Integer)
     strokes = Column(Integer)
-    cycles = Column(Integer)
+    cycles = Column(Float)
 
     __table_args__ = (
         UniqueConstraint("timestamp", "activity_type_id", "intensity", "duration"),

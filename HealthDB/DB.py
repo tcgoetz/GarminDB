@@ -117,7 +117,8 @@ class DBObject():
     # defaults, overridden by subclasses
     _updateable_fields = []
     _relational_mappings = {}
-    col_translations = {}
+    _col_translations = {}
+    _col_mappings = {}
 
     @classmethod
     def filename_from_pathname(cls, pathname):
@@ -142,6 +143,15 @@ class DBObject():
         return len(filtered_cols) >= cls.min_row_values
 
     @classmethod
+    def map_columns(cls, values_dict):
+        if len(cls._col_mappings) == 0:
+            return values_dict
+        for key, value in cls._col_mappings.iteritems():
+            if key in values_dict:
+                values_dict[value[0]] = value[1](values_dict[key])
+        return values_dict
+
+    @classmethod
     def relational_mappings(cls, db, values_dict):
         if len(cls._relational_mappings) == 0:
             return values_dict
@@ -152,25 +162,29 @@ class DBObject():
         }
 
     @classmethod
-    def _translate_columns(cls, values_dict):
-        if len(cls.col_translations) == 0:
+    def translate_columns(cls, values_dict):
+        if len(cls._col_translations) == 0:
             return values_dict
         return {
             key :
-            (cls.col_translations[key](value) if key in cls.col_translations else value)
+            (cls._col_translations[key](value) if key in cls._col_translations else value)
             for key, value in values_dict.iteritems()
         }
 
     @classmethod
-    def _translate_column(cls, col_name, col_value):
-        if len(cls.col_translations) == 0:
+    def massage_columns(cls, db, values_dict):
+        return cls._filter_columns(cls.translate_columns(cls.relational_mappings(db, cls.map_columns(values_dict))))
+
+    @classmethod
+    def translate_column(cls, col_name, col_value):
+        if len(cls._col_translations) == 0:
             return col_value
-        return (cls.col_translations[col_name](col_value) if col_name in cls.col_translations else col_value)
+        return (cls._col_translations[col_name](col_value) if col_name in cls._col_translations else col_value)
 
     @classmethod
     def find_query(cls, session, values_dict):
         logger.debug("%s::_find %s" % (cls.__name__, repr(values_dict)))
-        return cls._find_query(session, cls._translate_columns(values_dict))
+        return cls._find_query(session, cls.translate_columns(values_dict))
 
     @classmethod
     def find_all(cls, db, values_dict):
@@ -210,7 +224,7 @@ class DBObject():
     @classmethod
     def _create(cls, db, session, values_dict):
         logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
-        converted_values = cls._filter_columns(cls._translate_columns(cls.relational_mappings(db, values_dict)))
+        converted_values = cls.massage_columns(db, values_dict)
         non_none_values = 0
         for value in converted_values.values():
             if value is not None:
@@ -356,7 +370,7 @@ class KeyValueObject(DBObject):
     key = Column(String, primary_key=True)
     value = Column(String)
 
-    col_translations = {
+    _col_translations = {
         'value' : str,
     }
     min_row_values = 2
@@ -411,15 +425,9 @@ class SummaryBase(DBObject):
     steps = Column(Integer)
     floors = Column(Float)
 
-    _relational_mappings = {}
-    col_translations = {}
     min_row_values = 1
     _updateable_fields = [
-        'hr_avg', 'hr_min', 'hr_max',
-        'rhr_avg', 'rhr_min', 'rhr_max',
-        'weight_avg', 'weight_min', 'weight_max',
-        'stress_avg', 'stress_min', 'stress_max',
-        'intensity_mins', 'moderate_activity_mins', 'vigorous_activity_mins',
-        'steps', 'floors'
+        'hr_avg', 'hr_min', 'hr_max', 'rhr_avg', 'rhr_min', 'rhr_max', 'weight_avg', 'weight_min', 'weight_max', 'stress_avg', 'stress_min',
+        'stress_max', 'intensity_mins', 'moderate_activity_mins', 'vigorous_activity_mins', 'steps', 'floors'
     ]
 
