@@ -149,7 +149,7 @@ scrape_monitoring: $(MEW_MONITORING_FIT_FILES_DIR)
 
 import_monitoring: $(DB_DIR)
 	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
-		python import_garmin_fit.py -e --input_dir "$(MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR); \
+		python import_garmin_fit.py -e --input_dir "$$dir" --sqlite $(DB_DIR); \
 	done
 
 scrape_new_monitoring: $(MEW_MONITORING_FIT_FILES_DIR)
@@ -197,7 +197,7 @@ download_activities_tcx: $(ACTIVITES_TCX_FILES_DIR)
 GARMIN_DB=$(DB_DIR)/garmin.db
 $(GARMIN_DB): $(DB_DIR) garmin_config scrape_new_weight
 
-clean_garmin_dbs: clean_garmin_summary_db clean_monitoring_db
+clean_garmin_dbs: clean_garmin_summary_db clean_monitoring_db clean_activities_db
 	rm -f $(GARMIN_DB)
 
 GARMIN_SUM_DB=$(DB_DIR)/garmin_summary.db

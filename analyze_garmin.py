@@ -37,8 +37,8 @@ class Analyze():
             self.english_units = False
 
     def set_sleep_period(self, sleep_period_start, sleep_period_stop):
-        GarminDB.Attributes.set(self.garmindb, 'sleep_period_start', sleep_period_start)
-        GarminDB.Attributes.set(self.garmindb, 'sleep_period_stop', sleep_period_stop)
+        GarminDB.Attributes.set_if_unset(self.garmindb, 'sleep_time', sleep_period_start)
+        GarminDB.Attributes.set_if_unset(self.garmindb, 'wake_time', sleep_period_stop)
 
     def get_years(self):
         years = GarminDB.Monitoring.get_years(self.mondb)
@@ -214,8 +214,8 @@ class Analyze():
         HealthDB.MonthsSummary.create_or_update(self.sumdb, stats)
 
     def summary(self):
-        sleep_period_start = GarminDB.Attributes.get_time(self.garmindb, 'sleep_period_start')
-        sleep_period_stop = GarminDB.Attributes.get_time(self.garmindb, 'sleep_period_stop')
+        sleep_period_start = GarminDB.Attributes.get_time(self.garmindb, 'sleep_time')
+        sleep_period_stop = GarminDB.Attributes.get_time(self.garmindb, 'wake_time')
 
         years = GarminDB.Monitoring.get_years(self.mondb)
         for year in years:

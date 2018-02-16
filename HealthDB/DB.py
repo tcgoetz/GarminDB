@@ -377,6 +377,10 @@ class KeyValueObject(DBObject):
             return cls.create_or_update(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
 
     @classmethod
+    def set_if_unset(cls, db, key, value, timestamp=datetime.datetime.now()):
+        return cls.find_or_create(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
+
+    @classmethod
     def get(cls, db, key):
         try:
             return cls.find_one(db, {'key' : key}).value

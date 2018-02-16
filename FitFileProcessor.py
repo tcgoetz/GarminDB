@@ -149,9 +149,23 @@ class FitFileProcessor():
         for message in battery_messages:
             logger.info("battery message: " + repr(message.parsed()))
 
+    def write_attribute(self, timestamp, parsed_message, attribute_name):
+        attribute = parsed_message.get(attribute_name, None)
+        if attribute is not None:
+            GarminDB.Attributes.set_newer(self.garmin_db, attribute_name, attribute, timestamp)
+
+    def write_user_profile_entry(self, fit_file, message):
+        parsed_message = message.parsed()
+        timestamp = fit_file.time_created()
+        for attribute_name in [
+            'Gender', 'Height', 'Weight', 'Language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time'
+        ]:
+            self.write_attribute(timestamp, parsed_message, attribute_name)
+
     def write_user_profile(self, fit_file, user_profile_messages):
         for message in user_profile_messages:
             logger.info("user profile message: " + repr(message.parsed()))
+            self.write_user_profile_entry(fit_file, message)
 
     def write_activity(self, fit_file, activity_messages):
         for message in activity_messages:
