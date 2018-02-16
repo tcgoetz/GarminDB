@@ -352,6 +352,7 @@ class DBObject():
 
 class KeyValueObject(DBObject):
 
+    timestamp = Column(DateTime)
     key = Column(String, primary_key=True)
     value = Column(String)
 
@@ -366,8 +367,14 @@ class KeyValueObject(DBObject):
         return  session.query(cls).filter(cls.key == values_dict['key'])
 
     @classmethod
-    def set(cls, db, key, value):
-        return cls.create_or_update(db, {'key' : key, 'value' : str(value)})
+    def set(cls, db, key, value, timestamp=datetime.datetime.now()):
+        return cls.create_or_update(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
+
+    @classmethod
+    def set_newer(cls, db, key, value, timestamp=datetime.datetime.now()):
+        item = cls.find_one(db, {'key' : key})
+        if item is None or item.timestamp < timestamp:
+            return cls.create_or_update(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
 
     @classmethod
     def get(cls, db, key):

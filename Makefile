@@ -214,8 +214,7 @@ new_garmin: import_new_monitoring garmin_summary
 garmin_config:
 	python analyze_garmin.py -S$(DEFAULT_SLEEP_START),$(DEFAULT_SLEEP_STOP)  --sqlite /Users/tgoetz/HealthData/DBs
 
-#garmin_dbs: $(GARMIN_DB) $(GARMIN_MON_DB) $(GARMIN_ACT_DB) $(GARMIN_SUM_DB)
-garmin_dbs: $(GARMIN_DB) $(GARMIN_MON_DB) $(GARMIN_SUM_DB)
+garmin_dbs: $(GARMIN_DB) $(GARMIN_MON_DB) $(GARMIN_ACT_DB) $(GARMIN_SUM_DB)
 
 
 #

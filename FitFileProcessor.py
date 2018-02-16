@@ -23,9 +23,9 @@ class FitFileProcessor():
         self.garmin_act_db = GarminDB.ActivitiesDB(self.db_params_dict, self.debug)
 
         if english_units:
-            GarminDB.Attributes.set(self.garmin_db, 'units', 'english')
+            GarminDB.Attributes.set_newer(self.garmin_db, 'units', 'english')
         else:
-            GarminDB.Attributes.set(self.garmin_db, 'units', 'metric')
+            GarminDB.Attributes.set_newer(self.garmin_db, 'units', 'metric')
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
 
     def write_message_type(self, fit_file, message_type):
@@ -60,14 +60,14 @@ class FitFileProcessor():
         if parsed_message['serial_number'] is not None:
             device = {
                 'serial_number' : parsed_message['serial_number'],
-                'timestamp' : parsed_message['time_created'],
-                'manufacturer' : parsed_message['manufacturer'],
-                'product' : parsed_message['product'],
+                'timestamp'     : parsed_message['time_created'],
+                'manufacturer'  : parsed_message['manufacturer'],
+                'product'       : parsed_message['product'],
             }
             GarminDB.Device.find_or_create(self.garmin_db, device)
         file = {
-            'name' : fit_file.filename,
-            'type' : parsed_message['type'],
+            'name'          : fit_file.filename,
+            'type'          : parsed_message['type'],
             'serial_number' : parsed_message['serial_number'],
         }
         GarminDB.File.find_or_create(self.garmin_db, file)
@@ -77,10 +77,13 @@ class FitFileProcessor():
             self.write_file_id_entry(fit_file, message)
 
     def write_stress_level(self, fit_file, stress_messages):
-        for stress_message in stress_messages:
-            timestamp = stress_message['stress_level_time'].value()
-            stress = stress_message['stress_level_value'].value()
-            GarminDB.Stress.find_or_create(self.garmin_db, {'timestamp' : timestamp, 'stress' : stress})
+        for message in stress_messages:
+            parsed_message = message.parsed()
+            stress = {
+                'timestamp' : parsed_message['stress_level_time'],
+                'stress'    : parsed_message['stress_level_value'],
+            }
+            GarminDB.Stress.find_or_create(self.garmin_db, stress)
 
     def write_event(self, fit_file, event_messages):
         for message in event_messages:
@@ -112,7 +115,8 @@ class FitFileProcessor():
             'file_id'                           : GarminDB.File.get(self.garmin_db, fit_file.filename),
             'start_time'                        : parsed_message['start_time'],
             'stop_time'                         : parsed_message['timestamp'],
-            'sport_type'                        : parsed_message['sport'],
+            'sport'                             : parsed_message['sport'],
+            'sub_sport'                         : parsed_message['sub_sport'],
             'cycles'                            : parsed_message['cycles'],
             'laps'                              : parsed_message['num_laps'],
             'avg_hr'                            : parsed_message['avg_heart_rate'],

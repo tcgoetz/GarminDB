@@ -20,24 +20,6 @@ class ActivitiesDB(DB):
         ActivitiesDB.Base.metadata.create_all(self.engine)
 
 
-
-class SportType(ActivitiesDB.Base, DBObject):
-    __tablename__ = 'sport_type'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True)
-
-    min_row_values = 1
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.name == values_dict['name'])
-
-    @classmethod
-    def get_id(cls, db, name):
-        return cls.find_or_create_id(db, {'name' : name})
-
-
 class Activities(ActivitiesDB.Base, DBObject):
     __tablename__ = 'activities'
 
@@ -47,7 +29,8 @@ class Activities(ActivitiesDB.Base, DBObject):
     stop_time = Column(DateTime, unique=True)
     cycles = Column(Float)
     laps = Column(Integer)
-    sport_type_id = Column(Integer, ForeignKey('sport_type.id'))
+    sport = Column(String)
+    sub_sport = Column(String)
     avg_hr = Column(Integer)
     max_hr = Column(Integer)
     calories = Column(Integer)
@@ -61,9 +44,7 @@ class Activities(ActivitiesDB.Base, DBObject):
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)
 
-    _relational_mappings = {
-        'sport_type' : ('sport_type_id', SportType.get_id)
-    }
+    _relational_mappings = {}
     time_col = synonym("start_time")
     min_row_values = 2
 

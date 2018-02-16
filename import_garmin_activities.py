@@ -8,7 +8,6 @@ import os, sys, getopt, re, string, logging, datetime, traceback
 
 
 import Fit
-#import GarminDB
 import FitFileProcessor
 
 
