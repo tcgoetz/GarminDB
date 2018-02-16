@@ -31,8 +31,8 @@ class FitFileProcessor():
     def write_generic(self, fit_file, message_type, messages):
         for message in messages:
             try:
-                function = getattr(self, 'write_' + message_type + "_entry")
-                function(fit_file, messages)
+                function = getattr(self, 'write_' + message_type + '_entry')
+                function(fit_file, message)
             except AttributeError:
                 logger.debug("No entry handler for message type %s (%d) from %s: %s" % (message_type, len(messages), fit_file.filename, str(messages[0])))
 
