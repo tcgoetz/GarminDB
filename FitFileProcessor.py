@@ -116,7 +116,7 @@ class FitFileProcessor():
             'start_long'                        : parsed_message.get('start_position_long', None),
             'stop_lat'                          : parsed_message.get('end_position_lat', None),
             'stop_long'                         : parsed_message.get('end_position_long', None),
-            'distance'                          : parsed_message.get('total_distance', None),
+            'distance'                          : parsed_message.get('dev_User_distance', parsed_message.get('total_distance', None)),
             'sport'                             : parsed_message['sport'],
             'sub_sport'                         : parsed_message['sub_sport'],
             'cycles'                            : parsed_message.get('total_cycles', None),
@@ -124,7 +124,7 @@ class FitFileProcessor():
             'avg_hr'                            : parsed_message['avg_heart_rate'],
             'max_hr'                            : parsed_message['max_heart_rate'],
             'calories'                          : parsed_message['total_calories'],
-            'avg_cadence'                       : parsed_message['avg_cadence'],
+            'avg_cadence'                       : parsed_message.get('dev_avg_cadence', parsed_message['avg_cadence']),
             'max_cadence'                       : parsed_message['max_cadence'],
             'avg_speed'                         : parsed_message['avg_speed'],
             'max_speed'                         : parsed_message['max_speed'],
@@ -171,6 +171,9 @@ class FitFileProcessor():
 
     def write_dev_data_id_entry(self, fit_file, dev_data_id_message):
         logger.debug("dev_data_id message: " + repr(dev_data_id_message.to_dict()))
+
+    def write_field_description_entry(self, fit_file, field_description_message):
+        logger.info("field_description message: " + repr(field_description_message.to_dict()))
 
     def write_monitoring_info_entry(self, fit_file, message):
         parsed_message = message.to_dict()
