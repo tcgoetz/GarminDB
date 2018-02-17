@@ -103,6 +103,9 @@ class FitFileProcessor():
     def write_source_entry(self, fit_file, source_message):
         logger.info("source message: " + repr(source_message.to_dict()))
 
+    def get_field_value(self, message_dict, field_name):
+        return message_dict.get('dev_' + field_name, message_dict.get(field_name, None))
+
     def write_session_entry(self, fit_file, message):
         logger.info("session message: " + repr(message.to_dict()))
         parsed_message = message.to_dict()
@@ -119,13 +122,13 @@ class FitFileProcessor():
             'distance'                          : parsed_message.get('dev_User_distance', parsed_message.get('total_distance', None)),
             'sport'                             : parsed_message['sport'],
             'sub_sport'                         : parsed_message['sub_sport'],
-            'cycles'                            : parsed_message.get('total_cycles', None),
-            'laps'                              : parsed_message['num_laps'],
-            'avg_hr'                            : parsed_message['avg_heart_rate'],
-            'max_hr'                            : parsed_message['max_heart_rate'],
-            'calories'                          : parsed_message['total_calories'],
-            'avg_cadence'                       : parsed_message.get('dev_avg_cadence', parsed_message['avg_cadence']),
-            'max_cadence'                       : parsed_message['max_cadence'],
+            'cycles'                            : self.get_field_value(parsed_message, 'total_cycles'),
+            'laps'                              : self.get_field_value(parsed_message, 'num_laps'),
+            'avg_hr'                            : self.get_field_value(parsed_message, 'avg_heart_rate'),
+            'max_hr'                            : self.get_field_value(parsed_message, 'max_heart_rate'),
+            'calories'                          : self.get_field_value(parsed_message, 'total_calories'),
+            'avg_cadence'                       : self.get_field_value(parsed_message, 'avg_cadence'),
+            'max_cadence'                       : self.get_field_value(parsed_message, 'max_cadence'),
             'avg_speed'                         : parsed_message['avg_speed'],
             'max_speed'                         : parsed_message['max_speed'],
             'ascent'                            : parsed_message['total_ascent'],

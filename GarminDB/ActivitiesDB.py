@@ -66,3 +66,25 @@ class Activities(ActivitiesDB.Base, DBObject):
     @classmethod
     def _find_query(cls, session, values_dict):
         return session.query(cls).filter(cls.start_time == values_dict['start_time'])
+
+
+
+# class StepActivities(ActivitiesDB.Base, DBObject):
+#     __tablename__ = 'step_activities'
+
+#     id = Column(Integer, primary_key=True)
+#     steps = Column(Integer)
+
+
+# class StrokeActivities(ActivitiesDB.Base, DBObject):
+#     __tablename__ = 'stroke_activities'
+
+#     id = Column(Integer, primary_key=True)
+#     strokes = Column(Integer)
+
+
+# class RpmActivities(ActivitiesDB.Base, DBObject):
+#     __tablename__ = 'rpm_activities'
+
+#     id = Column(Integer, primary_key=True)
+#     strokes = Column(Integer)
