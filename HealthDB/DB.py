@@ -417,8 +417,6 @@ class SummaryBase(DBObject):
     weight_min = Column(Float)
     weight_max = Column(Float)
     stress_avg = Column(Float)
-    stress_min = Column(Float)
-    stress_max = Column(Float)
     intensity_mins = Column(Integer)
     moderate_activity_mins = Column(Integer)
     vigorous_activity_mins = Column(Integer)
@@ -427,7 +425,7 @@ class SummaryBase(DBObject):
 
     min_row_values = 1
     _updateable_fields = [
-        'hr_avg', 'hr_min', 'hr_max', 'rhr_avg', 'rhr_min', 'rhr_max', 'weight_avg', 'weight_min', 'weight_max', 'stress_avg', 'stress_min',
-        'stress_max', 'intensity_mins', 'moderate_activity_mins', 'vigorous_activity_mins', 'steps', 'floors'
+        'hr_avg', 'hr_min', 'hr_max', 'rhr_avg', 'rhr_min', 'rhr_max', 'weight_avg', 'weight_min', 'weight_max', 'stress_avg',
+        'intensity_mins', 'moderate_activity_mins', 'vigorous_activity_mins', 'steps', 'floors'
     ]
 

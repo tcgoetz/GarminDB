@@ -151,8 +151,6 @@ class Stress(GarminDB.Base, DBObject):
     def get_stats(cls, db, start_ts, end_ts):
         stats = {
             'stress_avg' : cls.get_col_avg(db, cls.stress, start_ts, end_ts, True),
-            'stress_min' : cls.get_col_min(db, cls.stress, start_ts, end_ts, True),
-            'stress_max' : cls.get_col_max(db, cls.stress, start_ts, end_ts),
         }
         return stats
 

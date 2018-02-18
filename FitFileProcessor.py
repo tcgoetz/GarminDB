@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import logging, sys
+import logging, sys, datetime
 
 import Fit
 import GarminDB
@@ -102,7 +102,7 @@ class FitFileProcessor():
         logger.debug("sensor message: " + repr(sensor_message.to_dict()))
 
     def write_source_entry(self, fit_file, source_message):
-        logger.info("source message: " + repr(source_message.to_dict()))
+        logger.debug("source message: " + repr(source_message.to_dict()))
 
     def get_field_value(self, message_dict, field_name):
         return message_dict.get('dev_' + field_name, message_dict.get(field_name, None))
@@ -112,32 +112,33 @@ class FitFileProcessor():
         run = {
             'id'                                : activity_id,
             'steps'                             : self.get_field_value(message_dict, 'total_steps'),
+            'avg_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['avg_speed'])).time(),
+            'max_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['max_speed'])).time(),
             'avg_steps_per_min'                 : self.get_field_value(message_dict, 'avg_cadence') * 2,
             'max_steps_per_min'                 : self.get_field_value(message_dict, 'max_cadence') * 2,
             'avg_step_length'                   : self.get_field_value(message_dict, 'avg_step_length'),
             'avg_vertical_ratio'                : self.get_field_value(message_dict, 'avg_vertical_ratio'),
-            'avg_stance_time_balance'           : self.get_field_value(message_dict, 'avg_stance_time_balance'),
-            'avg_stance_time'                   : self.get_field_value(message_dict, 'avg_stance_time'),
+            'avg_vertical_oscillation'          : self.get_field_value(message_dict, 'avg_vertical_oscillation'),
+            'avg_gct_balance'                   : self.get_field_value(message_dict, 'avg_stance_time_balance'),
+            'avg_ground_contact_time'           : self.get_field_value(message_dict, 'avg_stance_time'),
             'avg_stance_time_percent'           : self.get_field_value(message_dict, 'avg_stance_time_percent'),
         }
         GarminDB.RunActivities.find_or_create(self.garmin_act_db, run)
 
     def write_walking_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        logger.info("walk entry: " + repr(message_dict))
+        logger.debug("walk entry: " + repr(message_dict))
         walk = {
             'id'                                : activity_id,
             'steps'                             : self.get_field_value(message_dict, 'total_steps'),
+            'avg_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['avg_speed'])).time(),
+            'max_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['max_speed'])).time(),
         }
         GarminDB.WalkActivities.find_or_create(self.garmin_act_db, walk)
 
 
     def write_hiking_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        logger.info("hike entry: " + repr(message_dict))
-        hike = {
-            'id'                                : activity_id,
-            'steps'                             : self.get_field_value(message_dict, 'total_steps'),
-        }
-        GarminDB.HikeActivities.find_or_create(self.garmin_act_db, hike)
+        logger.debug("hike entry: " + repr(message_dict))
+        return self.write_walking_entry(fit_file, activity_id, sub_sport, message_dict)
 
     def write_cycling_entry(self, fit_file, activity_id, sub_sport, message_dict):
         logger.info("ride entry: " + repr(message_dict))
@@ -148,20 +149,23 @@ class FitFileProcessor():
         GarminDB.CycleActivities.find_or_create(self.garmin_act_db, ride)
 
     def write_stand_up_paddleboarding_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        logger.info("sup entry: " + repr(message_dict))
+        logger.debug("sup entry: " + repr(message_dict))
         paddle = {
             'id'                                : activity_id,
             'strokes'                           : self.get_field_value(message_dict, 'total_strokes'),
             'avg_stroke_distance'               : self.get_field_value(message_dict, 'avg_stroke_distance'),
+            'avg_strokes_per_min'               : self.get_field_value(message_dict, 'avg_cadence'),
+            'max_strokes_per_min'               : self.get_field_value(message_dict, 'max_cadence'),
         }
         GarminDB.PaddleActivities.find_or_create(self.garmin_act_db, paddle)
 
     def write_elliptical_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        logger.info("workout entry: " + repr(message_dict))
+        logger.info("elliptical entry: " + repr(message_dict))
         workout = {
             'id'                                : activity_id,
-            'steps'                             : self.get_field_value(message_dict, 'Steps'),
-            'elliptical_distance'               : self.get_field_value(message_dict, 'User_distance'),
+            'steps'                             : message_dict.get('dev_Steps', message_dict.get('steps', None)),
+            'elliptical_distance'               : message_dict.get('dev_User_distance', message_dict.get('dev_distance', message_dict.get('distance', None))),
+            'avg_rpm'                           : self.get_field_value(message_dict, 'avg_cadence'),
         }
         GarminDB.EllipticalActivities.find_or_create(self.garmin_act_db, workout)
 
@@ -171,7 +175,6 @@ class FitFileProcessor():
             function(fit_file, activity_id, sub_sport, message_dict)
         except AttributeError:
             logger.info("No sub sport handler type %s from %s: %s" % (sub_sport, fit_file.filename, str(message_dict)))
-            raise
 
     def write_session_entry(self, fit_file, message):
         logger.debug("session message: " + repr(message.to_dict()))
@@ -242,7 +245,7 @@ class FitFileProcessor():
         logger.debug("activity message: " + repr(activity_message.to_dict()))
 
     def write_zones_target_entry(self, fit_file, zones_target_message):
-        logger.info("zones target message: " + repr(zones_target_message.to_dict()))
+        logger.debug("zones target message: " + repr(zones_target_message.to_dict()))
 
     def write_record_entry(self, fit_file, record_message):
         logger.debug("record message: " + repr(record_message.to_dict()))

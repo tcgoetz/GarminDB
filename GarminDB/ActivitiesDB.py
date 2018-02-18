@@ -82,6 +82,9 @@ class SportActivities(DBObject):
 class RunActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'run_activities'
     steps = Column(Integer)
+    # pace in mins/mile
+    avg_pace = Column(Time)
+    max_pace = Column(Time)
     # steps per minute
     avg_steps_per_min = Column(Integer)
     max_steps_per_min = Column(Integer)
@@ -89,27 +92,30 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
     avg_step_length = Column(Float)
     # %
     avg_vertical_ratio = Column(Float)
+    # m or ft
+    avg_vertical_oscillation = Column(Float)
     # left % or left right balance
-    avg_stance_time_balance = Column(Float)
+    avg_gct_balance = Column(Float)
     # ground contact time in ms
-    avg_stance_time = Column(Time)
+    avg_ground_contact_time = Column(Time)
     avg_stance_time_percent = Column(Float)
 
 
 class WalkActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'walk_activities'
     steps = Column(Integer)
-
-
-class HikeActivities(ActivitiesDB.Base, SportActivities):
-    __tablename__ = 'hike_activities'
-    steps = Column(Integer)
+    # pace in mins/mile
+    avg_pace = Column(Time)
+    max_pace = Column(Time)
 
 
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'paddle_activities'
     strokes = Column(Integer)
+    # m or ft
     avg_stroke_distance = Column(Float)
+    avg_strokes_per_min = Column(Float)
+    max_strokes_per_min = Column(Float)
 
 
 class CycleActivities(ActivitiesDB.Base, SportActivities):
@@ -122,6 +128,7 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
     steps = Column(Integer)
     # kms or miles
     elliptical_distance = Column(Float)
+    avg_rpm = Column(Integer)
 
 
 # class StrokeActivities(ActivitiesDB.Base, DBObject):
