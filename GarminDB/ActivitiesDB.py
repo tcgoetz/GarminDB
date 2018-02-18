@@ -41,7 +41,9 @@ class Activities(ActivitiesDB.Base, DBObject):
     stop_long = Column(Float)
     # kms or miles
     distance = Column(Float)
+    #
     cycles = Column(Float)
+    #
     laps = Column(Integer)
     avg_hr = Column(Integer)
     max_hr = Column(Integer)
@@ -59,7 +61,6 @@ class Activities(ActivitiesDB.Base, DBObject):
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)
 
-    _relational_mappings = {}
     time_col = synonym("start_time")
     min_row_values = 2
 
@@ -68,12 +69,59 @@ class Activities(ActivitiesDB.Base, DBObject):
         return session.query(cls).filter(cls.start_time == values_dict['start_time'])
 
 
+class SportActivities(DBObject):
 
-# class StepActivities(ActivitiesDB.Base, DBObject):
-#     __tablename__ = 'step_activities'
+    id = Column(Integer, primary_key=True)
+    min_row_values = 1
 
-#     id = Column(Integer, primary_key=True)
-#     steps = Column(Integer)
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.id == values_dict['id'])
+
+
+class RunActivities(ActivitiesDB.Base, SportActivities):
+    __tablename__ = 'run_activities'
+    steps = Column(Integer)
+    # steps per minute
+    avg_steps_per_min = Column(Integer)
+    max_steps_per_min = Column(Integer)
+    # m or ft
+    avg_step_length = Column(Float)
+    # %
+    avg_vertical_ratio = Column(Float)
+    # left % or left right balance
+    avg_stance_time_balance = Column(Float)
+    # ground contact time in ms
+    avg_stance_time = Column(Time)
+    avg_stance_time_percent = Column(Float)
+
+
+class WalkActivities(ActivitiesDB.Base, SportActivities):
+    __tablename__ = 'walk_activities'
+    steps = Column(Integer)
+
+
+class HikeActivities(ActivitiesDB.Base, SportActivities):
+    __tablename__ = 'hike_activities'
+    steps = Column(Integer)
+
+
+class PaddleActivities(ActivitiesDB.Base, SportActivities):
+    __tablename__ = 'paddle_activities'
+    strokes = Column(Integer)
+    avg_stroke_distance = Column(Float)
+
+
+class CycleActivities(ActivitiesDB.Base, SportActivities):
+    __tablename__ = 'cycle_activities'
+    strokes = Column(Integer)
+
+
+class EllipticalActivities(ActivitiesDB.Base, SportActivities):
+    __tablename__ = 'elliptical_activities'
+    steps = Column(Integer)
+    # kms or miles
+    elliptical_distance = Column(Float)
 
 
 # class StrokeActivities(ActivitiesDB.Base, DBObject):

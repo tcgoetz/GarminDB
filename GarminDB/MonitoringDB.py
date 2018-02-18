@@ -276,7 +276,6 @@ class Monitoring(MonitoringDB.Base, DBObject):
     def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
         stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
         stats['first_day'] = first_day_ts
-        print repr(stats)
         return stats
 
     @classmethod
