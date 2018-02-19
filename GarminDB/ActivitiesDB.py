@@ -26,6 +26,8 @@ class Activities(ActivitiesDB.Base, DBObject):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     description = Column(String)
+    type = Column(String)
+    #
     start_time = Column(DateTime, unique=True)
     stop_time = Column(DateTime, unique=True)
     #
