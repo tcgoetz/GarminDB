@@ -18,8 +18,8 @@ Once you have your data in the DB, I recomend using a SQLite browser like [SQLit
 
 The scripts are automated with Make. The directories where the data files are stored is setup for my use and not genralized. You may need to reconfigure the file and directory paths in the makefile variables.
 
-* Git clone GarminDB repo.
-* Run `make setup` get the scripts ready to process data.Get the command from the green button on the project home page.
+* Git clone GarminDB repo. Get the command from the green button on the project home page.
+* Run `make setup` get the scripts ready to process data.
 * Run `make GC_DATE=<date to start scraping monitoring data from> GC_DAYS={number of days of monitoring data to download} GC_USER={username} GC_PASSWORD={password} scrape_monitoring` followed by `make import_monitoring` to start exporting your daily monitoring data. You need to run this at least once to get some data into your DB. The regular import command can't calulate the dates to import until there is data in the DB.
 * Download and import weight data from Garmin Connect by running `make GC_DATE={date to start scraping monitoring data from} GC_DAYS={number of days of monitoring data to download} GC_USER={username} GC_PASSWORD={password} scrape_weight`
 * Keep all of your local data up to date by running only one command: `make GC_USER={username} GC_PASSWORD={password}`.
