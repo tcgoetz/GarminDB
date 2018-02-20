@@ -273,6 +273,11 @@ class DBObject():
         return cls.find_one(db, values_dict)
 
     @classmethod
+    def create_or_update_not_none(cls, db, values_dict):
+        logger.debug("%s::create_or_update_not_none %s" % (cls.__name__, repr(values_dict)))
+        return cls.create_or_update(db, {key : value for (key,value) in values_dict.iteritems() if value is not None})
+
+    @classmethod
     def row_to_int(cls, row):
         return int(row[0])
 

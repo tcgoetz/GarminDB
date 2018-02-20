@@ -31,7 +31,7 @@ class Activities(ActivitiesDB.Base, DBObject):
     start_time = Column(DateTime, unique=True)
     stop_time = Column(DateTime, unique=True)
     #
-    time = Column(Time)
+    elapsed_time = Column(Time)
     moving_time = Column(Time)
     #
     sport = Column(String)
@@ -54,12 +54,16 @@ class Activities(ActivitiesDB.Base, DBObject):
     max_cadence = Column(Integer)
     # kmph or mph
     avg_speed = Column(Float)
+    avg_moving_speed = Column(Float)
     max_speed = Column(Float)
     # feet or meters
     ascent = Column(Float)
     descent = Column(Float)
+    # C or F
     max_tempature = Column(Float)
+    min_tempature = Column(Float)
     avg_tempature = Column(Float)
+
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)
 
@@ -68,7 +72,7 @@ class Activities(ActivitiesDB.Base, DBObject):
 
     @classmethod
     def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.start_time == values_dict['start_time'])
+        return session.query(cls).filter(cls.id == values_dict['id'])
 
 
 class SportActivities(DBObject):
@@ -86,6 +90,7 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
     steps = Column(Integer)
     # pace in mins/mile
     avg_pace = Column(Time)
+    avg_moving_pace = Column(Time)
     max_pace = Column(Time)
     # steps per minute
     avg_steps_per_min = Column(Integer)
@@ -96,11 +101,16 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
     avg_vertical_ratio = Column(Float)
     # m or ft
     avg_vertical_oscillation = Column(Float)
-    # left % or left right balance
+    # left % of left right balance
     avg_gct_balance = Column(Float)
     # ground contact time in ms
     avg_ground_contact_time = Column(Time)
     avg_stance_time_percent = Column(Float)
+    # bpm
+    lactate_threshold_hr = Column(Float)
+    # watts
+    power = Column(Float)
+    vo2_max = Column(Float)
 
 
 class WalkActivities(ActivitiesDB.Base, SportActivities):
@@ -109,6 +119,7 @@ class WalkActivities(ActivitiesDB.Base, SportActivities):
     # pace in mins/mile
     avg_pace = Column(Time)
     max_pace = Column(Time)
+    vo2_max = Column(Float)
 
 
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
@@ -118,30 +129,30 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
     avg_stroke_distance = Column(Float)
     avg_strokes_per_min = Column(Float)
     max_strokes_per_min = Column(Float)
+    power = Column(Float)
 
 
 class CycleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'cycle_activities'
     strokes = Column(Integer)
+    # pace in mins/mile
+    avg_pace = Column(Time)
+    avg_moving_pace = Column(Time)
+    max_pace = Column(Time)
+    avg_rpms = Column(Float)
+    max_rpms = Column(Float)
+    # watts
+    power = Column(Float)
+    vo2_max = Column(Float)
 
 
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'elliptical_activities'
     steps = Column(Integer)
+    avg_pace = Column(Time)
+    max_pace = Column(Time)
     # kms or miles
     elliptical_distance = Column(Float)
-    avg_rpm = Column(Integer)
-
-
-# class StrokeActivities(ActivitiesDB.Base, DBObject):
-#     __tablename__ = 'stroke_activities'
-
-#     id = Column(Integer, primary_key=True)
-#     strokes = Column(Integer)
-
-
-# class RpmActivities(ActivitiesDB.Base, DBObject):
-#     __tablename__ = 'rpm_activities'
-
-#     id = Column(Integer, primary_key=True)
-#     strokes = Column(Integer)
+    avg_rpms = Column(Float)
+    max_rpms = Column(Float)
+    power = Column(Float)

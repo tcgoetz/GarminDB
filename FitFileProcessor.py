@@ -123,7 +123,7 @@ class FitFileProcessor():
             'avg_ground_contact_time'           : self.get_field_value(message_dict, 'avg_stance_time'),
             'avg_stance_time_percent'           : self.get_field_value(message_dict, 'avg_stance_time_percent'),
         }
-        GarminDB.RunActivities.find_or_create(self.garmin_act_db, run)
+        GarminDB.RunActivities.create_or_update_not_none(self.garmin_act_db, run)
 
     def write_walking_entry(self, fit_file, activity_id, sub_sport, message_dict):
         logger.debug("walk entry: " + repr(message_dict))
@@ -133,7 +133,7 @@ class FitFileProcessor():
             'avg_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['avg_speed'])).time(),
             'max_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['max_speed'])).time(),
         }
-        GarminDB.WalkActivities.find_or_create(self.garmin_act_db, walk)
+        GarminDB.WalkActivities.create_or_update_not_none(self.garmin_act_db, walk)
 
 
     def write_hiking_entry(self, fit_file, activity_id, sub_sport, message_dict):
@@ -146,7 +146,7 @@ class FitFileProcessor():
             'id'                                : activity_id,
             'strokes'                            : self.get_field_value(message_dict, 'total_strokes'),
         }
-        GarminDB.CycleActivities.find_or_create(self.garmin_act_db, ride)
+        GarminDB.CycleActivities.create_or_update_not_none(self.garmin_act_db, ride)
 
     def write_stand_up_paddleboarding_entry(self, fit_file, activity_id, sub_sport, message_dict):
         logger.debug("sup entry: " + repr(message_dict))
@@ -157,17 +157,18 @@ class FitFileProcessor():
             'avg_strokes_per_min'               : self.get_field_value(message_dict, 'avg_cadence'),
             'max_strokes_per_min'               : self.get_field_value(message_dict, 'max_cadence'),
         }
-        GarminDB.PaddleActivities.find_or_create(self.garmin_act_db, paddle)
+        GarminDB.PaddleActivities.create_or_update_not_none(self.garmin_act_db, paddle)
 
     def write_elliptical_entry(self, fit_file, activity_id, sub_sport, message_dict):
         logger.info("elliptical entry: " + repr(message_dict))
         workout = {
             'id'                                : activity_id,
-            'steps'                             : message_dict.get('dev_Steps', message_dict.get('steps', None)),
+            'steps'                             : message_dict.get('dev_Steps', message_dict.get('total_steps', None)),
             'elliptical_distance'               : message_dict.get('dev_User_distance', message_dict.get('dev_distance', message_dict.get('distance', None))),
-            'avg_rpm'                           : self.get_field_value(message_dict, 'avg_cadence'),
+            'avg_rpms'                          : self.get_field_value(message_dict, 'avg_cadence'),
+            'max_rpms'                          : self.get_field_value(message_dict, 'max_cadence'),
         }
-        GarminDB.EllipticalActivities.find_or_create(self.garmin_act_db, workout)
+        GarminDB.EllipticalActivities.create_or_update_not_none(self.garmin_act_db, workout)
 
     def write_fitness_equipment_entry(self, fit_file, activity_id, sub_sport, message_dict):
         try:
@@ -186,7 +187,7 @@ class FitFileProcessor():
             'id'                                : activity_id,
             'start_time'                        : message_dict['start_time'],
             'stop_time'                         : message_dict['timestamp'],
-            'time'                              : message_dict['total_elapsed_time'],
+            'elapsed_time'                      : message_dict['total_elapsed_time'],
             'moving_time'                       : message_dict.get('total_timer_time', None),
             'start_lat'                         : message_dict.get('start_position_lat', None),
             'start_long'                        : message_dict.get('start_position_long', None),
@@ -211,7 +212,7 @@ class FitFileProcessor():
             'training_effect'                   : message_dict.get('total_training_effect', None),
             'anaerobic_training_effect'         : message_dict.get('total_anaerobic_training_effect', None)
         }
-        GarminDB.Activities.find_or_create(self.garmin_act_db, activity)
+        GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
         try:
             function = getattr(self, 'write_' + sport + '_entry')
             function(fit_file, activity_id, sub_sport, message_dict)

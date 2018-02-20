@@ -181,6 +181,12 @@ $(ACTIVITES_FIT_FILES_DIR):
 $(ACTIVITES_TCX_FILES_DIR):
 	mkdir -p $(ACTIVITES_TCX_FILES_DIR)
 
+test_import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
+	python import_garmin_activities.py -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/1655156096.fit" --sqlite $(DB_DIR)
+
+test_import_json_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
+	python import_garmin_activities.py -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_1655156096.json" --sqlite $(DB_DIR)
+
 import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
 
