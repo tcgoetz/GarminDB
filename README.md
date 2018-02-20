@@ -32,6 +32,6 @@ More [usage](https://github.com/tcgoetz/GarminDB/wiki/Usage)
 * If you get a DB version exception, the DB schema was updated and you need to rebuild your DBs by running `make GC_USER={username} GC_PASSWORD={password} rebuild_dbs`.
 * The scripts were developed on OSX. Information or patches that on using these scripts on other platforms are welcome.
 * Running the scripts on Linux should require little or no changes.
-* I'm not sure what it wouldtake to run these scripts on Windows.
+* I'm not sure what it would take to run these scripts on Windows.
 * Scraping data from Garmin Connect currently requires Firefox, but can also be done with Chrome. Additional coding required.
 * If you have issues, file a bug here on the project. see the Issues tab at the top.
