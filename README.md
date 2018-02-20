@@ -6,7 +6,7 @@ What they can do:
 * Automatically download Garmin daily monitoring files (all day heart rate, activity, climb/decend, and intensity minutes) from the user's Garmin Connect "Daily Summary" page. (Currently requires a Firefox browser be installed)
 * Import Garmin monitoring Fit files into a SQLite DB.
 * Extract weight data from Garmin Connect and import it into the DB. (Currently requires a Firefox browser be installed)
-* Download and import activity files from Garmin Connect.
+* Download and import activity files from Garmin Connect. A summary table for all activities and more detailed data for some activity types.
 * Import Fitbit daily summary CSV files (files with one summary entry per day).
 * Import MS Health daily summary CSV files.
 * Import MS Health Vault weight export CSV files.
