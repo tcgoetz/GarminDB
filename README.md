@@ -34,4 +34,4 @@ More [usage](https://github.com/tcgoetz/GarminDB/wiki/Usage)
 * Running the scripts on Linux should require little or no changes.
 * I'm not sure what it would take to run these scripts on Windows.
 * Scraping data from Garmin Connect currently requires Firefox, but can also be done with Chrome. Additional coding required.
-* If you have issues, file a bug here on the project. see the Issues tab at the top.
+* If you have issues, file a bug here on the project. See the Issues tab at the top of the project page.
