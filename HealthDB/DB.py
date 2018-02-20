@@ -407,8 +407,22 @@ class KeyValueObject(DBObject):
             return None
 
     @classmethod
+    def get_int(cls, db, key):
+        return int(cls.get(db, key))
+
+    @classmethod
     def get_time(cls, db, key):
         return datetime.datetime.strptime(cls.get(db, key), "%H:%M:%S").time()
+
+
+class DbVersionObject(KeyValueObject):
+    __tablename__ = 'version'
+
+    def version_check(self, db, version_number):
+        self.set_if_unset(db, 'version', version_number)
+        self.version = self.get_int(db, 'version')
+        if self.version != version_number:
+            raise RuntimeError("DB version mismatch. Please rebuild the DB. (%s vs %s)" % (self.version, version_number))
 
 
 class SummaryBase(DBObject):

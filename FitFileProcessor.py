@@ -160,7 +160,7 @@ class FitFileProcessor():
         GarminDB.PaddleActivities.create_or_update_not_none(self.garmin_act_db, paddle)
 
     def write_elliptical_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        logger.info("elliptical entry: " + repr(message_dict))
+        logger.debug("elliptical entry: " + repr(message_dict))
         workout = {
             'id'                                : activity_id,
             'steps'                             : message_dict.get('dev_Steps', message_dict.get('total_steps', None)),

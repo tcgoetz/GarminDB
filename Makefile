@@ -41,7 +41,7 @@ DEFAULT_SLEEP_STOP=06:00
 #
 # Master targets
 #
-all: import_new_monitoring scrape_new_weight
+all: update_dbs
 
 setup: update deps
 
@@ -99,6 +99,8 @@ $(SUMMARY_DB): $(DB_DIR)
 
 rebuild_dbs: clean_dbs fitbit_db mshealth_db garmin_dbs
 
+update_dbs: new_garmin
+
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs clean_summary_db
 
 clean_summary_db:
@@ -155,7 +157,7 @@ import_monitoring: $(DB_DIR)
 scrape_new_monitoring: $(MEW_MONITORING_FIT_FILES_DIR)
 	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
 
-import_new_monitoring: scrape_new_monitoring $(MONITORING_FIT_FILES_DIR)
+import_new_monitoring: scrape_new_monitoring $(MONITORING_FIT_FILES_DIR) $(MEW_MONITORING_FIT_FILES_DIR)
 	if ls $(MEW_MONITORING_FIT_FILES_DIR)/*.fit 1> /dev/null 2>&1; then \
 		python import_garmin_fit.py -e --input_dir "$(MEW_MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR) && \
 		mv $(MEW_MONITORING_FIT_FILES_DIR)/*.fit $(MONITORING_FIT_FILES_DIR)/.; \
@@ -190,6 +192,9 @@ test_import_json_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
 
+import_new_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR) download_new_activities
+	python import_garmin_activities.py -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
+
 download_new_activities: $(ACTIVITES_FIT_FILES_DIR)
 	python garmin-connect-export/gcexport.py -c 10 -f original --unzip --username $(GC_USER) --password $(GC_PASSWORD) -d "$(ACTIVITES_FIT_FILES_DIR)"
 
@@ -215,7 +220,7 @@ $(GARMIN_SUM_DB): $(DB_DIR) garmin_summary
 garmin_summary:
 	python analyze_garmin.py --analyze --dates --sqlite $(DB_DIR)
 
-new_garmin: import_new_monitoring download_new_activities garmin_summary
+new_garmin: import_new_monitoring import_new_activities garmin_summary
 
 garmin_config:
 	python analyze_garmin.py -S$(DEFAULT_SLEEP_START),$(DEFAULT_SLEEP_STOP)  --sqlite /Users/tgoetz/HealthData/DBs
