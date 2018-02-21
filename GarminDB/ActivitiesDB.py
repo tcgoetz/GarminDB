@@ -101,7 +101,7 @@ class SportActivities(DBObject):
 
     @classmethod
     def create_activity_view(cls, db):
-        cls.create_view(db, cls.__tablename__ + '_view', Activities)
+        cls.create_join_view(db, cls.__tablename__ + '_view', Activities)
 
 
 class RunActivities(ActivitiesDB.Base, SportActivities):

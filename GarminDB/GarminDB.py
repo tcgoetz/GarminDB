@@ -24,6 +24,8 @@ class GarminDB(DB):
         GarminDB.Base.metadata.create_all(self.engine)
         self.version = SummaryDB.DbVersion()
         self.version.version_check(self, self.db_version)
+        DeviceInfo.create_view(self)
+        File.create_view(self)
 
 
 class Attributes(GarminDB.Base, KeyValueObject):
@@ -68,6 +70,10 @@ class DeviceInfo(GarminDB.Base, DBObject):
     def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
+    @classmethod
+    def create_view(cls, db):
+        cls.create_join_view(db, cls.__tablename__ + '_view', Device)
+
 
 def gc_id_from_path(pathname):
     return DBObject.filename_from_pathname(pathname).split('.')[0]
@@ -80,7 +86,6 @@ class File(GarminDB.Base, DBObject):
     name = Column(String, unique=True)
     type = Column(String)
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
-
 
     _col_mappings = {
         'name' : ('id', gc_id_from_path)
@@ -97,6 +102,10 @@ class File(GarminDB.Base, DBObject):
     @classmethod
     def get(cls, db, name):
         return cls.find_id(db, {'name' : DBObject.filename_from_pathname(name)})
+
+    @classmethod
+    def create_view(cls, db):
+        cls.create_join_view(db, cls.__tablename__ + '_view', Device)
 
 
 class Weight(GarminDB.Base, DBObject):

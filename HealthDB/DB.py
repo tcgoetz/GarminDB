@@ -141,7 +141,7 @@ class DBObject():
 
 
     @classmethod
-    def create_view(cls, db, view_name, join_table):
+    def create_join_view(cls, db, view_name, join_table):
         if not db.engine.dialect.has_table(db.engine, view_name):
             query = db.session().query(cls, join_table).join(join_table)
             db.engine.execute('CREATE VIEW ' + view_name + ' AS ' + str(query))
