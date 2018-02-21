@@ -30,6 +30,7 @@ MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/$(YEAR)_Monitoring
 MEW_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/Incoming_Monitoring
 ACTIVITES_FIT_FILES_DIR=$(FIT_FILE_DIR)/Activities
 ACTIVITES_TCX_FILES_DIR=$(HEALTH_DATA_DIR)/TcxFiles
+WEIGHT_FILES_DIR=$(HEALTH_DATA_DIR)/Weight
 
 BIN_DIR=$(PWD)/bin
 
@@ -164,11 +165,14 @@ import_new_monitoring: scrape_new_monitoring $(MONITORING_FIT_FILES_DIR) $(MEW_M
 	fi
 
 ## weight
-scrape_weight: $(DB_DIR)
-	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w
+$(WEIGHT_FILES_DIR):
+	mkdir -p $(WEIGHT_FILES_DIR)
 
-scrape_new_weight: $(DB_DIR)
-	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w
+scrape_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
+	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
+
+scrape_new_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
+	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
 
 ## activities
 GARMIN_ACT_DB=$(DB_DIR)/garmin_activities.db

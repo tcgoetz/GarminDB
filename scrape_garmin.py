@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, logging, datetime, time, tempfile, zipfile
+import os, sys, getopt, re, logging, datetime, time, tempfile, zipfile, json
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -196,13 +196,16 @@ class Scrape():
         page_container = self.wait_for_pagecontainer(self.browser, 10)
         profile_name = self.get_profile_name(self.browser)
 
+def convert_to_json(object):
+    return object.__str__()
+
 
 def usage(program):
     print '%s -d [<date> -n <days> | -l <path to dbs>] -u <username> -p <password> [-m <outdir> | -w ]' % program
     print '  -d <date ex: 01/21/2018> -n <days> fetch n days of monitoring data starting at date'
     print '  -l check the garmin DB and find out what the most recent date is and fetch monitoring data from that date on'
     print '  -m <outdir> fetches the daily monitoring FIT files for each day specified, unzips them, and puts them in outdit'
-    print '  -w  fetches the daily weight data for each day specified and puts them in the DB'
+    print '  -w <outdit> fetches the daily weight data for each day specified and puts them in the DB'
     sys.exit()
 
 def main(argv):
@@ -213,11 +216,12 @@ def main(argv):
     username = None
     password = None
     monitoring = None
-    weight = False
+    weight = None
     debug = False
 
     try:
-        opts, args = getopt.getopt(argv,"d:n:lm:p:s:tu:w", ["debug", "date=", "days=", "username=", "password=", "latest", "monitoring=", "mysql=", "sqlite=", "weight"])
+        opts, args = getopt.getopt(argv,"d:n:lm:p:s:tu:w:",
+            ["debug", "date=", "days=", "username=", "password=", "latest", "monitoring=", "mysql=", "sqlite=", "weight="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -246,7 +250,7 @@ def main(argv):
             monitoring = arg
         elif opt in ("-w", "--weight"):
             logger.debug("Weight")
-            weight = True
+            weight = arg
         elif opt in ("-s", "--sqlite"):
             logging.debug("Sqlite DB path: %s" % arg)
             db_params_dict['db_type'] = 'sqlite'
@@ -304,6 +308,13 @@ def main(argv):
         scrape = Scrape()
         scrape.login(username, password)
         points = scrape.get_weight(date, days)
+
+        # dump weight data to file as json
+        json_filename = weight + '/weight_' + str(time.time()) + '.json'
+        save_file = open(json_filename, 'w')
+        save_file.write(json.dumps(points, default=convert_to_json))
+        save_file.close()
+
         garmindb = GarminDB.GarminDB(db_params_dict)
         for point in points:
             logger.debug("Inserting: " + repr(point))
