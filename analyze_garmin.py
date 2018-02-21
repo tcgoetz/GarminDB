@@ -13,6 +13,7 @@ import GarminDB
 root_logger = logging.getLogger()
 logger = logging.getLogger(__file__)
 
+
 class MovingAverageFilter():
     def __init__(self, factor, initial_value):
         self.factor1 = factor
@@ -30,11 +31,8 @@ class Analyze():
         self.mondb = GarminDB.MonitoringDB(db_params_dict)
         self.garminsumdb = GarminDB.GarminSummaryDB(db_params_dict)
         self.sumdb = HealthDB.SummaryDB(db_params_dict)
-        units = GarminDB.Attributes.get(self.garmindb, 'units')
-        if units == 'english':
-            self.english_units = True
-        else:
-            self.english_units = False
+        units = GarminDB.Attributes.get(self.garmindb, 'dist_setting')
+        self.english_units = (units == 'statute')
 
     def set_sleep_period(self, sleep_period_start, sleep_period_stop):
         GarminDB.Attributes.set_if_unset(self.garmindb, 'sleep_time', sleep_period_start)
@@ -160,6 +158,7 @@ class Analyze():
         self.wake_ts = None
         prev_sleep_state = self.sleep_state[initial_intensity]
         prev_sleep_state_ts = sleep_search_start_ts
+        duration = None
         mov_avg_flt = MovingAverageFilter(0.85, initial_intensity)
         for period_index, (timestamp, intensity, duration) in enumerate(activity_periods):
             for sec_index in xrange(0, duration, 60):
@@ -187,7 +186,7 @@ class Analyze():
         stats.update(GarminDB.Weight.get_daily_stats(self.garmindb, day_date))
         stats.update(GarminDB.Stress.get_daily_stats(self.garmindb, day_date))
         stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.mondb, day_date, self.english_units))
-        stats.update(GarminDB.MonitoringIntensityMins.get_daily_stats(self.mondb, day_date))
+        stats.update(GarminDB.MonitoringIntensity.get_daily_stats(self.mondb, day_date))
         stats.update(GarminDB.Monitoring.get_daily_stats(self.mondb, day_date))
         GarminDB.DaysSummary.create_or_update(self.garminsumdb, stats)
 
@@ -197,7 +196,7 @@ class Analyze():
         stats.update(GarminDB.Weight.get_weekly_stats(self.garmindb, day_date))
         stats.update(GarminDB.Stress.get_weekly_stats(self.garmindb, day_date))
         stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.mondb, day_date, self.english_units))
-        stats.update(GarminDB.MonitoringIntensityMins.get_weekly_stats(self.mondb, day_date))
+        stats.update(GarminDB.MonitoringIntensity.get_weekly_stats(self.mondb, day_date))
         stats.update(GarminDB.Monitoring.get_weekly_stats(self.mondb, day_date))
         GarminDB.WeeksSummary.create_or_update(self.garminsumdb, stats)
         HealthDB.WeeksSummary.create_or_update(self.sumdb, stats)
@@ -208,7 +207,7 @@ class Analyze():
         stats.update(GarminDB.Weight.get_monthly_stats(self.garmindb, start_day_date, end_day_date))
         stats.update(GarminDB.Stress.get_monthly_stats(self.garmindb, start_day_date, end_day_date))
         stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.mondb, start_day_date, end_day_date, self.english_units))
-        stats.update(GarminDB.MonitoringIntensityMins.get_monthly_stats(self.mondb, start_day_date, end_day_date))
+        stats.update(GarminDB.MonitoringIntensity.get_monthly_stats(self.mondb, start_day_date, end_day_date))
         stats.update(GarminDB.Monitoring.get_monthly_stats(self.mondb, start_day_date, end_day_date))
         GarminDB.MonthsSummary.create_or_update(self.garminsumdb, stats)
         HealthDB.MonthsSummary.create_or_update(self.sumdb, stats)

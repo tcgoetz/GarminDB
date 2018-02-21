@@ -18,6 +18,24 @@ logger = logging.getLogger(__name__)
 def day_of_the_year_to_datetime(year, day):
     return datetime.datetime(year, 1, 1) + datetime.timedelta(day - 1)
 
+def secs_to_dt_time(time_secs):
+    if time_secs is None:
+        return None
+    return (datetime.datetime.min + datetime.timedelta(0, time_secs)).time()
+
+def min_to_dt_time(time_mins):
+    if time_mins is None:
+        return None
+    return secs_to_dt_time(time_mins * 60)
+
+def time_to_timedelta(time):
+    if time is None:
+        return None
+    return datetime.timedelta(hours=time.hour, minutes=time.minute, seconds=time.second)
+
+def add_time(time1, time2, scale=1):
+    return (datetime.datetime.min + time_to_timedelta(time1) + (time_to_timedelta(time2) * scale)).time()
+
 
 class DB():
     max_commit_attempts = 15
@@ -310,17 +328,6 @@ class DBObject():
         return cls.rows_to_ints(db.session().query(func.strftime("%j", cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
 
     @classmethod
-    def get_col(cls, db, col, start_ts=None, end_ts=None, ignore_zero=False):
-        query = db.query_session().query(col)
-        if start_ts is not None:
-            query = query.filter(cls.time_col >= start_ts)
-        if end_ts is not None:
-            query = query.filter(cls.time_col < end_ts)
-        if ignore_zero:
-            query = query.filter(col != 0)
-        return query.all()
-
-    @classmethod
     def get_col_func(cls, db, col, func, start_ts=None, end_ts=None, ignore_zero=False):
         query = db.query_session().query(func(col))
         if start_ts is not None:
@@ -357,6 +364,32 @@ class DBObject():
         )
         sum_of_maxes = db.query_session().query(func.sum(max_daily_query.subquery().columns.maxes))
         return DB.query_scalar(sum_of_maxes)
+
+    @classmethod
+    def get_time_col_func(cls, db, col, stat_func, start_ts=None, end_ts=None):
+        #query = db.query_session().query(func.time(stat_func(func.strftime('%s', col) - func.strftime('%s', '00:00'))))
+        query = db.query_session().query(stat_func(func.strftime('%s', col) - func.strftime('%s', '00:00')))
+        if start_ts is not None:
+            query = query.filter(cls.time_col >= start_ts)
+        if end_ts is not None:
+            query = query.filter(cls.time_col < end_ts)
+        return secs_to_dt_time(query.one()[0])
+
+    @classmethod
+    def get_time_col_avg(cls, db, col, start_ts, end_ts):
+        return cls.get_time_col_func(db, col, func.avg, start_ts, end_ts)
+
+    @classmethod
+    def get_time_col_min(cls, db, col, start_ts, end_ts):
+        return cls.get_time_col_func(db, col, func.min, start_ts, end_ts)
+
+    @classmethod
+    def get_time_col_max(cls, db, col, start_ts=None, end_ts=None):
+        return cls.get_time_col_func(db, col, func.max, start_ts, end_ts)
+
+    @classmethod
+    def get_time_col_sum(cls, db, col, start_ts, end_ts):
+        return cls.get_time_col_func(db, col, func.sum, start_ts, end_ts)
 
     @classmethod
     def latest_time(cls, db):
@@ -422,7 +455,7 @@ class DbVersionObject(KeyValueObject):
         self.set_if_unset(db, 'version', version_number)
         self.version = self.get_int(db, 'version')
         if self.version != version_number:
-            raise RuntimeError("DB version mismatch. Please rebuild the DB. (%s vs %s)" % (self.version, version_number))
+            raise RuntimeError("DB %s version mismatch. Please rebuild the DB. (%s vs %s)" % (db.db_name, self.version, version_number))
 
 
 class SummaryBase(DBObject):
@@ -436,15 +469,15 @@ class SummaryBase(DBObject):
     weight_min = Column(Float)
     weight_max = Column(Float)
     stress_avg = Column(Float)
-    intensity_mins = Column(Integer)
-    moderate_activity_mins = Column(Integer)
-    vigorous_activity_mins = Column(Integer)
+    intensity_time = Column(Time)
+    moderate_activity_time = Column(Time)
+    vigorous_activity_time = Column(Time)
     steps = Column(Integer)
     floors = Column(Float)
 
     min_row_values = 1
     _updateable_fields = [
         'hr_avg', 'hr_min', 'hr_max', 'rhr_avg', 'rhr_min', 'rhr_max', 'weight_avg', 'weight_min', 'weight_max', 'stress_avg',
-        'intensity_mins', 'moderate_activity_mins', 'vigorous_activity_mins', 'steps', 'floors'
+        'intensity_time', 'moderate_activity_time', 'vigorous_activity_time', 'steps', 'floors'
     ]
 

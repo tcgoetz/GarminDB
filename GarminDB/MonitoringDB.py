@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class MonitoringDB(DB):
     Base = declarative_base()
     db_name = 'garmin_monitoring'
-    db_version = 1
+    db_version = 2
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -113,15 +113,15 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
         return cls.get_col_avg(db, cls.heart_rate, start_ts, wake_ts, True)
 
 
-class MonitoringIntensityMins(MonitoringDB.Base, DBObject):
-    __tablename__ = 'monitoring_intensity_mins'
+class MonitoringIntensity(MonitoringDB.Base, DBObject):
+    __tablename__ = 'monitoring_intensity'
 
     timestamp = Column(DateTime, primary_key=True)
-    moderate_activity_mins = Column(Integer)
-    vigorous_activity_mins = Column(Integer)
+    moderate_activity_time = Column(Time)
+    vigorous_activity_time = Column(Time)
 
     __table_args__ = (
-        UniqueConstraint("timestamp", "moderate_activity_mins", "vigorous_activity_mins"),
+        UniqueConstraint("timestamp", "moderate_activity_time", "vigorous_activity_time"),
     )
 
     time_col = synonym("timestamp")
@@ -133,35 +133,35 @@ class MonitoringIntensityMins(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_stats(cls, db, func, start_ts, end_ts):
-        moderate_activity_mins = func(db, cls.moderate_activity_mins, start_ts, end_ts)
-        vigorous_activity_mins = func(db, cls.vigorous_activity_mins, start_ts, end_ts)
-        intensity_mins = 0
-        if moderate_activity_mins:
-            intensity_mins += moderate_activity_mins
-        if vigorous_activity_mins:
-            intensity_mins += vigorous_activity_mins * 2
+        moderate_activity_time = func(db, cls.moderate_activity_time, start_ts, end_ts)
+        vigorous_activity_time = func(db, cls.vigorous_activity_time, start_ts, end_ts)
+        intensity_time = datetime.time.min
+        if moderate_activity_time:
+            intensity_time = add_time(intensity_time, moderate_activity_time)
+        if vigorous_activity_time:
+            intensity_time = add_time(intensity_time, vigorous_activity_time, 2)
         stats = {
-            'intensity_mins' : intensity_mins,
-            'moderate_activity_mins' : moderate_activity_mins,
-            'vigorous_activity_mins' : vigorous_activity_mins,
+            'intensity_time'            : intensity_time,
+            'moderate_activity_time'    : moderate_activity_time,
+            'vigorous_activity_time'    : vigorous_activity_time,
         }
         return stats
 
     @classmethod
     def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1))
+        stats = cls.get_stats(db, cls.get_time_col_sum, day_ts, day_ts + datetime.timedelta(1))
         stats['day'] = day_ts,
         return stats
 
     @classmethod
     def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db,cls.get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats = cls.get_stats(db,cls.get_time_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7))
         stats['first_day'] = first_day_ts,
         return stats
 
     @classmethod
     def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
-        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
+        stats = cls.get_stats(db, cls.get_time_col_sum, first_day_ts, last_day_ts)
         stats['first_day'] = first_day_ts,
         return stats
 
@@ -231,7 +231,7 @@ class Monitoring(MonitoringDB.Base, DBObject):
 
     intensity = Column(Integer)
 
-    duration = Column(Integer)
+    duration = Column(Time)
     distance = Column(Float)
     cum_active_time = Column(Time)
     active_calories = Column(Integer)
@@ -264,7 +264,9 @@ class Monitoring(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_stats(cls, db, func, start_ts, end_ts):
-        return { 'steps' : func(db, cls.steps, start_ts, end_ts) }
+        return {
+            'steps'     : func(db, cls.steps, start_ts, end_ts),
+        }
 
     @classmethod
     def get_daily_stats(cls, db, day_ts):

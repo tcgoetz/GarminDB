@@ -9,6 +9,7 @@ import logging, sys, datetime
 import Fit
 import GarminDB
 
+
 logger = logging.getLogger(__file__)
 
 
@@ -24,9 +25,9 @@ class FitFileProcessor():
         self.garmin_act_db = GarminDB.ActivitiesDB(self.db_params_dict, self.debug)
 
         if english_units:
-            GarminDB.Attributes.set_newer(self.garmin_db, 'units', 'english')
+            GarminDB.Attributes.set_newer(self.garmin_db, 'dist_setting', 'statute')
         else:
-            GarminDB.Attributes.set_newer(self.garmin_db, 'units', 'metric')
+            GarminDB.Attributes.set_newer(self.garmin_db, 'dist_setting', 'metric')
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
 
     def write_generic(self, fit_file, message_type, messages):
@@ -277,14 +278,14 @@ class FitFileProcessor():
         try:
             if GarminDB.MonitoringHeartRate.matches(entry):
                 GarminDB.MonitoringHeartRate.find_or_create(self.garmin_mon_db, entry)
-            elif GarminDB.MonitoringIntensityMins.matches(entry):
-                GarminDB.MonitoringIntensityMins.find_or_create(self.garmin_mon_db, entry)
+            elif GarminDB.MonitoringIntensity.matches(entry):
+                GarminDB.MonitoringIntensity.find_or_create(self.garmin_mon_db, entry)
             elif GarminDB.MonitoringClimb.matches(entry):
                 GarminDB.MonitoringClimb.find_or_create(self.garmin_mon_db, entry)
             else:
                 GarminDB.Monitoring.find_or_create(self.garmin_mon_db, entry)
         except ValueError as e:
-            logger.info("ValueError on entry: %s" % repr(entry))
+            logger.info("ValueError: %s" % str(e))
         except Exception as e:
             logger.info("Exception on entry: %s" % repr(entry))
 

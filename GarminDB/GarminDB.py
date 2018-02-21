@@ -59,8 +59,8 @@ class DeviceInfo(GarminDB.Base, DBObject):
     file_id = Column(Integer, ForeignKey('files.id'))
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
     software_version = Column(String)
-    cum_operating_time = Column(Integer)
-    battery_voltage = Column(String)
+    cum_operating_time = Column(Time)
+    battery_voltage = Column(Float)
 
     min_row_values = 3
 
