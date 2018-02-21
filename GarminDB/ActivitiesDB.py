@@ -6,7 +6,6 @@
 
 from HealthDB import *
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -24,6 +23,12 @@ class ActivitiesDB(DB):
         ActivitiesDB.Base.metadata.create_all(self.engine)
         self.version = SummaryDB.DbVersion()
         self.version.version_check(self, self.db_version)
+
+        RunActivities.create_activity_view(self)
+        WalkActivities.create_activity_view(self)
+        PaddleActivities.create_activity_view(self)
+        CycleActivities.create_activity_view(self)
+        EllipticalActivities.create_activity_view(self)
 
 
 class Activities(ActivitiesDB.Base, DBObject):
@@ -93,6 +98,10 @@ class SportActivities(DBObject):
     @classmethod
     def _find_query(cls, session, values_dict):
         return session.query(cls).filter(cls.activity_id == values_dict['activity_id'])
+
+    @classmethod
+    def create_activity_view(cls, db):
+        cls.create_view(db, cls.__tablename__ + '_view', Activities)
 
 
 class RunActivities(ActivitiesDB.Base, SportActivities):

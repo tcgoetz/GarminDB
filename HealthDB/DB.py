@@ -130,6 +130,7 @@ class DB():
         raise IOError("Failed to query")
 
 
+
 class DBObject():
 
     # defaults, overridden by subclasses
@@ -137,6 +138,13 @@ class DBObject():
     _relational_mappings = {}
     _col_translations = {}
     _col_mappings = {}
+
+
+    @classmethod
+    def create_view(cls, db, view_name, join_table):
+        if not db.engine.dialect.has_table(db.engine, view_name):
+            query = db.session().query(cls, join_table).join(join_table)
+            db.engine.execute('CREATE VIEW ' + view_name + ' AS ' + str(query))
 
     @classmethod
     def filename_from_pathname(cls, pathname):
