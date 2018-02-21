@@ -119,7 +119,7 @@ class GarminJsonData():
             avg_vertical_oscillation = meters_to_feet(avg_vertical_oscillation)
             avg_step_length = meters_to_feet(avg_step_length)
         run = {
-                'id'                        : activity_id,
+                'activity_id'               : activity_id,
 
                 'steps'                     : self.get_garmin_json_data(activity_summary, 'SumStep', 'value', float),
 
@@ -146,7 +146,7 @@ class GarminJsonData():
 
     def process_walking(self, activity_id, activity_summary):
         walk = {
-                'id'                        : activity_id,
+                'activity_id'               : activity_id,
 
                 'steps'                     : self.get_garmin_json_data(activity_summary, 'SumStep', 'value', float),
 
@@ -165,7 +165,7 @@ class GarminJsonData():
         if self.english_units:
             avg_stroke_distance = meters_to_feet(avg_stroke_distance)
         paddle = {
-                'id'                        : activity_id,
+                'activity_id'               : activity_id,
 
                 'strokes'                   : self.get_garmin_json_data(activity_summary, 'SumStrokes', 'value', float),
 
@@ -179,7 +179,7 @@ class GarminJsonData():
 
     def process_cycling(self, activity_id, activity_summary):
         ride = {
-                'id'                        : activity_id,
+                'activity_id'               : activity_id,
 
                 'strokes'                   : self.get_garmin_json_data(activity_summary, 'SumStrokes', 'value', float),
 
@@ -200,7 +200,7 @@ class GarminJsonData():
 
     def process_elliptical(self, activity_id, activity_summary):
         workout = {
-                'id'                        : activity_id,
+                'activity_id'               : activity_id,
 
                 'elliptical_distance'       : self.get_garmin_json_data(activity_summary, 'SumDistance', 'value', float),
                 'steps'                     : self.get_garmin_json_data(activity_summary, 'SumStep', 'value', float),
@@ -224,7 +224,7 @@ class GarminJsonData():
             activity_summary = json_data['activitySummary']
 
             activity = {
-                'id'                        : activity_id,
+                'activity_id'               : activity_id,
                 'name'                      : json_data['activityName'],
                 'description'               : json_data['activityDescription'],
                 'type'                      : self.get_garmin_json_data(json_data, 'eventType', 'display'),

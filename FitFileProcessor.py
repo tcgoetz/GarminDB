@@ -111,7 +111,7 @@ class FitFileProcessor():
     def write_running_entry(self, fit_file, activity_id, sub_sport, message_dict):
         logger.debug("run entry: " + repr(message_dict))
         run = {
-            'id'                                : activity_id,
+            'activity_id'                       : activity_id,
             'steps'                             : self.get_field_value(message_dict, 'total_steps'),
             'avg_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['avg_speed'])).time(),
             'max_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['max_speed'])).time(),
@@ -129,7 +129,7 @@ class FitFileProcessor():
     def write_walking_entry(self, fit_file, activity_id, sub_sport, message_dict):
         logger.debug("walk entry: " + repr(message_dict))
         walk = {
-            'id'                                : activity_id,
+            'activity_id'                       : activity_id,
             'steps'                             : self.get_field_value(message_dict, 'total_steps'),
             'avg_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['avg_speed'])).time(),
             'max_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['max_speed'])).time(),
@@ -144,7 +144,7 @@ class FitFileProcessor():
     def write_cycling_entry(self, fit_file, activity_id, sub_sport, message_dict):
         logger.info("ride entry: " + repr(message_dict))
         ride = {
-            'id'                                : activity_id,
+            'activity_id'                        : activity_id,
             'strokes'                            : self.get_field_value(message_dict, 'total_strokes'),
         }
         GarminDB.CycleActivities.create_or_update_not_none(self.garmin_act_db, ride)
@@ -152,7 +152,7 @@ class FitFileProcessor():
     def write_stand_up_paddleboarding_entry(self, fit_file, activity_id, sub_sport, message_dict):
         logger.debug("sup entry: " + repr(message_dict))
         paddle = {
-            'id'                                : activity_id,
+            'activity_id'                       : activity_id,
             'strokes'                           : self.get_field_value(message_dict, 'total_strokes'),
             'avg_stroke_distance'               : self.get_field_value(message_dict, 'avg_stroke_distance'),
             'avg_strokes_per_min'               : self.get_field_value(message_dict, 'avg_cadence'),
@@ -163,7 +163,7 @@ class FitFileProcessor():
     def write_elliptical_entry(self, fit_file, activity_id, sub_sport, message_dict):
         logger.debug("elliptical entry: " + repr(message_dict))
         workout = {
-            'id'                                : activity_id,
+            'activity_id'                       : activity_id,
             'steps'                             : message_dict.get('dev_Steps', message_dict.get('total_steps', None)),
             'elliptical_distance'               : message_dict.get('dev_User_distance', message_dict.get('dev_distance', message_dict.get('distance', None))),
             'avg_rpms'                          : self.get_field_value(message_dict, 'avg_cadence'),
@@ -185,7 +185,7 @@ class FitFileProcessor():
         sport = message_dict['sport']
         sub_sport = message_dict['sub_sport']
         activity = {
-            'id'                                : activity_id,
+            'activity_id'                       : activity_id,
             'start_time'                        : message_dict['start_time'],
             'stop_time'                         : message_dict['timestamp'],
             'elapsed_time'                      : message_dict['total_elapsed_time'],

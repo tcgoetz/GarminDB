@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
-    db_version = 1
+    db_version = 2
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -29,7 +29,7 @@ class ActivitiesDB(DB):
 class Activities(ActivitiesDB.Base, DBObject):
     __tablename__ = 'activities'
 
-    id = Column(Integer, primary_key=True)
+    activity_id = Column(Integer, primary_key=True)
     name = Column(String)
     description = Column(String)
     type = Column(String)
@@ -78,17 +78,21 @@ class Activities(ActivitiesDB.Base, DBObject):
 
     @classmethod
     def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.id == values_dict['id'])
+        return session.query(cls).filter(cls.activity_id == values_dict['activity_id'])
 
 
 class SportActivities(DBObject):
 
-    id = Column(Integer, primary_key=True)
+    #activity_id = Column(Integer, primary_key=True)
     min_row_values = 1
+
+    @declared_attr
+    def activity_id(cls):
+        return Column(Integer, ForeignKey(Activities.activity_id), primary_key=True)
 
     @classmethod
     def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.id == values_dict['id'])
+        return session.query(cls).filter(cls.activity_id == values_dict['activity_id'])
 
 
 class RunActivities(ActivitiesDB.Base, SportActivities):
