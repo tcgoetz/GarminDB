@@ -11,30 +11,10 @@ from sqlalchemy.ext.declarative import *
 from sqlalchemy.exc import *
 from sqlalchemy.orm import *
 
+from Fit import Conversions
+
 
 logger = logging.getLogger(__name__)
-
-
-def day_of_the_year_to_datetime(year, day):
-    return datetime.datetime(year, 1, 1) + datetime.timedelta(day - 1)
-
-def secs_to_dt_time(time_secs):
-    if time_secs is None:
-        return None
-    return (datetime.datetime.min + datetime.timedelta(0, time_secs)).time()
-
-def min_to_dt_time(time_mins):
-    if time_mins is None:
-        return None
-    return secs_to_dt_time(time_mins * 60)
-
-def time_to_timedelta(time):
-    if time is None:
-        return None
-    return datetime.timedelta(hours=time.hour, minutes=time.minute, seconds=time.second)
-
-def add_time(time1, time2, scale=1):
-    return (datetime.datetime.min + time_to_timedelta(time1) + (time_to_timedelta(time2) * scale)).time()
 
 
 class DB():
@@ -375,13 +355,12 @@ class DBObject():
 
     @classmethod
     def get_time_col_func(cls, db, col, stat_func, start_ts=None, end_ts=None):
-        #query = db.query_session().query(func.time(stat_func(func.strftime('%s', col) - func.strftime('%s', '00:00'))))
         query = db.query_session().query(stat_func(func.strftime('%s', col) - func.strftime('%s', '00:00')))
         if start_ts is not None:
             query = query.filter(cls.time_col >= start_ts)
         if end_ts is not None:
             query = query.filter(cls.time_col < end_ts)
-        return secs_to_dt_time(query.one()[0])
+        return Conversions.secs_to_dt_time(query.one()[0])
 
     @classmethod
     def get_time_col_avg(cls, db, col, start_ts, end_ts):

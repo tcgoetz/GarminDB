@@ -66,9 +66,9 @@ class DaysSummary(FitBitDB.Base, DBObject):
         vigorous_activity_time = Conversions.min_to_dt_time(func(db, cls.very_active_mins, start_ts, end_ts))
         intensity_time = datetime.time.min
         if moderate_activity_time:
-            intensity_time = add_time(intensity_time, moderate_activity_time)
+            intensity_time = Conversions.add_time(intensity_time, moderate_activity_time)
         if vigorous_activity_time:
-            intensity_time = add_time(intensity_time, vigorous_activity_time, 2)
+            intensity_time = Conversions.add_time(intensity_time, vigorous_activity_time, 2)
         stats = {
             'intensity_time'            : intensity_time,
             'moderate_activity_time'    : moderate_activity_time,

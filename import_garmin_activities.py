@@ -8,6 +8,7 @@ import os, sys, getopt, re, string, logging, datetime, traceback, json
 
 
 import Fit
+#import Fit.Conversions
 import FitFileProcessor
 import GarminDB
 
@@ -15,25 +16,6 @@ import GarminDB
 root_logger = logging.getLogger()
 logger = logging.getLogger(__file__)
 
-def centimeters_to_meters(centimeters):
-    if centimeters is None:
-        return None
-    return (centimeters * 100.0)
-
-def meters_to_feet(meters):
-    if meters is None:
-        return None
-    return (meters * 3.2808399)
-
-def secs_to_dt_time(time_secs):
-    if time_secs is None:
-        return None
-    return (datetime.datetime.min + datetime.timedelta(0, time_secs)).time()
-
-def ms_to_dt_time(time_ms):
-    if time_ms is None:
-        return None
-    return (datetime.datetime.min +  datetime.timedelta(0, 0, 0, time_ms)).time()
 
 def pace_to_time(pace):
     if pace is None or pace == '--:--':
@@ -113,11 +95,11 @@ class GarminJsonData():
             logger.debug("JSON %s[%s] not found in %s: %s" % (fieldname, format_str, repr(json), str(e)))
 
     def process_running(self, activity_id, activity_summary):
-        avg_vertical_oscillation = centimeters_to_meters(self.get_garmin_json_data(activity_summary, 'WeightedMeanVerticalOscillation', 'value', float))
+        avg_vertical_oscillation = Fit.Conversions.centimeters_to_meters(self.get_garmin_json_data(activity_summary, 'WeightedMeanVerticalOscillation', 'value', float))
         avg_step_length = self.get_garmin_json_data(activity_summary, 'WeightedMeanStrideLength', 'value', float)
         if self.english_units:
-            avg_vertical_oscillation = meters_to_feet(avg_vertical_oscillation)
-            avg_step_length = meters_to_feet(avg_step_length)
+            avg_vertical_oscillation = Fit.Conversions.meters_to_feet(avg_vertical_oscillation)
+            avg_step_length = Fit.Conversions.meters_to_feet(avg_step_length)
         run = {
                 'activity_id'               : activity_id,
 
@@ -134,7 +116,7 @@ class GarminJsonData():
                 'avg_gct_balance'           : self.get_garmin_json_data(activity_summary, 'WeightedMeanGroundContactBalanceLeft', 'value', float),
                 'lactate_threshold_hr'      : self.get_garmin_json_data(activity_summary, 'DirectLactateThresholdHeartRate', 'value', float),
                 'avg_vertical_oscillation'  : avg_vertical_oscillation,
-                'avg_ground_contact_time'   : ms_to_dt_time(self.get_garmin_json_data(activity_summary, 'WeightedMeanGroundContactTime', 'value', float)),
+                'avg_ground_contact_time'   : Fit.Conversions.ms_to_dt_time(self.get_garmin_json_data(activity_summary, 'WeightedMeanGroundContactTime', 'value', float)),
 
                 'power'                     : self.get_garmin_json_data(activity_summary, 'DirectFunctionalThresholdPower', 'value', float),
                 'vo2_max'                   : self.get_garmin_json_data(activity_summary, 'DirectVO2Max', 'value', float),
@@ -163,7 +145,7 @@ class GarminJsonData():
     def process_paddling(self, activity_id, activity_summary):
         avg_stroke_distance = self.get_garmin_json_data(activity_summary, 'WeightedMeanStrokeDistance', 'value', float)
         if self.english_units:
-            avg_stroke_distance = meters_to_feet(avg_stroke_distance)
+            avg_stroke_distance = Fit.Conversions.meters_to_feet(avg_stroke_distance)
         paddle = {
                 'activity_id'               : activity_id,
 
@@ -232,8 +214,8 @@ class GarminJsonData():
                 'start_time'                : datetime.datetime.strptime(self.get_garmin_json_data(activity_summary, 'BeginTimestamp', 'value'), "%Y-%m-%dT%H:%M:%S.%fZ"),
                 'stop_time'                 : datetime.datetime.strptime(self.get_garmin_json_data(activity_summary, 'EndTimestamp', 'value'), "%Y-%m-%dT%H:%M:%S.%fZ"),
 
-                'elapsed_time'              : secs_to_dt_time(int(self.get_garmin_json_data(activity_summary, 'SumElapsedDuration', 'value', float))),
-                'moving_time'               : secs_to_dt_time(int(self.get_garmin_json_data(activity_summary, 'SumMovingDuration', 'value', float))),
+                'elapsed_time'              : Fit.Conversions.secs_to_dt_time(int(self.get_garmin_json_data(activity_summary, 'SumElapsedDuration', 'value', float))),
+                'moving_time'               : Fit.Conversions.secs_to_dt_time(int(self.get_garmin_json_data(activity_summary, 'SumMovingDuration', 'value', float))),
 
                 'sport'                     : self.get_garmin_json_data(json_data['activityType'], 'parent', 'key'),
                 'sub_sport'                 : sub_sport,

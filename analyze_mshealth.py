@@ -8,6 +8,7 @@ import os, sys, getopt, re, string, logging, datetime, calendar
 
 import HealthDB
 import MSHealthDB
+import Fit.Conversions
 
 
 logger = logging.getLogger(__file__)
@@ -48,8 +49,8 @@ class Analyze():
             day = int(days[index])
             next_day = int(days[index + 1])
             if next_day != day + 1:
-                day_str = str(HealthDB.day_of_the_year_to_datetime(year_int, day))
-                next_day_str = str(HealthDB.day_of_the_year_to_datetime(year_int, next_day))
+                day_str = str(Fit.Conversions.day_of_the_year_to_datetime(year_int, day))
+                next_day_str = str(Fit.Conversions.day_of_the_year_to_datetime(year_int, next_day))
                 print "Days gap between %d (%s) and %d (%s)" % (day, day_str, next_day, next_day_str)
 
     def summary(self):
