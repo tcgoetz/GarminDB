@@ -11,6 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
+from selenium.common import exceptions
 
 import GarminDB
 
@@ -153,9 +154,8 @@ class Scrape():
             monitoring_files_zip.close()
 
     def get_weight_year(self, page_container):
-        self.click_by_id(page_container, "lastYearLinkId")
-        time.sleep(2)
-        page_container = self.wait_for_pagecontainer(self.browser, 10)
+        #time.sleep(1)
+        #page_container = self.wait_for_pagecontainer(self.browser, 10)
         chart_div = page_container.find_element_by_xpath("//div[@data-highcharts-chart]")
         chart_number = chart_div.get_attribute('data-highcharts-chart')
         data = self.browser.execute_script('return Highcharts.charts[' + chart_number + '].series[0].options.data')
@@ -177,17 +177,21 @@ class Scrape():
         del points[-1]
         return points
 
-    def get_weight(self, date, days):
-        logger.info("get_weight: %s : %d" % (str(date), days))
+    def get_weight(self):
+        logger.info("get_weight")
         points = []
         self.load_page(self.garmin_connect_weight_base_url)
+        page_container = self.wait_for_pagecontainer(self.browser, 10)
+        self.click_by_id(page_container, "lastYearLinkId")
         while True:
+            time.sleep(1)
             page_container = self.wait_for_pagecontainer(self.browser, 10)
             new_points = self.get_weight_year(page_container)
             points += new_points
-            if len(new_points) == 0 or new_points[0]['timestamp'].date() < date:
+            try:
+                self.click_by_xpath(page_container, "//button[@class='icon-arrow-left']")
+            except:
                 break
-            self.click_by_xpath(page_container, "//button[@class='icon-arrow-left']")
         return points
 
     def get_activities(self, date, days):
@@ -307,7 +311,7 @@ def main(argv):
     if weight and days > 0:
         scrape = Scrape()
         scrape.login(username, password)
-        points = scrape.get_weight(date, days)
+        points = scrape.get_weight()
 
         # dump weight data to file as json
         json_filename = weight + '/weight_' + str(time.time()) + '.json'
@@ -319,7 +323,7 @@ def main(argv):
         for point in points:
             logger.debug("Inserting: " + repr(point))
             GarminDB.Weight.create_or_update(garmindb, point)
-        logger.info("DB updated with weight data for %s (%d)" % (str(date), days))
+        logger.info("DB updated with weight data for %s (%d)" % (str(date), len(points)))
 
 
 if __name__ == "__main__":

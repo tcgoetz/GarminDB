@@ -188,7 +188,8 @@ class Analyze():
         stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.mondb, day_date, self.english_units))
         stats.update(GarminDB.MonitoringIntensity.get_daily_stats(self.mondb, day_date))
         stats.update(GarminDB.Monitoring.get_daily_stats(self.mondb, day_date))
-        GarminDB.DaysSummary.create_or_update(self.garminsumdb, stats)
+        GarminDB.DaysSummary.create_or_update_not_none(self.garminsumdb, stats)
+        HealthDB.DaysSummary.create_or_update_not_none(self.sumdb, stats)
 
     def calculate_week_stats(self, day_date):
         stats = GarminDB.MonitoringHeartRate.get_weekly_stats(self.mondb, day_date)
@@ -198,8 +199,8 @@ class Analyze():
         stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.mondb, day_date, self.english_units))
         stats.update(GarminDB.MonitoringIntensity.get_weekly_stats(self.mondb, day_date))
         stats.update(GarminDB.Monitoring.get_weekly_stats(self.mondb, day_date))
-        GarminDB.WeeksSummary.create_or_update(self.garminsumdb, stats)
-        HealthDB.WeeksSummary.create_or_update(self.sumdb, stats)
+        GarminDB.WeeksSummary.create_or_update_not_none(self.garminsumdb, stats)
+        HealthDB.WeeksSummary.create_or_update_not_none(self.sumdb, stats)
 
     def calculate_month_stats(self, start_day_date, end_day_date):
         stats = GarminDB.MonitoringHeartRate.get_monthly_stats(self.mondb, start_day_date, end_day_date)
@@ -209,8 +210,8 @@ class Analyze():
         stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.mondb, start_day_date, end_day_date, self.english_units))
         stats.update(GarminDB.MonitoringIntensity.get_monthly_stats(self.mondb, start_day_date, end_day_date))
         stats.update(GarminDB.Monitoring.get_monthly_stats(self.mondb, start_day_date, end_day_date))
-        GarminDB.MonthsSummary.create_or_update(self.garminsumdb, stats)
-        HealthDB.MonthsSummary.create_or_update(self.sumdb, stats)
+        GarminDB.MonthsSummary.create_or_update_not_none(self.garminsumdb, stats)
+        HealthDB.MonthsSummary.create_or_update_not_none(self.sumdb, stats)
 
     def summary(self):
         sleep_period_start = GarminDB.Attributes.get_time(self.garmindb, 'sleep_time')

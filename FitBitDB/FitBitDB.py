@@ -5,6 +5,8 @@
 #
 
 from HealthDB import *
+from Fit import Conversions
+
 
 logger = logging.getLogger(__name__)
 
@@ -60,17 +62,17 @@ class DaysSummary(FitBitDB.Base, DBObject):
 
     @classmethod
     def get_activity_mins_stats(cls, db, func, start_ts, end_ts):
-        moderate_activity_mins = func(db, cls.fairly_active_mins, start_ts, end_ts)
-        vigorous_activity_mins = func(db, cls.very_active_mins, start_ts, end_ts)
-        intensity_mins = 0
-        if moderate_activity_mins:
-            intensity_mins += moderate_activity_mins
-        if vigorous_activity_mins:
-            intensity_mins += vigorous_activity_mins * 2
+        moderate_activity_time = Conversions.min_to_dt_time(func(db, cls.fairly_active_mins, start_ts, end_ts))
+        vigorous_activity_time = Conversions.min_to_dt_time(func(db, cls.very_active_mins, start_ts, end_ts))
+        intensity_time = datetime.time.min
+        if moderate_activity_time:
+            intensity_time = add_time(intensity_time, moderate_activity_time)
+        if vigorous_activity_time:
+            intensity_time = add_time(intensity_time, vigorous_activity_time, 2)
         stats = {
-            'intensity_mins' : intensity_mins,
-            'moderate_activity_mins' : moderate_activity_mins,
-            'vigorous_activity_mins' : vigorous_activity_mins,
+            'intensity_time'            : intensity_time,
+            'moderate_activity_time'    : moderate_activity_time,
+            'vigorous_activity_time'    : vigorous_activity_time,
         }
         return stats
 

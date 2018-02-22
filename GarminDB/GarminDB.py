@@ -37,8 +37,8 @@ class Device(GarminDB.Base, DBObject):
 
     serial_number = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
-    manufacturer = Column(String)
-    product = Column(String)
+    manufacturer = Column(String, nullable=False)
+    product = Column(String, nullable=False)
     hardware_version = Column(String)
 
     min_row_values = 2
@@ -57,7 +57,7 @@ class DeviceInfo(GarminDB.Base, DBObject):
     __tablename__ = 'device_info'
 
     id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime)
+    timestamp = Column(DateTime, nullable=False)
     file_id = Column(Integer, ForeignKey('files.id'))
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
     software_version = Column(String)
@@ -84,7 +84,7 @@ class File(GarminDB.Base, DBObject):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
-    type = Column(String)
+    type = Column(String, nullable=False)
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
 
     _col_mappings = {
@@ -112,7 +112,7 @@ class Weight(GarminDB.Base, DBObject):
     __tablename__ = 'weight'
 
     timestamp = Column(DateTime, primary_key=True, unique=True)
-    weight = Column(Float)
+    weight = Column(Float, nullable=False)
 
     time_col = synonym("timestamp")
     min_row_values = 2
@@ -153,7 +153,7 @@ class Stress(GarminDB.Base, DBObject):
     __tablename__ = 'stress'
 
     timestamp = Column(DateTime, primary_key=True, unique=True)
-    stress = Column(Integer)
+    stress = Column(Integer, nullable=False)
 
     time_col = synonym("timestamp")
     min_row_values = 2

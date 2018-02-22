@@ -5,6 +5,7 @@
 #
 
 from HealthDB import *
+from Fit import Conversions
 
 
 logger = logging.getLogger(__name__)
@@ -85,14 +86,14 @@ class DaysSummary(MSHealthDB.Base, DBObject):
     def get_activity_mins_stats(cls, db, func, start_ts, end_ts):
         active_hours = func(db, cls.active_hours, start_ts, end_ts)
         if active_hours is not None:
-            intensity_mins = active_hours * 60
+            intensity_time = Conversions.min_to_dt_time(active_hours * 60)
+            stats = {
+                'intensity_time' : intensity_time,
+                'moderate_activity_time' : intensity_time,
+                # 'vigorous_activity_time' : None,      Don't write where we have no data, may overwrite good data
+            }
         else:
-            intensity_mins = 0
-        stats = {
-            'intensity_mins' : intensity_mins,
-            'moderate_activity_mins' : intensity_mins,
-            'vigorous_activity_mins' : 0,
-        }
+            stats = {}
         return stats
 
     @classmethod

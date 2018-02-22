@@ -14,9 +14,12 @@ ifeq ($(OS), Darwin)
 	# If your using iCloud Keychaion, you have to copy the entry from the iCloud keychain to the login keychain using KeychainAccess.app.
 	GC_USER ?= $(shell security find-internet-password -s sso.garmin.com | egrep acct | egrep -o "[A-Za-z]*@[A-Za-z.]*" )
 	GC_PASSWORD ?= $(shell security find-internet-password -s sso.garmin.com -w)
+	GC_DATE ?= $(shell date -v-1y +'%m/%d/%Y')
 else
 	# store the username and password in ~/.garmindb.conf ?
+	GC_DATE ?= $(shell date -d '-1 year' +'%m/%d/%Y')
 endif
+GC_DAYS ?= 365
 
 
 HEALTH_DATA_DIR=$(HOME)/HealthData
@@ -56,10 +59,12 @@ submodules_update:
 deps: install_geckodriver
 	sudo pip install --upgrade sqlalchemy
 	sudo pip install --upgrade selenium
+	sudo pip install --upgrade python-dateutil
 
 clean_deps: clean_geckodriver
 	sudo pip uninstall sqlalchemy
 	sudo pip uninstall selenium
+	sudo pip uninstall python-dateutil
 
 clean:
 	rm -rf *.pyc
@@ -98,7 +103,7 @@ clean_geckodriver:
 SUMMARY_DB=$(DB_DIR)/summary.db
 $(SUMMARY_DB): $(DB_DIR)
 
-rebuild_dbs: clean_dbs fitbit_db mshealth_db garmin_dbs
+rebuild_dbs: clean_dbs garmin_dbs fitbit_db mshealth_summary fitbit_summary
 
 update_dbs: new_garmin
 
@@ -152,7 +157,7 @@ scrape_monitoring: $(MEW_MONITORING_FIT_FILES_DIR)
 
 import_monitoring: $(DB_DIR)
 	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
-		python import_garmin_fit.py -e --input_dir "$$dir" --sqlite $(DB_DIR); \
+		python import_garmin.py -e --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
 	done
 
 scrape_new_monitoring: $(MEW_MONITORING_FIT_FILES_DIR)
@@ -160,13 +165,19 @@ scrape_new_monitoring: $(MEW_MONITORING_FIT_FILES_DIR)
 
 import_new_monitoring: scrape_new_monitoring $(MONITORING_FIT_FILES_DIR) $(MEW_MONITORING_FIT_FILES_DIR)
 	if ls $(MEW_MONITORING_FIT_FILES_DIR)/*.fit 1> /dev/null 2>&1; then \
-		python import_garmin_fit.py -e --input_dir "$(MEW_MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR) && \
+		python import_garmin.py -e --fit_input_dir "$(MEW_MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR) && \
 		mv $(MEW_MONITORING_FIT_FILES_DIR)/*.fit $(MONITORING_FIT_FILES_DIR)/.; \
 	fi
 
 ## weight
 $(WEIGHT_FILES_DIR):
 	mkdir -p $(WEIGHT_FILES_DIR)
+
+import_weight: $(DB_DIR)
+	python import_garmin.py -e --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
+
+import_new_weight: $(DB_DIR) scrape_new_weight
+	python import_garmin.py -e --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
 
 scrape_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
 	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
@@ -210,7 +221,7 @@ download_activities_tcx: $(ACTIVITES_TCX_FILES_DIR)
 
 ## generic garmin
 GARMIN_DB=$(DB_DIR)/garmin.db
-$(GARMIN_DB): $(DB_DIR) garmin_config scrape_new_weight
+$(GARMIN_DB): $(DB_DIR) garmin_config import_weight
 
 clean_garmin_summary_db:
 	rm -f $(GARMIN_SUM_DB)
@@ -224,7 +235,7 @@ $(GARMIN_SUM_DB): $(DB_DIR) garmin_summary
 garmin_summary:
 	python analyze_garmin.py --analyze --dates --sqlite $(DB_DIR)
 
-new_garmin: import_new_monitoring import_new_activities garmin_summary
+new_garmin: import_new_monitoring import_new_activities import_new_weight garmin_summary
 
 garmin_config:
 	python analyze_garmin.py -S$(DEFAULT_SLEEP_START),$(DEFAULT_SLEEP_STOP)  --sqlite /Users/tgoetz/HealthData/DBs

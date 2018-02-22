@@ -47,7 +47,7 @@ class MonitoringInfo(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_info'
 
     timestamp = Column(DateTime, primary_key=True)
-    file_id = Column(Integer)
+    file_id = Column(Integer, nullable=False)
     activity_type_id = Column(Integer, ForeignKey('activity_type.id'))
     resting_metabolic_rate = Column(Integer)
     cycles_to_distance = Column(FLOAT)
@@ -67,7 +67,7 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_hr'
 
     timestamp = Column(DateTime, primary_key=True)
-    heart_rate = Column(Integer)
+    heart_rate = Column(Integer, nullable=False)
 
     __table_args__ = (
         UniqueConstraint("timestamp", "heart_rate"),
@@ -173,7 +173,7 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
     meters_to_floors = 3
 
     id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime)
+    timestamp = Column(DateTime, nullable=False)
     # meters or feet
     ascent = Column(Float)
     descent = Column(Float)
@@ -226,7 +226,7 @@ class Monitoring(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring'
 
     id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime)
+    timestamp = Column(DateTime, nullable=False)
     activity_type_id = Column(Integer, ForeignKey('activity_type.id'))
 
     intensity = Column(Integer)

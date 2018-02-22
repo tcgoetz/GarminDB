@@ -300,7 +300,7 @@ class FitFileProcessor():
                 'hardware_version'  : parsed_message.get('hardware_version', None),
             }
             try:
-                GarminDB.Device.create_or_update(self.garmin_db, device)
+                GarminDB.Device.create_or_update_not_none(self.garmin_db, device)
             except ValueError:
                 logger.debug("Message not written: " + repr(parsed_message))
             device_info = {
@@ -312,6 +312,6 @@ class FitFileProcessor():
                 'software_version'      : parsed_message['software_version'],
             }
             try:
-                GarminDB.DeviceInfo.find_or_create(self.garmin_db, device_info)
+                GarminDB.DeviceInfo.create_or_update_not_none(self.garmin_db, device_info)
             except Exception as e:
                 logger.warning("Device info message not written: " + repr(parsed_message))
