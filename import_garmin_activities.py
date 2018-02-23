@@ -99,18 +99,27 @@ class GarminTcxData():
             tcx = tcxparser.TCXParser(file_name)
             end_time = dateutil.parser.parse(tcx.completed_at)
             start_time = dateutil.parser.parse(tcx.started_at)
+            manufacturer = 'Unknown'
+            product = tcx.creator
+            if product is not None:
+                match = re.search('Microsoft', product)
+                if match:
+                    manufacturer = 'Microsoft'
+            serial_number = tcx.creator_version
+            if serial_number is None or serial_number ==0:
+                serial_number = GarminDB.Device.unknown_device_serial_number
             device = {
-                'serial_number'     : GarminDB.Device.unknown_device_serial_number,
+                'serial_number'     : serial_number,
                 'timestamp'         : start_time,
-                'manufacturer'      : 'Unknown',
-                'product'           : 'Unknown',
+                'manufacturer'      : manufacturer,
+                'product'           : product,
                 'hardware_version'  : None,
             }
             GarminDB.Device.create_or_update_not_none(garmin_db, device)
             file = {
                 'name'          : file_name,
                 'type'          : 'tcx',
-                'serial_number' : GarminDB.Device.unknown_device_serial_number,
+                'serial_number' : serial_number,
             }
             GarminDB.File.find_or_create(garmin_db, file)
             activity_id = GarminDB.File.get(garmin_db, file_name)
