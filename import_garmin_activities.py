@@ -4,8 +4,7 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, string, logging, datetime, traceback, json
-
+import os, sys, getopt, re, string, logging, datetime, traceback, json, tcxparser, dateutil.parser
 
 import Fit
 #import Fit.Conversions
@@ -62,6 +61,89 @@ class GarminFitData():
             except IndexError as e:
                 logger.info("Failed to parse %s: %s" % (file_name, str(e)))
 
+
+class GarminTcxData():
+
+    def __init__(self, input_file, input_dir, english_units, debug):
+        self.english_units = english_units
+        self.debug = debug
+        logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
+
+        if input_file:
+            logger.info("Reading file: " + input_file)
+            match = re.search('.*\.tcx', input_file)
+            if match:
+                self.file_names = [input_file]
+            else:
+                self.file_names = []
+        if input_dir:
+            logger.info("Reading directory: " + input_dir)
+            self.file_names = self.dir_to_tcx_files(input_dir)
+
+    def dir_to_tcx_files(self, input_dir):
+        file_names = []
+        for file in os.listdir(input_dir):
+            match = re.search('.*\.tcx', file)
+            if match:
+                file_names.append(input_dir + "/" + file)
+        return file_names
+
+    def file_count(self):
+        return len(self.file_names)
+
+    def process_files(self, db_params_dict):
+        garmin_db = GarminDB.GarminDB(db_params_dict, self.debug)
+        garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug)
+        for file_name in self.file_names:
+            logger.info("Processing file: " + file_name)
+            tcx = tcxparser.TCXParser(file_name)
+            end_time = dateutil.parser.parse(tcx.completed_at)
+            start_time = dateutil.parser.parse(tcx.started_at)
+            device = {
+                'serial_number'     : GarminDB.Device.unknown_device_serial_number,
+                'timestamp'         : start_time,
+                'manufacturer'      : 'Unknown',
+                'product'           : 'Unknown',
+                'hardware_version'  : None,
+            }
+            GarminDB.Device.create_or_update_not_none(garmin_db, device)
+            file = {
+                'name'          : file_name,
+                'type'          : 'tcx',
+                'serial_number' : GarminDB.Device.unknown_device_serial_number,
+            }
+            GarminDB.File.find_or_create(garmin_db, file)
+            activity_id = GarminDB.File.get(garmin_db, file_name)
+            if self.english_units and tcx.distance_units == 'meters':
+                distance = Fit.Conversions.meters_to_miles(tcx.distance)
+                ascent = Fit.Conversions.meters_to_feet(tcx.ascent)
+                descent = Fit.Conversions.meters_to_feet(tcx.descent)
+            else:
+                distance = tcx.distance / 1000.0
+                ascent = tcx.ascent / 1000.0
+                descent = tcx.descent / 1000.0
+            activity = {
+                'activity_id'               : activity_id,
+                'start_time'                : start_time,
+                'stop_time'                 : end_time,
+                'laps'                      : len(tcx.activity.Lap),
+                # 'sport'                     : tcx.activity_type,
+                'start_lat'                 : tcx.start_latitude,
+                'start_long'                : tcx.start_longitude,
+                'stop_lat'                  : tcx.end_latitude,
+                'stop_long'                 : tcx.end_longitude,
+
+                'distance'                  : distance,
+                'avg_hr'                    : tcx.hr_avg,
+                'max_hr'                    : tcx.hr_max,
+                'calories'                  : tcx.calories,
+                'max_cadence'               : tcx.cadence_max,
+                'avg_cadence'               : tcx.cadence_avg,
+                #'ascent'                    : ascent,
+                #'descent'                   : descent
+            }
+            activity_not_zero = {key : value for (key,value) in activity.iteritems() if value}
+            GarminDB.Activities.create_or_update_not_none(garmin_act_db, activity_not_zero)
 
 class GarminJsonData():
 
@@ -255,9 +337,7 @@ class GarminJsonData():
                 'training_effect'           : self.get_garmin_json_data(activity_summary, 'SumTrainingEffect', 'value', float),
                 'anaerobic_training_effect' : self.get_garmin_json_data(activity_summary, 'SumAnaerobicTrainingEffect', 'value', float),
             }
-            # only save not None values, don't overwrite Fit file import with None values
-            activity_not_none = {key : value for (key,value) in activity.iteritems() if value is not None}
-            GarminDB.Activities.create_or_update(self.garmin_act_db, activity_not_none)
+            GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
             try:
                 function = getattr(self, 'process_' + sub_sport)
                 function(activity_id, activity_summary)
@@ -321,9 +401,13 @@ def main(argv):
     if gjd.file_count() > 0:
         gjd.process_files(db_params_dict)
 
-    gd = GarminFitData(input_file, input_dir, english_units, debug > 1)
-    if gd.file_count() > 0:
-        gd.process_files(db_params_dict)
+    gtd = GarminTcxData(input_file, input_dir, english_units, debug > 1)
+    if gtd.file_count() > 0:
+        gtd.process_files(db_params_dict)
+
+    gfd = GarminFitData(input_file, input_dir, english_units, debug > 1)
+    if gfd.file_count() > 0:
+        gfd.process_files(db_params_dict)
 
 
 if __name__ == "__main__":

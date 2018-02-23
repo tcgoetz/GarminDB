@@ -56,12 +56,18 @@ submodules_update:
 	git submodule init
 	git submodule update
 
-deps: install_geckodriver
+deps_tcxparser:
+	cd python-tcxparser && sudo python setup.py install --record files.txt
+
+clean_deps_tcxparser:
+	cd python-tcxparser && sudo cat files.txt | xargs rm -rf
+
+deps: install_geckodriver deps_tcxparser
 	sudo pip install --upgrade sqlalchemy
 	sudo pip install --upgrade selenium
-	sudo pip install --upgrade python-dateutil
+	sudo pip install --upgrade python-dateutil || true
 
-clean_deps: clean_geckodriver
+clean_deps: clean_geckodriver clean_deps_tcxparser
 	sudo pip uninstall sqlalchemy
 	sudo pip uninstall selenium
 	sudo pip uninstall python-dateutil
@@ -198,11 +204,15 @@ $(ACTIVITES_FIT_FILES_DIR):
 $(ACTIVITES_TCX_FILES_DIR):
 	mkdir -p $(ACTIVITES_TCX_FILES_DIR)
 
+TEST_ACTIVITY_ID=1593891306
 test_import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/2515196477.fit" --sqlite $(DB_DIR)
+	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/$(TEST_ACTIVITY_ID).fit" --sqlite $(DB_DIR)
+
+test_import_tcx_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
+	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/$(TEST_ACTIVITY_ID).tcx" --sqlite $(DB_DIR)
 
 test_import_json_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	python import_garmin_activities.py -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_1655156096.json" --sqlite $(DB_DIR)
+	python import_garmin_activities.py -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_$(TEST_ACTIVITY_ID).json" --sqlite $(DB_DIR)
 
 import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)

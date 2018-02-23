@@ -34,6 +34,7 @@ class Attributes(GarminDB.Base, KeyValueObject):
 
 class Device(GarminDB.Base, DBObject):
     __tablename__ = 'devices'
+    unknown_device_serial_number = 9999999999
 
     serial_number = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
@@ -85,7 +86,7 @@ class File(GarminDB.Base, DBObject):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
     type = Column(String, nullable=False)
-    serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
+    serial_number = Column(Integer, ForeignKey('devices.serial_number'))
 
     _col_mappings = {
         'name' : ('id', gc_id_from_path)
