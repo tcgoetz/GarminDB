@@ -32,7 +32,11 @@ class GarminFitData():
 
         if input_file:
             logger.info("Reading file: " + input_file)
-            self.file_names = [input_file]
+            match = re.search('.*\.fit', input_file)
+            if match:
+                self.file_names = [input_file]
+            else:
+                self.file_names = []
         if input_dir:
             logger.info("Reading directory: " + input_dir)
             self.file_names = self.dir_to_fit_files(input_dir)
@@ -57,7 +61,6 @@ class GarminFitData():
                 logger.info("Failed to parse %s: %s" % (file_name, str(e)))
             except IndexError as e:
                 logger.info("Failed to parse %s: %s" % (file_name, str(e)))
-            #sys.exit()
 
 
 class GarminJsonData():
@@ -69,7 +72,11 @@ class GarminJsonData():
 
         if input_file:
             logger.info("Reading file: " + input_file)
-            self.file_names = [input_file]
+            match = re.search('.*\.json', input_file)
+            if match:
+                self.file_names = [input_file]
+            else:
+                self.file_names = []
         if input_dir:
             logger.info("Reading directory: " + input_dir)
             self.file_names = self.dir_to_json_files(input_dir)
@@ -266,14 +273,14 @@ def usage(program):
     sys.exit()
 
 def main(argv):
-    debug = False
+    debug = 0
     english_units = False
     input_dir = None
     input_file = None
     db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"d:eim::s:t", ["trace", "english", "input_dir=", "input_file=", "mysql=", "sqlite="])
+        opts, args = getopt.getopt(argv,"d:eim::s:t:", ["trace=", "english", "input_dir=", "input_file=", "mysql=", "sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -281,7 +288,7 @@ def main(argv):
         if opt == '-h':
             usage(sys.argv[0])
         elif opt in ("-t", "--trace"):
-            debug = True
+            debug = int(arg)
         elif opt in ("-e", "--english"):
             english_units = True
         elif opt in ("-d", "--input_dir"):
@@ -301,7 +308,7 @@ def main(argv):
             db_params_dict['db_password'] = db_args[1]
             db_params_dict['db_host'] = db_args[2]
 
-    if debug:
+    if debug > 0:
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)
@@ -310,11 +317,11 @@ def main(argv):
         print "Missing arguments:"
         usage(sys.argv[0])
 
-    gjd = GarminJsonData(input_file, input_dir, english_units, debug)
+    gjd = GarminJsonData(input_file, input_dir, english_units, debug > 1)
     if gjd.file_count() > 0:
         gjd.process_files(db_params_dict)
 
-    gd = GarminFitData(input_file, input_dir, english_units, debug)
+    gd = GarminFitData(input_file, input_dir, english_units, debug > 1)
     if gd.file_count() > 0:
         gd.process_files(db_params_dict)
 
