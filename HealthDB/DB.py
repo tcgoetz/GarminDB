@@ -327,11 +327,11 @@ class DBObject():
         return query.one()[0]
 
     @classmethod
-    def get_col_avg(cls, db, col, start_ts, end_ts, ignore_zero=False):
+    def get_col_avg(cls, db, col, start_ts=None, end_ts=None, ignore_zero=False):
         return cls.get_col_func(db, col, func.avg, start_ts, end_ts, ignore_zero)
 
     @classmethod
-    def get_col_min(cls, db, col, start_ts, end_ts, ignore_zero=False):
+    def get_col_min(cls, db, col, start_ts=None, end_ts=None, ignore_zero=False):
         return cls.get_col_func(db, col, func.min, start_ts, end_ts, ignore_zero)
 
     @classmethod
@@ -339,7 +339,7 @@ class DBObject():
         return cls.get_col_func(db, col, func.max, start_ts, end_ts, False)
 
     @classmethod
-    def get_col_sum(cls, db, col, start_ts, end_ts):
+    def get_col_sum(cls, db, col, start_ts=None, end_ts=None):
         return cls.get_col_func(db, col, func.sum, start_ts, end_ts, False)
 
     @classmethod
@@ -381,6 +381,13 @@ class DBObject():
     @classmethod
     def latest_time(cls, db):
         return cls.get_col_max(db, cls.time_col)
+
+    @classmethod
+    def row_count(cls, db, col=None, col_value=None):
+        query = db.query_session().query(cls)
+        if col and col_value:
+            query = query.filter(col == col_value)
+        return query.count()
 
     def __repr__(self):
         classname = self.__class__.__name__

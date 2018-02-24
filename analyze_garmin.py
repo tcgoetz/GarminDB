@@ -31,6 +31,7 @@ class Analyze():
         self.mondb = GarminDB.MonitoringDB(db_params_dict)
         self.garminsumdb = GarminDB.GarminSummaryDB(db_params_dict)
         self.sumdb = HealthDB.SummaryDB(db_params_dict)
+        self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict)
         units = GarminDB.Attributes.get(self.garmindb, 'dist_setting')
         self.english_units = (units == 'statute')
 
@@ -38,9 +39,43 @@ class Analyze():
         GarminDB.Attributes.set_if_unset(self.garmindb, 'sleep_time', sleep_period_start)
         GarminDB.Attributes.set_if_unset(self.garmindb, 'wake_time', sleep_period_stop)
 
+    def report_sport(self, sport_col, sport):
+        records = GarminDB.Activities.row_count(self.garmin_act_db, sport_col, sport.lower())
+        logger.info("%s activities: %d" % (sport, records))
+        GarminDB.Summary.set(self.garminsumdb, sport + '_Activities', records)
+
+    def get_activities_stats(self):
+        records = GarminDB.Activities.row_count(self.garmin_act_db)
+        logger.info("Activities records: %d" % records)
+        GarminDB.Summary.set(self.garminsumdb, 'Activities', records)
+        self.report_sport(GarminDB.Activities.sport, 'Running')
+        self.report_sport(GarminDB.Activities.sport, 'Walking')
+        self.report_sport(GarminDB.Activities.sport, 'Cycling')
+        self.report_sport(GarminDB.Activities.sub_sport, 'Mountain_Biking')
+        self.report_sport(GarminDB.Activities.sport, 'Hiking')
+        self.report_sport(GarminDB.Activities.sub_sport, 'Elliptical')
+        self.report_sport(GarminDB.Activities.sub_sport, 'Treadmill')
+        self.report_sport(GarminDB.Activities.sport, 'Stand_Up_Paddleboarding')
+        self.report_sport(GarminDB.Activities.sub_sport, 'resort_skiing_snowboarding')
+
+    def get_weight_stats(self):
+        records = GarminDB.Weight.row_count(self.garmindb)
+        logger.info("Weight records: %d" % records)
+        GarminDB.Summary.set(self.garminsumdb, 'Weight_Records', records)
+        max_weight = GarminDB.Weight.get_col_max(self.garmindb, GarminDB.Weight.weight)
+        logger.info("Max weight: %f" % max_weight)
+        GarminDB.Summary.set(self.garminsumdb, 'Max_Weight', max_weight)
+        min_weight = GarminDB.Weight.get_col_min(self.garmindb, GarminDB.Weight.weight)
+        logger.info("Min weight: %f" % min_weight)
+        GarminDB.Summary.set(self.garminsumdb, 'Min_Weight', min_weight)
+        avg_weight = GarminDB.Weight.get_col_avg(self.garmindb, GarminDB.Weight.weight)
+        logger.info("Avg weight: %f" % avg_weight)
+        GarminDB.Summary.set(self.garminsumdb, 'Avg_Weight', avg_weight)
+
     def get_years(self):
         years = GarminDB.Monitoring.get_years(self.mondb)
         GarminDB.Summary.set(self.garminsumdb, 'years', len(years))
+        logger.info("Monitoring records: %d" % GarminDB.Monitoring.row_count(self.mondb))
         logger.info("Years (%d): %s" % (len(years), str(years)))
         for year in years:
             self.get_months(year)
@@ -62,7 +97,7 @@ class Analyze():
             span = 0
         GarminDB.Summary.set(self.garminsumdb, str(year) + '_days', days_count)
         GarminDB.Summary.set(self.garminsumdb, str(year) + '_days_span', span)
-        logger.info("%d Days (%d vs %d): %s" % (year, days_count, span, str(days)))
+        logger.info("%d Days (%d count vs %d span): %s" % (year, days_count, span, str(days)))
         for index in xrange(days_count - 1):
             day = int(days[index])
             next_day = int(days[index + 1])
@@ -294,6 +329,8 @@ def main(argv):
     if sleep_period_start and sleep_period_stop:
         analyze.set_sleep_period(sleep_period_start, sleep_period_stop)
     if dates:
+        analyze.get_weight_stats()
+        analyze.get_activities_stats()
         analyze.get_years()
     if summary:
         analyze.summary()
