@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
-    db_version = 2
+    db_version = 3
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -71,9 +71,9 @@ class Activities(ActivitiesDB.Base, DBObject):
     ascent = Column(Float)
     descent = Column(Float)
     # C or F
-    max_tempature = Column(Float)
-    min_tempature = Column(Float)
-    avg_tempature = Column(Float)
+    max_temperature = Column(Float)
+    min_temperature = Column(Float)
+    avg_temperature = Column(Float)
 
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)

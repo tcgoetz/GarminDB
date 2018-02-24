@@ -208,8 +208,8 @@ class FitFileProcessor():
             'max_speed'                         : message_dict['max_speed'],
             'ascent'                            : message_dict['total_ascent'],
             'descent'                           : message_dict['total_descent'],
-            'max_tempature'                     : message_dict.get('max_temperature', None),
-            'avg_tempature'                     : message_dict.get('avg_temperature', None),
+            'max_temperature'                   : message_dict.get('max_temperature', None),
+            'avg_temperature'                   : message_dict.get('avg_temperature', None),
             'training_effect'                   : message_dict.get('total_training_effect', None),
             'anaerobic_training_effect'         : message_dict.get('total_anaerobic_training_effect', None)
         }

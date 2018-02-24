@@ -308,41 +308,29 @@ class GarminJsonData():
                 'name'                      : json_data['activityName'],
                 'description'               : json_data['activityDescription'],
                 'type'                      : self.get_garmin_json_data(json_data, 'eventType', 'display'),
-
                 'start_time'                : datetime.datetime.strptime(self.get_garmin_json_data(activity_summary, 'BeginTimestamp', 'value'), "%Y-%m-%dT%H:%M:%S.%fZ"),
                 'stop_time'                 : datetime.datetime.strptime(self.get_garmin_json_data(activity_summary, 'EndTimestamp', 'value'), "%Y-%m-%dT%H:%M:%S.%fZ"),
-
                 'elapsed_time'              : Fit.Conversions.secs_to_dt_time(int(self.get_garmin_json_data(activity_summary, 'SumElapsedDuration', 'value', float))),
                 'moving_time'               : Fit.Conversions.secs_to_dt_time(int(self.get_garmin_json_data(activity_summary, 'SumMovingDuration', 'value', float))),
-
                 'sport'                     : self.get_garmin_json_data(json_data['activityType'], 'parent', 'key'),
                 'sub_sport'                 : sub_sport,
-
                 'start_lat'                 : self.get_garmin_json_data(activity_summary, 'BeginLatitude', 'value', float),
                 'start_long'                : self.get_garmin_json_data(activity_summary, 'BeginLongitude', 'value', float),
                 'stop_lat'                  : self.get_garmin_json_data(activity_summary, 'EndLatitude', 'value', float),
                 'stop_long'                 : self.get_garmin_json_data(activity_summary, 'EndLongitude', 'value', float),
-
                 'distance'                  : self.get_garmin_json_data(activity_summary, 'SumDistance', 'value', float),
-
                 #'laps'                      : self.get_garmin_json_data(json_data, 'totalLaps'),
-
                 'avg_hr'                    : self.get_garmin_json_data(activity_summary, 'WeightedMeanHeartRate', 'value', float),
                 'max_hr'                    : self.get_garmin_json_data(activity_summary, 'MaxHeartRate', 'value', float),
-
                 'calories'                  : self.get_garmin_json_data(activity_summary, 'SumEnergy', 'value', float),
-
                 'avg_speed'                 : self.get_garmin_json_data(activity_summary, 'WeightedMeanSpeed', 'value', float),
                 'avg_moving_speed'          : self.get_garmin_json_data(activity_summary, 'WeightedMeanMovingSpeed', 'value', float),
                 'max_speed'                 : self.get_garmin_json_data(activity_summary, 'MaxSpeed', 'value', float),
-
                 'ascent'                    : self.get_garmin_json_data(activity_summary, 'GainElevation', 'value', float),
                 'descent'                   : self.get_garmin_json_data(activity_summary, 'LossElevation', 'value', float),
-
-                'max_tempature'             : self.get_garmin_json_data(activity_summary, 'MaxAirTemperature', 'value', float),
-                'min_tempature'             : self.get_garmin_json_data(activity_summary, 'MinAirTemperature', 'value', float),
-                'avg_tempature'             : self.get_garmin_json_data(activity_summary, 'WeightedMeanAirTemperature', 'value', float),
-
+                'max_temperature'           : self.get_garmin_json_data(activity_summary, 'MaxAirTemperature', 'value', float),
+                'min_temperature'           : self.get_garmin_json_data(activity_summary, 'MinAirTemperature', 'value', float),
+                'avg_temperature'           : self.get_garmin_json_data(activity_summary, 'WeightedMeanAirTemperature', 'value', float),
                 'training_effect'           : self.get_garmin_json_data(activity_summary, 'SumTrainingEffect', 'value', float),
                 'anaerobic_training_effect' : self.get_garmin_json_data(activity_summary, 'SumAnaerobicTrainingEffect', 'value', float),
             }
