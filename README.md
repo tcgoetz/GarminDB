@@ -16,6 +16,8 @@ What they can do:
 
 Once you have your data in the DB, I recomend using a SQLite browser like [SQLite Studio](http://sqlitestudio.pl) for browsing and working with the data.
 
+[Screen Shots](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+
 # Using It
 
 The scripts are automated with [Make](https://www.gnu.org/software/make/manual/make.html). Run the Make commands in a terminal window. You may need to reconfigure the file and directory paths in the makefile variables.
