@@ -48,6 +48,9 @@ class Analyze():
         records = GarminDB.Activities.row_count(self.garmin_act_db)
         logger.info("Activities records: %d" % records)
         GarminDB.Summary.set(self.garminsumdb, 'Activities', records)
+        years = GarminDB.Monitoring.get_years(self.mondb)
+        logger.info("Activities years: %d (%s)" % (len(years), str(years)))
+        GarminDB.Summary.set(self.garminsumdb, 'Activity_Years', len(years))
         self.report_sport(GarminDB.Activities.sport, 'Running')
         self.report_sport(GarminDB.Activities.sport, 'Walking')
         self.report_sport(GarminDB.Activities.sport, 'Cycling')
@@ -56,7 +59,7 @@ class Analyze():
         self.report_sport(GarminDB.Activities.sub_sport, 'Elliptical')
         self.report_sport(GarminDB.Activities.sub_sport, 'Treadmill')
         self.report_sport(GarminDB.Activities.sport, 'Stand_Up_Paddleboarding')
-        self.report_sport(GarminDB.Activities.sub_sport, 'resort_skiing_snowboarding')
+        self.report_sport(GarminDB.Activities.sub_sport, 'Resort_Skiing_Snowboarding')
 
     def get_weight_stats(self):
         records = GarminDB.Weight.row_count(self.garmindb)
@@ -72,11 +75,25 @@ class Analyze():
         logger.info("Avg weight: %f" % avg_weight)
         GarminDB.Summary.set(self.garminsumdb, 'Avg_Weight', avg_weight)
 
+    def get_stress_stats(self):
+        records = GarminDB.Stress.row_count(self.garmindb)
+        logger.info("Stress records: %d" % records)
+        GarminDB.Summary.set(self.garminsumdb, 'Stress_Records', records)
+        max_stress = GarminDB.Stress.get_col_max(self.garmindb, GarminDB.Stress.stress)
+        logger.info("Max stress: %f" % max_stress)
+        GarminDB.Summary.set(self.garminsumdb, 'Max_Stress', max_stress)
+        min_stress = GarminDB.Stress.get_col_min(self.garmindb, GarminDB.Stress.stress)
+        logger.info("Min stress: %f" % min_stress)
+        GarminDB.Summary.set(self.garminsumdb, 'Min_Stress', min_stress)
+        avg_stress = GarminDB.Stress.get_col_avg(self.garmindb, GarminDB.Stress.stress)
+        logger.info("Avg stress: %f" % avg_stress)
+        GarminDB.Summary.set(self.garminsumdb, 'Avg_Stress', avg_stress)
+
     def get_years(self):
         years = GarminDB.Monitoring.get_years(self.mondb)
-        GarminDB.Summary.set(self.garminsumdb, 'years', len(years))
+        GarminDB.Summary.set(self.garminsumdb, 'Monitoring_Years', len(years))
         logger.info("Monitoring records: %d" % GarminDB.Monitoring.row_count(self.mondb))
-        logger.info("Years (%d): %s" % (len(years), str(years)))
+        logger.info("Monitoring Years (%d): %s" % (len(years), str(years)))
         for year in years:
             self.get_months(year)
             self.get_days(year)
@@ -330,6 +347,7 @@ def main(argv):
         analyze.set_sleep_period(sleep_period_start, sleep_period_stop)
     if dates:
         analyze.get_weight_stats()
+        analyze.get_stress_stats()
         analyze.get_activities_stats()
         analyze.get_years()
     if summary:
