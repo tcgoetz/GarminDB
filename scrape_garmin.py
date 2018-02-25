@@ -314,7 +314,7 @@ def main(argv):
         points = scrape.get_weight()
 
         # dump weight data to file as json
-        json_filename = weight + '/weight_' + str(time.time()) + '.json'
+        json_filename = weight + '/weight_' + str(int(time.time())) + '.json'
         save_file = open(json_filename, 'w')
         save_file.write(json.dumps(points, default=convert_to_json))
         save_file.close()

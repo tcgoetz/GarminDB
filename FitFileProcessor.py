@@ -142,7 +142,7 @@ class FitFileProcessor():
         return self.write_walking_entry(fit_file, activity_id, sub_sport, message_dict)
 
     def write_cycling_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        logger.info("ride entry: " + repr(message_dict))
+        logger.debug("ride entry: " + repr(message_dict))
         ride = {
             'activity_id'                        : activity_id,
             'strokes'                            : self.get_field_value(message_dict, 'total_strokes'),
@@ -256,7 +256,7 @@ class FitFileProcessor():
         logger.debug("dev_data_id message: " + repr(dev_data_id_message.to_dict()))
 
     def write_field_description_entry(self, fit_file, field_description_message):
-        logger.info("field_description message: " + repr(field_description_message.to_dict()))
+        logger.debug("field_description message: " + repr(field_description_message.to_dict()))
 
     def write_monitoring_info_entry(self, fit_file, message):
         parsed_message = message.to_dict()
