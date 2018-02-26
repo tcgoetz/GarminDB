@@ -7,7 +7,6 @@
 import os, sys, getopt, re, string, logging, datetime, traceback, json, tcxparser, dateutil.parser
 
 import Fit
-#import Fit.Conversions
 import FitFileProcessor
 import GarminDB
 

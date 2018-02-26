@@ -136,7 +136,6 @@ class FitFileProcessor():
         }
         GarminDB.WalkActivities.create_or_update_not_none(self.garmin_act_db, walk)
 
-
     def write_hiking_entry(self, fit_file, activity_id, sub_sport, message_dict):
         logger.debug("hike entry: " + repr(message_dict))
         return self.write_walking_entry(fit_file, activity_id, sub_sport, message_dict)
@@ -160,6 +159,10 @@ class FitFileProcessor():
         }
         GarminDB.PaddleActivities.create_or_update_not_none(self.garmin_act_db, paddle)
 
+    def write_rowing_entry(self, fit_file, activity_id, sub_sport, message_dict):
+        logger.debug("row entry: " + repr(message_dict))
+        return self.write_stand_up_paddleboarding_entry(fit_file, activity_id, sub_sport, message_dict)
+
     def write_elliptical_entry(self, fit_file, activity_id, sub_sport, message_dict):
         logger.debug("elliptical entry: " + repr(message_dict))
         workout = {
@@ -177,6 +180,9 @@ class FitFileProcessor():
             function(fit_file, activity_id, sub_sport, message_dict)
         except AttributeError:
             logger.info("No sub sport handler type %s from %s: %s" % (sub_sport, fit_file.filename, str(message_dict)))
+
+    def write_alpine_skiing_entry(self, fit_file, activity_id, sub_sport, message_dict):
+        logger.debug("Skiing entry: " + repr(message_dict))
 
     def write_session_entry(self, fit_file, message):
         logger.debug("session message: " + repr(message.to_dict()))

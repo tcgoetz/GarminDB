@@ -159,7 +159,7 @@ $(MEW_MONITORING_FIT_FILES_DIR):
 	mkdir -p $(MEW_MONITORING_FIT_FILES_DIR)
 
 scrape_monitoring: $(MEW_MONITORING_FIT_FILES_DIR)
-	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
+	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MEW_MONITORING_FIT_FILES_DIR)"
 
 import_monitoring: $(DB_DIR)
 	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
@@ -167,7 +167,7 @@ import_monitoring: $(DB_DIR)
 	done
 
 scrape_new_monitoring: $(MEW_MONITORING_FIT_FILES_DIR)
-	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD)  -m "$(MEW_MONITORING_FIT_FILES_DIR)"
+	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MEW_MONITORING_FIT_FILES_DIR)"
 
 import_new_monitoring: scrape_new_monitoring $(MONITORING_FIT_FILES_DIR) $(MEW_MONITORING_FIT_FILES_DIR)
 	if ls $(MEW_MONITORING_FIT_FILES_DIR)/*.fit 1> /dev/null 2>&1; then \
@@ -182,14 +182,10 @@ $(WEIGHT_FILES_DIR):
 import_weight: $(DB_DIR)
 	python import_garmin.py -e --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
 
-import_new_weight: $(DB_DIR) scrape_new_weight
-	python import_garmin.py -e --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
+import_new_weight: scrape_weight import_weight
 
 scrape_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
-	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
-
-scrape_new_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
-	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
+	python scrape_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
 
 ## activities
 GARMIN_ACT_DB=$(DB_DIR)/garmin_activities.db
