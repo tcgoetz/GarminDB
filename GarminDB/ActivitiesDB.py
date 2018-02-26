@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
-    db_version = 3
+    db_version = 4
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -169,7 +169,6 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'elliptical_activities'
     steps = Column(Integer)
     avg_pace = Column(Time)
-    max_pace = Column(Time)
     # kms or miles
     elliptical_distance = Column(Float)
     avg_rpms = Column(Float)

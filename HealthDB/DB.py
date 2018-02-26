@@ -119,7 +119,6 @@ class DBObject():
     _col_translations = {}
     _col_mappings = {}
 
-
     @classmethod
     def create_join_view(cls, db, view_name, join_table):
         if not db.engine.dialect.has_table(db.engine, view_name):
