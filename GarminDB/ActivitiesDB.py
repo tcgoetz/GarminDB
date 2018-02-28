@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
-    db_version = 4
+    db_version = 5
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -24,11 +24,11 @@ class ActivitiesDB(DB):
         self.version = SummaryDB.DbVersion()
         self.version.version_check(self, self.db_version)
 
-        RunActivities.create_activity_view(self)
-        WalkActivities.create_activity_view(self)
-        PaddleActivities.create_activity_view(self)
-        CycleActivities.create_activity_view(self)
-        EllipticalActivities.create_activity_view(self)
+        RunActivities.create_view(self)
+        WalkActivities.create_view(self)
+        PaddleActivities.create_view(self)
+        CycleActivities.create_view(self)
+        EllipticalActivities.create_view(self)
 
 
 class Activities(ActivitiesDB.Base, DBObject):
@@ -131,6 +131,49 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
     power = Column(Float)
     vo2_max = Column(Float)
 
+    @classmethod
+    def create_view(cls, db):
+        view_name = cls.__tablename__ + '_view'
+        query_str = (
+            'SELECT ' +
+                'activities.activity_id AS activity_id, ' +
+                'activities.name AS name, ' +
+                'activities.description AS description, ' +
+                'activities.type AS type, ' +
+                'activities.start_time AS start_time, ' +
+                'activities.stop_time AS stop_time, ' +
+                'activities.elapsed_time AS elapsed_time, ' +
+                'activities.start_lat AS start_lat, ' +
+                'activities.start_long AS start_long, ' +
+                'activities.stop_lat AS stop_lat, ' +
+                'activities.stop_long AS stop_long, ' +
+                'activities.distance AS distance, ' +
+                'run_activities.steps AS steps, ' +
+                'run_activities.avg_pace AS avg_pace, ' +
+                'run_activities.avg_moving_pace AS avg_moving_pace, ' +
+                'run_activities.max_pace AS max_pace, ' +
+                'run_activities.avg_steps_per_min AS avg_steps_per_min, ' +
+                'run_activities.max_steps_per_min AS max_steps_per_min, ' +
+                'activities.avg_hr AS avg_hr, ' +
+                'activities.max_hr AS max_hr, ' +
+                'activities.calories AS calories, ' +
+                'activities.avg_speed AS avg_speed, ' +
+                'activities.max_speed AS max_speed, ' +
+                'run_activities.avg_step_length AS avg_step_length, ' +
+                'run_activities.avg_vertical_ratio AS avg_vertical_ratio, ' +
+                'run_activities.avg_vertical_oscillation AS avg_vertical_oscillation, ' +
+                'run_activities.avg_gct_balance AS avg_gct_balance, ' +
+                'run_activities.avg_ground_contact_time AS avg_ground_contact_time, ' +
+                'run_activities.avg_stance_time_percent AS avg_stance_time_percent, ' +
+                'run_activities.lactate_threshold_hr AS lactate_threshold_hr, ' +
+                'run_activities.power AS power, ' +
+                'run_activities.vo2_max AS vo2_max, ' +
+                'activities.training_effect AS training_effect, ' +
+                'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
+            'FROM run_activities JOIN activities ON activities.activity_id = run_activities.activity_id'
+        )
+        cls._create_view(db, view_name, query_str)
+
 
 class WalkActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'walk_activities'
@@ -139,6 +182,38 @@ class WalkActivities(ActivitiesDB.Base, SportActivities):
     avg_pace = Column(Time)
     max_pace = Column(Time)
     vo2_max = Column(Float)
+
+    @classmethod
+    def create_view(cls, db):
+        view_name = cls.__tablename__ + '_view'
+        query_str = (
+            'SELECT ' +
+                'activities.activity_id AS activity_id, ' +
+                'activities.name AS name, ' +
+                'activities.description AS description, ' +
+                'activities.type AS type, ' +
+                'activities.start_time AS start_time, ' +
+                'activities.stop_time AS stop_time, ' +
+                'activities.elapsed_time AS elapsed_time, ' +
+                'activities.start_lat AS start_lat, ' +
+                'activities.start_long AS start_long, ' +
+                'activities.stop_lat AS stop_lat, ' +
+                'activities.stop_long AS stop_long, ' +
+                'activities.distance AS distance, ' +
+                'walk_activities.steps AS steps, ' +
+                'walk_activities.avg_pace AS avg_pace, ' +
+                'walk_activities.max_pace AS max_pace, ' +
+                'activities.avg_hr AS avg_hr, ' +
+                'activities.max_hr AS max_hr, ' +
+                'activities.calories AS calories, ' +
+                'activities.avg_speed AS avg_speed, ' +
+                'activities.max_speed AS max_speed, ' +
+                'walk_activities.vo2_max AS vo2_max, ' +
+                'activities.training_effect AS training_effect, ' +
+                'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
+            'FROM walk_activities JOIN activities ON activities.activity_id = walk_activities.activity_id'
+        )
+        cls._create_view(db, view_name, query_str)
 
 
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
@@ -150,6 +225,39 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
     max_strokes_per_min = Column(Float)
     power = Column(Float)
 
+    @classmethod
+    def create_view(cls, db):
+        view_name = cls.__tablename__ + '_view'
+        query_str = (
+            'SELECT ' +
+                'activities.activity_id AS activity_id, ' +
+                'activities.name AS name, ' +
+                'activities.description AS description, ' +
+                'activities.type AS type, ' +
+                'activities.start_time AS start_time, ' +
+                'activities.stop_time AS stop_time, ' +
+                'activities.elapsed_time AS elapsed_time, ' +
+                'activities.start_lat AS start_lat, ' +
+                'activities.start_long AS start_long, ' +
+                'activities.stop_lat AS stop_lat, ' +
+                'activities.stop_long AS stop_long, ' +
+                'activities.distance AS distance, ' +
+                'paddle_activities.strokes AS strokes, ' +
+                'paddle_activities.avg_stroke_distance AS avg_stroke_distance, ' +
+                'paddle_activities.avg_strokes_per_min AS avg_strokes_per_min, ' +
+                'paddle_activities.max_strokes_per_min AS max_strokes_per_min, ' +
+                'activities.avg_hr AS avg_hr, ' +
+                'activities.max_hr AS max_hr, ' +
+                'activities.calories AS calories, ' +
+                'activities.avg_speed AS avg_speed, ' +
+                'activities.max_speed AS max_speed, ' +
+                'paddle_activities.power AS power, ' +
+                'activities.training_effect AS training_effect, ' +
+                'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
+            'FROM paddle_activities JOIN activities ON activities.activity_id = paddle_activities.activity_id'
+        )
+        cls._create_view(db, view_name, query_str)
+
 
 class CycleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'cycle_activities'
@@ -158,11 +266,45 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
     avg_pace = Column(Time)
     avg_moving_pace = Column(Time)
     max_pace = Column(Time)
-    avg_rpms = Column(Float)
-    max_rpms = Column(Float)
     # watts
     power = Column(Float)
     vo2_max = Column(Float)
+
+    @classmethod
+    def create_view(cls, db):
+        view_name = cls.__tablename__ + '_view'
+        query_str = (
+            'SELECT ' +
+                'activities.activity_id AS activity_id, ' +
+                'activities.name AS name, ' +
+                'activities.description AS description, ' +
+                'activities.type AS type, ' +
+                'activities.start_time AS start_time, ' +
+                'activities.stop_time AS stop_time, ' +
+                'activities.elapsed_time AS elapsed_time, ' +
+                'activities.start_lat AS start_lat, ' +
+                'activities.start_long AS start_long, ' +
+                'activities.stop_lat AS stop_lat, ' +
+                'activities.stop_long AS stop_long, ' +
+                'activities.distance AS distance, ' +
+                'cycle_activities.strokes AS strokes, ' +
+                'cycle_activities.avg_pace AS avg_pace, ' +
+                'cycle_activities.avg_moving_pace AS avg_moving_pace, ' +
+                'cycle_activities.max_pace AS max_pace, ' +
+                'activities.avg_hr AS avg_hr, ' +
+                'activities.max_hr AS max_hr, ' +
+                'activities.calories AS calories, ' +
+                'activities.avg_cadence AS avg_rpms, ' +
+                'activities.max_cadence AS max_rpms, ' +
+                'activities.avg_speed AS avg_speed, ' +
+                'activities.max_speed AS max_speed, ' +
+                'cycle_activities.power AS power, ' +
+                'cycle_activities.vo2_max AS vo2_max, ' +
+                'activities.training_effect AS training_effect, ' +
+                'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
+            'FROM cycle_activities JOIN activities ON activities.activity_id = cycle_activities.activity_id'
+        )
+        cls._create_view(db, view_name, query_str)
 
 
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
@@ -174,32 +316,31 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
     power = Column(Float)
 
     @classmethod
-    def create_join_view(cls, db, view_name, join_table):
+    def create_view(cls, db):
         view_name = cls.__tablename__ + '_view'
-        if not db.engine.dialect.has_table(db.engine, view_name):
-            query = (
-                'SELECT ' +
-                    'activities.activity_id AS activity_id, ' +
-                    'activities.name AS name, ' +
-                    'activities.description AS description, ' +
-                    'activities.type AS type, ' +
-                    'elliptical_activities.steps AS steps, ' +
-                    'elliptical_activities.avg_pace AS avg_pace, ' +
-                    'elliptical_activities.elliptical_distance AS distance, ' +
-                    'elliptical_activities.power AS power, ' +
-                    'activities.start_time AS start_time, ' +
-                    'activities.stop_time AS stop_time, ' +
-                    'activities.elapsed_time AS elapsed_time, ' +
-                    'activities.cycles AS cycles, ' +
-                    'activities.avg_hr AS avg_hr, ' +
-                    'activities.max_hr AS max_hr, ' +
-                    'activities.calories AS calories, ' +
-                    'activities.avg_cadence AS avg_rpms, ' +
-                    'activities.max_cadence AS max_rpms, ' +
-                    'activities.avg_speed AS avg_speed, ' +
-                    'activities.max_speed AS max_speed, ' +
-                    'activities.training_effect AS training_effect, ' +
-                    'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
-                'FROM elliptical_activities JOIN activities ON activities.activity_id = elliptical_activities.activity_id'
-            )
-            db.engine.execute('CREATE VIEW ' + view_name + ' AS ' + str(query))
+        query_str = (
+            'SELECT ' +
+                'activities.activity_id AS activity_id, ' +
+                'activities.name AS name, ' +
+                'activities.description AS description, ' +
+                'activities.type AS type, ' +
+                'activities.start_time AS start_time, ' +
+                'activities.stop_time AS stop_time, ' +
+                'activities.elapsed_time AS elapsed_time, ' +
+                'elliptical_activities.steps AS steps, ' +
+                'elliptical_activities.avg_pace AS avg_pace, ' +
+                'elliptical_activities.elliptical_distance AS distance, ' +
+                'activities.cycles AS cycles, ' +
+                'activities.avg_hr AS avg_hr, ' +
+                'activities.max_hr AS max_hr, ' +
+                'activities.calories AS calories, ' +
+                'activities.avg_cadence AS avg_rpms, ' +
+                'activities.max_cadence AS max_rpms, ' +
+                'activities.avg_speed AS avg_speed, ' +
+                'elliptical_activities.power AS power, ' +
+                'activities.training_effect AS training_effect, ' +
+                'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
+            'FROM elliptical_activities JOIN activities ON activities.activity_id = elliptical_activities.activity_id'
+        )
+        cls._create_view(db, view_name, query_str)
+

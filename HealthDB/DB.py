@@ -120,10 +120,18 @@ class DBObject():
     _col_mappings = {}
 
     @classmethod
+    def _delete_view(cls, db, view_name):
+        db.engine.execute('DROP VIEW IF EXISTS ' + view_name)
+
+    @classmethod
+    def _create_view(cls, db, view_name, query_str):
+        cls._delete_view(db, view_name)
+        db.engine.execute('CREATE VIEW IF NOT EXISTS ' + view_name + ' AS ' + query_str)
+
+    @classmethod
     def create_join_view(cls, db, view_name, join_table):
-        if not db.engine.dialect.has_table(db.engine, view_name):
-            query = db.session().query(cls, join_table).join(join_table)
-            db.engine.execute('CREATE VIEW ' + view_name + ' AS ' + str(query))
+        query = db.session().query(cls, join_table).join(join_table)
+        cls._create_view(db, view_name, str(query))
 
     @classmethod
     def filename_from_pathname(cls, pathname):
