@@ -169,8 +169,6 @@ class FitFileProcessor():
             'activity_id'                       : activity_id,
             'steps'                             : message_dict.get('dev_Steps', message_dict.get('total_steps', None)),
             'elliptical_distance'               : message_dict.get('dev_User_distance', message_dict.get('dev_distance', message_dict.get('distance', None))),
-            'avg_rpms'                          : self.get_field_value(message_dict, 'avg_cadence'),
-            'max_rpms'                          : self.get_field_value(message_dict, 'max_cadence'),
         }
         GarminDB.EllipticalActivities.create_or_update_not_none(self.garmin_act_db, workout)
 
