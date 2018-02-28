@@ -39,6 +39,19 @@ class Analyze():
         GarminDB.Attributes.set_if_unset(self.garmindb, 'sleep_time', sleep_period_start)
         GarminDB.Attributes.set_if_unset(self.garmindb, 'wake_time', sleep_period_stop)
 
+    def report_file_type(self, file_type):
+        records = GarminDB.File.row_count(self.garmindb, GarminDB.File.type, file_type)
+        logger.info("%s files: %d" % (file_type, records))
+        GarminDB.Summary.set(self.garminsumdb, file_type + '_files', records)
+
+    def get_files_stats(self):
+        records = GarminDB.File.row_count(self.garmindb)
+        logger.info("File records: %d" % records)
+        GarminDB.Summary.set(self.garminsumdb, 'files', records)
+        self.report_file_type('tcx')
+        self.report_file_type('activity')
+        self.report_file_type('monitoring_b')
+
     def report_sport(self, sport_col, sport):
         records = GarminDB.Activities.row_count(self.garmin_act_db, sport_col, sport.lower())
         logger.info("%s activities: %d" % (sport, records))
@@ -346,6 +359,7 @@ def main(argv):
     if sleep_period_start and sleep_period_stop:
         analyze.set_sleep_period(sleep_period_start, sleep_period_stop)
     if dates:
+        analyze.get_files_stats()
         analyze.get_weight_stats()
         analyze.get_stress_stats()
         analyze.get_activities_stats()
