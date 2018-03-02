@@ -110,8 +110,8 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_resting_heartrate(cls, db, wake_ts):
-        start_ts = wake_ts - datetime.timedelta(0, 0, 0, 0, 0, 2)
-        return cls.get_col_avg(db, cls.heart_rate, start_ts, wake_ts, True)
+        start_ts = wake_ts - datetime.timedelta(0, 0, 0, 0, 30)
+        return cls.get_col_min(db, cls.heart_rate, start_ts, wake_ts, True)
 
 
 class MonitoringIntensity(MonitoringDB.Base, DBObject):

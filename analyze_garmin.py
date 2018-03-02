@@ -248,6 +248,8 @@ class Analyze():
         rhr = GarminDB.MonitoringHeartRate.get_resting_heartrate(self.mondb, wake_ts)
         if rhr:
             GarminDB.RestingHeartRate.create_or_update(self.garminsumdb, {'day' : day_date, 'resting_heart_rate' : rhr})
+        else:
+            logger.debug("No RHR for %s)" % str(day_date))
 
     def calculate_day_stats(self, day_date):
         stats = GarminDB.MonitoringHeartRate.get_daily_stats(self.mondb, day_date)
