@@ -199,22 +199,17 @@ class GarminJsonData():
             avg_step_length = Fit.Conversions.meters_to_feet(avg_step_length)
         run = {
                 'activity_id'               : activity_id,
-
                 'steps'                     : self.get_garmin_json_data(activity_summary, 'SumStep', 'value', float),
-
                 'avg_pace'                  : pace_to_time(self.get_garmin_json_data(activity_summary, 'WeightedMeanPace', 'display')),
                 'avg_moving_pace'           : pace_to_time(self.get_garmin_json_data(activity_summary, 'WeightedMeanMovingPace', 'display')),
                 'max_pace'                  : pace_to_time(self.get_garmin_json_data(activity_summary, 'MaxPace', 'display')),
-
                 'avg_steps_per_min'         : self.get_garmin_json_data(activity_summary, 'WeightedMeanRunCadence', 'value', float),
                 'max_steps_per_min'         : self.get_garmin_json_data(activity_summary, 'MaxRunCadence', 'value', float),
-
                 'avg_step_length'           : avg_step_length,
                 'avg_gct_balance'           : self.get_garmin_json_data(activity_summary, 'WeightedMeanGroundContactBalanceLeft', 'value', float),
                 'lactate_threshold_hr'      : self.get_garmin_json_data(activity_summary, 'DirectLactateThresholdHeartRate', 'value', float),
                 'avg_vertical_oscillation'  : avg_vertical_oscillation,
                 'avg_ground_contact_time'   : Fit.Conversions.ms_to_dt_time(self.get_garmin_json_data(activity_summary, 'WeightedMeanGroundContactTime', 'value', float)),
-
                 'power'                     : self.get_garmin_json_data(activity_summary, 'DirectFunctionalThresholdPower', 'value', float),
                 'vo2_max'                   : self.get_garmin_json_data(activity_summary, 'DirectVO2Max', 'value', float),
         }
@@ -226,12 +221,9 @@ class GarminJsonData():
     def process_walking(self, activity_id, activity_summary):
         walk = {
                 'activity_id'               : activity_id,
-
                 'steps'                     : self.get_garmin_json_data(activity_summary, 'SumStep', 'value', float),
-
                 'avg_pace'                  : pace_to_time(self.get_garmin_json_data(activity_summary, 'WeightedMeanPace', 'display')),
                 'max_pace'                  : pace_to_time(self.get_garmin_json_data(activity_summary, 'MaxPace', 'display')),
-
                 'vo2_max'                   : self.get_garmin_json_data(activity_summary, 'DirectVO2Max', 'value', float),
         }
         GarminDB.WalkActivities.create_or_update_not_none(self.garmin_act_db, walk)
@@ -240,35 +232,36 @@ class GarminJsonData():
         return self.process_walking(activity_id, activity_summary)
 
     def process_paddling(self, activity_id, activity_summary):
+        activity = {
+                'activity_id'               : activity_id,
+                'avg_cadence'               : self.get_garmin_json_data(activity_summary, 'WeightedMeanStrokeCadence', 'value', float),
+                'max_cadence'               : self.get_garmin_json_data(activity_summary, 'MaxStrokeCadence', 'value', float),
+        }
+        GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
         avg_stroke_distance = self.get_garmin_json_data(activity_summary, 'WeightedMeanStrokeDistance', 'value', float)
         if self.english_units:
             avg_stroke_distance = Fit.Conversions.meters_to_feet(avg_stroke_distance)
         paddle = {
                 'activity_id'               : activity_id,
-
                 'strokes'                   : self.get_garmin_json_data(activity_summary, 'SumStrokes', 'value', float),
-
-                'avg_strokes_per_min'       : self.get_garmin_json_data(activity_summary, 'WeightedMeanStrokeCadence', 'value', float),
-                'max_strokes_per_min'       : self.get_garmin_json_data(activity_summary, 'MaxStrokeCadence', 'value', float),
-
                 'avg_stroke_distance'       : avg_stroke_distance,
                 'power'                     : self.get_garmin_json_data(activity_summary, 'DirectFunctionalThresholdPower', 'value', float),
         }
         GarminDB.PaddleActivities.create_or_update_not_none(self.garmin_act_db, paddle)
 
     def process_cycling(self, activity_id, activity_summary):
+        activity = {
+                'activity_id'               : activity_id,
+                'avg_cadence'               : self.get_garmin_json_data(activity_summary, 'WeightedMeanBikeCadence', 'value', float),
+                'max_cadence'               : self.get_garmin_json_data(activity_summary, 'MaxBikeCadence', 'value', float),
+        }
+        GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
         ride = {
                 'activity_id'               : activity_id,
-
                 'strokes'                   : self.get_garmin_json_data(activity_summary, 'SumStrokes', 'value', float),
-
                 'avg_pace'                  : pace_to_time(self.get_garmin_json_data(activity_summary, 'WeightedMeanPace', 'display')),
                 'avg_moving_pace'           : pace_to_time(self.get_garmin_json_data(activity_summary, 'WeightedMeanMovingPace', 'display')),
                 'max_pace'                  : pace_to_time(self.get_garmin_json_data(activity_summary, 'MaxPace', 'display')),
-
-                'avg_rpms'                  : self.get_garmin_json_data(activity_summary, 'WeightedMeanBikeCadence', 'value', float),
-                'max_rpms'                  : self.get_garmin_json_data(activity_summary, 'MaxBikeCadence', 'value', float),
-
                 'power'                     : self.get_garmin_json_data(activity_summary, 'DirectFunctionalThresholdPower', 'value', float),
                 'vo2_max'                   : self.get_garmin_json_data(activity_summary, 'DirectVO2Max', 'value', float),
         }
@@ -278,18 +271,18 @@ class GarminJsonData():
         return self.process_cycling(activity_id, activity_summary)
 
     def process_elliptical(self, activity_id, activity_summary):
+        activity = {
+                'activity_id'               : activity_id,
+                'avg_cadence'               : self.get_garmin_json_data(activity_summary, 'WeightedMeanRunCadence', 'value', float),
+                'max_cadence'               : self.get_garmin_json_data(activity_summary, 'MaxRunCadence', 'value', float),
+        }
+        GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
         workout = {
                 'activity_id'               : activity_id,
-
                 'elliptical_distance'       : self.get_garmin_json_data(activity_summary, 'SumDistance', 'value', float),
                 'steps'                     : self.get_garmin_json_data(activity_summary, 'SumStep', 'value', float),
-
                 'avg_pace'                  : pace_to_time(self.get_garmin_json_data(activity_summary, 'WeightedMeanPace', 'display')),
                 'max_pace'                  : pace_to_time(self.get_garmin_json_data(activity_summary, 'MaxPace', 'display')),
-
-                'avg_rpms'                  : self.get_garmin_json_data(activity_summary, 'WeightedMeanRunCadence', 'value', float),
-                'max_rpms'                  : self.get_garmin_json_data(activity_summary, 'MaxRunCadence', 'value', float),
-
                 'power'                     : self.get_garmin_json_data(activity_summary, 'DirectFunctionalThresholdPower', 'value', float),
         }
         GarminDB.EllipticalActivities.create_or_update_not_none(self.garmin_act_db, workout)

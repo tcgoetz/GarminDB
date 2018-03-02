@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
-    db_version = 5
+    db_version = 6
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -221,8 +221,6 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
     strokes = Column(Integer)
     # m or ft
     avg_stroke_distance = Column(Float)
-    avg_strokes_per_min = Column(Float)
-    max_strokes_per_min = Column(Float)
     power = Column(Float)
 
     @classmethod
@@ -244,8 +242,8 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
                 'activities.distance AS distance, ' +
                 'paddle_activities.strokes AS strokes, ' +
                 'paddle_activities.avg_stroke_distance AS avg_stroke_distance, ' +
-                'paddle_activities.avg_strokes_per_min AS avg_strokes_per_min, ' +
-                'paddle_activities.max_strokes_per_min AS max_strokes_per_min, ' +
+                'activities.avg_cadence AS avg_strokes_per_min, ' +
+                'activities.max_cadence AS max_strokes_per_min, ' +
                 'activities.avg_hr AS avg_hr, ' +
                 'activities.max_hr AS max_hr, ' +
                 'activities.calories AS calories, ' +
@@ -310,7 +308,9 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'elliptical_activities'
     steps = Column(Integer)
+    #
     avg_pace = Column(Time)
+    max_pace = Column(Time)
     # kms or miles
     elliptical_distance = Column(Float)
     power = Column(Float)

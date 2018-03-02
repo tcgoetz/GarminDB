@@ -154,8 +154,6 @@ class FitFileProcessor():
             'activity_id'                       : activity_id,
             'strokes'                           : self.get_field_value(message_dict, 'total_strokes'),
             'avg_stroke_distance'               : self.get_field_value(message_dict, 'avg_stroke_distance'),
-            'avg_strokes_per_min'               : self.get_field_value(message_dict, 'avg_cadence'),
-            'max_strokes_per_min'               : self.get_field_value(message_dict, 'max_cadence'),
         }
         GarminDB.PaddleActivities.create_or_update_not_none(self.garmin_act_db, paddle)
 

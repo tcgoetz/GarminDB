@@ -116,3 +116,11 @@ class Sleep(GarminSummaryDB.Base, DBObject):
     def _find_query(cls, session, values_dict):
         return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
+    @classmethod
+    def get_wake_time(cls, db, day_date):
+        day_start_ts = datetime.datetime.combine(day_date, datetime.time.min)
+        day_stop_ts = datetime.datetime.combine(day_date, datetime.time.max)
+        values = cls.get_col_values(db, cls.timestamp, cls.event, 'wake_time', day_start_ts, day_stop_ts)
+        if len(values) > 0:
+            return values[0][0]
+

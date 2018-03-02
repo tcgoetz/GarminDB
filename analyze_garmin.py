@@ -236,12 +236,16 @@ class Analyze():
                     prev_sleep_state = sleep_state
                     prev_sleep_state_ts = current_ts
         self.sleep_state_change(prev_sleep_state_ts, prev_sleep_state, duration)
-        GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : self.bedtime_ts, 'event' : 'bed_time', 'duration' : 1})
-        GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : self.wake_ts, 'event' : 'wake_time', 'duration' : 1})
+        if self.bedtime_ts is not None:
+            GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : self.bedtime_ts, 'event' : 'bed_time', 'duration' : 1})
+        if self.wake_ts is not None:
+            GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : self.wake_ts, 'event' : 'wake_time', 'duration' : 1})
 
     def calculate_resting_heartrate(self, day_date, sleep_period_stop):
-        start_ts = datetime.datetime.combine(day_date, sleep_period_stop)
-        rhr = GarminDB.MonitoringHeartRate.get_resting_heartrate(self.mondb, start_ts)
+        wake_ts = GarminDB.Sleep.get_wake_time(self.garminsumdb, day_date)
+        if wake_ts is None:
+            wake_ts = datetime.datetime.combine(day_date, sleep_period_stop)
+        rhr = GarminDB.MonitoringHeartRate.get_resting_heartrate(self.mondb, wake_ts)
         if rhr:
             GarminDB.RestingHeartRate.create_or_update(self.garminsumdb, {'day' : day_date, 'resting_heart_rate' : rhr})
 
