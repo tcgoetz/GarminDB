@@ -200,7 +200,7 @@ $(ACTIVITES_FIT_FILES_DIR):
 $(ACTIVITES_TCX_FILES_DIR):
 	mkdir -p $(ACTIVITES_TCX_FILES_DIR)
 
-TEST_ACTIVITY_ID=1590594442
+TEST_ACTIVITY_ID=2518387315
 test_import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/$(TEST_ACTIVITY_ID).fit" --sqlite $(DB_DIR)
 

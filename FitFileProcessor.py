@@ -57,6 +57,7 @@ class FitFileProcessor():
                 self.write_message_type(fit_file, message_type)
 
     def write_file(self, fit_file):
+        self.lap = 1
         self.write_message_types(fit_file, fit_file.message_types())
 
     #
@@ -226,7 +227,36 @@ class FitFileProcessor():
         logger.debug("device settings message: " + repr(device_settings_message.to_dict()))
 
     def write_lap_entry(self, fit_file, lap_message):
-        logger.debug("lap message: " + repr(lap_message.to_dict()))
+        message_dict = lap_message.to_dict()
+        logger.debug("lap message: " + repr(message_dict))
+        activity_id = GarminDB.File.get(self.garmin_db, fit_file.filename)
+        lap = {
+            'activity_id'                       : activity_id,
+            'lap'                               : self.lap,
+            'start_time'                        : message_dict['start_time'],
+            'stop_time'                         : message_dict['timestamp'],
+            'elapsed_time'                      : message_dict['total_elapsed_time'],
+            'moving_time'                       : message_dict.get('total_timer_time', None),
+            'start_lat'                         : message_dict.get('start_position_lat', None),
+            'start_long'                        : message_dict.get('start_position_long', None),
+            'stop_lat'                          : message_dict.get('end_position_lat', None),
+            'stop_long'                         : message_dict.get('end_position_long', None),
+            'distance'                          : message_dict.get('dev_User_distance', message_dict.get('total_distance', None)),
+            'cycles'                            : self.get_field_value(message_dict, 'total_cycles'),
+            'avg_hr'                            : self.get_field_value(message_dict, 'avg_heart_rate'),
+            'max_hr'                            : self.get_field_value(message_dict, 'max_heart_rate'),
+            'calories'                          : self.get_field_value(message_dict, 'total_calories'),
+            'avg_cadence'                       : self.get_field_value(message_dict, 'avg_cadence'),
+            'max_cadence'                       : self.get_field_value(message_dict, 'max_cadence'),
+            'avg_speed'                         : message_dict['avg_speed'],
+            'max_speed'                         : message_dict['max_speed'],
+            'ascent'                            : message_dict['total_ascent'],
+            'descent'                           : message_dict['total_descent'],
+            'max_temperature'                   : message_dict.get('max_temperature', None),
+            'avg_temperature'                   : message_dict.get('avg_temperature', None),
+        }
+        GarminDB.ActivityLaps.create_or_update_not_none(self.garmin_act_db, lap)
+        self.lap += 1
 
     def write_battery_entry(self, fit_file, battery_message):
         logger.debug("battery message: " + repr(battery_message.to_dict()))
