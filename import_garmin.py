@@ -18,7 +18,7 @@ logger = logging.getLogger(__file__)
 
 class GarminWeightData():
 
-    def __init__(self, input_file, input_dir, english_units, debug):
+    def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
