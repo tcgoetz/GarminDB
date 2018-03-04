@@ -58,9 +58,15 @@ class Analyze():
         GarminDB.Summary.set(self.garminsumdb, sport + '_Activities', records)
 
     def get_activities_stats(self):
-        records = GarminDB.Activities.row_count(self.garmin_act_db)
-        logger.info("Activities records: %d" % records)
-        GarminDB.Summary.set(self.garminsumdb, 'Activities', records)
+        activities = GarminDB.Activities.row_count(self.garmin_act_db)
+        logger.info("Activity summary records: %d" % activities)
+        GarminDB.Summary.set(self.garminsumdb, 'Activities', activities)
+        laps = GarminDB.ActivityLaps.row_count(self.garmin_act_db)
+        logger.info("Activities lap records: %d" % laps)
+        GarminDB.Summary.set(self.garminsumdb, 'Activity_laps', laps)
+        records = GarminDB.ActivityRecords.row_count(self.garmin_act_db)
+        logger.info("Activity records: %d" % records)
+        GarminDB.Summary.set(self.garminsumdb, 'Activity_records', records)
         years = GarminDB.Activities.get_years(self.garmin_act_db)
         logger.info("Activities years: %d (%s)" % (len(years), str(years)))
         GarminDB.Summary.set(self.garminsumdb, 'Activity_Years', len(years))
