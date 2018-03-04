@@ -30,7 +30,6 @@ DB_DIR=$(HEALTH_DATA_DIR)/DBs
 TEST_DB_DIR=/tmp/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/$(YEAR)_Monitoring
-MEW_MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/Incoming_Monitoring
 ACTIVITES_FIT_FILES_DIR=$(FIT_FILE_DIR)/Activities
 ACTIVITES_TCX_FILES_DIR=$(HEALTH_DATA_DIR)/TcxFiles
 WEIGHT_FILES_DIR=$(HEALTH_DATA_DIR)/Weight
@@ -155,25 +154,21 @@ clean_monitoring_db:
 $(MONITORING_FIT_FILES_DIR):
 	mkdir -p $(MONITORING_FIT_FILES_DIR)
 
-$(MEW_MONITORING_FIT_FILES_DIR):
-	mkdir -p $(MEW_MONITORING_FIT_FILES_DIR)
+scrape_monitoring: $(MONITORING_FIT_FILES_DIR)
+	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MONITORING_FIT_FILES_DIR)"
 
-scrape_monitoring: $(MEW_MONITORING_FIT_FILES_DIR)
-	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MEW_MONITORING_FIT_FILES_DIR)"
-
-import_monitoring: $(DB_DIR)
+import_monitoring: $(DB_DIR) $(MONITORING_FIT_FILES_DIR)
 	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
 		python import_garmin.py -e --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
 	done
 
-scrape_new_monitoring: $(MEW_MONITORING_FIT_FILES_DIR)
-	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MEW_MONITORING_FIT_FILES_DIR)"
+scrape_new_monitoring: $(MONITORING_FIT_FILES_DIR)
+	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MONITORING_FIT_FILES_DIR)"
 
-import_new_monitoring: scrape_new_monitoring $(MONITORING_FIT_FILES_DIR) $(MEW_MONITORING_FIT_FILES_DIR)
-	if ls $(MEW_MONITORING_FIT_FILES_DIR)/*.fit 1> /dev/null 2>&1; then \
-		python import_garmin.py -e --fit_input_dir "$(MEW_MONITORING_FIT_FILES_DIR)" --sqlite $(DB_DIR) && \
-		mv $(MEW_MONITORING_FIT_FILES_DIR)/*.fit $(MONITORING_FIT_FILES_DIR)/.; \
-	fi
+import_new_monitoring: scrape_new_monitoring
+	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
+		python import_garmin.py -e -l --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
+	done
 
 ## weight
 $(WEIGHT_FILES_DIR):

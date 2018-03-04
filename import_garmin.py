@@ -4,9 +4,10 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, string, logging, datetime, traceback, json, dateutil.parser
+import os, sys, getopt, string, logging, datetime, traceback, json, dateutil.parser
 
 import Fit
+import FileProcessor
 import FitFileProcessor
 import GarminDB
 
@@ -21,21 +22,10 @@ class GarminWeightData():
         self.english_units = english_units
         self.debug = debug
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
-
         if input_file:
-            logger.info("Reading file: " + input_file)
-            self.file_names = [input_file]
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'weight_.*\.json')
         if input_dir:
-            logger.info("Reading directory: " + input_dir)
-            self.file_names = self.dir_to_weight_files(input_dir)
-
-    def dir_to_weight_files(self, input_dir):
-        file_names = []
-        for file in os.listdir(input_dir):
-            match = re.search('weight_.*\.json', file)
-            if match:
-                file_names.append(input_dir + "/" + file)
-        return file_names
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'weight_.*\.json', latest)
 
     def file_count(self):
         return len(self.file_names)
@@ -55,25 +45,14 @@ class GarminWeightData():
 
 class GarminFitData():
 
-    def __init__(self, input_file, input_dir, english_units, debug):
+    def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
-
         if input_file:
-            logger.info("Reading file: " + input_file)
-            self.file_names = [input_file]
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.fit')
         if input_dir:
-            logger.info("Reading directory: " + input_dir)
-            self.file_names = self.dir_to_fit_files(input_dir)
-
-    def dir_to_fit_files(self, input_dir):
-        file_names = []
-        for file in os.listdir(input_dir):
-            match = re.search('.*\.fit', file)
-            if match:
-                file_names.append(input_dir + "/" + file)
-        return file_names
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, '.*\.fit', latest)
 
     def file_count(self):
         return len(self.file_names)
@@ -99,11 +78,12 @@ def main(argv):
     fit_input_file = None
     weight_input_dir = None
     weight_input_file = None
+    latest = False
     db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"f:F:em:s:tw:W:",
-            ["trace", "english", "fit_input_dir=", "fit_input_file=", "mysql=", "sqlite=", "weight_input_dir=", "weight_input_file="])
+        opts, args = getopt.getopt(argv,"f:F:elm:s:tw:W:",
+            ["trace", "english", "fit_input_dir=", "fit_input_file=", "latest", "mysql=", "sqlite=", "weight_input_dir=", "weight_input_file="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -120,6 +100,8 @@ def main(argv):
         elif opt in ("-F", "--fit_input_file"):
             logging.debug("Fit input File: %s" % arg)
             fit_input_file = arg
+        elif opt in ("-l", "--latest"):
+            latest = True
         elif opt in ("-w", "--weight_input_dir"):
             logging.debug("Weight input dir: %s" % arg)
             weight_input_dir = arg
@@ -151,12 +133,12 @@ def main(argv):
         usage(sys.argv[0])
 
     if weight_input_file or weight_input_dir:
-        gwd = GarminWeightData(weight_input_file, weight_input_dir, english_units, debug)
+        gwd = GarminWeightData(weight_input_file, weight_input_dir, latest, english_units, debug)
         if gwd.file_count() > 0:
             gwd.process_files(db_params_dict)
 
     if fit_input_file or fit_input_dir:
-        gfd = GarminFitData(fit_input_file, fit_input_dir, english_units, debug)
+        gfd = GarminFitData(fit_input_file, fit_input_dir, latest, english_units, debug)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
 

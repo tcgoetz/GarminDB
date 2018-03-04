@@ -29,9 +29,9 @@ class GarminFitData():
         self.debug = debug
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'fit')
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.fit')
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'fit', latest)
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, '.*\.fit', latest)
 
     def file_count(self):
         return len(self.file_names)
@@ -54,9 +54,9 @@ class GarminTcxData():
         self.debug = debug
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'tcx')
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.tcx')
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'tcx', latest)
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, '.*\.tcx', latest)
 
     def file_count(self):
         return len(self.file_names)
@@ -130,9 +130,9 @@ class GarminJsonData():
         self.debug = debug
         logger.info("Debug: %s" % str(debug))
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'json')
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.json')
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'json', latest)
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, '.*\.json', latest)
 
     def file_count(self):
         return len(self.file_names)
