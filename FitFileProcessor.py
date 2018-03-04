@@ -330,17 +330,17 @@ class FitFileProcessor():
         entry = message.to_dict()
         try:
             if GarminDB.MonitoringHeartRate.matches(entry):
-                GarminDB.MonitoringHeartRate.find_or_create(self.garmin_mon_db, entry)
+                GarminDB.MonitoringHeartRate.create_or_update_not_none(self.garmin_mon_db, entry)
             elif GarminDB.MonitoringIntensity.matches(entry):
-                GarminDB.MonitoringIntensity.find_or_create(self.garmin_mon_db, entry)
+                GarminDB.MonitoringIntensity.create_or_update_not_none(self.garmin_mon_db, entry)
             elif GarminDB.MonitoringClimb.matches(entry):
-                GarminDB.MonitoringClimb.find_or_create(self.garmin_mon_db, entry)
+                GarminDB.MonitoringClimb.create_or_update_not_none(self.garmin_mon_db, entry)
             else:
-                GarminDB.Monitoring.find_or_create(self.garmin_mon_db, entry)
+                GarminDB.Monitoring.create_or_update_not_none(self.garmin_mon_db, entry)
         except ValueError as e:
             logger.info("ValueError: %s" % str(e))
         except Exception as e:
-            logger.info("Exception on entry: %s" % repr(entry))
+            logger.info("Exception on entry: %s: %s" % (repr(entry), str(e)))
 
     def write_device_info_entry(self, fit_file, device_info_message):
         parsed_message = device_info_message.to_dict()

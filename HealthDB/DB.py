@@ -221,7 +221,7 @@ class DBObject():
     @classmethod
     def update_statement(cls, session, values_dict):
         logger.debug("%s::_update %s" % (cls.__name__, repr(values_dict)))
-        return cls.find_query(session, values_dict).update(values_dict)
+        return cls.find_query(session, values_dict).update(cls._filter_columns(values_dict))
 
     @classmethod
     def update_one(cls, db, values_dict):
@@ -337,23 +337,23 @@ class DBObject():
         return query.all()
 
     @classmethod
-    def get_col_func(cls, db, col, func, start_ts=None, end_ts=None, ignore_zero=False):
+    def get_col_func(cls, db, col, func, start_ts=None, end_ts=None, ignore_le_zero=False):
         query = db.query_session().query(func(col))
         if start_ts is not None:
             query = query.filter(cls.time_col >= start_ts)
         if end_ts is not None:
             query = query.filter(cls.time_col < end_ts)
-        if ignore_zero:
-            query = query.filter(col != 0)
-        return query.one()[0]
+        if ignore_le_zero:
+            query = query.filter(col > 0)
+        return query.scalar()
 
     @classmethod
-    def get_col_avg(cls, db, col, start_ts=None, end_ts=None, ignore_zero=False):
-        return cls.get_col_func(db, col, func.avg, start_ts, end_ts, ignore_zero)
+    def get_col_avg(cls, db, col, start_ts=None, end_ts=None, ignore_le_zero=False):
+        return cls.get_col_func(db, col, func.avg, start_ts, end_ts, ignore_le_zero)
 
     @classmethod
-    def get_col_min(cls, db, col, start_ts=None, end_ts=None, ignore_zero=False):
-        return cls.get_col_func(db, col, func.min, start_ts, end_ts, ignore_zero)
+    def get_col_min(cls, db, col, start_ts=None, end_ts=None, ignore_le_zero=False):
+        return cls.get_col_func(db, col, func.min, start_ts, end_ts, ignore_le_zero)
 
     @classmethod
     def get_col_max(cls, db, col, start_ts=None, end_ts=None):
@@ -381,7 +381,7 @@ class DBObject():
             query = query.filter(cls.time_col >= start_ts)
         if end_ts is not None:
             query = query.filter(cls.time_col < end_ts)
-        return Conversions.secs_to_dt_time(query.one()[0])
+        return Conversions.secs_to_dt_time(query.scalar())
 
     @classmethod
     def get_time_col_avg(cls, db, col, start_ts, end_ts):
