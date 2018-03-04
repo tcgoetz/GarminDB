@@ -1,4 +1,4 @@
-[![Screen shot of browsing the DB](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/ScreenShot_browsing_sm.jpg)](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/ScreenShot_browsing.jpg)
+[![Screen shot of browsing the DB](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/ScreenShot_browsing_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
 # GarminDB
 
@@ -13,8 +13,6 @@ What they can do:
 * Summarizing data into a common DB with tables containing daily summaries, weekly summaries, and monthly summaries.
 
 Once you have your data in the DB, I recomend using a SQLite browser like [SQLite Studio](http://sqlitestudio.pl) for browsing and working with the data.
-
-[Screen Shots](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
 # Using It
 
