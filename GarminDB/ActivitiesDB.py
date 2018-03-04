@@ -88,7 +88,7 @@ class Activities(ActivitiesDB.Base, DBObject):
 class ActivityLaps(ActivitiesDB.Base, DBObject):
     __tablename__ = 'activity_laps'
 
-    activity_id = Column(Integer)
+    activity_id = Column(Integer, ForeignKey('activities.activity_id'))
     lap = Column(Integer)
     #
     start_time = Column(DateTime, primary_key=True)
@@ -100,9 +100,8 @@ class ActivityLaps(ActivitiesDB.Base, DBObject):
     start_long = Column(Float)
     stop_lat = Column(Float)
     stop_long = Column(Float)
-    #
+    # kms or miles
     distance = Column(Float)
-    #
     cycles = Column(Float)
     #
     avg_hr = Column(Integer)
@@ -134,6 +133,37 @@ class ActivityLaps(ActivitiesDB.Base, DBObject):
         return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.lap == values_dict['lap'])
 
 
+class ActivityRecords(ActivitiesDB.Base, DBObject):
+    __tablename__ = 'activity_records'
+
+    activity_id = Column(Integer, ForeignKey('activities.activity_id'))
+    record = Column(Integer)
+    timestamp = Column(DateTime, primary_key=True)
+    # degrees
+    position_lat = Column(Float)
+    position_long = Column(Float)
+    distance = Column(Float)
+    cadence = Column(Integer)
+    hr = Column(Integer)
+    # feet or meters
+    alititude = Column(Float)
+    # kmph or mph
+    speed = Column(Float)
+    # C or F
+    temperature = Column(Float)
+
+    __table_args__ = (
+        UniqueConstraint("activity_id", "record"),
+    )
+
+    time_col = synonym("timestamp")
+    min_row_values = 2
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.record == values_dict['record'])
+
+
 class SportActivities(DBObject):
 
     min_row_values = 1
@@ -149,20 +179,6 @@ class SportActivities(DBObject):
     @classmethod
     def create_activity_view(cls, db):
         cls.create_join_view(db, cls.__tablename__ + '_view', Activities)
-
-
-class SportLaps(DBObject):
-
-    lap = Column(Integer)
-    min_row_values = 1
-
-    @declared_attr
-    def activity_id(cls):
-        return Column(Integer, ForeignKey(Activities.activity_id))
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.start_time == values_dict['start_time'])
 
 
 class RunActivities(ActivitiesDB.Base, SportActivities):

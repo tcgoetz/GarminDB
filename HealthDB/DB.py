@@ -26,7 +26,11 @@ class DB():
     def __init__(self, db_params_dict, debug=False):
         logger.debug("DB %s debug %s " % (repr(db_params_dict), str(debug)))
         url_func = getattr(self, db_params_dict['db_type'] + '_url')
-        self.engine = create_engine(url_func(db_params_dict), echo=debug)
+        if debug > 0:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
+        self.engine = create_engine(url_func(db_params_dict), echo=(debug > 1))
         self.session_maker = sessionmaker(bind=self.engine)
         self._query_session = None
 

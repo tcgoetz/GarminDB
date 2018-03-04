@@ -27,7 +27,6 @@ class GarminFitData():
         self.english_units = english_units
         self.debug = debug
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
-
         if input_file:
             logger.info("Reading file: " + input_file)
             match = re.search('.*\.fit', input_file)
@@ -67,7 +66,6 @@ class GarminTcxData():
         self.english_units = english_units
         self.debug = debug
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
-
         if input_file:
             logger.info("Reading file: " + input_file)
             match = re.search('.*\.tcx', input_file)
@@ -91,7 +89,7 @@ class GarminTcxData():
         return len(self.file_names)
 
     def process_files(self, db_params_dict):
-        garmin_db = GarminDB.GarminDB(db_params_dict, self.debug)
+        garmin_db = GarminDB.GarminDB(db_params_dict, self.debug - 1)
         garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug)
         for file_name in self.file_names:
             logger.info("Processing file: " + file_name)
@@ -140,7 +138,6 @@ class GarminTcxData():
                 'start_long'                : tcx.start_longitude,
                 'stop_lat'                  : tcx.end_latitude,
                 'stop_long'                 : tcx.end_longitude,
-
                 'distance'                  : distance,
                 'avg_hr'                    : tcx.hr_avg,
                 'max_hr'                    : tcx.hr_max,
@@ -159,7 +156,6 @@ class GarminJsonData():
         self.english_units = english_units
         self.debug = debug
         logger.info("Debug: %s" % str(debug))
-
         if input_file:
             logger.info("Reading file: " + input_file)
             match = re.search('.*\.json', input_file)
@@ -288,7 +284,7 @@ class GarminJsonData():
         GarminDB.EllipticalActivities.create_or_update_not_none(self.garmin_act_db, workout)
 
     def process_files(self, db_params_dict):
-        self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug)
+        self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
         for file_name in self.file_names:
             json_data = json.load(open(file_name))
             activity_id = json_data['activityId']
@@ -386,15 +382,15 @@ def main(argv):
         print "Missing arguments:"
         usage(sys.argv[0])
 
-    gjd = GarminJsonData(input_file, input_dir, english_units, debug > 1)
+    gjd = GarminJsonData(input_file, input_dir, english_units, debug)
     if gjd.file_count() > 0:
         gjd.process_files(db_params_dict)
 
-    gtd = GarminTcxData(input_file, input_dir, english_units, debug > 1)
+    gtd = GarminTcxData(input_file, input_dir, english_units, debug)
     if gtd.file_count() > 0:
         gtd.process_files(db_params_dict)
 
-    gfd = GarminFitData(input_file, input_dir, english_units, debug > 1)
+    gfd = GarminFitData(input_file, input_dir, english_units, debug)
     if gfd.file_count() > 0:
         gfd.process_files(db_params_dict)
 

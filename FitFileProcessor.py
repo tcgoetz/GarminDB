@@ -20,9 +20,9 @@ class FitFileProcessor():
         self.english_units = english_units
         self.debug = debug
 
-        self.garmin_db = GarminDB.GarminDB(db_params_dict, debug)
-        self.garmin_mon_db = GarminDB.MonitoringDB(self.db_params_dict, self.debug)
-        self.garmin_act_db = GarminDB.ActivitiesDB(self.db_params_dict, self.debug)
+        self.garmin_db = GarminDB.GarminDB(db_params_dict, debug - 1)
+        self.garmin_mon_db = GarminDB.MonitoringDB(self.db_params_dict, self.debug - 1)
+        self.garmin_act_db = GarminDB.ActivitiesDB(self.db_params_dict, self.debug - 1)
 
         if english_units:
             GarminDB.Attributes.set_newer(self.garmin_db, 'dist_setting', 'statute')
@@ -58,6 +58,7 @@ class FitFileProcessor():
 
     def write_file(self, fit_file):
         self.lap = 1
+        self.record = 1
         self.write_message_types(fit_file, fit_file.message_types())
 
     #
@@ -282,7 +283,24 @@ class FitFileProcessor():
         logger.debug("zones target message: " + repr(zones_target_message.to_dict()))
 
     def write_record_entry(self, fit_file, record_message):
-        logger.debug("record message: " + repr(record_message.to_dict()))
+        message_dict = record_message.to_dict()
+        logger.debug("record message: " + repr(message_dict))
+        activity_id = GarminDB.File.get(self.garmin_db, fit_file.filename)
+        record = {
+            'activity_id'                       : activity_id,
+            'record'                            : self.record,
+            'timestamp'                         : message_dict['timestamp'],
+            'position_lat'                      : message_dict.get('position_lat', None),
+            'position_long'                     : message_dict.get('position_long', None),
+            'distance'                          : message_dict.get('distance', None),
+            'cadence'                           : self.get_field_value(message_dict, 'cadence'),
+            'hr'                                : self.get_field_value(message_dict, 'heart_rate'),
+            'alititude'                         : message_dict.get('altitude', None),
+            'speed'                             : message_dict.get('speed', None),
+            'temperature'                       : message_dict.get('temperature', None),
+        }
+        GarminDB.ActivityRecords.create_or_update_not_none(self.garmin_act_db, record)
+        self.record += 1
 
     def write_dev_data_id_entry(self, fit_file, dev_data_id_message):
         logger.debug("dev_data_id message: " + repr(dev_data_id_message.to_dict()))
