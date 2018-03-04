@@ -7,6 +7,7 @@
 import os, sys, getopt, re, string, logging, datetime, traceback, json, tcxparser, dateutil.parser
 
 import Fit
+import FileProcessor
 import FitFileProcessor
 import GarminDB
 
@@ -23,28 +24,14 @@ def pace_to_time(pace):
 
 class GarminFitData():
 
-    def __init__(self, input_file, input_dir, english_units, debug):
+    def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
         if input_file:
-            logger.info("Reading file: " + input_file)
-            match = re.search('.*\.fit', input_file)
-            if match:
-                self.file_names = [input_file]
-            else:
-                self.file_names = []
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'fit')
         if input_dir:
-            logger.info("Reading directory: " + input_dir)
-            self.file_names = self.dir_to_fit_files(input_dir)
-
-    def dir_to_fit_files(self, input_dir):
-        file_names = []
-        for file in os.listdir(input_dir):
-            match = re.search('.*\.fit', file)
-            if match:
-                file_names.append(input_dir + "/" + file)
-        return file_names
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'fit', latest)
 
     def file_count(self):
         return len(self.file_names)
@@ -62,28 +49,14 @@ class GarminFitData():
 
 class GarminTcxData():
 
-    def __init__(self, input_file, input_dir, english_units, debug):
+    def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
         logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
         if input_file:
-            logger.info("Reading file: " + input_file)
-            match = re.search('.*\.tcx', input_file)
-            if match:
-                self.file_names = [input_file]
-            else:
-                self.file_names = []
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'tcx')
         if input_dir:
-            logger.info("Reading directory: " + input_dir)
-            self.file_names = self.dir_to_tcx_files(input_dir)
-
-    def dir_to_tcx_files(self, input_dir):
-        file_names = []
-        for file in os.listdir(input_dir):
-            match = re.search('.*\.tcx', file)
-            if match:
-                file_names.append(input_dir + "/" + file)
-        return file_names
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'tcx', latest)
 
     def file_count(self):
         return len(self.file_names)
@@ -152,28 +125,14 @@ class GarminTcxData():
 
 class GarminJsonData():
 
-    def __init__(self, input_file, input_dir, english_units, debug):
+    def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
         logger.info("Debug: %s" % str(debug))
         if input_file:
-            logger.info("Reading file: " + input_file)
-            match = re.search('.*\.json', input_file)
-            if match:
-                self.file_names = [input_file]
-            else:
-                self.file_names = []
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'json')
         if input_dir:
-            logger.info("Reading directory: " + input_dir)
-            self.file_names = self.dir_to_json_files(input_dir)
-
-    def dir_to_json_files(self, input_dir):
-        file_names = []
-        for file in os.listdir(input_dir):
-            match = re.search('.*\.json', file)
-            if match:
-                file_names.append(input_dir + "/" + file)
-        return file_names
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'json', latest)
 
     def file_count(self):
         return len(self.file_names)
@@ -342,10 +301,11 @@ def main(argv):
     english_units = False
     input_dir = None
     input_file = None
+    latest = False
     db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"d:eim::s:t:", ["trace=", "english", "input_dir=", "input_file=", "mysql=", "sqlite="])
+        opts, args = getopt.getopt(argv,"d:eilm::s:t:", ["trace=", "english", "latest", "input_dir=", "input_file=", "mysql=", "sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -361,6 +321,8 @@ def main(argv):
         elif opt in ("-i", "--input_file"):
             logging.debug("Input File: %s" % arg)
             input_file = arg
+        elif opt in ("-l", "--latest"):
+            latest = True
         elif opt in ("-s", "--sqlite"):
             logging.debug("Sqlite DB path: %s" % arg)
             db_params_dict['db_type'] = 'sqlite'
@@ -382,15 +344,15 @@ def main(argv):
         print "Missing arguments:"
         usage(sys.argv[0])
 
-    gjd = GarminJsonData(input_file, input_dir, english_units, debug)
+    gjd = GarminJsonData(input_file, input_dir, latest, english_units, debug)
     if gjd.file_count() > 0:
         gjd.process_files(db_params_dict)
 
-    gtd = GarminTcxData(input_file, input_dir, english_units, debug)
+    gtd = GarminTcxData(input_file, input_dir, latest, english_units, debug)
     if gtd.file_count() > 0:
         gtd.process_files(db_params_dict)
 
-    gfd = GarminFitData(input_file, input_dir, english_units, debug)
+    gfd = GarminFitData(input_file, input_dir, latest, english_units, debug)
     if gfd.file_count() > 0:
         gfd.process_files(db_params_dict)
 

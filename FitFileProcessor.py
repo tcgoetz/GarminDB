@@ -182,6 +182,9 @@ class FitFileProcessor():
     def write_alpine_skiing_entry(self, fit_file, activity_id, sub_sport, message_dict):
         logger.debug("Skiing entry: " + repr(message_dict))
 
+    def write_training_entry(self, fit_file, activity_id, sub_sport, message_dict):
+        logger.debug("Training entry: " + repr(message_dict))
+
     def write_session_entry(self, fit_file, message):
         logger.debug("session message: " + repr(message.to_dict()))
         message_dict = message.to_dict()
