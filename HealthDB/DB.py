@@ -65,7 +65,7 @@ class DBObject():
     _col_translations = {}
     _col_mappings = {}
 
-    def _from_dict(self, db, values_dict, update=False):
+    def _from_dict(self, db, values_dict, update=False, ignore_none=False):
         if update:
             test_key_dict = self._updateable_fields
         else:
@@ -75,7 +75,9 @@ class DBObject():
             if key in test_key_dict:
                 if value is not None:
                     self.not_none_values += 1
-                self.__dict__[key] = value
+                    self.__dict__[key] = value
+                elif not ignore_none:
+                    self.__dict__[key] = value
         return self
 
     @classmethod
@@ -210,20 +212,20 @@ class DBObject():
             return instance.id
 
     @classmethod
-    def create_or_update(cls, db, values_dict):
+    def create_or_update(cls, db, values_dict, ignore_none=False):
         logger.debug("%s::create_or_update %s" % (cls.__name__, repr(values_dict)))
         session = db.session()
         instance = cls._find_one(session, values_dict)
         if instance is None:
             cls._create(db, session, values_dict)
         else:
-            instance._from_dict(db, values_dict, True)
+            instance._from_dict(db, values_dict, True, ignore_none)
         DB.commit(session)
 
     @classmethod
     def create_or_update_not_none(cls, db, values_dict):
         logger.debug("%s::create_or_update_not_none %s" % (cls.__name__, repr(values_dict)))
-        cls.create_or_update(db, {key : value for (key,value) in values_dict.iteritems() if value is not None})
+        cls.create_or_update(db, values_dict, True)
 
     @classmethod
     def row_to_int(cls, row):
