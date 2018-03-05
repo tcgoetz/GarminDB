@@ -18,10 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 class DB():
-    max_commit_attempts = 15
-    commit_errors = 0
-    max_query_attempts = max_commit_attempts
-    query_errors = 0
 
     def __init__(self, db_params_dict, debug=False):
         logger.debug("DB %s debug %s " % (repr(db_params_dict), str(debug)))
@@ -52,67 +48,13 @@ class DB():
 
     @classmethod
     def commit(cls, session):
-        attempts = 0
-        while attempts < DB.max_commit_attempts:
-            try:
-                session.commit()
-                session.close()
-                return
-            except OperationalError as e:
-                attempts += 1
-                logger.error("Exeption '%s' on commit %s attempt %d" % (str(e), str(session), attempts))
-                session.rollback()
-                cls.commit_errors += 1
-                time.sleep(attempts)
-                continue
-            break
-        raise IOError("Failed to commit")
-
-    @classmethod
-    def query_one_or_none(cls, query):
-        attempts = 0
-        while attempts < DB.max_query_attempts:
-            try:
-                return query.one_or_none()
-            except OperationalError as e:
-                attempts += 1
-                logger.error("Exeption '%s' on query %s attempt %d" % (str(e), str(query), attempts))
-                cls.query_errors += 1
-                time.sleep(attempts)
-                continue
-            break
-        raise IOError("Failed to query")
-
-    @classmethod
-    def query_all(cls, query):
-        attempts = 0
-        while attempts < DB.max_query_attempts:
-            try:
-                return query.all()
-            except OperationalError as e:
-                attempts += 1
-                logger.error("Exeption '%s' on query %s attempt %d" % (str(e), str(query), attempts))
-                cls.query_errors += 1
-                time.sleep(attempts)
-                continue
-            break
-        raise IOError("Failed to query")
-
-    @classmethod
-    def query_scalar(cls, query):
-        attempts = 0
-        while attempts < DB.max_query_attempts:
-            try:
-                return query.scalar()
-            except OperationalError as e:
-                attempts += 1
-                logger.error("Exeption '%s' on query %s attempt %d" % (str(e), str(query), attempts))
-                cls.query_errors += 1
-                time.sleep(attempts)
-                continue
-            break
-        raise IOError("Failed to query")
-
+        try:
+            session.commit()
+            session.close()
+            return
+        except OperationalError as e:
+            logger.error("Exeption '%s' on commit %s attempt %d" % (str(e), str(session), attempts))
+            session.rollback()
 
 
 class DBObject():
@@ -122,6 +64,23 @@ class DBObject():
     _relational_mappings = {}
     _col_translations = {}
     _col_mappings = {}
+
+    def _from_dict(self, db, values_dict, update=False):
+        if update:
+            test_key_dict = self._updateable_fields
+        else:
+            test_key_dict = self.__class__.__dict__
+        self.not_none_values = 0
+        for key, value in self.translate_columns(self.relational_mappings(db, self.map_columns(values_dict))).iteritems():
+            if key in test_key_dict:
+                if value is not None:
+                    self.not_none_values += 1
+                self.__dict__[key] = value
+        return self
+
+    @classmethod
+    def from_dict(cls, db, values_dict):
+        return cls()._from_dict(db, values_dict)
 
     @classmethod
     def _delete_view(cls, db, view_name):
@@ -156,8 +115,7 @@ class DBObject():
 
     @classmethod
     def matches(cls, values_dict):
-        filtered_cols = cls.__filter_columns(values_dict)
-        return len(filtered_cols) >= cls.min_row_values
+        return len(cls.__filter_columns(values_dict)) >= cls.min_row_values
 
     @classmethod
     def map_columns(cls, values_dict):
@@ -206,7 +164,7 @@ class DBObject():
     @classmethod
     def find_all(cls, db, values_dict):
         logger.debug("%s::find_all %s" % (cls.__name__, repr(values_dict)))
-        return DB.query_all(cls.find_query(db.query_session(), values_dict))
+        return cls.find_query(db.query_session(), values_dict).all()
 
     @classmethod
     def _find_one(cls, session, values_dict):
@@ -216,7 +174,7 @@ class DBObject():
     @classmethod
     def find_one(cls, db, values_dict):
         logger.debug("%s::find_one %s" % (cls.__name__, repr(values_dict)))
-        return DB.query_one_or_none(cls.find_query(db.query_session(), values_dict))
+        return cls.find_query(db.query_session(), values_dict).one_or_none()
 
     @classmethod
     def update_statement(cls, session, values_dict):
@@ -228,7 +186,7 @@ class DBObject():
         logger.debug("%s::update_one %s" % (cls.__name__, repr(values_dict)))
         session = db.session()
         cls.update_statement(session, values_dict)
-        return DB.commit(session)
+        DB.commit(session)
 
     @classmethod
     def find_id(cls, db, values_dict):
@@ -236,19 +194,13 @@ class DBObject():
         instance = cls.find_one(db, values_dict)
         if instance is not None:
             return instance.id
-        return None
 
     @classmethod
     def _create(cls, db, session, values_dict):
         logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
-        converted_values = cls.massage_columns(db, values_dict)
-        non_none_values = 0
-        for value in converted_values.values():
-            if value is not None:
-                non_none_values += 1
-        if non_none_values < cls.min_row_values:
-            raise ValueError("None row values: %s" % repr(values_dict))
-        instance = cls(**converted_values)
+        instance = cls.from_dict(db, values_dict)
+        if instance.not_none_values < cls.min_row_values:
+            raise ValueError("%d not-None row values: %s" % (instance.not_none_values, repr(values_dict)))
         session.add(instance)
         return instance
 
@@ -271,13 +223,8 @@ class DBObject():
     def find_or_create_id(cls, db, values_dict):
         logger.debug("%s::find_or_create_id %s" % (cls.__name__, repr(values_dict)))
         instance = cls.find_or_create(db, values_dict)
-        if instance is None:
-            return None
-        return instance.id
-
-    def update(self, values_dict):
-        for field in self._updateable_fields:
-            self.__dict__[field] = values_dict[field]
+        if instance is not None:
+            return instance.id
 
     @classmethod
     def create_or_update(cls, db, values_dict):
@@ -287,12 +234,11 @@ class DBObject():
             cls.create(db, values_dict)
         else:
             cls.update_one(db, values_dict)
-        return cls.find_one(db, values_dict)
 
     @classmethod
     def create_or_update_not_none(cls, db, values_dict):
         logger.debug("%s::create_or_update_not_none %s" % (cls.__name__, repr(values_dict)))
-        return cls.create_or_update(db, {key : value for (key,value) in values_dict.iteritems() if value is not None})
+        cls.create_or_update(db, {key : value for (key,value) in values_dict.iteritems() if value is not None})
 
     @classmethod
     def row_to_int(cls, row):
@@ -371,8 +317,7 @@ class DBObject():
                 .filter(cls.timestamp < end_ts)
                 .group_by(func.strftime("%j", cls.timestamp))
         )
-        sum_of_maxes = db.query_session().query(func.sum(max_daily_query.subquery().columns.maxes))
-        return DB.query_scalar(sum_of_maxes)
+        return db.query_session().query(func.sum(max_daily_query.subquery().columns.maxes)).scalar()
 
     @classmethod
     def get_time_col_func(cls, db, col, stat_func, start_ts=None, end_ts=None):
@@ -435,13 +380,13 @@ class KeyValueObject(DBObject):
 
     @classmethod
     def set(cls, db, key, value, timestamp=datetime.datetime.now()):
-        return cls.create_or_update(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
+        cls.create_or_update(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
 
     @classmethod
     def set_newer(cls, db, key, value, timestamp=datetime.datetime.now()):
         item = cls.find_one(db, {'key' : key})
         if item is None or item.timestamp < timestamp:
-            return cls.create_or_update(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
+            cls.create_or_update(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
 
     @classmethod
     def set_if_unset(cls, db, key, value, timestamp=datetime.datetime.now()):
