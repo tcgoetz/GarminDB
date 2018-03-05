@@ -169,24 +169,12 @@ class DBObject():
     @classmethod
     def _find_one(cls, session, values_dict):
         logger.debug("%s::_find_one %s" % (cls.__name__, repr(values_dict)))
-        return DB.query_one_or_none(cls.find_query(session, values_dict))
+        return cls.find_query(session, values_dict).one_or_none()
 
     @classmethod
     def find_one(cls, db, values_dict):
         logger.debug("%s::find_one %s" % (cls.__name__, repr(values_dict)))
-        return cls.find_query(db.query_session(), values_dict).one_or_none()
-
-    @classmethod
-    def update_statement(cls, session, values_dict):
-        logger.debug("%s::_update %s" % (cls.__name__, repr(values_dict)))
-        return cls.find_query(session, values_dict).update(cls._filter_columns(values_dict))
-
-    @classmethod
-    def update_one(cls, db, values_dict):
-        logger.debug("%s::update_one %s" % (cls.__name__, repr(values_dict)))
-        session = db.session()
-        cls.update_statement(session, values_dict)
-        DB.commit(session)
+        return cls._find_one(db.query_session(), values_dict)
 
     @classmethod
     def find_id(cls, db, values_dict):
@@ -200,23 +188,18 @@ class DBObject():
         logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
         instance = cls.from_dict(db, values_dict)
         if instance.not_none_values < cls.min_row_values:
-            raise ValueError("%d not-None row values: %s" % (instance.not_none_values, repr(values_dict)))
+            raise ValueError("%d not-None values: %s" % (instance.not_none_values, repr(values_dict)))
         session.add(instance)
         return instance
 
     @classmethod
-    def create(cls, db, values_dict):
-        session = db.session()
-        cls._create(db, session, values_dict)
-        DB.commit(session)
-
-    @classmethod
     def find_or_create(cls, db, values_dict):
         logger.debug("%s::find_or_create %s" % (cls.__name__, repr(values_dict)))
-        instance = cls.find_one(db, values_dict)
+        session = db.session()
+        instance = cls._find_one(session, values_dict)
         if instance is None:
-            cls.create(db, values_dict)
-            instance = cls.find_one(db, values_dict)
+            instance = cls._create(db, session, values_dict)
+            DB.commit(session)
         return instance
 
     @classmethod
@@ -229,11 +212,13 @@ class DBObject():
     @classmethod
     def create_or_update(cls, db, values_dict):
         logger.debug("%s::create_or_update %s" % (cls.__name__, repr(values_dict)))
-        instance = cls.find_one(db, values_dict)
+        session = db.session()
+        instance = cls._find_one(session, values_dict)
         if instance is None:
-            cls.create(db, values_dict)
+            cls._create(db, session, values_dict)
         else:
-            cls.update_one(db, values_dict)
+            instance._from_dict(db, values_dict, True)
+        DB.commit(session)
 
     @classmethod
     def create_or_update_not_none(cls, db, values_dict):
