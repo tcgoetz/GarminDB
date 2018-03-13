@@ -10,6 +10,7 @@ from sqlalchemy import *
 from sqlalchemy.ext.declarative import *
 from sqlalchemy.exc import *
 from sqlalchemy.orm import *
+from sqlalchemy.orm.attributes import *
 
 from Fit import Conversions
 
@@ -75,9 +76,9 @@ class DBObject():
             if key in test_key_dict:
                 if value is not None:
                     self.not_none_values += 1
-                    self.__dict__[key] = value
+                    set_attribute(self, key, value)
                 elif not ignore_none:
-                    self.__dict__[key] = value
+                    set_attribute(self, key, value)
         return self
 
     @classmethod
@@ -237,7 +238,7 @@ class DBObject():
 
     @classmethod
     def row_to_month(cls, row):
-        return datetime.date(1900, int(row[0]), 1).strftime("%b")
+        return datetime.date(1900, row, 1).strftime("%b")
 
     @classmethod
     def rows_to_months(cls, rows):
@@ -249,7 +250,7 @@ class DBObject():
 
     @classmethod
     def get_months(cls, db, year):
-          return (db.query_session().query(extract('month', cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
+          return cls.rows_to_ints(db.query_session().query(extract('month', cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
 
     @classmethod
     def get_month_names(cls, db, year):

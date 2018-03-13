@@ -157,7 +157,7 @@ $(MONITORING_FIT_FILES_DIR):
 scrape_monitoring: $(MONITORING_FIT_FILES_DIR)
 	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MONITORING_FIT_FILES_DIR)"
 
-import_monitoring: $(DB_DIR) $(MONITORING_FIT_FILES_DIR)
+import_monitoring: $(DB_DIR)
 	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
 		python import_garmin.py -e --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
 	done

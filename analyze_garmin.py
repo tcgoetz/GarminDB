@@ -26,12 +26,12 @@ class MovingAverageFilter():
 
 
 class Analyze():
-    def __init__(self, db_params_dict):
-        self.garmindb = GarminDB.GarminDB(db_params_dict)
-        self.mondb = GarminDB.MonitoringDB(db_params_dict)
-        self.garminsumdb = GarminDB.GarminSummaryDB(db_params_dict)
-        self.sumdb = HealthDB.SummaryDB(db_params_dict)
-        self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict)
+    def __init__(self, db_params_dict, debug):
+        self.garmindb = GarminDB.GarminDB(db_params_dict, debug)
+        self.mondb = GarminDB.MonitoringDB(db_params_dict, debug)
+        self.garminsumdb = GarminDB.GarminSummaryDB(db_params_dict, debug)
+        self.sumdb = HealthDB.SummaryDB(db_params_dict, debug)
+        self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, debug)
         units = GarminDB.Attributes.get(self.garmindb, 'dist_setting')
         self.english_units = (units == 'statute')
 
@@ -76,9 +76,9 @@ class Analyze():
         self.report_sport(GarminDB.Activities.sub_sport, 'Mountain_Biking')
         self.report_sport(GarminDB.Activities.sport, 'Hiking')
         self.report_sport(GarminDB.Activities.sub_sport, 'Elliptical')
-        self.report_sport(GarminDB.Activities.sub_sport, 'Treadmill')
-        self.report_sport(GarminDB.Activities.sport, 'Stand_Up_Paddleboarding')
-        self.report_sport(GarminDB.Activities.sport, 'Alpine_Skiing')
+        self.report_sport(GarminDB.Activities.sub_sport, 'Treadmill_Running')
+        self.report_sport(GarminDB.Activities.sub_sport, 'Paddling')
+        self.report_sport(GarminDB.Activities.sub_sport, 'Resort_Skiing_Snowboarding')
 
     def get_weight_stats(self):
         records = GarminDB.Weight.row_count(self.garmindb)
@@ -101,7 +101,7 @@ class Analyze():
         max_stress = GarminDB.Stress.get_col_max(self.garmindb, GarminDB.Stress.stress)
         logger.info("Max stress: %f" % max_stress)
         GarminDB.Summary.set(self.garminsumdb, 'Max_Stress', max_stress)
-        min_stress = GarminDB.Stress.get_col_min(self.garmindb, GarminDB.Stress.stress)
+        min_stress = GarminDB.Stress.get_col_min(self.garmindb, GarminDB.Stress.stress, ignore_le_zero=True)
         logger.info("Min stress: %f" % min_stress)
         GarminDB.Summary.set(self.garminsumdb, 'Min_Stress', min_stress)
         avg_stress = GarminDB.Stress.get_col_avg(self.garmindb, GarminDB.Stress.stress)
@@ -324,7 +324,8 @@ class Analyze():
                 day_date = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
                 self.calculate_week_stats(day_date)
 
-            for month in xrange(1, 12):
+            months = GarminDB.Monitoring.get_months(self.mondb, year)
+            for month in months:
                 start_day_date = datetime.date(year, month, 1)
                 end_day_date = datetime.date(year, month, calendar.monthrange(year, month)[1])
                 self.calculate_month_stats(start_day_date, end_day_date)
@@ -335,14 +336,17 @@ def usage(program):
 
 def main(argv):
     summary = False
-    debug = False
+    debug = 0
     db_params_dict = {}
     dates = False
     sleep_period_start = None
     sleep_period_stop = None
 
+    logger.setLevel(logging.INFO)
+    root_logger.setLevel(logging.INFO)
+
     try:
-        opts, args = getopt.getopt(argv,"adi:tS:s:", ["analyze", "debug", "dates", "mysql=", "sleep=", "sqlite="])
+        opts, args = getopt.getopt(argv,"adi:t:S:s:", ["analyze", "debug=", "dates", "mysql=", "sleep=", "sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -353,8 +357,12 @@ def main(argv):
             logging.debug("analyze: True")
             summary = True
         elif opt in ("-t", "--debug"):
-            logging.debug("debug: True")
-            debug = True
+            debug = int(arg)
+            if debug > 0:
+                logger.setLevel(logging.DEBUG)
+            if debug > 1:
+                root_logger.setLevel(logging.DEBUG)
+            logging.debug("debug: %d" % debug)
         elif opt in ("-d", "--dates"):
             logging.debug("Dates")
             dates = True
@@ -375,16 +383,11 @@ def main(argv):
             db_params_dict['db_password'] = db_args[1]
             db_params_dict['db_host'] = db_args[2]
 
-    if debug:
-        root_logger.setLevel(logging.DEBUG)
-    else:
-        root_logger.setLevel(logging.INFO)
-
     if len(db_params_dict) == 0:
         print "Missing arguments:"
         usage(sys.argv[0])
 
-    analyze = Analyze(db_params_dict)
+    analyze = Analyze(db_params_dict, debug - 1)
     if sleep_period_start and sleep_period_stop:
         analyze.set_sleep_period(sleep_period_start, sleep_period_stop)
     if dates:
