@@ -108,7 +108,11 @@ clean_geckodriver:
 SUMMARY_DB=$(DB_DIR)/summary.db
 $(SUMMARY_DB): $(DB_DIR)
 
-rebuild_dbs: clean_dbs garmin_dbs fitbit_db mshealth_summary fitbit_summary
+summary: mshealth_summary fitbit_summary garmin_summary
+
+build_dbs: garmin_dbs mshealth_summary fitbit_summary
+
+rebuild_dbs: clean_dbs build_dbs
 
 update_dbs: new_garmin
 
@@ -233,7 +237,7 @@ clean_garmin_dbs: clean_garmin_summary_db clean_monitoring_db clean_activities_d
 GARMIN_SUM_DB=$(DB_DIR)/garmin_summary.db
 $(GARMIN_SUM_DB): $(DB_DIR) garmin_summary
 
-garmin_summary:
+garmin_summary: $(GARMIN_DB)
 	python analyze_garmin.py --analyze --dates --sqlite $(DB_DIR)
 
 new_garmin: import_new_monitoring import_new_activities import_new_weight garmin_summary
@@ -254,10 +258,10 @@ clean_fitbit_db:
 	rm -f $(FITBIT_DB)
 
 import_fitbit_file: $(DB_DIR)
-	python import_fitbit_csv.py -e --input_file "$(FITBIT_FILE_DIR)/2015_fitbit_all.csv" --sqlite $(DB_DIR)
+	python import_fitbit_csv.py -e --input_dir "$(FITBIT_FILE_DIR)" --sqlite $(DB_DIR)
 
 fitbit_summary: $(FITBIT_DB)
-	python analyze_fitbit.py --sqlite $(DB_DIR) --years --months 2015 --days 2015
+	python analyze_fitbit.py --sqlite $(DB_DIR) --dates
 
 fitbit_db: $(FITBIT_DB)
 
@@ -266,21 +270,18 @@ fitbit_db: $(FITBIT_DB)
 # MS Health
 #
 MSHEALTH_DB=$(DB_DIR)/mshealth.db
-$(MSHEALTH_DB): $(DB_DIR) import_mshealth_file import_healthvault_file
+$(MSHEALTH_DB): $(DB_DIR) import_mshealth
 
 clean_mshealth_db:
 	rm -f $(MSHEALTH_DB)
 
-import_mshealth_file: $(DB_DIR)
-	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20151230_20161004.csv" --sqlite $(DB_DIR) -m
-	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20160101_20161231.csv" --sqlite $(DB_DIR) -m
-	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/Daily_Summary_20170101_20170226.csv" --sqlite $(DB_DIR) -m
+$(MSHEALTH_FILE_DIR):
+	mkdir -p $(MSHEALTH_FILE_DIR)
 
-import_healthvault_file: $(DB_DIR)
-	python import_mshealth_csv.py -e --input_file "$(MSHEALTH_FILE_DIR)/HealthVault_Weight_20150106_20160315.csv" --sqlite $(DB_DIR) -v
+import_mshealth: $(DB_DIR)
+	python import_mshealth_csv.py -e --input_dir "$(MSHEALTH_FILE_DIR)" --sqlite $(DB_DIR)
 
 mshealth_summary: $(MSHEALTH_DB)
-	python analyze_mshealth.py --sqlite $(DB_DIR) --years --months 2015 --days 2015
-	python analyze_mshealth.py --sqlite $(DB_DIR) --years --months 2016 --days 2016
+	python analyze_mshealth.py --sqlite $(DB_DIR) --dates
 
 mshealth_db: $(MSHEALTH_DB)

@@ -8,6 +8,7 @@ import os, sys, getopt, re, string, logging, datetime, calendar
 
 import HealthDB
 import GarminDB
+from Fit import Conversions
 
 
 root_logger = logging.getLogger()
@@ -138,8 +139,8 @@ class Analyze():
             day = int(days[index])
             next_day = int(days[index + 1])
             if next_day != day + 1:
-                day_str = str(HealthDB.day_of_the_year_to_datetime(year, day))
-                next_day_str = str(HealthDB.day_of_the_year_to_datetime(year, next_day))
+                day_str = str(Conversions.day_of_the_year_to_datetime(year, day))
+                next_day_str = str(Conversions.day_of_the_year_to_datetime(year, next_day))
                 logger.info("Days gap between %d (%s) and %d (%s)" % (day, day_str, next_day, next_day_str))
 
     base_awake_intensity = 3
@@ -165,8 +166,8 @@ class Analyze():
         16 : 'very_active',
         17 : 'very_active',
         18 : 'extremely_active',
-        18 : 'extremely_active',
         19 : 'extremely_active',
+        20 : 'extremely_active',
     }
 
     sleep_state_index = {
@@ -196,15 +197,17 @@ class Analyze():
         return self.sleep_state_index[sleep_state] <= 1
 
     def sleep_state_change(self, sleep_state_ts, sleep_state, sleep_state_duration):
-        GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : sleep_state_ts, 'event' : sleep_state, 'duration' : sleep_state_duration})
+        GarminDB.SleepEvents.create_or_update(self.garminsumdb,
+            {'timestamp' : sleep_state_ts, 'event' : sleep_state, 'duration' : Conversions.secs_to_dt_time(sleep_state_duration)})
         if self.bedtime_ts is None:
             if self.asleep(sleep_state) and self.mins_asleep >= 10:
                 self.bedtime_ts = sleep_state_ts - datetime.timedelta(0, 1)
+                self.mins_asleep_total = 0
         elif self.awake(sleep_state) and self.mins_awake >= 30 and (sleep_state_ts - self.bedtime_ts).total_seconds() < 3600:
             self.bedtime_ts = None
             self.wake_ts = None
         elif self.wake_ts is None:
-            if self.awake(sleep_state) and self.mins_awake >= 10:
+            if self.awake(sleep_state):
                 self.wake_ts = sleep_state_ts + datetime.timedelta(0, 1)
         elif self.asleep(sleep_state) and self.mins_asleep >= 30:
             self.wake_ts = None
@@ -213,8 +216,8 @@ class Analyze():
         generic_act_id = GarminDB.ActivityType.get_id(self.mondb, 'generic')
         stop_act_id = GarminDB.ActivityType.get_id(self.mondb, 'stop_disable')
 
-        sleep_search_start_ts = datetime.datetime.combine(day_date, sleep_period_start) - datetime.timedelta(0, 0, 0, 0, 0, 1)
-        sleep_search_stop_ts = datetime.datetime.combine(day_date + datetime.timedelta(1), sleep_period_stop) + datetime.timedelta(0, 0, 0, 0, 0, 1)
+        sleep_search_start_ts = datetime.datetime.combine(day_date, sleep_period_start) - datetime.timedelta(0, 7200)
+        sleep_search_stop_ts = datetime.datetime.combine(day_date + datetime.timedelta(1), sleep_period_stop) + datetime.timedelta(0, 7200)
 
         activity = GarminDB.Monitoring.get_activity(self.mondb, sleep_search_start_ts, sleep_search_stop_ts)
 
@@ -236,6 +239,7 @@ class Analyze():
 
         self.bedtime_ts = None
         self.mins_asleep = 0
+        self.mins_asleep_total = 0
         self.wake_ts = None
         self.mins_awake = 0
         prev_sleep_state = self.sleep_state[initial_intensity]
@@ -251,6 +255,7 @@ class Analyze():
                     self.mins_awake += 1
                 else:
                     self.mins_asleep += 1
+                    self.mins_asleep_total += 1
                     self.mins_awake = 0
                 current_ts = timestamp + datetime.timedelta(0, sec_index)
                 duration = int((current_ts - prev_sleep_state_ts).total_seconds())
@@ -260,12 +265,20 @@ class Analyze():
                     prev_sleep_state_ts = current_ts
         self.sleep_state_change(prev_sleep_state_ts, prev_sleep_state, duration)
         if self.bedtime_ts is not None:
-            GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : self.bedtime_ts, 'event' : 'bed_time', 'duration' : 1})
+            GarminDB.SleepEvents.create_or_update(self.garminsumdb,
+                {'timestamp' : self.bedtime_ts, 'event' : 'bed_time', 'duration' : datetime.time.min})
+        else:
+            logger.debug("No bedtime for %s)" % str(day_date))
         if self.wake_ts is not None:
-            GarminDB.Sleep.create_or_update(self.garminsumdb, {'timestamp' : self.wake_ts, 'event' : 'wake_time', 'duration' : 1})
+            GarminDB.SleepEvents.create_or_update(self.garminsumdb,
+                {'timestamp' : self.wake_ts, 'event' : 'wake_time', 'duration' : datetime.time.min})
+        else:
+            logger.debug("No wake time for %s)" % str(day_date))
+        GarminDB.Sleep.create_or_update(self.garminsumdb,
+            {'day' :  day_date, 'duration' : Conversions.min_to_dt_time(self.mins_asleep_total)})
 
     def calculate_resting_heartrate(self, day_date, sleep_period_stop):
-        wake_ts = GarminDB.Sleep.get_wake_time(self.garminsumdb, day_date)
+        wake_ts = GarminDB.SleepEvents.get_wake_time(self.garminsumdb, day_date)
         if wake_ts is None:
             wake_ts = datetime.datetime.combine(day_date, sleep_period_stop)
         rhr = GarminDB.MonitoringHeartRate.get_resting_heartrate(self.mondb, wake_ts)
@@ -282,6 +295,7 @@ class Analyze():
         stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.mondb, day_date, self.english_units))
         stats.update(GarminDB.MonitoringIntensity.get_daily_stats(self.mondb, day_date))
         stats.update(GarminDB.Monitoring.get_daily_stats(self.mondb, day_date))
+        stats.update(GarminDB.Sleep.get_daily_stats(self.garminsumdb, day_date))
         GarminDB.DaysSummary.create_or_update_not_none(self.garminsumdb, stats)
         HealthDB.DaysSummary.create_or_update_not_none(self.sumdb, stats)
 
@@ -293,6 +307,7 @@ class Analyze():
         stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.mondb, day_date, self.english_units))
         stats.update(GarminDB.MonitoringIntensity.get_weekly_stats(self.mondb, day_date))
         stats.update(GarminDB.Monitoring.get_weekly_stats(self.mondb, day_date))
+        stats.update(GarminDB.Sleep.get_weekly_stats(self.garminsumdb, day_date))
         GarminDB.WeeksSummary.create_or_update_not_none(self.garminsumdb, stats)
         HealthDB.WeeksSummary.create_or_update_not_none(self.sumdb, stats)
 
@@ -304,6 +319,7 @@ class Analyze():
         stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.mondb, start_day_date, end_day_date, self.english_units))
         stats.update(GarminDB.MonitoringIntensity.get_monthly_stats(self.mondb, start_day_date, end_day_date))
         stats.update(GarminDB.Monitoring.get_monthly_stats(self.mondb, start_day_date, end_day_date))
+        stats.update(GarminDB.Sleep.get_monthly_stats(self.garminsumdb, start_day_date, end_day_date))
         GarminDB.MonthsSummary.create_or_update_not_none(self.garminsumdb, stats)
         HealthDB.MonthsSummary.create_or_update_not_none(self.sumdb, stats)
 

@@ -98,12 +98,15 @@ class DaysSummary(MSHealthDB.Base, DBObject):
 
     @classmethod
     def get_floors_stats(cls, db, func, start_ts, end_ts):
-        floors = func(db, cls.floors, start_ts, end_ts)
-        return { 'floors' : floors }
+        return { 'floors' : func(db, cls.floors, start_ts, end_ts) }
 
     @classmethod
     def get_steps_stats(cls, db, func, start_ts, end_ts):
         return { 'steps' : func(db, cls.steps, start_ts, end_ts) }
+
+    @classmethod
+    def get_sleep_stats(cls, db, func, start_ts, end_ts):
+        return { 'sleep' : Conversions.secs_to_dt_time(func(db, cls.sleep_secs, start_ts, end_ts)) }
 
     @classmethod
     def get_daily_stats(cls, db, day_ts):
@@ -111,6 +114,7 @@ class DaysSummary(MSHealthDB.Base, DBObject):
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1)))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1)))
         stats.update(cls.get_hr_stats(db, day_ts, day_ts + datetime.timedelta(1)))
+        stats.update(cls.get_sleep_stats(db, cls.get_col_avg, day_ts, day_ts + datetime.timedelta(1)))
         stats['day'] = day_ts
         return stats
 
@@ -120,6 +124,7 @@ class DaysSummary(MSHealthDB.Base, DBObject):
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats.update(cls.get_hr_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7)))
+        stats.update(cls.get_sleep_stats(db, cls.get_col_avg, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats['first_day'] = first_day_ts
         return stats
 
@@ -129,6 +134,7 @@ class DaysSummary(MSHealthDB.Base, DBObject):
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
         stats.update(cls.get_hr_stats(db, first_day_ts, last_day_ts))
+        stats.update(cls.get_sleep_stats(db, cls.get_col_avg, first_day_ts, last_day_ts))
         stats['first_day'] = first_day_ts
         return stats
 

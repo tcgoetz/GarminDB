@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 class DB():
 
+    max_commit_attempts = 5
+    commit_errors = 0
+
     def __init__(self, db_params_dict, debug=False):
         logger.debug("DB %s debug %s " % (repr(db_params_dict), str(debug)))
         url_func = getattr(self, db_params_dict['db_type'] + '_url')
@@ -49,13 +52,21 @@ class DB():
 
     @classmethod
     def commit(cls, session):
-        try:
-            session.commit()
-            session.close()
-            return
-        except OperationalError as e:
-            logger.error("Exeption '%s' on commit %s attempt %d" % (str(e), str(session), attempts))
-            session.rollback()
+        attempts = 0
+        while attempts < DB.max_commit_attempts:
+            try:
+                session.commit()
+                session.close()
+                return
+            except OperationalError as e:
+                attempts += 1
+                logger.error("Exeption '%s' on commit %s attempt %d" % (str(e), str(session), attempts))
+                session.rollback()
+                cls.commit_errors += 1
+                time.sleep(attempts)
+                continue
+            break
+        raise IOError("Failed to commit")
 
 
 class DBObject():
@@ -187,30 +198,39 @@ class DBObject():
             return instance.id
 
     @classmethod
-    def _create(cls, db, session, values_dict):
+    def _create(cls, db, session, values_dict, ignore_none=False):
         logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
         instance = cls.from_dict(db, values_dict)
         if instance.not_none_values < cls.min_row_values:
-            raise ValueError("%d not-None values: %s" % (instance.not_none_values, repr(values_dict)))
+            if ignore_none:
+                return None
+            else:
+                raise ValueError("%d not-None values: %s" % (instance.not_none_values, repr(values_dict)))
         session.add(instance)
-        return instance
+
+    @classmethod
+    def create(cls, db, values_dict, ignore_none=False):
+        logger.debug("%s::create %s" % (cls.__name__, repr(values_dict)))
+        session = db.session()
+        cls._create(db, session, values_dict)
+        DB.commit(session)
 
     @classmethod
     def find_or_create(cls, db, values_dict):
         logger.debug("%s::find_or_create %s" % (cls.__name__, repr(values_dict)))
         session = db.session()
-        instance = cls._find_one(session, values_dict)
-        if instance is None:
-            instance = cls._create(db, session, values_dict)
+        if cls._find_one(session, values_dict) is None:
+            cls._create(db, session, values_dict)
             DB.commit(session)
-        return instance
 
     @classmethod
     def find_or_create_id(cls, db, values_dict):
         logger.debug("%s::find_or_create_id %s" % (cls.__name__, repr(values_dict)))
-        instance = cls.find_or_create(db, values_dict)
-        if instance is not None:
-            return instance.id
+        instance = cls.find_one(db, values_dict)
+        if instance is None:
+            cls.create(db, values_dict)
+            instance = cls.find_one(db, values_dict)
+        return instance.id
 
     @classmethod
     def create_or_update(cls, db, values_dict, ignore_none=False):
@@ -218,7 +238,7 @@ class DBObject():
         session = db.session()
         instance = cls._find_one(session, values_dict)
         if instance is None:
-            cls._create(db, session, values_dict)
+            cls._create(db, session, values_dict, ignore_none)
         else:
             instance._from_dict(db, values_dict, True, ignore_none)
         DB.commit(session)
@@ -422,10 +442,11 @@ class SummaryBase(DBObject):
     vigorous_activity_time = Column(Time)
     steps = Column(Integer)
     floors = Column(Float)
+    sleep = Column(Time)
 
-    min_row_values = 1
+    min_row_values = 2
     _updateable_fields = [
         'hr_avg', 'hr_min', 'hr_max', 'rhr_avg', 'rhr_min', 'rhr_max', 'weight_avg', 'weight_min', 'weight_max', 'stress_avg',
-        'intensity_time', 'moderate_activity_time', 'vigorous_activity_time', 'steps', 'floors'
+        'intensity_time', 'moderate_activity_time', 'vigorous_activity_time', 'steps', 'floors', 'sleep'
     ]
 

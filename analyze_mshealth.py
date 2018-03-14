@@ -29,6 +29,9 @@ class Analyze():
     def get_years(self):
         years = MSHealthDB.DaysSummary.get_years(self.mshealthdb)
         print "Years (%d): %s" % (len(years), str(years))
+        for year in years:
+            self.get_months(year)
+            self.get_days(year)
 
     def get_months(self, year):
         months = MSHealthDB.DaysSummary.get_month_names(self.mshealthdb, year)
@@ -61,34 +64,33 @@ class Analyze():
                 day_ts = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
                 stats = MSHealthDB.DaysSummary.get_daily_stats(self.mshealthdb, day_ts)
                 stats.update(MSHealthDB.MSVaultWeight.get_daily_stats(self.mshealthdb, day_ts))
-                HealthDB.DaysSummary.create_or_update(self.sumdb, stats)
+                HealthDB.DaysSummary.create_or_update_not_none(self.sumdb, stats)
             for week_starting_day in xrange(1, 365, 7):
                 day_ts = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
                 stats = MSHealthDB.DaysSummary.get_weekly_stats(self.mshealthdb, day_ts)
                 stats.update(MSHealthDB.MSVaultWeight.get_weekly_stats(self.mshealthdb, day_ts))
-                HealthDB.WeeksSummary.create_or_update(self.sumdb, stats)
-            for month in xrange(1, 12):
+                HealthDB.WeeksSummary.create_or_update_not_none(self.sumdb, stats)
+            months = MSHealthDB.DaysSummary.get_months(self.mshealthdb, year)
+            for month in months:
                 start_day_ts = datetime.date(year, month, 1)
                 end_day_ts = datetime.date(year, month, calendar.monthrange(year, month)[1])
                 stats = MSHealthDB.DaysSummary.get_monthly_stats(self.mshealthdb, start_day_ts, end_day_ts)
                 stats.update(MSHealthDB.MSVaultWeight.get_monthly_stats(self.mshealthdb, start_day_ts, end_day_ts))
-                HealthDB.MonthsSummary.create_or_update(self.sumdb, stats)
+                HealthDB.MonthsSummary.create_or_update_not_none(self.sumdb, stats)
 
 
 def usage(program):
-    print '%s --sqlite <sqlite db path> -m ...' % program
+    print '%s --sqlite <sqlite db path>' % program
     sys.exit()
 
 def main(argv):
     debug = False
-    years = False
-    months = None
-    days = None
+    dates = False
     summary = False
     db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"d:i:m:s:y", ["dbpath=", "days=", "months=", "mysql=", "years", "sqlite="])
+        opts, args = getopt.getopt(argv,"di:s:y", ["dbpath=", "mysql=", "dates", "sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -98,9 +100,9 @@ def main(argv):
         elif opt in ("-d", "--debug"):
             logging.debug("Debug True")
             debug = True
-        elif opt in ("-y", "--years"):
-            logging.debug("Years")
-            years = True
+        elif opt in ("-d", "--dates"):
+            logging.debug("Dates")
+            dates = True
         elif opt in ("-m", "--months"):
             logging.debug("Months")
             months = arg
@@ -129,12 +131,8 @@ def main(argv):
         usage(sys.argv[0])
 
     analyze = Analyze(db_params_dict)
-    if years:
+    if dates:
         analyze.get_years()
-    if months:
-        analyze.get_months(months)
-    if days:
-        analyze.get_days(days)
     analyze.summary()
 
 if __name__ == "__main__":

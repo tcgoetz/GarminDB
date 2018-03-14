@@ -8,6 +8,7 @@ import os, sys, getopt, re, string, logging, datetime, time, traceback
 
 from HealthDB import CsvImporter
 import MSHealthDB
+import FileProcessor
 
 
 logger = logging.getLogger(__file__)
@@ -55,35 +56,52 @@ class MSHealthData():
         'Guided_Workout_Total_Seconds': ('guided_workout_secs', CsvImporter.map_integer),
     }
 
-    def __init__(self, input_file, db_params_dict, english_units, debug):
+    def __init__(self, input_file, input_dir, db_params_dict, english_units, debug):
         self.english_units = english_units
         self.mshealthdb = MSHealthDB.MSHealthDB(db_params_dict, debug)
-        self.csvimporter = CsvImporter(input_file, self.cols_map, self.write_entry)
+        if input_file:
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'Daily_Summary_.*.csv')
+        if input_dir:
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'Daily_Summary_.*.csv')
+
+    def file_count(self):
+        return len(self.file_names)
 
     def write_entry(self, db_entry):
         MSHealthDB.DaysSummary.find_or_create(self.mshealthdb, db_entry)
 
     def process_files(self):
-        self.csvimporter.process_file(self.english_units)
+        for file_name in self.file_names:
+            logger.info("Processing file: " + file_name)
+            csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
+            csvimporter.process_file(self.english_units)
 
 
 class MSVaultData():
 
-    def __init__(self, input_file, db_params_dict, english_units, debug):
+    def __init__(self, input_file, input_dir, db_params_dict, english_units, debug):
         self.english_units = english_units
-        self.input_file = input_file
         self.mshealthdb = MSHealthDB.MSHealthDB(db_params_dict, debug)
-        cols_map = {
+        self.cols_map = {
             'Date': ('timestamp', CsvImporter.map_mdy_date),
             'Weight': ('weight', MSVaultData.map_weight),
         }
-        self.csvimporter = CsvImporter(input_file, cols_map, self.write_entry)
+        if input_file:
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'HealthVault_Weight_.*.csv')
+        if input_dir:
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'HealthVault_Weight_.*.csv')
+
+    def file_count(self):
+        return len(self.file_names)
 
     def write_entry(self, db_entry):
         MSHealthDB.MSVaultWeight.find_or_create(self.mshealthdb, db_entry)
 
     def process_files(self):
-        self.csvimporter.process_file(self.english_units)
+        for file_name in self.file_names:
+            logger.info("Processing file: " + file_name)
+            csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
+            csvimporter.process_file(self.english_units)
 
     @classmethod
     def map_weight(cls, english_units, value):
@@ -104,12 +122,12 @@ def main(argv):
     debug = False
     english_units = False
     input_file = None
+    input_dir = None
     db_params_dict = {}
-    mshealth = False
-    healthvault = False
 
     try:
-        opts, args = getopt.getopt(argv,"hei:s:mv", ["help", "trace", "english", "input_file=", "mysql=", "sqlite=", "mshealth", "healthvault"])
+        opts, args = getopt.getopt(argv,"d:ehi:s:",
+            ["help", "input_dir=", "trace", "english", "input_file=", "mysql=", "sqlite="])
     except getopt.GetoptError:
         print "Bad argument"
         usage(sys.argv[0])
@@ -126,12 +144,8 @@ def main(argv):
         elif opt in ("-i", "--input_file"):
             logger.info("Input File: %s" % arg)
             input_file = arg
-        elif opt in ("-m", "--mshealth"):
-            logger.info("MSHeath:")
-            mshealth = True
-        elif opt in ("-v", "--healthvault"):
-            logger.info("HealthVault:")
-            healthvault = True
+        elif opt in ("-d", "--input_dir"):
+            input_dir = arg
         elif opt in ("-s", "--sqlite"):
             logging.debug("Sqlite DB path: %s" % arg)
             db_params_dict['db_type'] = 'sqlite'
@@ -149,16 +163,16 @@ def main(argv):
     else:
         logger.setLevel(logging.INFO)
 
-    if not input_file or len(db_params_dict) == 0:
+    if (not input_file and not input_dir) or len(db_params_dict) == 0:
         print "Missing arguments:"
         usage(sys.argv[0])
 
-    if mshealth:
-        msd = MSHealthData(input_file, db_params_dict, english_units, debug)
+    msd = MSHealthData(input_file, input_dir, db_params_dict, english_units, debug)
+    if msd.file_count() > 0:
         msd.process_files()
 
-    if healthvault:
-        mshv = MSVaultData(input_file, db_params_dict, english_units, debug)
+    mshv = MSVaultData(input_file, input_dir, db_params_dict, english_units, debug)
+    if mshv.file_count() > 0:
         mshv.process_files()
 
 

@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class SummaryDB(DB):
     Base = declarative_base()
     db_name = 'summary'
-    db_version = 2
+    db_version = 3
 
     class DbVersion(Base, DbVersionObject):
         pass

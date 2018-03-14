@@ -133,9 +133,9 @@ class MonitoringIntensity(MonitoringDB.Base, DBObject):
         return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
-    def get_stats(cls, db, func, start_ts, end_ts):
-        moderate_activity_time = func(db, cls.moderate_activity_time, start_ts, end_ts)
-        vigorous_activity_time = func(db, cls.vigorous_activity_time, start_ts, end_ts)
+    def get_stats(cls, db, start_ts, end_ts):
+        moderate_activity_time = cls.get_time_col_sum(db, cls.moderate_activity_time, start_ts, end_ts)
+        vigorous_activity_time = cls.get_time_col_sum(db, cls.vigorous_activity_time, start_ts, end_ts)
         intensity_time = datetime.time.min
         if moderate_activity_time:
             intensity_time = Conversions.add_time(intensity_time, moderate_activity_time)
@@ -150,20 +150,20 @@ class MonitoringIntensity(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, cls.get_time_col_sum, day_ts, day_ts + datetime.timedelta(1))
-        stats['day'] = day_ts,
+        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
+        stats['day'] = day_ts
         return stats
 
     @classmethod
     def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db,cls.get_time_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7))
-        stats['first_day'] = first_day_ts,
+        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats['first_day'] = first_day_ts
         return stats
 
     @classmethod
     def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
-        stats = cls.get_stats(db, cls.get_time_col_sum, first_day_ts, last_day_ts)
-        stats['first_day'] = first_day_ts,
+        stats = cls.get_stats(db, first_day_ts, last_day_ts)
+        stats['first_day'] = first_day_ts
         return stats
 
 

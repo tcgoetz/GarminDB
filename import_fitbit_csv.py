@@ -8,6 +8,7 @@ import os, sys, getopt, re, string, logging, datetime, time, traceback
 
 from HealthDB import CsvImporter
 import FitBitDB
+import FileProcessor
 
 
 logger = logging.getLogger(__file__)
@@ -43,16 +44,25 @@ class FitBitData():
         'sleep-awakeningsCount': ('awakenings_count', CsvImporter.map_integer),
     }
 
-    def __init__(self, input_file, db_params_dict, english_units, debug):
+    def __init__(self, input_file, input_dir, db_params_dict, english_units, debug):
         self.english_units = english_units
         self.fitbitdb = FitBitDB.FitBitDB(db_params_dict, debug)
-        self.csvimporter = CsvImporter(input_file, self.cols_map, self.write_entry)
+        if input_file:
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*.csv')
+        if input_dir:
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, '.*.csv')
+
+    def file_count(self):
+        return len(self.file_names)
 
     def write_entry(self, db_entry):
         FitBitDB.DaysSummary.find_or_create(self.fitbitdb, db_entry)
 
     def process_files(self):
-        self.csvimporter.process_file(self.english_units)
+        for file_name in self.file_names:
+            logger.info("Processing file: " + file_name)
+            self.csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
+            self.csvimporter.process_file(self.english_units)
 
 
 
@@ -64,10 +74,11 @@ def main(argv):
     debug = False
     english_units = False
     input_file = None
+    input_dir = None
     db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"dei:m:s:", ["debug", "english", "input_file=", "mysql=", "sqlite="])
+        opts, args = getopt.getopt(argv,"dD:ei:m:s:", ["debug", "english", "input_dir=", "input_file=", "mysql=", "sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -81,6 +92,9 @@ def main(argv):
         elif opt in ("-i", "--input_file"):
             logging.debug("Input File: %s" % arg)
             input_file = arg
+        elif opt in ("-D", "--input_dir"):
+            logging.debug("Input dir: %s" % arg)
+            input_dir = arg
         elif opt in ("-s", "--sqlite"):
             logging.debug("Sqlite DB path: %s" % arg)
             db_params_dict['db_type'] = 'sqlite'
@@ -98,12 +112,13 @@ def main(argv):
     else:
         logger.setLevel(logging.INFO)
 
-    if not input_file or len(db_params_dict) == 0:
+    if (not input_file and not input_dir) or len(db_params_dict) == 0:
         print "Missing arguments:"
         usage(sys.argv[0])
 
-    fd = FitBitData(input_file, db_params_dict, english_units, debug)
-    fd.process_files()
+    fd = FitBitData(input_file, input_dir, db_params_dict, english_units, debug)
+    if fd.file_count() > 0:
+        fd.process_files()
 
 
 if __name__ == "__main__":
