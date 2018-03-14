@@ -287,6 +287,16 @@ class Analyze():
         else:
             logger.debug("No RHR for %s)" % str(day_date))
 
+    def combine_stats(self, stats, stat1_name, stat2_name):
+        stat1 = stats.get(stat1_name, 0)
+        stat2 = stats.get(stat2_name, 0)
+        if stat1 is not None and stat2 is not None:
+            return stat1 + stat2
+        if stat1 is not None:
+            return stat1
+        if stat2 is not None:
+            return stat2
+
     def calculate_day_stats(self, day_date):
         stats = GarminDB.MonitoringHeartRate.get_daily_stats(self.mondb, day_date)
         stats.update(GarminDB.RestingHeartRate.get_daily_stats(self.garminsumdb, day_date))
@@ -296,6 +306,8 @@ class Analyze():
         stats.update(GarminDB.MonitoringIntensity.get_daily_stats(self.mondb, day_date))
         stats.update(GarminDB.Monitoring.get_daily_stats(self.mondb, day_date))
         stats.update(GarminDB.Sleep.get_daily_stats(self.garminsumdb, day_date))
+        stats.update(GarminDB.MonitoringInfo.get_daily_stats(self.mondb, day_date))
+        stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
         GarminDB.DaysSummary.create_or_update_not_none(self.garminsumdb, stats)
         HealthDB.DaysSummary.create_or_update_not_none(self.sumdb, stats)
 
@@ -308,6 +320,8 @@ class Analyze():
         stats.update(GarminDB.MonitoringIntensity.get_weekly_stats(self.mondb, day_date))
         stats.update(GarminDB.Monitoring.get_weekly_stats(self.mondb, day_date))
         stats.update(GarminDB.Sleep.get_weekly_stats(self.garminsumdb, day_date))
+        stats.update(GarminDB.MonitoringInfo.get_weekly_stats(self.mondb, day_date))
+        stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
         GarminDB.WeeksSummary.create_or_update_not_none(self.garminsumdb, stats)
         HealthDB.WeeksSummary.create_or_update_not_none(self.sumdb, stats)
 
@@ -320,6 +334,8 @@ class Analyze():
         stats.update(GarminDB.MonitoringIntensity.get_monthly_stats(self.mondb, start_day_date, end_day_date))
         stats.update(GarminDB.Monitoring.get_monthly_stats(self.mondb, start_day_date, end_day_date))
         stats.update(GarminDB.Sleep.get_monthly_stats(self.garminsumdb, start_day_date, end_day_date))
+        stats.update(GarminDB.MonitoringInfo.get_monthly_stats(self.mondb, start_day_date, end_day_date))
+        stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
         GarminDB.MonthsSummary.create_or_update_not_none(self.garminsumdb, stats)
         HealthDB.MonthsSummary.create_or_update_not_none(self.sumdb, stats)
 

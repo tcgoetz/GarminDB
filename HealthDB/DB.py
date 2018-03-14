@@ -318,14 +318,30 @@ class DBObject():
         return cls.get_col_func(db, col, func.sum, start_ts, end_ts, False)
 
     @classmethod
-    def get_col_sum_of_max_per_day(cls, db, col, start_ts, end_ts):
+    def get_col_func_of_max_per_day(cls, db, col, stat_func, start_ts, end_ts):
         max_daily_query = (
             db.query_session().query(func.max(col).label('maxes'))
                 .filter(cls.timestamp >= start_ts)
                 .filter(cls.timestamp < end_ts)
                 .group_by(func.strftime("%j", cls.timestamp))
         )
-        return db.query_session().query(func.sum(max_daily_query.subquery().columns.maxes)).scalar()
+        return db.query_session().query(stat_func(max_daily_query.subquery().columns.maxes)).scalar()
+
+    @classmethod
+    def get_col_sum_of_max_per_day(cls, db, col, start_ts, end_ts):
+       return cls.get_col_func_of_max_per_day(db, col, func.sum, start_ts, end_ts)
+
+    @classmethod
+    def get_col_avg_of_max_per_day(cls, db, col, start_ts, end_ts):
+       return cls.get_col_func_of_max_per_day(db, col, func.avg, start_ts, end_ts)
+
+    @classmethod
+    def get_col_min_of_max_per_day(cls, db, col, start_ts, end_ts):
+       return cls.get_col_func_of_max_per_day(db, col, func.min, start_ts, end_ts)
+
+    @classmethod
+    def get_col_max_of_max_per_day(cls, db, col, start_ts, end_ts):
+       return cls.get_col_func_of_max_per_day(db, col, func.max, start_ts, end_ts)
 
     @classmethod
     def get_time_col_func(cls, db, col, stat_func, start_ts=None, end_ts=None):
@@ -335,6 +351,25 @@ class DBObject():
         if end_ts is not None:
             query = query.filter(cls.time_col < end_ts)
         return Conversions.secs_to_dt_time(query.scalar())
+
+    @classmethod
+    def get_col_func_of_max_per_day_for_value(cls, db, col, stat_func, match_col, match_value, start_ts, end_ts):
+        max_daily_query = (
+            db.query_session().query(func.max(col).label('maxes'))
+                .filter(match_col == match_value)
+                .filter(cls.timestamp >= start_ts)
+                .filter(cls.timestamp < end_ts)
+                .group_by(func.strftime("%j", cls.timestamp))
+        )
+        return db.query_session().query(stat_func(max_daily_query.subquery().columns.maxes)).scalar()
+
+    @classmethod
+    def get_col_sum_of_max_per_day_for_value(cls, db, col, match_col, match_value, start_ts, end_ts):
+       return cls.get_col_func_of_max_per_day_for_value(db, col, func.sum, match_col, match_value, start_ts, end_ts)
+
+    @classmethod
+    def get_col_avg_of_max_per_day_for_value(cls, db, col, match_col, match_value, start_ts, end_ts):
+       return cls.get_col_func_of_max_per_day_for_value(db, col, func.avg, match_col, match_value, start_ts, end_ts)
 
     @classmethod
     def get_time_col_avg(cls, db, col, start_ts, end_ts):
@@ -442,11 +477,17 @@ class SummaryBase(DBObject):
     vigorous_activity_time = Column(Time)
     steps = Column(Integer)
     floors = Column(Float)
-    sleep = Column(Time)
+    sleep_avg = Column(Time)
+    sleep_min = Column(Time)
+    sleep_max = Column(Time)
+    calories_avg = Column(Integer)
+    calories_bmr_avg = Column(Integer)
+    calories_active_avg = Column(Integer)
 
     min_row_values = 2
     _updateable_fields = [
         'hr_avg', 'hr_min', 'hr_max', 'rhr_avg', 'rhr_min', 'rhr_max', 'weight_avg', 'weight_min', 'weight_max', 'stress_avg',
-        'intensity_time', 'moderate_activity_time', 'vigorous_activity_time', 'steps', 'floors', 'sleep'
+        'intensity_time', 'moderate_activity_time', 'vigorous_activity_time', 'steps', 'floors', 'sleep_avg', 'sleep_min', 'sleep_max',
+        'calories_avg', 'calories_bmr_avg', 'calories_active_avg'
     ]
 

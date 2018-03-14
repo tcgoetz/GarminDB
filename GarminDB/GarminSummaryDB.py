@@ -140,7 +140,11 @@ class Sleep(GarminSummaryDB.Base, DBObject):
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
-        return {'sleep' : cls.get_time_col_avg(db, cls.duration, start_ts, end_ts)}
+        return {
+            'sleep_avg' : cls.get_time_col_avg(db, cls.duration, start_ts, end_ts),
+            'sleep_min' : cls.get_time_col_min(db, cls.duration, start_ts, end_ts),
+            'sleep_max' : cls.get_time_col_max(db, cls.duration, start_ts, end_ts),
+        }
 
     @classmethod
     def get_daily_stats(cls, db, day_ts):

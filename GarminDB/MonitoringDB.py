@@ -57,11 +57,41 @@ class MonitoringInfo(MonitoringDB.Base, DBObject):
     _relational_mappings = {
         'activity_type' : ('activity_type_id', ActivityType.get_id)
     }
+    time_col = synonym("timestamp")
     min_row_values = 3
 
     @classmethod
     def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
+        return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
+
+    @classmethod
+    def get_daily_bmr(cls, db, day_ts):
+        return cls.get_col_avg_of_max_per_day(db, cls.resting_metabolic_rate, day_ts, day_ts + datetime.timedelta(1))
+
+    @classmethod
+    def get_stats(cls, db, start_ts, end_ts):
+        stats = {
+            'calories_bmr_avg' : cls.get_col_avg(db, cls.resting_metabolic_rate, start_ts, end_ts),
+        }
+        return stats
+
+    @classmethod
+    def get_daily_stats(cls, db, day_ts):
+        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
+        stats['day'] = day_ts
+        return stats
+
+    @classmethod
+    def get_weekly_stats(cls, db, first_day_ts):
+        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats['first_day'] = first_day_ts
+        return stats
+
+    @classmethod
+    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
+        stats = cls.get_stats(db, first_day_ts, last_day_ts)
+        stats['first_day'] = first_day_ts
+        return stats
 
 
 class MonitoringHeartRate(MonitoringDB.Base, DBObject):
@@ -260,13 +290,17 @@ class Monitoring(MonitoringDB.Base, DBObject):
         return db.query_session().query(cls.timestamp, cls.activity_type_id, cls.intensity).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).all()
 
     @classmethod
-    def get_activity_avg(cls, db, start_ts, end_ts):
-        return cls.get_col_avg(db, cls.intensity, start_ts, end_ts)
+    def get_active_calories(cls, db, activity_type_id, start_ts, end_ts):
+        active_calories = cls.get_col_avg_of_max_per_day_for_value(db, cls.active_calories, cls.activity_type_id, activity_type_id, start_ts, end_ts)
+        if active_calories is not None:
+            return active_calories
+        return 0
 
     @classmethod
     def get_stats(cls, db, func, start_ts, end_ts):
         return {
-            'steps'     : func(db, cls.steps, start_ts, end_ts),
+            'steps'                 : func(db, cls.steps, start_ts, end_ts),
+            'calories_active_avg'   : cls.get_active_calories(db, 0, start_ts, end_ts) + cls.get_active_calories(db, 1, start_ts, end_ts)
         }
 
     @classmethod

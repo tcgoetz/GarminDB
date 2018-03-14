@@ -94,8 +94,26 @@ class DaysSummary(FitBitDB.Base, DBObject):
         return stats
 
     @classmethod
-    def get_sleep_stats(cls, db, func, start_ts, end_ts):
-        return { 'sleep' : Conversions.min_to_dt_time(func(db, cls.asleep_mins, start_ts, end_ts)) }
+    def get_sleep_stats(cls, db, start_ts, end_ts):
+        return {
+            'sleep_avg' : Conversions.min_to_dt_time(cls.get_col_avg(db, cls.asleep_mins, start_ts, end_ts)),
+            'sleep_min' : Conversions.min_to_dt_time(cls.get_col_min(db, cls.asleep_mins, start_ts, end_ts)),
+            'sleep_max' : Conversions.min_to_dt_time(cls.get_col_max(db, cls.asleep_mins, start_ts, end_ts)),
+        }
+
+    @classmethod
+    def get_calories_stats(cls, db, start_ts, end_ts):
+        calories_bmr_avg = cls.get_col_avg(db, cls.calories_bmr, start_ts, end_ts)
+        calories_active_avg = cls.get_col_avg(db, cls.activities_calories, start_ts, end_ts)
+        if calories_bmr_avg is not None and  calories_active_avg is not None:
+            calories_avg = calories_bmr_avg + calories_active_avg
+        else:
+            calories_avg = None
+        return {
+            'calories_avg'          : calories_avg,
+            'calories_bmr_avg'      : calories_bmr_avg,
+            'calories_active_avg'   : calories_active_avg,
+        }
 
     @classmethod
     def get_daily_stats(cls, db, day_ts):
@@ -103,7 +121,8 @@ class DaysSummary(FitBitDB.Base, DBObject):
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1)))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1)))
         stats.update(cls.get_weight_stats(db, day_ts, day_ts + datetime.timedelta(1)))
-        stats.update(cls.get_sleep_stats(db, cls.get_col_avg, day_ts, day_ts + datetime.timedelta(1)))
+        stats.update(cls.get_sleep_stats(db, day_ts, day_ts + datetime.timedelta(1)))
+        stats.update(cls.get_calories_stats(db, day_ts, day_ts + datetime.timedelta(1)))
         stats['day'] = day_ts
         return stats
 
@@ -113,7 +132,8 @@ class DaysSummary(FitBitDB.Base, DBObject):
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats.update(cls.get_weight_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7)))
-        stats.update(cls.get_sleep_stats(db, cls.get_col_avg, first_day_ts, first_day_ts + datetime.timedelta(7)))
+        stats.update(cls.get_sleep_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7)))
+        stats.update(cls.get_calories_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats['first_day'] = first_day_ts
         return stats
 
@@ -123,7 +143,8 @@ class DaysSummary(FitBitDB.Base, DBObject):
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
         stats.update(cls.get_weight_stats(db, first_day_ts, last_day_ts))
-        stats.update(cls.get_sleep_stats(db, cls.get_col_avg, first_day_ts, last_day_ts))
+        stats.update(cls.get_sleep_stats(db, first_day_ts, last_day_ts))
+        stats.update(cls.get_calories_stats(db, first_day_ts, last_day_ts))
         stats['first_day'] = first_day_ts
         return stats
 
