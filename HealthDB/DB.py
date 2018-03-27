@@ -72,19 +72,25 @@ class DB():
 class DBObject():
 
     # defaults, overridden by subclasses
-    _updateable_fields = []
+    UPDATE_ALL_FIELDS = 0xff
+    _updateable_fields = UPDATE_ALL_FIELDS
     _relational_mappings = {}
     _col_translations = {}
     _col_mappings = {}
+    min_row_values = 1
+
 
     def _from_dict(self, db, values_dict, update=False, ignore_none=False):
         if update:
-            test_key_dict = self._updateable_fields
+            if self._updateable_fields == self.UPDATE_ALL_FIELDS:
+                test_key_dict = None
+            else:
+                test_key_dict = self._updateable_fields
         else:
             test_key_dict = self.__class__.__dict__
         self.not_none_values = 0
         for key, value in self.translate_columns(self.relational_mappings(db, self.map_columns(values_dict))).iteritems():
-            if key in test_key_dict:
+            if test_key_dict is None or key in test_key_dict:
                 if value is not None:
                     self.not_none_values += 1
                     set_attribute(self, key, value)
@@ -253,8 +259,17 @@ class DBObject():
         return int(row[0])
 
     @classmethod
+    def row_to_int_not_none(cls, row):
+        if row[0] is not None:
+            return int(row[0])
+
+    @classmethod
     def rows_to_ints(cls, rows):
         return [cls.row_to_int(row) for row in rows]
+
+    @classmethod
+    def rows_to_ints_not_none(cls, rows):
+        return [cls.row_to_int_not_none(row) for row in rows]
 
     @classmethod
     def row_to_month(cls, row):
@@ -266,11 +281,11 @@ class DBObject():
 
     @classmethod
     def get_years(cls, db):
-        return cls.rows_to_ints(db.session().query(extract('year', cls.time_col)).distinct().all())
+        return cls.rows_to_ints_not_none(db.session().query(extract('year', cls.time_col)).distinct().all())
 
     @classmethod
     def get_months(cls, db, year):
-          return cls.rows_to_ints(db.query_session().query(extract('month', cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
+          return cls.rows_to_ints_not_none(db.query_session().query(extract('month', cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
 
     @classmethod
     def get_month_names(cls, db, year):
@@ -344,15 +359,6 @@ class DBObject():
        return cls.get_col_func_of_max_per_day(db, col, func.max, start_ts, end_ts)
 
     @classmethod
-    def get_time_col_func(cls, db, col, stat_func, start_ts=None, end_ts=None):
-        query = db.query_session().query(stat_func(func.strftime('%s', col) - func.strftime('%s', '00:00')))
-        if start_ts is not None:
-            query = query.filter(cls.time_col >= start_ts)
-        if end_ts is not None:
-            query = query.filter(cls.time_col < end_ts)
-        return Conversions.secs_to_dt_time(query.scalar())
-
-    @classmethod
     def get_col_func_of_max_per_day_for_value(cls, db, col, stat_func, match_col, match_value, start_ts, end_ts):
         max_daily_query = (
             db.query_session().query(func.max(col).label('maxes'))
@@ -372,12 +378,23 @@ class DBObject():
        return cls.get_col_func_of_max_per_day_for_value(db, col, func.avg, match_col, match_value, start_ts, end_ts)
 
     @classmethod
-    def get_time_col_avg(cls, db, col, start_ts, end_ts):
-        return cls.get_time_col_func(db, col, func.avg, start_ts, end_ts)
+    def get_time_col_func(cls, db, col, stat_func, start_ts=None, end_ts=None, ignore_le_zero=False):
+        query = db.query_session().query(stat_func(func.strftime('%s', col) - func.strftime('%s', '00:00')))
+        if start_ts is not None:
+            query = query.filter(cls.time_col >= start_ts)
+        if end_ts is not None:
+            query = query.filter(cls.time_col < end_ts)
+        if ignore_le_zero:
+            query = query.filter(col > 0)
+        return Conversions.secs_to_dt_time(query.scalar())
 
     @classmethod
-    def get_time_col_min(cls, db, col, start_ts, end_ts):
-        return cls.get_time_col_func(db, col, func.min, start_ts, end_ts)
+    def get_time_col_avg(cls, db, col, start_ts, end_ts, ignore_le_zero=False):
+        return cls.get_time_col_func(db, col, func.avg, start_ts, end_ts, ignore_le_zero)
+
+    @classmethod
+    def get_time_col_min(cls, db, col, start_ts, end_ts, ignore_le_zero=False):
+        return cls.get_time_col_func(db, col, func.min, start_ts, end_ts, ignore_le_zero)
 
     @classmethod
     def get_time_col_max(cls, db, col, start_ts=None, end_ts=None):

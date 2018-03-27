@@ -66,6 +66,7 @@ class DeviceInfo(GarminDB.Base, DBObject):
     battery_voltage = Column(Float)
 
     min_row_values = 3
+    _updateable_fields = ['software_version', 'cum_operating_time', 'battery_voltage']
 
     @classmethod
     def _find_query(cls, session, values_dict):
@@ -117,6 +118,7 @@ class Weight(GarminDB.Base, DBObject):
 
     time_col = synonym("timestamp")
     min_row_values = 2
+    _updateable_fields = ['weight']
 
     @classmethod
     def _find_query(cls, session, values_dict):
@@ -158,6 +160,7 @@ class Stress(GarminDB.Base, DBObject):
 
     time_col = synonym("timestamp")
     min_row_values = 2
+    _updateable_fields = ['stress']
 
     @classmethod
     def _find_query(cls, session, values_dict):

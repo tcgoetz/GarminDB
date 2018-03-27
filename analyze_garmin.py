@@ -180,16 +180,6 @@ class Analyze():
         'extremely_active' : 6
     }
 
-    sleep_state_latch_time = {
-        'deep_sleep' : 300,
-        'light_sleep' : 120,
-        'awake' : 60,
-        'active' : 60,
-        'moderately_active' : 60,
-        'very_active' : 60,
-        'extremely_active' : 60
-    }
-
     def awake(self, sleep_state):
         return self.sleep_state_index[sleep_state] >= 2
 
@@ -203,7 +193,7 @@ class Analyze():
             if self.asleep(sleep_state) and self.mins_asleep >= 10:
                 self.bedtime_ts = sleep_state_ts - datetime.timedelta(0, 1)
                 self.mins_asleep_total = 0
-        elif self.awake(sleep_state) and self.mins_awake >= 30 and (sleep_state_ts - self.bedtime_ts).total_seconds() < 3600:
+        elif self.awake(sleep_state) and self.mins_awake >= 30 and self.mins_asleep_total < 60:
             self.bedtime_ts = None
             self.wake_ts = None
         elif self.wake_ts is None:
@@ -221,6 +211,7 @@ class Analyze():
 
         activity = GarminDB.Monitoring.get_activity(self.mondb, sleep_search_start_ts, sleep_search_stop_ts)
 
+        # turn activity data into activity periods
         initial_intensity = self.base_awake_intensity
         last_intensity = initial_intensity
         last_sample_ts = sleep_search_stop_ts
@@ -258,8 +249,8 @@ class Analyze():
                     self.mins_asleep_total += 1
                     self.mins_awake = 0
                 current_ts = timestamp + datetime.timedelta(0, sec_index)
-                duration = int((current_ts - prev_sleep_state_ts).total_seconds())
-                if sleep_state != prev_sleep_state and duration >= self.sleep_state_latch_time[prev_sleep_state]:
+                duration = (current_ts - prev_sleep_state_ts).total_seconds()
+                if sleep_state != prev_sleep_state:
                     self.sleep_state_change(prev_sleep_state_ts, prev_sleep_state, duration)
                     prev_sleep_state = sleep_state
                     prev_sleep_state_ts = current_ts

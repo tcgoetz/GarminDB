@@ -96,8 +96,8 @@ class DaysSummary(FitBitDB.Base, DBObject):
     @classmethod
     def get_sleep_stats(cls, db, start_ts, end_ts):
         return {
-            'sleep_avg' : Conversions.min_to_dt_time(cls.get_col_avg(db, cls.asleep_mins, start_ts, end_ts)),
-            'sleep_min' : Conversions.min_to_dt_time(cls.get_col_min(db, cls.asleep_mins, start_ts, end_ts)),
+            'sleep_avg' : Conversions.min_to_dt_time(cls.get_col_avg(db, cls.asleep_mins, start_ts, end_ts, True)),
+            'sleep_min' : Conversions.min_to_dt_time(cls.get_col_min(db, cls.asleep_mins, start_ts, end_ts, True)),
             'sleep_max' : Conversions.min_to_dt_time(cls.get_col_max(db, cls.asleep_mins, start_ts, end_ts)),
         }
 

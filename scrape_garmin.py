@@ -116,6 +116,7 @@ class Scrape():
     def login(self, username, password):
         logger.debug("login: %s %s" % (username, password))
         self.load_page(self.garmin_connect_login_url)
+        self.wait_for_xpath(self.browser, self.initial_page_load_timeout, "//div[@class='page-container']")
         self.switch_frame_by_id(self.browser, "gauth-widget-frame-gauth-widget")
         self.fill_field_by_id(self.browser, "username", username)
         self.fill_field_by_id(self.browser, "password", password)

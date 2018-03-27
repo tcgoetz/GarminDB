@@ -49,7 +49,7 @@ class Activities(ActivitiesDB.Base, DBObject):
     # degrees
     start_lat = Column(Float)
     start_long = Column(Float)
-    stop_lat = Column(Float)
+    start_long = Column(Float)
     stop_long = Column(Float)
     # kms or miles
     distance = Column(Float)
@@ -78,7 +78,7 @@ class Activities(ActivitiesDB.Base, DBObject):
     anaerobic_training_effect = Column(Float)
 
     time_col = synonym("start_time")
-    min_row_values = 2
+    min_row_values = 3
 
     @classmethod
     def _find_query(cls, session, values_dict):
@@ -166,7 +166,7 @@ class ActivityRecords(ActivitiesDB.Base, DBObject):
 
 class SportActivities(DBObject):
 
-    min_row_values = 1
+    min_row_values = 2
 
     @declared_attr
     def activity_id(cls):
