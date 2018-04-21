@@ -49,7 +49,7 @@ class Activities(ActivitiesDB.Base, DBObject):
     # degrees
     start_lat = Column(Float)
     start_long = Column(Float)
-    start_long = Column(Float)
+    stop_lat = Column(Float)
     stop_long = Column(Float)
     # kms or miles
     distance = Column(Float)
