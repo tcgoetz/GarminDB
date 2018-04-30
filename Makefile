@@ -193,13 +193,10 @@ import_new_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR) download_new_activit
 	python import_garmin_activities.py -e -l --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
 
 download_new_activities: $(ACTIVITES_FIT_FILES_DIR)
-	-python garmin-connect-export/gcexport.py -c 10 -f original --unzip --username $(GC_USER) --password $(GC_PASSWORD) -d "$(ACTIVITES_FIT_FILES_DIR)"
+	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -a "$(ACTIVITES_FIT_FILES_DIR)" -c 10
 
 download_all_activities: $(ACTIVITES_FIT_FILES_DIR)
-	python garmin-connect-export/gcexport.py -c all -f original --unzip --username $(GC_USER) --password $(GC_PASSWORD) -d "$(ACTIVITES_FIT_FILES_DIR)"
-
-download_activities_tcx: $(ACTIVITES_TCX_FILES_DIR)
-	python garmin-connect-export/gcexport.py -c all -f tcx --unzip --username $(GC_USER) --password $(GC_PASSWORD) -d "$(ACTIVITES_TCX_FILES_DIR)"
+	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -a "$(ACTIVITES_FIT_FILES_DIR)"
 
 ## generic garmin
 GARMIN_DB=$(DB_DIR)/garmin.db

@@ -34,7 +34,9 @@ class Download():
     garmin_connect_activities_url = garmin_connect_modern_url + "/activities"
 
     garmin_connect_modern_proxy_url = garmin_connect_modern_url + '/proxy'
-    garmin_connect_download_daily_url = garmin_connect_modern_proxy_url + "/download-service/files/wellness"
+    garmin_connect_download_url = garmin_connect_modern_proxy_url + "/download-service/files"
+
+    garmin_connect_download_daily_url = garmin_connect_download_url + "/wellness"
     garmin_connect_user_profile_url = garmin_connect_modern_proxy_url + "/userprofile-service/userprofile"
     garmin_connect_personal_info_url = garmin_connect_user_profile_url + "/personal-information"
     garmin_connect_wellness_url = garmin_connect_modern_proxy_url + "/wellness-service/wellness"
@@ -43,6 +45,9 @@ class Download():
     garmin_connect_stress_daily_url = garmin_connect_wellness_url + "/dailySleepData"
 
     garmin_connect_weight_url = garmin_connect_modern_proxy_url + "/userprofile-service/userprofile/personal-information/weightWithOutbound/filterByDay"
+
+    garmin_connect_activity_search_url = garmin_connect_modern_proxy_url + "/activitylist-service/activities/search/activities"
+    garmin_connect_download_activity_url = garmin_connect_download_url + "/activity/"
 
     agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337 Safari/537.36'
 
@@ -134,6 +139,13 @@ class Download():
             for chunk in response:
                 file.write(chunk)
 
+    def unzip_files(self, outdir):
+        logger.info("unzip_files: " + outdir)
+        for filename in os.listdir(self.temp_dir):
+            files_zip = zipfile.ZipFile(self.temp_dir + "/" + filename, 'r')
+            files_zip.extractall(outdir)
+            files_zip.close()
+
     def get_monitoring_day(self, date):
         logger.info("get_monitoring_day: %s" % str(date))
         response = self.get(self.garmin_connect_download_daily_url + '/' + date.strftime("%Y-%m-%d"))
@@ -145,16 +157,13 @@ class Download():
             day_date = date + datetime.timedelta(day)
             self.get_monitoring_day(day_date)
 
-    def unzip_monitoring(self, outdir):
-        logger.info("unzip_monitoring: " + outdir)
-        for filename in os.listdir(self.temp_dir):
-            monitoring_files_zip = zipfile.ZipFile(self.temp_dir + "/" + filename, 'r')
-            monitoring_files_zip.extractall(outdir)
-            monitoring_files_zip.close()
-
     def get_weight_chunk(self, start, end):
         logger.info("get_weight_chunk: %d - %d" % (start, end))
-        response = self.get(self.garmin_connect_weight_url + '?from=' + str(start) + "&until=" + str(end))
+        params = {
+            'from' : str(start),
+            "until" : str(end)
+        }
+        response = self.get(self.garmin_connect_weight_url, params)
         return response.json()
 
     def get_weight(self):
@@ -170,6 +179,33 @@ class Download():
             data.extend(chunk_data)
             end -= chunk_size
         return data
+
+    def get_activity_summaries(self, start, count):
+        logger.info("get_activity_summaries")
+        params = {
+            'start' : str(start),
+            "limit" : str(count)
+        }
+        response = self.get(self.garmin_connect_activity_search_url, params)
+        return response.json()
+
+    def save_activity_file(self, activity_id_str):
+        logger.info("get_activity_file: " + activity_id_str)
+        response = self.get(self.garmin_connect_download_activity_url + activity_id_str)
+        self.save_file(self.temp_dir + '/activity_' + activity_id_str + '.zip', response)
+
+    def get_activities(self, directory, count):
+        logger.info("get_activities: '%s' (%d)" % (directory, count))
+        activities = self.get_activity_summaries(0, count)
+        for activity in activities:
+            activity_id_str = str(activity['activityId'])
+            activity_name_str = Conversions.printable(activity['activityName'])
+            logger.info("get_activities: %s (%s)" % (activity_name_str, activity_id_str))
+            json_filename = directory + '/activity_' + activity_id_str + '.json'
+            logger.debug("get_activities: %s <- %s" % (json_filename, repr(activity)))
+            with open(json_filename, 'wb') as file:
+                file.write(json.dumps(activity))
+            self.save_activity_file(activity_id_str)
 
 
 def convert_to_json(object):
@@ -191,19 +227,27 @@ def main(argv):
     db_params_dict = {}
     username = None
     password = None
+    activities = None
+    activity_count = 1000
     monitoring = None
     weight = None
     debug = False
 
     try:
-        opts, args = getopt.getopt(argv,"d:n:lm:p:s:tu:w:",
-            ["debug", "date=", "days=", "username=", "password=", "latest", "monitoring=", "mysql=", "sqlite=", "weight="])
+        opts, args = getopt.getopt(argv,"a:c:d:n:lm:p:s:tu:w:",
+            ["activities=", "activity_count=", "debug", "date=", "days=", "username=", "password=", "latest", "monitoring=", "mysql=", "sqlite=", "weight="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
     for opt, arg in opts:
         if opt == '-h':
             usage(sys.argv[0])
+        elif opt in ("-a", "--activities"):
+            logger.debug("Activities: " + arg)
+            activities = arg
+        elif opt in ("-c", "--activity_count"):
+            logger.debug("Activity count: " + arg)
+            activity_count = int(arg)
         elif opt in ("-t", "--debug"):
             debug = True
         elif opt in ("-d", "--date"):
@@ -257,6 +301,14 @@ def main(argv):
     garmindb = GarminDB.GarminDB(db_params_dict)
     english_units = (GarminDB.Attributes.get(garmindb, 'dist_setting') == 'statute')
 
+    download = Download()
+    download.login(username, password)
+
+    if activities and activity_count > 0:
+        logger.info("Fetching %d activities" % activity_count)
+        download.get_activities(activities, activity_count)
+        download.unzip_files(activities)
+
     if latest and monitoring:
         mondb = GarminDB.MonitoringDB(db_params_dict)
         last_ts = GarminDB.Monitoring.latest_time(mondb)
@@ -272,15 +324,11 @@ def main(argv):
 
     if monitoring and days > 0:
         logger.info("Date range to update: %s (%d)" % (str(date), days))
-        download = Download()
-        download.login(username, password)
         download.get_monitoring(date, days)
-        download.unzip_monitoring(monitoring)
+        download.unzip_files(monitoring)
         logger.info("Saved monitoring files for %s (%d) to %s for processing" % (str(date), days, monitoring))
 
     if weight:
-        download = Download()
-        download.login(username, password)
         weight_data = download.get_weight()
 
         # dump weight data to file as json

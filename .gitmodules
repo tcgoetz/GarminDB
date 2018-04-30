@@ -1,9 +1,6 @@
 [submodule "Fit"]
 	path = Fit
 	url = ../Fit.git
-[submodule "garmin-connect-export"]
-	path = garmin-connect-export
-	url = ../garmin-connect-export.git
 [submodule "python-tcxparser"]
 	path = python-tcxparser
 	url = ../python-tcxparser.git
