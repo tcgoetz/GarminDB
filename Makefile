@@ -61,12 +61,12 @@ deps_tcxparser:
 clean_deps_tcxparser:
 	cd python-tcxparser && sudo cat files.txt | xargs rm -rf
 
-deps: install_geckodriver deps_tcxparser
+deps: deps_tcxparser
 	sudo pip install --upgrade sqlalchemy
 	sudo pip install --upgrade requests
 	sudo pip install --upgrade python-dateutil || true
 
-clean_deps: clean_geckodriver clean_deps_tcxparser
+clean_deps: clean_deps_tcxparser
 	sudo pip uninstall sqlalchemy
 	sudo pip uninstall selenium
 	sudo pip uninstall python-dateutil
