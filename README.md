@@ -5,8 +5,8 @@
 [Python scripts](https://www.python.org/) for parsing health data into and manipulating data in a [SQLite](http://sqlite.org/) DB. SQLite is a light weight DB that requires no server.
 
 What they can do:
-* Automatically download and import Garmin daily monitoring files (all day heart rate, activity, climb/decend, stress, and intensity minutes) from the user's Garmin Connect "Daily Summary" page. (Currently requires a Firefox browser be installed)
-* Extract weight data from Garmin Connect and import it into the DB. (Currently requires a Firefox browser be installed)
+* Automatically download and import Garmin daily monitoring files (all day heart rate, activity, climb/decend, stress, and intensity minutes) from the user's Garmin Connect "Daily Summary" page.
+* Extract weight data from Garmin Connect and import it into the DB.
 * Download and import activity files from Garmin Connect. A summary table for all activities and more detailed data for some activity types. Lap amd record entries for activities.
 * Import Fitbit daily summary CSV files (files with one summary entry per day).
 * Import MS Health daily summary CSV filesand MS Health Vault weight export CSV files.
