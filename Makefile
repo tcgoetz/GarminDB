@@ -63,7 +63,7 @@ clean_deps_tcxparser:
 
 deps: install_geckodriver deps_tcxparser
 	sudo pip install --upgrade sqlalchemy
-	sudo pip install --upgrade selenium
+	sudo pip install --upgrade requests
 	sudo pip install --upgrade python-dateutil || true
 
 clean_deps: clean_geckodriver clean_deps_tcxparser
@@ -77,29 +77,6 @@ clean:
 	rm -rf HealthDB/*.pyc
 	rm -rf GarminDB/*.pyc
 	rm -rf FitBitDB/*.pyc
-
-
-#
-# Manage dependancies for scraping
-#
-$(BIN_DIR):
-	mkdir -p $(BIN_DIR)
-
-GECKO_DRIVER_URL=https://github.com/mozilla/geckodriver/releases/download/v0.19.1/
-ifeq ($(OS), Darwin)
-	GECKO_DRIVER_FILE=geckodriver-v0.19.1-macos.tar.gz
-else ifeq ($(OS), Linux)
-	ifeq ($(ARCH), x86_64)
-		GECKO_DRIVER_FILE=geckodriver-v0.19.1-linux64.tar.gz
-	else
-		GECKO_DRIVER_FILE=geckodriver-v0.19.1-linux32.tar.gz
-	endif
-endif
-install_geckodriver: $(BIN_DIR)
-	curl -L $(GECKO_DRIVER_URL)/$(GECKO_DRIVER_FILE) | tar -C $(BIN_DIR) -x -z -f -
-
-clean_geckodriver:
-	rm -f $(BIN_DIR)/geckodriver*
 
 
 #
@@ -158,18 +135,18 @@ clean_monitoring_db:
 $(MONITORING_FIT_FILES_DIR):
 	mkdir -p $(MONITORING_FIT_FILES_DIR)
 
-scrape_monitoring: $(MONITORING_FIT_FILES_DIR)
-	python scrape_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MONITORING_FIT_FILES_DIR)"
+download_monitoring: $(MONITORING_FIT_FILES_DIR)
+	python download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MONITORING_FIT_FILES_DIR)"
 
 import_monitoring: $(DB_DIR)
 	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
 		python import_garmin.py -e --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
 	done
 
-scrape_new_monitoring: $(MONITORING_FIT_FILES_DIR)
-	python scrape_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MONITORING_FIT_FILES_DIR)"
+download_new_monitoring: $(MONITORING_FIT_FILES_DIR)
+	python download_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MONITORING_FIT_FILES_DIR)"
 
-import_new_monitoring: scrape_new_monitoring
+import_new_monitoring: download_new_monitoring
 	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
 		python import_garmin.py -e -l --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
 	done
@@ -181,10 +158,10 @@ $(WEIGHT_FILES_DIR):
 import_weight: $(DB_DIR)
 	python import_garmin.py -e --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
 
-import_new_weight: scrape_weight import_weight
+import_new_weight: download_weight import_weight
 
-scrape_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
-	python scrape_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
+download_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
+	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
 
 ## activities
 GARMIN_ACT_DB=$(DB_DIR)/garmin_activities.db

@@ -33,8 +33,7 @@ class Analyze():
         self.garminsumdb = GarminDB.GarminSummaryDB(db_params_dict, debug)
         self.sumdb = HealthDB.SummaryDB(db_params_dict, debug)
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, debug)
-        units = GarminDB.Attributes.get(self.garmindb, 'dist_setting')
-        self.english_units = (units == 'statute')
+        self.english_units = (GarminDB.Attributes.get(self.garmindb, 'dist_setting') == 'statute')
 
     def set_sleep_period(self, sleep_period_start, sleep_period_stop):
         GarminDB.Attributes.set_if_unset(self.garmindb, 'sleep_time', sleep_period_start)

@@ -39,8 +39,18 @@ class GarminWeightData():
         for file_name in self.file_names:
             json_data = json.load(open(file_name), object_hook=json_parser)
             for sample in json_data:
-                GarminDB.Weight.create_or_update(garmindb, sample)
-            logger.info("DB updated with weight data for %s (%d)" % (str(json_data[0]['timestamp']), len(json_data)))
+                timestamp_ms = sample.get('date', None)
+                if timestamp_ms is None:
+                    break
+                weight = sample['weight'] / 1000.0
+                if self.english_units:
+                    weight *= 2.204623
+                point = {
+                    'timestamp' : Fit.Conversions.epoch_ms_to_dt(timestamp_ms),
+                    'weight' : weight
+                }
+                GarminDB.Weight.create_or_update(garmindb, point)
+            logger.info("DB updated with %d weight entries" % len(json_data))
 
 
 class GarminFitData():
