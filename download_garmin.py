@@ -136,7 +136,7 @@ class Download():
         logger.debug("login: %s (%s) english units %s" % (self.full_name, self.display_name, str(self.english_units)))
         return True
 
-    def save_file(self, filename, response):
+    def save_binary_file(self, filename, response):
         with open(filename, 'wb') as file:
             for chunk in response:
                 file.write(chunk)
@@ -158,7 +158,7 @@ class Download():
     def get_monitoring_day(self, date):
         logger.info("get_monitoring_day: %s" % str(date))
         response = self.get(self.garmin_connect_download_daily_url + '/' + date.strftime("%Y-%m-%d"))
-        self.save_file(self.temp_dir + '/' + str(date) + '.zip', response)
+        self.save_binary_file(self.temp_dir + '/' + str(date) + '.zip', response)
 
     def get_monitoring(self, date, days):
         logger.info("get_monitoring: %s : %d" % (str(date), days))
@@ -201,7 +201,7 @@ class Download():
     def save_activity_file(self, activity_id_str):
         logger.info("get_activity_file: " + activity_id_str)
         response = self.get(self.garmin_connect_download_activity_url + activity_id_str)
-        self.save_file(self.temp_dir + '/activity_' + activity_id_str + '.zip', response)
+        self.save_binary_file(self.temp_dir + '/activity_' + activity_id_str + '.zip', response)
 
     def get_activities(self, directory, count):
         logger.info("get_activities: '%s' (%d)" % (directory, count))
@@ -210,11 +210,10 @@ class Download():
             activity_id_str = str(activity['activityId'])
             activity_name_str = Conversions.printable(activity['activityName'])
             logger.info("get_activities: %s (%s)" % (activity_name_str, activity_id_str))
-            json_filename = directory + '/activity_' + activity_id_str + '.json'
+            json_filename = directory + '/activity_' + activity_id_str
             if not os.path.isfile(json_filename):
                 logger.debug("get_activities: %s <- %s" % (json_filename, repr(activity)))
-                with open(json_filename, 'wb') as file:
-                    file.write(json.dumps(activity))
+                self.save_json_file(json_filename, activity)
                 self.save_activity_file(activity_id_str)
 
     def get_sleep_day(self, directory, date):
@@ -225,7 +224,7 @@ class Download():
                 'date' : date.strftime("%Y-%m-%d")
             }
             response = self.get(self.garmin_connect_sleep_daily_url + '/' + self.display_name, params)
-            self.save_file(filename, response)
+            self.save_binary_file(filename, response)
 
     def get_sleep(self, directory, date, days):
         logger.info("get_sleep: %s : %d" % (str(date), days))
