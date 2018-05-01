@@ -28,9 +28,6 @@ class Download():
     garmin_connect_css_url = 'https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css'
 
     garmin_connect_modern_url = garmin_connect_base_url + "/modern"
-    garmin_connect_daily_url = garmin_connect_modern_url + "/dailySummary/timeline"
-    garmin_connect_daily_user_base_url = garmin_connect_modern_url + "/daily-summary"
-    garmin_connect_weight_base_url = garmin_connect_modern_url + "/weight"
     garmin_connect_activities_url = garmin_connect_modern_url + "/activities"
 
     garmin_connect_modern_proxy_url = garmin_connect_modern_url + '/proxy'
@@ -42,18 +39,15 @@ class Download():
     garmin_connect_wellness_url = garmin_connect_modern_proxy_url + "/wellness-service/wellness"
     garmin_connect_hr_daily_url = garmin_connect_wellness_url + "/dailyHeartRate"
     garmin_connect_stress_daily_url = garmin_connect_wellness_url + "/dailyStress"
-    garmin_connect_stress_daily_url = garmin_connect_wellness_url + "/dailySleepData"
+    garmin_connect_sleep_daily_url = garmin_connect_wellness_url + "/dailySleepData"
 
-    garmin_connect_weight_url = garmin_connect_modern_proxy_url + "/userprofile-service/userprofile/personal-information/weightWithOutbound/filterByDay"
+    garmin_connect_rhr_url = garmin_connect_modern_proxy_url + "/userstats-service/wellness/daily"
+    garmin_connect_weight_url = garmin_connect_personal_info_url + "/weightWithOutbound/filterByDay"
 
     garmin_connect_activity_search_url = garmin_connect_modern_proxy_url + "/activitylist-service/activities/search/activities"
     garmin_connect_download_activity_url = garmin_connect_download_url + "/activity/"
 
     agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337 Safari/537.36'
-
-    # timeout is seconds
-    initial_page_load_timeout = 30
-    page_reload_timeout = 15
 
     def __init__(self):
         self.temp_dir = tempfile.mkdtemp()
@@ -86,8 +80,11 @@ class Download():
         except Exception as e:
             logger.error("post exception: " + str(e))
 
-    def build_login_url(self):
-        return 'https://sso.garmin.com/sso/login?'
+    def get_json(self, page_html, key):
+        found = re.search(key + r" = JSON.parse\(\"(.*)\"\);", page_html, re.M)
+        if found:
+            json_text = found.group(1).replace('\\"', '"')
+            return json.loads(json_text)
 
     def login(self, username, password):
         logger.debug("login: %s %s" % (username, password))
@@ -127,17 +124,29 @@ class Download():
         if not found:
             logger.error("Login failed: " + response.text)
             return False
-        print found.group(1)
         params = {
             'ticket' : found.group(1)
         }
-        self.get(self.garmin_connect_activities_url, params)
+        response = self.get(self.garmin_connect_activities_url, params)
+        self.user_prefs = self.get_json(response.text, 'VIEWER_USERPREFERENCES')
+        self.display_name = self.user_prefs['displayName']
+        self.english_units = (self.user_prefs['measurementSystem'] == 'statute_us')
+        self.social_profile = self.get_json(response.text, 'VIEWER_SOCIAL_PROFILE')
+        self.full_name = self.social_profile['fullName']
+        logger.debug("login: %s (%s) english units %s" % (self.full_name, self.display_name, str(self.english_units)))
         return True
 
     def save_file(self, filename, response):
         with open(filename, 'wb') as file:
             for chunk in response:
                 file.write(chunk)
+
+    def convert_to_json(self, object):
+        return object.__str__()
+
+    def save_json_file(self, json_filename, json_data):
+        with open(json_filename + '.json', 'w') as file:
+            file.write(json.dumps(json_data, default=self.convert_to_json))
 
     def unzip_files(self, outdir):
         logger.info("unzip_files: " + outdir)
@@ -202,14 +211,55 @@ class Download():
             activity_name_str = Conversions.printable(activity['activityName'])
             logger.info("get_activities: %s (%s)" % (activity_name_str, activity_id_str))
             json_filename = directory + '/activity_' + activity_id_str + '.json'
-            logger.debug("get_activities: %s <- %s" % (json_filename, repr(activity)))
-            with open(json_filename, 'wb') as file:
-                file.write(json.dumps(activity))
-            self.save_activity_file(activity_id_str)
+            if not os.path.isfile(json_filename):
+                logger.debug("get_activities: %s <- %s" % (json_filename, repr(activity)))
+                with open(json_filename, 'wb') as file:
+                    file.write(json.dumps(activity))
+                self.save_activity_file(activity_id_str)
 
+    def get_sleep_day(self, directory, date):
+        filename = directory + '/sleep_' + str(date) + '.json'
+        if not os.path.isfile(filename):
+            logger.info("get_sleep_day: %s -> %s" % (str(date), filename))
+            params = {
+                'date' : date.strftime("%Y-%m-%d")
+            }
+            response = self.get(self.garmin_connect_sleep_daily_url + '/' + self.display_name, params)
+            self.save_file(filename, response)
 
-def convert_to_json(object):
-    return object.__str__()
+    def get_sleep(self, directory, date, days):
+        logger.info("get_sleep: %s : %d" % (str(date), days))
+        for day in xrange(0, days):
+            day_date = date + datetime.timedelta(day)
+            self.get_sleep_day(directory, day_date)
+
+    def get_rhr_chunk(self, start, end):
+        start_str = start.strftime("%Y-%m-%d")
+        end_str = end.strftime("%Y-%m-%d")
+        logger.info("get_rhr_chunk: %s - %s" % (start_str, end_str))
+        params = {
+            'fromDate' : start_str,
+            'untilDate' : end_str,
+            'metricId' : 60
+        }
+        response = self.get(self.garmin_connect_rhr_url + '/' + self.display_name, params)
+        rhr_data = response.json()['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
+        return [entry for entry in rhr_data if entry['value'] is not None]
+
+    def get_rhr(self):
+        logger.info("get_rhr")
+        data = []
+        chunk_size = datetime.timedelta(30)
+        end = datetime.datetime.now()
+        while True:
+            start = end - chunk_size
+            chunk_data = self.get_rhr_chunk(start, end)
+            if len(chunk_data) == 0:
+                break
+            data.extend(chunk_data)
+            end -= chunk_size
+        return data
+
 
 
 def usage(program):
@@ -231,11 +281,14 @@ def main(argv):
     activity_count = 1000
     monitoring = None
     weight = None
+    rhr = None
+    sleep = None
     debug = False
 
     try:
-        opts, args = getopt.getopt(argv,"a:c:d:n:lm:p:s:tu:w:",
-            ["activities=", "activity_count=", "debug", "date=", "days=", "username=", "password=", "latest", "monitoring=", "mysql=", "sqlite=", "weight="])
+        opts, args = getopt.getopt(argv,"a:c:d:n:lm:p:r:S:s:tu:w:",
+            ["activities=", "activity_count=", "debug", "date=", "days=", "username=", "password=", "latest", "monitoring=", "mysql=",
+             "rhr=", "sqlite=", "sleep=", "weight="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -268,9 +321,15 @@ def main(argv):
         elif opt in ("-m", "--monitoring"):
             logger.debug("Monitoring: " + arg)
             monitoring = arg
+        elif opt in ("-S", "--sleep"):
+            logger.debug("Sleep: " + arg)
+            sleep = arg
         elif opt in ("-w", "--weight"):
             logger.debug("Weight")
             weight = arg
+        elif opt in ("-r", "--rhr"):
+            logger.debug("Resting heart rate")
+            rhr = arg
         elif opt in ("-s", "--sqlite"):
             logging.debug("Sqlite DB path: %s" % arg)
             db_params_dict['db_type'] = 'sqlite'
@@ -297,9 +356,6 @@ def main(argv):
     if len(db_params_dict) == 0 and monitoring and latest:
         print "Missing arguments: must specify <db params> with --sqlite or --mysql"
         usage(sys.argv[0])
-
-    garmindb = GarminDB.GarminDB(db_params_dict)
-    english_units = (GarminDB.Attributes.get(garmindb, 'dist_setting') == 'statute')
 
     download = Download()
     download.login(username, password)
@@ -328,27 +384,16 @@ def main(argv):
         download.unzip_files(monitoring)
         logger.info("Saved monitoring files for %s (%d) to %s for processing" % (str(date), days, monitoring))
 
+    if sleep and days > 0:
+        logger.info("Date range to update: %s (%d)" % (str(date), days))
+        download.get_sleep(sleep, date, days)
+        logger.info("Saved sleep files for %s (%d) to %s for processing" % (str(date), days, sleep))
+
     if weight:
-        weight_data = download.get_weight()
+       download.save_json_file(weight + '/weight_' + str(int(time.time())), download.get_weight())
 
-        # dump weight data to file as json
-        json_filename = weight + '/weight_' + str(int(time.time())) + '.json'
-        save_file = open(json_filename, 'w')
-        save_file.write(json.dumps(weight_data, default=convert_to_json))
-        save_file.close()
-
-        for entry in weight_data:
-            weight = entry['weight'] / 1000.0
-            if english_units:
-                weight *= 2.204623
-            point = {
-                'timestamp' : Conversions.epoch_ms_to_dt(entry['date']),
-                'weight' : weight
-            }
-            logger.debug("Inserting: " + repr(point))
-            GarminDB.Weight.create_or_update(garmindb, point)
-        logger.info("DB updated with weight %d entries" % len(weight_data))
-
+    if rhr:
+        download.save_json_file(rhr + '/rhr_' + str(int(time.time())), download.get_rhr())
 
 
 if __name__ == "__main__":

@@ -190,3 +190,113 @@ class Stress(GarminDB.Base, DBObject):
         stats = cls.get_stats(db, first_day_ts, last_day_ts)
         stats['first_day'] = first_day_ts
         return stats
+
+
+class Sleep(GarminDB.Base, DBObject):
+    __tablename__ = 'sleep'
+
+    day = Column(Date, primary_key=True)
+    start = Column(DateTime)
+    end = Column(DateTime)
+    total_sleep = Column(Time)
+    deep_sleep = Column(Time)
+    light_sleep = Column(Time)
+    awake = Column(Time)
+
+    time_col = synonym("day")
+    min_row_values = 2
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.day == values_dict['day'])
+
+    @classmethod
+    def get_stats(cls, db, start_ts, end_ts):
+        return {
+            'sleep_avg' : cls.get_time_col_avg(db, cls.total_sleep, start_ts, end_ts, True),
+            'sleep_min' : cls.get_time_col_min(db, cls.total_sleep, start_ts, end_ts, True),
+            'sleep_max' : cls.get_time_col_max(db, cls.total_sleep, start_ts, end_ts),
+        }
+
+    @classmethod
+    def get_daily_stats(cls, db, day_ts):
+        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
+        stats['day'] = day_ts
+        return stats
+
+    @classmethod
+    def get_weekly_stats(cls, db, first_day_ts):
+        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats['first_day'] = first_day_ts
+        return stats
+
+    @classmethod
+    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
+        stats = cls.get_stats(db, first_day_ts, last_day_ts)
+        stats['first_day'] = first_day_ts
+        return stats
+
+
+class SleepEvents(GarminDB.Base, DBObject):
+    __tablename__ = 'sleep_events'
+
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, unique=True)
+    event = Column(String)
+    duration = Column(Time)
+
+    time_col = synonym("timestamp")
+    min_row_values = 2
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
+
+    @classmethod
+    def get_wake_time(cls, db, day_date):
+        day_start_ts = datetime.datetime.combine(day_date, datetime.time.min)
+        day_stop_ts = datetime.datetime.combine(day_date, datetime.time.max)
+        values = cls.get_col_values(db, cls.timestamp, cls.event, 'wake_time', day_start_ts, day_stop_ts)
+        if len(values) > 0:
+            return values[0][0]
+
+
+class RestingHeartRate(GarminDB.Base, DBObject):
+    __tablename__ = 'resting_hr'
+
+    day = Column(Date, primary_key=True)
+    resting_heart_rate = Column(Float)
+
+    time_col = synonym("day")
+    min_row_values = 2
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.day == values_dict['day'])
+
+    @classmethod
+    def get_stats(cls, db, start_ts, end_ts):
+        stats = {
+            'rhr_avg' : cls.get_col_avg(db, cls.resting_heart_rate, start_ts, end_ts, True),
+            'rhr_min' : cls.get_col_min(db, cls.resting_heart_rate, start_ts, end_ts, True),
+            'rhr_max' : cls.get_col_max(db, cls.resting_heart_rate, start_ts, end_ts),
+        }
+        return stats
+
+    @classmethod
+    def get_daily_stats(cls, db, day_ts):
+        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
+        stats['day'] = day_ts
+        return stats
+
+    @classmethod
+    def get_weekly_stats(cls, db, first_day_ts):
+        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats['first_day'] = first_day_ts
+        return stats
+
+    @classmethod
+    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
+        stats = cls.get_stats(db, first_day_ts, last_day_ts)
+        stats['first_day'] = first_day_ts
+        return stats

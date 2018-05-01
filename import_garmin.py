@@ -49,7 +49,7 @@ class GarminWeightData():
                     'timestamp' : Fit.Conversions.epoch_ms_to_dt(timestamp_ms),
                     'weight' : weight
                 }
-                GarminDB.Weight.create_or_update(garmindb, point)
+                GarminDB.Weight.create_or_update_not_none(garmindb, point)
             logger.info("DB updated with %d weight entries" % len(json_data))
 
 
@@ -73,6 +73,114 @@ class GarminFitData():
             fp.write_file(Fit.File(file_name, self.english_units))
 
 
+class GarminSleepData():
+
+    activity_levels = {
+        0.0 : 'deep_sleep',
+        1.0 : 'light_sleep',
+        2.0 : 'awake',
+    }
+
+    def __init__(self, input_file, input_dir, latest, debug):
+        self.debug = debug
+        logger.info("Debug: %s" % str(debug))
+        if input_file:
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'sleep_.*\.json')
+        if input_dir:
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'sleep_.*\.json', latest)
+
+    def file_count(self):
+        return len(self.file_names)
+
+    def process_files(self, db_params_dict):
+        garmindb = GarminDB.GarminDB(db_params_dict)
+        def json_parser(entry):
+            if 'calendarDate' in entry:
+                entry['calendarDate'] = dateutil.parser.parse(entry['calendarDate'])
+            if 'sleepTimeSeconds' in entry:
+                entry['sleepTimeSeconds'] = Fit.Conversions.secs_to_dt_time(entry['sleepTimeSeconds'])
+            if 'sleepStartTimestampGMT' in entry:
+                entry['sleepStartTimestampGMT'] = Fit.Conversions.epoch_ms_to_dt(entry['sleepStartTimestampGMT'])
+            if 'sleepEndTimestampGMT' in entry:
+                entry['sleepEndTimestampGMT'] = Fit.Conversions.epoch_ms_to_dt(entry['sleepEndTimestampGMT'])
+            if 'deepSleepSeconds' in entry:
+                entry['deepSleepSeconds'] = Fit.Conversions.secs_to_dt_time(entry['deepSleepSeconds'])
+            if 'lightSleepSeconds' in entry:
+                entry['lightSleepSeconds'] = Fit.Conversions.secs_to_dt_time(entry['lightSleepSeconds'])
+            if 'awakeSleepSeconds' in entry:
+                entry['awakeSleepSeconds'] = Fit.Conversions.secs_to_dt_time(entry['awakeSleepSeconds'])
+            if 'startGMT' in entry:
+                entry['startGMT'] = dateutil.parser.parse(entry['startGMT'])
+            if 'endGMT' in entry:
+                entry['endGMT'] = dateutil.parser.parse(entry['endGMT'])
+            return entry
+        for file_name in self.file_names:
+            json_data = json.load(open(file_name), object_hook=json_parser)
+            daily_sleep = json_data.get('dailySleepDTO', None)
+            if daily_sleep is None:
+                continue
+            date = daily_sleep.get('calendarDate', None)
+            if date is None:
+                continue
+            logger.info("Importing %s" % file_name)
+            day = date.date()
+            day_data = {
+                'day' : day,
+                'start' : daily_sleep.get('sleepStartTimestampGMT', None),
+                'end' : daily_sleep.get('sleepEndTimestampGMT', None),
+                'total_sleep' : daily_sleep.get('sleepTimeSeconds', None),
+                'deep_sleep' : daily_sleep.get('deepSleepSeconds', None),
+                'light_sleep' : daily_sleep.get('lightSleepSeconds', None),
+                'awake' : daily_sleep.get('awakeSleepSeconds', None)
+            }
+            GarminDB.Sleep.create_or_update_not_none(garmindb, day_data)
+            sleep_levels = json_data.get('sleepLevels', None)
+            if sleep_levels is None:
+                continue
+            for sleep_level in sleep_levels:
+                start = sleep_level['startGMT']
+                end = sleep_level['endGMT']
+                event = self.activity_levels[sleep_level['activityLevel']]
+                duration = (datetime.datetime.min + (end - start)).time()
+                level_data = {
+                    'timestamp' : start,
+                    'event' : event,
+                    'duration' : duration
+                }
+                GarminDB.SleepEvents.create_or_update_not_none(garmindb, level_data)
+            logger.info("DB updated %s with %d sleep level entries" % (str(day), len(sleep_levels)))
+        logger.info("DB updated with %d sleep entries" % self.file_count())
+
+
+class GarminRhrData():
+
+    def __init__(self, input_file, input_dir, latest, debug):
+        self.debug = debug
+        logger.info("Debug: %s" % str(debug))
+        if input_file:
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'rhr_.*\.json')
+        if input_dir:
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'rhr_.*\.json', latest)
+
+    def file_count(self):
+        return len(self.file_names)
+
+    def process_files(self, db_params_dict):
+        garmindb = GarminDB.GarminDB(db_params_dict)
+        def json_parser(entry):
+            if 'calendarDate' in entry:
+                entry['calendarDate'] = dateutil.parser.parse(entry['calendarDate'])
+            return entry
+        for file_name in self.file_names:
+            json_data = json.load(open(file_name), object_hook=json_parser)
+            for sample in json_data:
+                data = {
+                    'day' : sample['calendarDate'].date(),
+                    'resting_heart_rate' : sample['value']
+                }
+                GarminDB.RestingHeartRate.create_or_update_not_none(garmindb, data)
+            logger.info("DB updated with %d rhr entries" % len(json_data))
+
 
 def usage(program):
     print '%s [-s <sqlite db path> | -m <user,password,host>] [-i <fit_inputfile> | -d <fit_input_dir>] ...' % program
@@ -88,12 +196,17 @@ def main(argv):
     fit_input_file = None
     weight_input_dir = None
     weight_input_file = None
+    rhr_input_dir = None
+    rhr_input_file = None
+    sleep_input_dir = None
+    sleep_input_file = None
     latest = False
     db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"f:F:elm:s:tw:W:",
-            ["trace", "english", "fit_input_dir=", "fit_input_file=", "latest", "mysql=", "sqlite=", "weight_input_dir=", "weight_input_file="])
+        opts, args = getopt.getopt(argv,"f:F:elm:r:R:s:tw:W:",
+            ["trace", "english", "fit_input_dir=", "fit_input_file=", "latest", "mysql=", "sqlite=",
+             "rhr_input_dir=", "rhr_input_file=", "sleep_input_dir=", "sleep_input_file=", "weight_input_dir=", "weight_input_file="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -112,6 +225,18 @@ def main(argv):
             fit_input_file = arg
         elif opt in ("-l", "--latest"):
             latest = True
+        elif opt in ("-r", "--rhr_input_dir"):
+            logging.debug("RHR input dir: %s" % arg)
+            rhr_input_dir = arg
+        elif opt in ("-R", "--rhr_input_file"):
+            logging.debug("RHR input file: %s" % arg)
+            rhr_input_file = arg
+        elif opt in ("-S", "--sleep_input_dir"):
+            logging.debug("Sleep input dir: %s" % arg)
+            sleep_input_dir = arg
+        elif opt in ("--sleep_input_file"):
+            logging.debug("Sleep input file: %s" % arg)
+            sleep_input_file = arg
         elif opt in ("-w", "--weight_input_dir"):
             logging.debug("Weight input dir: %s" % arg)
             weight_input_dir = arg
@@ -135,7 +260,8 @@ def main(argv):
     else:
         root_logger.setLevel(logging.INFO)
 
-    if not (fit_input_file or fit_input_dir) and not (weight_input_file or weight_input_dir):
+    if (not (fit_input_file or fit_input_dir) and not (weight_input_file or weight_input_dir)
+        and not (sleep_input_file or sleep_input_dir) and not (rhr_input_file or rhr_input_dir)):
         print "Missing or incorrect arguments: Fit or weight input files or directory"
         usage(sys.argv[0])
     if len(db_params_dict) == 0:
@@ -151,6 +277,16 @@ def main(argv):
         gfd = GarminFitData(fit_input_file, fit_input_dir, latest, english_units, debug)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
+
+    if sleep_input_file or sleep_input_dir:
+        gsd = GarminSleepData(sleep_input_file, sleep_input_dir, latest, debug)
+        if gsd.file_count() > 0:
+            gsd.process_files(db_params_dict)
+
+    if rhr_input_file or rhr_input_dir:
+        grhrd = GarminRhrData(rhr_input_file, rhr_input_dir, latest, debug)
+        if grhrd.file_count() > 0:
+            grhrd.process_files(db_params_dict)
 
 
 if __name__ == "__main__":

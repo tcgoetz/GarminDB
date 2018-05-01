@@ -30,9 +30,11 @@ DB_DIR=$(HEALTH_DATA_DIR)/DBs
 TEST_DB_DIR=/tmp/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/$(YEAR)_Monitoring
+SLEEP_FILES_DIR=$(HEALTH_DATA_DIR)/Sleep
 ACTIVITES_FIT_FILES_DIR=$(FIT_FILE_DIR)/Activities
 ACTIVITES_TCX_FILES_DIR=$(HEALTH_DATA_DIR)/TcxFiles
 WEIGHT_FILES_DIR=$(HEALTH_DATA_DIR)/Weight
+RHR_FILES_DIR=$(HEALTH_DATA_DIR)/RHR
 
 BIN_DIR=$(PWD)/bin
 
@@ -151,18 +153,6 @@ import_new_monitoring: download_new_monitoring
 		python import_garmin.py -e -l --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
 	done
 
-## weight
-$(WEIGHT_FILES_DIR):
-	mkdir -p $(WEIGHT_FILES_DIR)
-
-import_weight: $(DB_DIR)
-	python import_garmin.py -e --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
-
-import_new_weight: download_weight import_weight
-
-download_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
-	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
-
 ## activities
 GARMIN_ACT_DB=$(DB_DIR)/garmin_activities.db
 $(GARMIN_ACT_DB): $(DB_DIR) import_activities
@@ -200,7 +190,7 @@ download_all_activities: $(ACTIVITES_FIT_FILES_DIR)
 
 ## generic garmin
 GARMIN_DB=$(DB_DIR)/garmin.db
-$(GARMIN_DB): $(DB_DIR) garmin_config import_weight
+$(GARMIN_DB): $(DB_DIR) garmin_config import_sleep import_weight import_rhr
 
 clean_garmin_summary_db:
 	rm -f $(GARMIN_SUM_DB)
@@ -208,13 +198,51 @@ clean_garmin_summary_db:
 clean_garmin_dbs: clean_garmin_summary_db clean_monitoring_db clean_activities_db
 	rm -f $(GARMIN_DB)
 
+## sleep
+$(SLEEP_FILES_DIR):
+	mkdir -p $(SLEEP_FILES_DIR)
+
+import_sleep: $(DB_DIR)
+	python import_garmin.py -e --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
+
+import_new_sleep: download_sleep
+	python import_garmin.py -e -l --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
+
+download_sleep: $(SLEEP_FILES_DIR)
+	python download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -S "$(SLEEP_FILES_DIR)"
+
+## weight
+$(WEIGHT_FILES_DIR):
+	mkdir -p $(WEIGHT_FILES_DIR)
+
+import_weight: $(DB_DIR)
+	python import_garmin.py -e --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
+
+import_new_weight: download_weight import_weight
+
+download_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
+	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
+
+## rhr
+$(RHR_FILES_DIR):
+	mkdir -p $(RHR_FILES_DIR)
+
+import_rhr: $(DB_DIR)
+	python import_garmin.py -e --rhr_input_dir "$(RHR_FILES_DIR)" --sqlite $(DB_DIR)
+
+import_new_rhr: download_rhr import_rhr
+
+download_rhr: $(DB_DIR) $(RHR_FILES_DIR)
+	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -r "$(RHR_FILES_DIR)"
+
+## digested garmin data
 GARMIN_SUM_DB=$(DB_DIR)/garmin_summary.db
 $(GARMIN_SUM_DB): $(DB_DIR) garmin_summary
 
 garmin_summary: $(GARMIN_DB)
 	python analyze_garmin.py --analyze --dates --sqlite $(DB_DIR)
 
-new_garmin: import_new_monitoring import_new_activities import_new_weight garmin_summary
+new_garmin: import_new_monitoring import_new_activities import_new_weight import_new_sleep import_new_rhr garmin_summary
 
 garmin_config:
 	python analyze_garmin.py -S$(DEFAULT_SLEEP_START),$(DEFAULT_SLEEP_STOP)  --sqlite /Users/tgoetz/HealthData/DBs
