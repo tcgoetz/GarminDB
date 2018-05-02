@@ -80,47 +80,33 @@ class Analyze():
         self.report_sport(GarminDB.Activities.sub_sport, 'Paddling')
         self.report_sport(GarminDB.Activities.sub_sport, 'Resort_Skiing_Snowboarding')
 
+    def get_col_stats(self, table, col, name, ignore_le_zero=False):
+        records = table.row_count(self.garmindb)
+        logger.info("%s records: %d" % (name, records))
+        GarminDB.Summary.set(self.garminsumdb, '%s_Records' % name, records)
+        maximum = table.get_col_max(self.garmindb, col)
+        logger.info("Max %s: %s" % (name, str(maximum)))
+        GarminDB.Summary.set(self.garminsumdb, 'Max_%s' % name, maximum)
+        minimum = table.get_col_min(self.garmindb, col, ignore_le_zero=ignore_le_zero)
+        logger.info("Min %s: %s" % (name, str(minimum)))
+        GarminDB.Summary.set(self.garminsumdb, 'Min_%s' % name, minimum)
+        average = table.get_col_avg(self.garmindb, col)
+        logger.info("Avg %s: %s" % (name, str(average)))
+        GarminDB.Summary.set(self.garminsumdb, 'Avg_%s' % name, average)
+        latest = table.get_col_latest(self.garmindb, col)
+        logger.info("Latest %s: %s" % (name, str(latest)))
+
     def get_weight_stats(self):
-        records = GarminDB.Weight.row_count(self.garmindb)
-        logger.info("Weight records: %d" % records)
-        GarminDB.Summary.set(self.garminsumdb, 'Weight_Records', records)
-        max_weight = GarminDB.Weight.get_col_max(self.garmindb, GarminDB.Weight.weight)
-        logger.info("Max weight: %f" % max_weight)
-        GarminDB.Summary.set(self.garminsumdb, 'Max_Weight', max_weight)
-        min_weight = GarminDB.Weight.get_col_min(self.garmindb, GarminDB.Weight.weight)
-        logger.info("Min weight: %f" % min_weight)
-        GarminDB.Summary.set(self.garminsumdb, 'Min_Weight', min_weight)
-        avg_weight = GarminDB.Weight.get_col_avg(self.garmindb, GarminDB.Weight.weight)
-        logger.info("Avg weight: %f" % avg_weight)
-        GarminDB.Summary.set(self.garminsumdb, 'Avg_Weight', avg_weight)
+        self.get_col_stats(GarminDB.Weight, GarminDB.Weight.weight, 'Weight')
 
     def get_stress_stats(self):
-        records = GarminDB.Stress.row_count(self.garmindb)
-        logger.info("Stress records: %d" % records)
-        GarminDB.Summary.set(self.garminsumdb, 'Stress_Records', records)
-        max_stress = GarminDB.Stress.get_col_max(self.garmindb, GarminDB.Stress.stress)
-        logger.info("Max stress: %f" % max_stress)
-        GarminDB.Summary.set(self.garminsumdb, 'Max_Stress', max_stress)
-        min_stress = GarminDB.Stress.get_col_min(self.garmindb, GarminDB.Stress.stress, ignore_le_zero=True)
-        logger.info("Min stress: %f" % min_stress)
-        GarminDB.Summary.set(self.garminsumdb, 'Min_Stress', min_stress)
-        avg_stress = GarminDB.Stress.get_col_avg(self.garmindb, GarminDB.Stress.stress)
-        logger.info("Avg stress: %f" % avg_stress)
-        GarminDB.Summary.set(self.garminsumdb, 'Avg_Stress', avg_stress)
+        self.get_col_stats(GarminDB.Stress, GarminDB.Stress.stress, 'Stress', True)
 
     def get_rhr_stats(self):
-        records = GarminDB.RestingHeartRate.row_count(self.garmindb)
-        logger.info("RHR records: %d" % records)
-        GarminDB.Summary.set(self.garminsumdb, 'RHR_Records', records)
-        max_rhr = GarminDB.RestingHeartRate.get_col_max(self.garmindb, GarminDB.RestingHeartRate.resting_heart_rate)
-        logger.info("Max rhr: %f" % max_rhr)
-        GarminDB.Summary.set(self.garminsumdb, 'Max_RHR', max_rhr)
-        min_rhr = GarminDB.RestingHeartRate.get_col_min(self.garmindb, GarminDB.RestingHeartRate.resting_heart_rate)
-        logger.info("Min rhr: %f" % min_rhr)
-        GarminDB.Summary.set(self.garminsumdb, 'Min_RHR', min_rhr)
-        avg_rhr = GarminDB.RestingHeartRate.get_col_avg(self.garmindb, GarminDB.RestingHeartRate.resting_heart_rate)
-        logger.info("Avg rhr: %f" % avg_rhr)
-        GarminDB.Summary.set(self.garminsumdb, 'Avg_RHR', avg_rhr)
+        self.get_col_stats(GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'RHR', True)
+
+    def get_sleep_stats(self):
+        self.get_col_stats(GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'Sleep', True)
 
     def get_monitoring_years(self):
         years = GarminDB.Monitoring.get_years(self.mondb)
@@ -294,6 +280,7 @@ def main(argv):
         analyze.get_weight_stats()
         analyze.get_stress_stats()
         analyze.get_rhr_stats()
+        analyze.get_sleep_stats()
         analyze.get_activities_stats()
         analyze.get_monitoring_years()
     if summary:

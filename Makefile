@@ -123,8 +123,8 @@ test_monitoring_clean:
 
 TEST_FIT_FILE_DIR=$(HEALTH_DATA_DIR)/TestFitFiles
 test_monitoring_file: $(TEST_DB_DIR)
-#	python import_garmin_fit.py -e --input_file "$(TEST_FIT_FILE_DIR)/15044952621.fit" --dbpath $(TEST_DB_DIR)
-	python import_garmin_fit.py -t -e --input_dir "$(TEST_FIT_FILE_DIR)" --sqlite $(TEST_DB_DIR) && \
+	python import_garmin.py -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/20053386096.fit" --sqlite $(TEST_DB_DIR)
+#	python import_garmin.py -t -e --fit_input_file "$(TEST_FIT_FILE_DIR)" --sqlite $(TEST_DB_DIR) && \
 	python analyze_garmin.py --analyze --dates  --sqlite $(TEST_DB_DIR)
 
 ##  monitoring
@@ -239,7 +239,7 @@ download_rhr: $(DB_DIR) $(RHR_FILES_DIR)
 GARMIN_SUM_DB=$(DB_DIR)/garmin_summary.db
 $(GARMIN_SUM_DB): $(DB_DIR) garmin_summary
 
-garmin_summary: $(GARMIN_DB)
+garmin_summary:
 	python analyze_garmin.py --analyze --dates --sqlite $(DB_DIR)
 
 new_garmin: import_new_monitoring import_new_activities import_new_weight import_new_sleep import_new_rhr garmin_summary

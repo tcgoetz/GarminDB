@@ -333,6 +333,10 @@ class DBObject():
         return cls.get_col_func(db, col, func.sum, start_ts, end_ts, False)
 
     @classmethod
+    def get_col_latest(cls, db, col):
+        return db.query_session().query(col).order_by(desc(cls.time_col)).limit(1).scalar()
+
+    @classmethod
     def get_col_func_of_max_per_day(cls, db, col, stat_func, start_ts, end_ts):
         max_daily_query = (
             db.query_session().query(func.max(col).label('maxes'))
