@@ -273,12 +273,25 @@ class GarminJsonData():
                 max_speed = max_speed_mps
                 max_temperature = max_temperature_c
                 min_temperature = min_temperature_c
+            sport = self.get_garmin_json_data(json_data['activityType'], 'parentTypeId')
+            sport_mappings = {
+                1   : 'running',
+                2   : 'cycling',
+                3   : 'hiking',
+                4   : 'other',
+                5   : 'mountain_biking',
+                9   : 'walking',
+                17  : sub_sport,
+                29  : 'fitness_equipment',
+                30  : 'elliptical'
+            }
+            sport_name = sport_mappings.get(sport, None)
             activity = {
                 'activity_id'               : activity_id,
                 'name'                      : json_data['activityName'],
                 'description'               : self.get_garmin_json_data(json_data, 'description'),
                 'type'                      : self.get_garmin_json_data(json_data['eventType'], 'typeKey'),
-                'sport'                     : self.get_garmin_json_data(json_data['activityType'], 'parentTypeId'),
+                'sport'                     : sport_name,
                 'sub_sport'                 : sub_sport,
                 'start_time'                : dateutil.parser.parse(self.get_garmin_json_data(json_data, 'startTimeLocal'), ignoretz=True),
                 #'stop_time'                 : dateutil.parser.parse(self.get_garmin_json_data(json_data, 'EndTimestamp', ignoretz=True)),
@@ -289,7 +302,7 @@ class GarminJsonData():
                 'stop_lat'                  : self.get_garmin_json_data(json_data, 'endLatitude', float),
                 'stop_long'                 : self.get_garmin_json_data(json_data, 'endLongitude', float),
                 'distance'                  : distance,
-                #'laps'                      : self.get_garmin_json_data(json_data, 'totalLaps'),
+                'laps'                      : self.get_garmin_json_data(json_data, 'lapCount'),
                 'avg_hr'                    : self.get_garmin_json_data(json_data, 'averageHR', float),
                 'max_hr'                    : self.get_garmin_json_data(json_data, 'maxHR', float),
                 'calories'                  : self.get_garmin_json_data(json_data, 'calories', float),

@@ -74,7 +74,20 @@ class DeviceInfo(GarminDB.Base, DBObject):
 
     @classmethod
     def create_view(cls, db):
-        cls.create_join_view(db, cls.__tablename__ + '_view', Device)
+        view_name = cls.__tablename__ + '_view'
+        query_str = (
+            'SELECT ' +
+                'device_info.id AS id, ' +
+                'device_info.timestamp AS timestamp, ' +
+                'device_info.file_id AS file_id, ' +
+                'device_info.serial_number AS serial_number, ' +
+                'device_info.software_version AS software_version, ' +
+                'devices.manufacturer AS devices_manufacturer, ' +
+                'devices.product AS devices_product, ' +
+                'devices.hardware_version AS devices_hardware_version ' +
+            'FROM device_info JOIN devices ON devices.serial_number = device_info.serial_number'
+        )
+        cls._create_view(db, view_name, query_str)
 
 
 def gc_id_from_path(pathname):
@@ -107,7 +120,18 @@ class File(GarminDB.Base, DBObject):
 
     @classmethod
     def create_view(cls, db):
-        cls.create_join_view(db, cls.__tablename__ + '_view', Device)
+        view_name = cls.__tablename__ + '_view'
+        query_str = (
+            'SELECT ' +
+                'files.id AS id, ' +
+                'files.name AS name, ' +
+                'files.type AS type, ' +
+                'devices.serial_number AS device_serial_number, ' +
+                'devices.manufacturer AS device_manufacturer, ' +
+                'devices.product AS device_product ' +
+            'FROM files JOIN devices ON devices.serial_number = files.serial_number'
+        )
+        cls._create_view(db, view_name, query_str)
 
 
 class Weight(GarminDB.Base, DBObject):

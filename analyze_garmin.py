@@ -231,7 +231,7 @@ def main(argv):
     root_logger.setLevel(logging.INFO)
 
     try:
-        opts, args = getopt.getopt(argv,"adi:t:S:s:", ["analyze", "debug=", "dates", "mysql=", "sleep=", "sqlite="])
+        opts, args = getopt.getopt(argv,"adi:t:s:", ["analyze", "debug=", "dates", "mysql=", "sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -251,11 +251,6 @@ def main(argv):
         elif opt in ("-d", "--dates"):
             logging.debug("Dates")
             dates = True
-        elif opt in ("-S", "--sleep"):
-            logging.debug("Sleep: " + arg)
-            sleep_args = arg.split(',')
-            sleep_period_start = datetime.datetime.strptime(sleep_args[0], "%H:%M").time()
-            sleep_period_stop = datetime.datetime.strptime(sleep_args[1], "%H:%M").time()
         elif opt in ("-s", "--sqlite"):
             logging.debug("Sqlite DB path: %s" % arg)
             db_params_dict['db_type'] = 'sqlite'
@@ -273,8 +268,6 @@ def main(argv):
         usage(sys.argv[0])
 
     analyze = Analyze(db_params_dict, debug - 1)
-    if sleep_period_start and sleep_period_stop:
-        analyze.set_sleep_period(sleep_period_start, sleep_period_stop)
     if dates:
         analyze.get_files_stats()
         analyze.get_weight_stats()
