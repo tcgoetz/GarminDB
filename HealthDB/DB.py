@@ -469,7 +469,10 @@ class KeyValueObject(DBObject):
 
     @classmethod
     def get_time(cls, db, key):
-        return datetime.datetime.strptime(cls.get(db, key), "%H:%M:%S").time()
+        try:
+            return datetime.datetime.strptime(cls.get(db, key), "%H:%M:%S").time()
+        except Exception:
+            return None
 
 
 class DbVersionObject(KeyValueObject):
