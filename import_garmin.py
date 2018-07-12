@@ -82,10 +82,11 @@ class GarminSleepData():
         2.0 : 'awake',
     }
     rem_activity_levels = {
-        0.0 : 'deep_sleep',
-        1.0 : 'light_sleep',
-        2.0 : 'rem',
-        3.0 : 'awake',
+        -1.0    : 'unmeasurable',
+        0.0     : 'deep_sleep',
+        1.0     : 'light_sleep',
+        2.0     : 'rem',
+        3.0     : 'awake',
     }
 
     def __init__(self, input_file, input_dir, latest, debug):
