@@ -89,7 +89,8 @@ class DBObject():
         else:
             test_key_dict = self.__class__.__dict__
         self.not_none_values = 0
-        for key, value in self.translate_columns(self.relational_mappings(db, self.map_columns(values_dict))).iteritems():
+        processed_dict = self.translate_columns(self.relational_mappings(db, self.map_columns(self.__filter_columns(values_dict))))
+        for key, value in processed_dict.iteritems():
             if test_key_dict is None or key in test_key_dict:
                 if value is not None:
                     self.not_none_values += 1

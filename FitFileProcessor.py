@@ -340,7 +340,7 @@ class FitFileProcessor():
         except ValueError as e:
             logger.info("ValueError: %s" % str(e))
         except Exception as e:
-            logger.info("Exception on entry: %s: %s" % (repr(entry), str(e)))
+            logger.info("Exception on monitoring entry: %s: %s" % (repr(entry), str(e)))
 
     def write_device_info_entry(self, fit_file, device_info_message):
         parsed_message = device_info_message.to_dict()
