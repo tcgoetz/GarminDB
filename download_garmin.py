@@ -158,7 +158,8 @@ class Download():
     def get_monitoring_day(self, date):
         logger.info("get_monitoring_day: %s" % str(date))
         response = self.get(self.garmin_connect_download_daily_url + '/' + date.strftime("%Y-%m-%d"))
-        self.save_binary_file(self.temp_dir + '/' + str(date) + '.zip', response)
+        if response:
+            self.save_binary_file(self.temp_dir + '/' + str(date) + '.zip', response)
 
     def get_monitoring(self, date, days):
         logger.info("get_monitoring: %s : %d" % (str(date), days))
