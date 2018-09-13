@@ -1,5 +1,14 @@
 
 
+#
+# Install Python dependancies as root?
+#
+INSTALL_DEPS_TO_SYSTEM ?= y
+ifeq ($(INSTALL_DEPS_TO_SYSTEM), y)
+	DEPS_SUDO = sudo
+else
+	DEPS_SUDO =
+endif
 
 OS := $(shell uname -s)
 ARCH := $(shell uname -p)
@@ -57,20 +66,26 @@ submodules_update:
 	git submodule update
 
 deps_tcxparser:
-	cd python-tcxparser && sudo python setup.py install --record files.txt
+	cd python-tcxparser && python setup.py install --record files.txt
 
 clean_deps_tcxparser:
-	cd python-tcxparser && sudo cat files.txt | xargs rm -rf
+	cd python-tcxparser && cat files.txt | xargs rm -rf
 
-deps: deps_tcxparser
-	sudo pip install --upgrade sqlalchemy
-	sudo pip install --upgrade requests
-	sudo pip install --upgrade python-dateutil || true
+install_deps: deps_tcxparser
+	pip install --upgrade sqlalchemy
+	pip install --upgrade requests
+	pip install --upgrade python-dateutil || true
 
-clean_deps: clean_deps_tcxparser
-	sudo pip uninstall sqlalchemy
-	sudo pip uninstall selenium
-	sudo pip uninstall python-dateutil
+deps:
+	$(DEPS_SUDO) $(MAKE) install_deps
+
+remove_deps: clean_deps_tcxparser
+	pip uninstall sqlalchemy
+	pip uninstall selenium
+	pip uninstall python-dateutil
+
+clean_deps:
+	$(DEPS_SUDO) $(MAKE) remove_deps
 
 clean:
 	rm -rf *.pyc
@@ -198,7 +213,7 @@ clean_garmin_dbs: clean_garmin_summary_db clean_monitoring_db clean_activities_d
 $(SLEEP_FILES_DIR):
 	mkdir -p $(SLEEP_FILES_DIR)
 
-import_sleep: $(DB_DIR)
+import_sleep: download_sleep
 	python import_garmin.py -e --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
 
 import_new_sleep: download_sleep
