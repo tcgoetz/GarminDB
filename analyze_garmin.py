@@ -68,7 +68,7 @@ class Analyze():
         logger.info("Activity records: %d" % records)
         GarminDB.Summary.set(self.garminsumdb, 'Activity_records', records)
         years = GarminDB.Activities.get_years(self.garmin_act_db)
-        logger.info("Activities years: %d (%s)" % (len(years), str(years)))
+        logger.info("Activities years: %d %s" % (len(years), str(years)))
         GarminDB.Summary.set(self.garminsumdb, 'Activity_Years', len(years))
         self.report_sport(GarminDB.Activities.sport, 'Running')
         self.report_sport(GarminDB.Activities.sport, 'Walking')

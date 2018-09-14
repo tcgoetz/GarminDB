@@ -103,23 +103,23 @@ class GarminSleepData():
     def process_files(self, db_params_dict):
         garmindb = GarminDB.GarminDB(db_params_dict)
         def json_parser(entry):
-            if 'calendarDate' in entry:
+            if 'calendarDate' in entry and entry['calendarDate'] is not None:
                 entry['calendarDate'] = dateutil.parser.parse(entry['calendarDate'])
-            if 'sleepTimeSeconds' in entry:
+            if 'sleepTimeSeconds' in entry and entry['sleepTimeSeconds'] is not None:
                 entry['sleepTimeSeconds'] = Fit.Conversions.secs_to_dt_time(entry['sleepTimeSeconds'])
-            if 'sleepStartTimestampGMT' in entry:
+            if 'sleepStartTimestampGMT' in entry and entry['sleepStartTimestampGMT'] is not None:
                 entry['sleepStartTimestampGMT'] = Fit.Conversions.epoch_ms_to_dt(entry['sleepStartTimestampGMT'])
-            if 'sleepEndTimestampGMT' in entry:
+            if 'sleepEndTimestampGMT' in entry and entry['sleepEndTimestampGMT'] is not None:
                 entry['sleepEndTimestampGMT'] = Fit.Conversions.epoch_ms_to_dt(entry['sleepEndTimestampGMT'])
-            if 'deepSleepSeconds' in entry:
+            if 'deepSleepSeconds' in entry and entry['deepSleepSeconds'] is not None:
                 entry['deepSleepSeconds'] = Fit.Conversions.secs_to_dt_time(entry['deepSleepSeconds'])
-            if 'lightSleepSeconds' in entry:
+            if 'lightSleepSeconds' in entry and entry['lightSleepSeconds'] is not None:
                 entry['lightSleepSeconds'] = Fit.Conversions.secs_to_dt_time(entry['lightSleepSeconds'])
-            if 'awakeSleepSeconds' in entry:
+            if 'awakeSleepSeconds' in entry and entry['awakeSleepSeconds'] is not None:
                 entry['awakeSleepSeconds'] = Fit.Conversions.secs_to_dt_time(entry['awakeSleepSeconds'])
-            if 'startGMT' in entry:
+            if 'startGMT' in entry and entry['startGMT'] is not None:
                 entry['startGMT'] = dateutil.parser.parse(entry['startGMT'])
-            if 'endGMT' in entry:
+            if 'endGMT' in entry and entry['endGMT'] is not None:
                 entry['endGMT'] = dateutil.parser.parse(entry['endGMT'])
             return entry
         for file_name in self.file_names:
