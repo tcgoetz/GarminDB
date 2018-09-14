@@ -16,6 +16,16 @@ root_logger = logging.getLogger()
 logger = logging.getLogger(__file__)
 
 
+def parse_json_file(filename, conversions):
+    def json_parser(entry):
+        for (conversion_key, conversion_func) in conversions.iteritems():
+            entry_value = entry.get(conversion_key, None)
+            if entry_value is not None:
+                entry[conversion_key] = conversion_func(entry_value)
+        return entry
+    return json.load(open(filename), object_hook=json_parser)
+
+
 class GarminWeightData():
 
     def __init__(self, input_file, input_dir, latest, english_units, debug):
@@ -32,12 +42,8 @@ class GarminWeightData():
 
     def process_files(self, db_params_dict):
         garmindb = GarminDB.GarminDB(db_params_dict)
-        def json_parser(entry):
-            if 'timestamp' in entry:
-                entry['timestamp'] = dateutil.parser.parse(entry['timestamp'])
-            return entry
         for file_name in self.file_names:
-            json_data = json.load(open(file_name), object_hook=json_parser)
+            json_data = parse_json_file(file_name, {'timestamp' : dateutil.parser.parse})
             for sample in json_data:
                 timestamp_ms = sample.get('date', None)
                 if timestamp_ms is None:
@@ -102,28 +108,19 @@ class GarminSleepData():
 
     def process_files(self, db_params_dict):
         garmindb = GarminDB.GarminDB(db_params_dict)
-        def json_parser(entry):
-            if 'calendarDate' in entry and entry['calendarDate'] is not None:
-                entry['calendarDate'] = dateutil.parser.parse(entry['calendarDate'])
-            if 'sleepTimeSeconds' in entry and entry['sleepTimeSeconds'] is not None:
-                entry['sleepTimeSeconds'] = Fit.Conversions.secs_to_dt_time(entry['sleepTimeSeconds'])
-            if 'sleepStartTimestampGMT' in entry and entry['sleepStartTimestampGMT'] is not None:
-                entry['sleepStartTimestampGMT'] = Fit.Conversions.epoch_ms_to_dt(entry['sleepStartTimestampGMT'])
-            if 'sleepEndTimestampGMT' in entry and entry['sleepEndTimestampGMT'] is not None:
-                entry['sleepEndTimestampGMT'] = Fit.Conversions.epoch_ms_to_dt(entry['sleepEndTimestampGMT'])
-            if 'deepSleepSeconds' in entry and entry['deepSleepSeconds'] is not None:
-                entry['deepSleepSeconds'] = Fit.Conversions.secs_to_dt_time(entry['deepSleepSeconds'])
-            if 'lightSleepSeconds' in entry and entry['lightSleepSeconds'] is not None:
-                entry['lightSleepSeconds'] = Fit.Conversions.secs_to_dt_time(entry['lightSleepSeconds'])
-            if 'awakeSleepSeconds' in entry and entry['awakeSleepSeconds'] is not None:
-                entry['awakeSleepSeconds'] = Fit.Conversions.secs_to_dt_time(entry['awakeSleepSeconds'])
-            if 'startGMT' in entry and entry['startGMT'] is not None:
-                entry['startGMT'] = dateutil.parser.parse(entry['startGMT'])
-            if 'endGMT' in entry and entry['endGMT'] is not None:
-                entry['endGMT'] = dateutil.parser.parse(entry['endGMT'])
-            return entry
         for file_name in self.file_names:
-            json_data = json.load(open(file_name), object_hook=json_parser)
+            conversions = {
+                'calendarDate'              : dateutil.parser.parse,
+                'sleepTimeSeconds'          : Fit.Conversions.secs_to_dt_time,
+                'sleepStartTimestampGMT'    : Fit.Conversions.epoch_ms_to_dt,
+                'sleepEndTimestampGMT'      : Fit.Conversions.epoch_ms_to_dt,
+                'deepSleepSeconds'          : Fit.Conversions.secs_to_dt_time,
+                'lightSleepSeconds'         : Fit.Conversions.secs_to_dt_time,
+                'awakeSleepSeconds'         : Fit.Conversions.secs_to_dt_time,
+                'startGMT'                  : dateutil.parser.parse,
+                'endGMT'                    : dateutil.parser.parse
+            }
+            json_data = parse_json_file(file_name, conversions)
             daily_sleep = json_data.get('dailySleepDTO', None)
             if daily_sleep is None:
                 continue
@@ -181,12 +178,8 @@ class GarminRhrData():
 
     def process_files(self, db_params_dict):
         garmindb = GarminDB.GarminDB(db_params_dict)
-        def json_parser(entry):
-            if 'calendarDate' in entry:
-                entry['calendarDate'] = dateutil.parser.parse(entry['calendarDate'])
-            return entry
         for file_name in self.file_names:
-            json_data = json.load(open(file_name), object_hook=json_parser)
+            json_data = parse_json_file(file_name, {'calendarDate' : dateutil.parser.parse})
             for sample in json_data:
                 data = {
                     'day' : sample['calendarDate'].date(),
