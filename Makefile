@@ -270,7 +270,10 @@ $(FITBIT_DB): $(DB_DIR) import_fitbit_file
 clean_fitbit_db:
 	rm -f $(FITBIT_DB)
 
-import_fitbit_file: $(DB_DIR)
+$(FITBIT_FILE_DIR):
+	mkdir -p $(FITBIT_FILE_DIR)
+
+import_fitbit_file: $(DB_DIR) $(FITBIT_FILE_DIR)
 	python import_fitbit_csv.py -e --input_dir "$(FITBIT_FILE_DIR)" --sqlite $(DB_DIR)
 
 fitbit_summary: $(FITBIT_DB)
@@ -291,7 +294,7 @@ clean_mshealth_db:
 $(MSHEALTH_FILE_DIR):
 	mkdir -p $(MSHEALTH_FILE_DIR)
 
-import_mshealth: $(DB_DIR)
+import_mshealth: $(DB_DIR) $(MSHEALTH_FILE_DIR)
 	python import_mshealth_csv.py -e --input_dir "$(MSHEALTH_FILE_DIR)" --sqlite $(DB_DIR)
 
 mshealth_summary: $(MSHEALTH_DB)
