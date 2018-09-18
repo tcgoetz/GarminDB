@@ -166,6 +166,8 @@ class Download():
         for day in xrange(0, days):
             day_date = date + datetime.timedelta(day)
             self.get_monitoring_day(day_date)
+            # pause for a second between every page access
+            time.sleep(1)
 
     def get_weight_chunk(self, start, end):
         logger.info("get_weight_chunk: %d - %d" % (start, end))
