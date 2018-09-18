@@ -151,9 +151,11 @@ class Download():
     def unzip_files(self, outdir):
         logger.info("unzip_files: " + outdir)
         for filename in os.listdir(self.temp_dir):
-            files_zip = zipfile.ZipFile(self.temp_dir + "/" + filename, 'r')
-            files_zip.extractall(outdir)
-            files_zip.close()
+            match = re.search('.*\.zip', filename)
+            if match:
+                files_zip = zipfile.ZipFile(self.temp_dir + "/" + filename, 'r')
+                files_zip.extractall(outdir)
+                files_zip.close()
 
     def get_monitoring_day(self, date):
         logger.info("get_monitoring_day: %s" % str(date))
@@ -204,11 +206,11 @@ class Download():
         return response.json()
 
     def save_activity_file(self, activity_id_str):
-        logger.info("get_activity_file: " + activity_id_str)
+        logger.debug("save_activity_file: " + activity_id_str)
         response = self.get(self.garmin_connect_download_activity_url + activity_id_str)
         self.save_binary_file(self.temp_dir + '/activity_' + activity_id_str + '.zip', response)
 
-    def get_activities(self, directory, count):
+    def get_activities(self, directory, count, overwite=False):
         logger.info("get_activities: '%s' (%d)" % (directory, count))
         activities = self.get_activity_summaries(0, count)
         for activity in activities:
@@ -216,12 +218,12 @@ class Download():
             activity_name_str = Conversions.printable(activity['activityName'])
             logger.info("get_activities: %s (%s)" % (activity_name_str, activity_id_str))
             json_filename = directory + '/activity_' + activity_id_str
-            if not os.path.isfile(json_filename):
+            if not os.path.isfile(json_filename) or overwite:
                 logger.debug("get_activities: %s <- %s" % (json_filename, repr(activity)))
                 self.save_json_file(json_filename, activity)
                 self.save_activity_file(activity_id_str)
-            # pause for a second between every page access
-            time.sleep(1)
+                # pause for a second between every page access
+                time.sleep(1)
 
     def get_sleep_day(self, directory, date):
         filename = directory + '/sleep_' + str(date) + '.json'
@@ -290,15 +292,16 @@ def main(argv):
     activities = None
     activity_count = 1000
     monitoring = None
+    overwite = False
     weight = None
     rhr = None
     sleep = None
     debug = False
 
     try:
-        opts, args = getopt.getopt(argv,"a:c:d:n:lm:p:r:S:s:tu:w:",
+        opts, args = getopt.getopt(argv,"a:c:d:n:lm:op:r:S:s:tu:w:",
             ["activities=", "activity_count=", "debug", "date=", "days=", "username=", "password=", "latest", "monitoring=", "mysql=",
-             "rhr=", "sqlite=", "sleep=", "weight="])
+             "overwrite", "rhr=", "sqlite=", "sleep=", "weight="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -331,6 +334,8 @@ def main(argv):
         elif opt in ("-m", "--monitoring"):
             logger.debug("Monitoring: " + arg)
             monitoring = arg
+        elif opt in ("-o", "--overwite"):
+            overwite = True
         elif opt in ("-S", "--sleep"):
             logger.debug("Sleep: " + arg)
             sleep = arg
@@ -372,7 +377,7 @@ def main(argv):
 
     if activities and activity_count > 0:
         logger.info("Fetching %d activities" % activity_count)
-        download.get_activities(activities, activity_count)
+        download.get_activities(activities, activity_count, overwite)
         download.unzip_files(activities)
 
     if latest and monitoring:

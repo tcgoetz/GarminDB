@@ -54,8 +54,12 @@ class Analyze():
 
     def report_sport(self, sport_col, sport):
         records = GarminDB.Activities.row_count(self.garmin_act_db, sport_col, sport.lower())
-        logger.info("%s activities: %d" % (sport, records))
+        total_distance = GarminDB.Activities.get_col_sum_for_value(self.garmin_act_db, GarminDB.Activities.distance, sport_col, sport.lower())
+        if total_distance is None:
+            total_distance = 0
+        logger.info("%s activities: %d Total Distance %d miles", sport, records, total_distance)
         GarminDB.Summary.set(self.garminsumdb, sport + '_Activities', records)
+        GarminDB.Summary.set(self.garminsumdb, sport + '_Miles', total_distance)
 
     def get_activities_stats(self):
         activities = GarminDB.Activities.row_count(self.garmin_act_db)

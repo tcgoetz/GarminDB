@@ -199,6 +199,9 @@ download_new_activities: $(ACTIVITES_FIT_FILES_DIR)
 download_all_activities: $(ACTIVITES_FIT_FILES_DIR)
 	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -a "$(ACTIVITES_FIT_FILES_DIR)"
 
+force_download_all_activities: $(ACTIVITES_FIT_FILES_DIR)
+	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -a "$(ACTIVITES_FIT_FILES_DIR)" -o
+
 ## generic garmin
 GARMIN_DB=$(DB_DIR)/garmin.db
 $(GARMIN_DB): $(DB_DIR) garmin_config import_sleep import_weight import_rhr
