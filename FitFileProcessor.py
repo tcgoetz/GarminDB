@@ -45,7 +45,7 @@ class FitFileProcessor():
         logger.debug("Processed %d %s entries for %s" % (len(messages), message_type, fit_file.filename))
 
     def write_message_types(self, fit_file, message_types):
-        logger.info("%s [%s] message types: %s" % (fit_file.filename, fit_file.type(), message_types))
+        logger.info("%s (%s) [%s] message types: %s" % (fit_file.filename, fit_file.time_created(), fit_file.type(), message_types))
         #
         # Some ordering is import: 1. create new file entries 2. create new device entries
         #
