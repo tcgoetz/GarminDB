@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
-    db_version = 1
+    db_version = 2
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -39,7 +39,7 @@ class Device(GarminDB.Base, DBObject):
     serial_number = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
     manufacturer = Column(String, nullable=False)
-    product = Column(String, nullable=False)
+    product = Column(String)
     hardware_version = Column(String)
 
     min_row_values = 2
@@ -184,7 +184,6 @@ class Stress(GarminDB.Base, DBObject):
 
     time_col = synonym("timestamp")
     min_row_values = 2
-    _updateable_fields = ['stress']
 
     @classmethod
     def _find_query(cls, session, values_dict):
@@ -225,6 +224,7 @@ class Sleep(GarminDB.Base, DBObject):
     total_sleep = Column(Time)
     deep_sleep = Column(Time)
     light_sleep = Column(Time)
+    rem_sleep = Column(Time)
     awake = Column(Time)
 
     time_col = synonym("day")
@@ -237,9 +237,12 @@ class Sleep(GarminDB.Base, DBObject):
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
         return {
-            'sleep_avg' : cls.get_time_col_avg(db, cls.total_sleep, start_ts, end_ts, True),
-            'sleep_min' : cls.get_time_col_min(db, cls.total_sleep, start_ts, end_ts, True),
-            'sleep_max' : cls.get_time_col_max(db, cls.total_sleep, start_ts, end_ts),
+            'sleep_avg'     : cls.get_time_col_avg(db, cls.total_sleep, start_ts, end_ts, True),
+            'sleep_min'     : cls.get_time_col_min(db, cls.total_sleep, start_ts, end_ts, True),
+            'sleep_max'     : cls.get_time_col_max(db, cls.total_sleep, start_ts, end_ts),
+            'rem_sleep_avg' : cls.get_time_col_avg(db, cls.rem_sleep, start_ts, end_ts, True),
+            'rem_sleep_min' : cls.get_time_col_min(db, cls.rem_sleep, start_ts, end_ts, True),
+            'rem_sleep_max' : cls.get_time_col_max(db, cls.rem_sleep, start_ts, end_ts),
         }
 
     @classmethod
