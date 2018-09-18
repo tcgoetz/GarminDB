@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class GarminSummaryDB(DB):
     Base = declarative_base()
     db_name = 'garmin_summary'
-    db_version = 3
+    db_version = 4
 
     class DbVersion(Base, DbVersionObject):
         pass
