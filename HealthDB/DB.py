@@ -421,6 +421,11 @@ class DBObject():
         return query.count()
 
     @classmethod
+    def row_count_for_period(cls, db, start_ts, end_ts):
+        query = db.query_session().query(cls).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
+        return query.count()
+
+    @classmethod
     def get_col_func_for_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None):
         values_query = db.query_session().query(stat_func(col)).filter(match_col == match_value)
         if start_ts is not None or end_ts is not None:
@@ -516,14 +521,16 @@ class SummaryBase(DBObject):
     sleep_avg = Column(Time)
     sleep_min = Column(Time)
     sleep_max = Column(Time)
+    rem_sleep_avg = Column(Time)
+    rem_sleep_min = Column(Time)
+    rem_sleep_max = Column(Time)
+    stress_avg = Column(Integer)
     calories_avg = Column(Integer)
     calories_bmr_avg = Column(Integer)
     calories_active_avg = Column(Integer)
+    activities = Column(Integer)
+    activities_calories = Column(Integer)
+    activities_distance = Column(Integer)
 
     min_row_values = 2
-    _updateable_fields = [
-        'hr_avg', 'hr_min', 'hr_max', 'rhr_avg', 'rhr_min', 'rhr_max', 'weight_avg', 'weight_min', 'weight_max', 'stress_avg',
-        'intensity_time', 'moderate_activity_time', 'vigorous_activity_time', 'steps', 'floors', 'sleep_avg', 'sleep_min', 'sleep_max',
-        'calories_avg', 'calories_bmr_avg', 'calories_active_avg'
-    ]
 
