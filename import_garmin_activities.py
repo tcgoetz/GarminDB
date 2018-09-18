@@ -248,7 +248,6 @@ class GarminJsonData():
         for file_name in self.file_names:
             json_data = json.load(open(file_name))
             activity_id = json_data['activityId']
-            sub_sport = json_data['activityType']['typeKey']
 
             distance_in_meters = self.get_garmin_json_data(json_data, 'distance', float)
             ascent_in_meters = self.get_garmin_json_data(json_data, 'elevationGain', float)
@@ -274,6 +273,7 @@ class GarminJsonData():
                 max_temperature = max_temperature_c
                 min_temperature = min_temperature_c
             sport = self.get_garmin_json_data(json_data['activityType'], 'parentTypeId')
+            sub_sport = json_data['activityType']['typeKey']
             sport_mappings = {
                 1   : 'running',
                 2   : 'cycling',
@@ -283,7 +283,11 @@ class GarminJsonData():
                 9   : 'walking',
                 17  : sub_sport,
                 29  : 'fitness_equipment',
-                30  : 'elliptical'
+                30  : 'elliptical',
+                57  : 'paddling',
+                63  : 'inline_skating',
+                67  : 'resort_skiing_snowboarding',
+                87  : 'stand_up_paddleboarding'
             }
             sport_name = sport_mappings.get(sport, None)
             activity = {
