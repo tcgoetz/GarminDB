@@ -56,6 +56,7 @@ DEFAULT_SLEEP_STOP=06:00
 #
 all: update_dbs
 
+# install all needed code
 setup: update deps
 
 update: submodules_update
@@ -94,6 +95,20 @@ clean:
 	rm -rf GarminDB/*.pyc
 	rm -rf FitBitDB/*.pyc
 
+clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs clean_summary_db
+
+# build dbs from already downloaded data files
+build_dbs: garmin_dbs mshealth_db fitbit_db mshealth_summary fitbit_summary
+
+# delete the exisitng dbs and build new dbs from already downloaded data files
+rebuild_dbs: clean_dbs build_dbs
+
+# download data files for the period specified by GC_DATE and GC_DAYS and build the dbs
+create_dbs: download_garmin build_dbs
+
+# update the exisitng dbs by downloading data files for dates after the last in the dbs and update the dbs
+update_dbs: update_garmin
+
 
 #
 # Fitness System independant
@@ -102,14 +117,6 @@ SUMMARY_DB=$(DB_DIR)/summary.db
 $(SUMMARY_DB): $(DB_DIR)
 
 summary: mshealth_summary fitbit_summary garmin_summary
-
-build_dbs: garmin_dbs mshealth_summary fitbit_summary
-
-rebuild_dbs: clean_dbs build_dbs
-
-update_dbs: new_garmin
-
-clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs clean_summary_db
 
 clean_summary_db:
 	rm -f $(SUMMARY_DB)
@@ -135,10 +142,9 @@ $(TEST_DB_DIR):
 test_monitoring_clean:
 	rm -rf $(TEST_DB_DIR)
 
-TEST_FIT_FILE_DIR=$(HEALTH_DATA_DIR)/TestFitFiles
+TEST_FIT_FILE=2930357413
 test_monitoring_file: $(TEST_DB_DIR)
-	python import_garmin.py -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/20053386096.fit" --sqlite $(TEST_DB_DIR)
-#	python import_garmin.py -t -e --fit_input_file "$(TEST_FIT_FILE_DIR)" --sqlite $(TEST_DB_DIR) && \
+	python import_garmin.py -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_FIT_FILE).fit" --sqlite $(TEST_DB_DIR)
 	python analyze_garmin.py --analyze --dates  --sqlite $(TEST_DB_DIR)
 
 ##  monitoring
@@ -177,7 +183,7 @@ clean_activities_db:
 $(ACTIVITES_FIT_FILES_DIR):
 	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
 
-TEST_ACTIVITY_ID=1589795363
+TEST_ACTIVITY_ID=2930357413
 test_import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/$(TEST_ACTIVITY_ID).fit" --sqlite $(DB_DIR)
 
@@ -216,14 +222,17 @@ clean_garmin_dbs: clean_garmin_summary_db clean_monitoring_db clean_activities_d
 $(SLEEP_FILES_DIR):
 	mkdir -p $(SLEEP_FILES_DIR)
 
-import_sleep: download_sleep
-	python import_garmin.py -e --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
-
-import_new_sleep: download_sleep
-	python import_garmin.py -e -l --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
-
 download_sleep: $(SLEEP_FILES_DIR)
 	python download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -S "$(SLEEP_FILES_DIR)"
+
+import_sleep: $(SLEEP_FILES_DIR)
+	python import_garmin.py -e --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
+
+download_new_sleep: $(SLEEP_FILES_DIR)
+	python download_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -S "$(SLEEP_FILES_DIR)"
+
+import_new_sleep: download_new_sleep
+	python import_garmin.py -e -l --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
 
 ## weight
 $(WEIGHT_FILES_DIR):
@@ -256,10 +265,12 @@ $(GARMIN_SUM_DB): $(DB_DIR) garmin_summary
 garmin_summary:
 	python analyze_garmin.py --analyze --dates --sqlite $(DB_DIR)
 
-new_garmin: import_new_monitoring import_new_activities import_new_weight import_new_sleep import_new_rhr garmin_summary
-
 garmin_config:
-	python analyze_garmin.py -S$(DEFAULT_SLEEP_START),$(DEFAULT_SLEEP_STOP)  --sqlite /Users/tgoetz/HealthData/DBs
+	python analyze_garmin.py -S$(DEFAULT_SLEEP_START),$(DEFAULT_SLEEP_STOP) --sqlite /Users/tgoetz/HealthData/DBs
+
+update_garmin: import_new_monitoring import_new_activities import_new_weight import_new_sleep import_new_rhr garmin_summary
+
+download_garmin: download_monitoring download_all_activities download_sleep download_weight download_rhr
 
 garmin_dbs: $(GARMIN_DB) $(GARMIN_MON_DB) $(GARMIN_ACT_DB) $(GARMIN_SUM_DB)
 
