@@ -45,7 +45,7 @@ class FitFileProcessor():
         logger.debug("Processed %d %s entries for %s" % (len(messages), message_type, fit_file.filename))
 
     def write_message_types(self, fit_file, message_types):
-        logger.info("%s (%s) [%s] message types: %s" % (fit_file.filename, fit_file.time_created(), fit_file.type(), message_types))
+        logger.info("Importing %s (%s) [%s] with message types: %s" % (fit_file.filename, fit_file.time_created(), fit_file.type(), message_types))
         #
         # Some ordering is import: 1. create new file entries 2. create new device entries
         #
@@ -354,8 +354,8 @@ class FitFileProcessor():
             }
             try:
                 GarminDB.Device.create_or_update_not_none(self.garmin_db, device)
-            except ValueError:
-                logger.debug("Message not written: " + repr(parsed_message))
+            except Exception:
+                logger.error("Message not written: " + repr(parsed_message))
             device_info = {
                 'file_id'               : GarminDB.File.get(self.garmin_db, fit_file.filename),
                 'serial_number'         : parsed_message['serial_number'],
@@ -366,5 +366,5 @@ class FitFileProcessor():
             }
             try:
                 GarminDB.DeviceInfo.create_or_update_not_none(self.garmin_db, device_info)
-            except Exception as e:
+            except Exception:
                 logger.warning("Device info message not written: " + repr(parsed_message))
