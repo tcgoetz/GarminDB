@@ -362,8 +362,8 @@ def main(argv):
     else:
         logger.setLevel(logging.INFO)
 
-    if ((not date or not days) and not latest) and monitoring:
-        print "Missing arguments: specify date and days or latest when scraping monitoring data"
+    if ((not date or not days) and not latest) and (monitoring or sleep):
+        print "Missing arguments: specify date and days or latest when downloading monitoring or sleep data"
         usage(sys.argv[0])
     if not username or not password:
         print "Missing arguments: need username and password"
@@ -384,13 +384,26 @@ def main(argv):
         mondb = GarminDB.MonitoringDB(db_params_dict)
         last_ts = GarminDB.Monitoring.latest_time(mondb)
         if last_ts is None:
-            days = 365
+            days = 31
             date = datetime.datetime.now().date() - datetime.timedelta(days)
             logger.info("Automatic date not found, using: " + str(date))
         else:
             # start from the day after the last day in the DB
             logger.info("Automatically downloading monitoring data from: " + str(last_ts))
             date = last_ts.date() + datetime.timedelta(1)
+            days = (datetime.datetime.now().date() - date).days
+
+    if latest and sleep:
+        garmindb = GarminDB.GarminDB(db_params_dict)
+        last_ts = GarminDB.Sleep.latest_time(garmindb)
+        if last_ts is None:
+            days = 31
+            date = datetime.datetime.now().date() - datetime.timedelta(days)
+            logger.info("Automatic date not found, using: " + str(date))
+        else:
+            # start from the day after the last day in the DB
+            logger.info("Automatically downloading sleep data from: " + str(last_ts))
+            date = last_ts + datetime.timedelta(1)
             days = (datetime.datetime.now().date() - date).days
 
     if monitoring and days > 0:
