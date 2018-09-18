@@ -23,12 +23,12 @@ ifeq ($(OS), Darwin)
 	# If your using iCloud Keychaion, you have to copy the entry from the iCloud keychain to the login keychain using KeychainAccess.app.
 	GC_USER ?= $(shell security find-internet-password -s sso.garmin.com | egrep acct | egrep -o "[A-Za-z]*@[A-Za-z.]*" )
 	GC_PASSWORD ?= $(shell security find-internet-password -s sso.garmin.com -w)
-	GC_DATE ?= $(shell date -v-1y +'%m/%d/%Y')
+	GC_DATE ?= $(shell date -v-1m +'%m/%d/%Y')
 else
 	# store the username and password in ~/.garmindb.conf ?
-	GC_DATE ?= $(shell date -d '-1 year' +'%m/%d/%Y')
+	GC_DATE ?= $(shell date -d '-1 month' +'%m/%d/%Y')
 endif
-GC_DAYS ?= 365
+GC_DAYS ?= 31
 
 
 HEALTH_DATA_DIR=$(HOME)/HealthData
