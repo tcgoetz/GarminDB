@@ -190,6 +190,8 @@ class Download():
                 break
             data.extend(chunk_data)
             end -= chunk_size
+            # pause for a second between every page access
+            time.sleep(1)
         return data
 
     def get_activity_summaries(self, start, count):
@@ -218,6 +220,8 @@ class Download():
                 logger.debug("get_activities: %s <- %s" % (json_filename, repr(activity)))
                 self.save_json_file(json_filename, activity)
                 self.save_activity_file(activity_id_str)
+            # pause for a second between every page access
+            time.sleep(1)
 
     def get_sleep_day(self, directory, date):
         filename = directory + '/sleep_' + str(date) + '.json'
@@ -234,6 +238,8 @@ class Download():
         for day in xrange(0, days):
             day_date = date + datetime.timedelta(day)
             self.get_sleep_day(directory, day_date)
+            # pause for a second between every page access
+            time.sleep(1)
 
     def get_rhr_chunk(self, start, end):
         start_str = start.strftime("%Y-%m-%d")
@@ -260,6 +266,8 @@ class Download():
                 break
             data.extend(chunk_data)
             end -= chunk_size
+            # pause for a second between every page access
+            time.sleep(1)
         return data
 
 
