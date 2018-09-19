@@ -202,8 +202,6 @@ class FitFileProcessor():
             'stop_lat'                          : message_dict.get('end_position_lat', None),
             'stop_long'                         : message_dict.get('end_position_long', None),
             'distance'                          : message_dict.get('dev_User_distance', message_dict.get('total_distance', None)),
-            'sport'                             : sport,
-            'sub_sport'                         : sub_sport,
             'cycles'                            : self.get_field_value(message_dict, 'total_cycles'),
             'laps'                              : self.get_field_value(message_dict, 'num_laps'),
             'avg_hr'                            : self.get_field_value(message_dict, 'avg_heart_rate'),
@@ -220,6 +218,13 @@ class FitFileProcessor():
             'training_effect'                   : message_dict.get('total_training_effect', None),
             'anaerobic_training_effect'         : message_dict.get('total_anaerobic_training_effect', None)
         }
+        # json metadata gives better values for sport and subsport, so use existing value if set
+        current = GarminDB.Activities.get_id(self.garmin_act_db, activity_id)
+        if current:
+            if current.sport is None:
+                activity['sport'] = sport
+            if current.sub_sport is None:
+                activity['sub_sport'] = sub_sport
         GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
         try:
             function = getattr(self, 'write_' + sport + '_entry')

@@ -43,7 +43,7 @@ class Device(GarminDB.Base, DBObject):
     hardware_version = Column(String)
 
     min_row_values = 2
-    _updateable_fields = ['hardware_version']
+    _updateable_fields = ['hardware_version', 'product']
 
     @classmethod
     def _find_query(cls, session, values_dict):

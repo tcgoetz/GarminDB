@@ -84,14 +84,14 @@ class GarminSleepData():
     old_activity_levels = {
         0.0 : 'deep_sleep',
         1.0 : 'light_sleep',
-        2.0 : 'rem',
+        2.0 : 'rem_sleep',
         2.0 : 'awake',
     }
     rem_activity_levels = {
         -1.0    : 'unmeasurable',
         0.0     : 'deep_sleep',
         1.0     : 'light_sleep',
-        2.0     : 'rem',
+        2.0     : 'rem_sleep',
         3.0     : 'awake',
     }
 
@@ -116,6 +116,7 @@ class GarminSleepData():
                 'sleepEndTimestampGMT'      : Fit.Conversions.epoch_ms_to_dt,
                 'deepSleepSeconds'          : Fit.Conversions.secs_to_dt_time,
                 'lightSleepSeconds'         : Fit.Conversions.secs_to_dt_time,
+                'remSleepSeconds'           : Fit.Conversions.secs_to_dt_time,
                 'awakeSleepSeconds'         : Fit.Conversions.secs_to_dt_time,
                 'startGMT'                  : dateutil.parser.parse,
                 'endGMT'                    : dateutil.parser.parse
@@ -127,7 +128,7 @@ class GarminSleepData():
             date = daily_sleep.get('calendarDate', None)
             if date is None:
                 continue
-            logger.info("Importing %s" % file_name)
+            logger.debug("Importing %s" % file_name)
             day = date.date()
             day_data = {
                 'day' : day,
@@ -136,6 +137,7 @@ class GarminSleepData():
                 'total_sleep' : daily_sleep.get('sleepTimeSeconds', None),
                 'deep_sleep' : daily_sleep.get('deepSleepSeconds', None),
                 'light_sleep' : daily_sleep.get('lightSleepSeconds', None),
+                'rem_sleep' : daily_sleep.get('remSleepSeconds', None),
                 'awake' : daily_sleep.get('awakeSleepSeconds', None)
             }
             GarminDB.Sleep.create_or_update_not_none(garmindb, day_data)

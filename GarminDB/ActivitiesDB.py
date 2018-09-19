@@ -85,6 +85,10 @@ class Activities(ActivitiesDB.Base, DBObject):
         return session.query(cls).filter(cls.activity_id == values_dict['activity_id'])
 
     @classmethod
+    def get_id(cls, db, activity_id):
+        return cls.find_one(db, {'activity_id' : activity_id})
+
+    @classmethod
     def get_stats(cls, db, start_ts, end_ts):
         stats = {
             'activities'            : cls.row_count_for_period(db, start_ts, end_ts),
