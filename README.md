@@ -21,7 +21,7 @@ The scripts are automated with [Make](https://www.gnu.org/software/make/manual/m
 
 * Git clone GarminDB repo. Get the command from the green button on the project home page.
 * Run `make setup` get the scripts ready to process data.
-* Run `make GC_DATE=<date to start downloading data from> GC_DAYS={number of days of data to download} GC_USER={username} GC_PASSWORD={password} build_dbs`.
+* Run `make GC_DATE=<date to start downloading data from> GC_DAYS={number of days of data to download} GC_USER={username} GC_PASSWORD={password} create_dbs` for your first run.
 * Keep all of your local data up to date by running only one command: `make GC_USER={username} GC_PASSWORD={password}`.
 * Run `make backup` to backup your DBs.
 
