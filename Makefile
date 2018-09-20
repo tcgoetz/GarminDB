@@ -54,10 +54,30 @@ DEFAULT_SLEEP_STOP=06:00
 #
 # Master targets
 #
+
 all: update_dbs
 
 # install all needed code
 setup: update deps
+
+
+clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs clean_summary_db
+
+# build dbs from already downloaded data files
+build_dbs: garmin_dbs mshealth_db fitbit_db mshealth_summary fitbit_summary
+
+# delete the exisitng dbs and build new dbs from already downloaded data files
+rebuild_dbs: clean_dbs build_dbs
+
+# download data files for the period specified by GC_DATE and GC_DAYS and build the dbs
+create_dbs: download_garmin build_dbs
+
+# update the exisitng dbs by downloading data files for dates after the last in the dbs and update the dbs
+update_dbs: update_garmin
+
+#
+#
+#
 
 update: submodules_update
 	git pull --rebase
@@ -76,6 +96,7 @@ install_deps: deps_tcxparser
 	pip install --upgrade sqlalchemy
 	pip install --upgrade requests
 	pip install --upgrade python-dateutil || true
+	pip install --upgrade enum34
 
 deps:
 	$(DEPS_SUDO) $(MAKE) install_deps
@@ -84,6 +105,7 @@ remove_deps: clean_deps_tcxparser
 	pip uninstall sqlalchemy
 	pip uninstall selenium
 	pip uninstall python-dateutil
+	pip uninstall enum34
 
 clean_deps:
 	$(DEPS_SUDO) $(MAKE) remove_deps
@@ -94,20 +116,6 @@ clean:
 	rm -rf HealthDB/*.pyc
 	rm -rf GarminDB/*.pyc
 	rm -rf FitBitDB/*.pyc
-
-clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs clean_summary_db
-
-# build dbs from already downloaded data files
-build_dbs: garmin_dbs mshealth_db fitbit_db mshealth_summary fitbit_summary
-
-# delete the exisitng dbs and build new dbs from already downloaded data files
-rebuild_dbs: clean_dbs build_dbs
-
-# download data files for the period specified by GC_DATE and GC_DAYS and build the dbs
-create_dbs: download_garmin build_dbs
-
-# update the exisitng dbs by downloading data files for dates after the last in the dbs and update the dbs
-update_dbs: update_garmin
 
 
 #
@@ -142,10 +150,10 @@ $(TEST_DB_DIR):
 test_monitoring_clean:
 	rm -rf $(TEST_DB_DIR)
 
-TEST_FIT_FILE=2930357413
+TEST_FIT_FILE ?= 10724054307
 test_monitoring_file: $(TEST_DB_DIR)
-	python import_garmin.py -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_FIT_FILE).fit" --sqlite $(TEST_DB_DIR)
-	python analyze_garmin.py --analyze --dates  --sqlite $(TEST_DB_DIR)
+	#python import_garmin.py -t -e --fit_input_file "$(FIT_FILE_DIR)/2017_Monitoring/$(TEST_FIT_FILE).fit" --sqlite $(TEST_DB_DIR)
+	python import_garmin.py -t -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_FIT_FILE).fit" --sqlite $(TEST_DB_DIR)
 
 ##  monitoring
 GARMIN_MON_DB=$(DB_DIR)/garmin_monitoring.db
@@ -183,7 +191,7 @@ clean_activities_db:
 $(ACTIVITES_FIT_FILES_DIR):
 	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
 
-TEST_ACTIVITY_ID=2930357413
+TEST_ACTIVITY_ID ?= 3024080986
 test_import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/$(TEST_ACTIVITY_ID).fit" --sqlite $(DB_DIR)
 

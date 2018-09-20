@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, string, logging, datetime, traceback, json, dateutil.parser
+import os, sys, getopt, string, logging, datetime, traceback, json, dateutil.parser, enum
 
 import Fit
 import FileProcessor
@@ -79,21 +79,21 @@ class GarminFitData():
             fp.write_file(Fit.File(file_name, self.english_units))
 
 
-class GarminSleepData():
+class SleepActivityLevels(enum.Enum):
+    deep_sleep = 0.0
+    light_sleep = 1.0
+    awake = 2.0
 
-    old_activity_levels = {
-        0.0 : 'deep_sleep',
-        1.0 : 'light_sleep',
-        2.0 : 'rem_sleep',
-        2.0 : 'awake',
-    }
-    rem_activity_levels = {
-        -1.0    : 'unmeasurable',
-        0.0     : 'deep_sleep',
-        1.0     : 'light_sleep',
-        2.0     : 'rem_sleep',
-        3.0     : 'awake',
-    }
+
+class RemSleepActivityLevels(enum.Enum):
+    unmeasurable = -1.0
+    deep_sleep = 0.0
+    light_sleep = 1.0
+    rem_sleep = 2.0
+    awake = 3.0
+
+
+class GarminSleepData():
 
     def __init__(self, input_file, input_dir, latest, debug):
         self.debug = debug
@@ -144,20 +144,19 @@ class GarminSleepData():
             sleep_levels = json_data.get('sleepLevels', None)
             if sleep_levels is None:
                 continue
-            if json_data.get('remSleepData', None):
-                sleep_activity_levels = self.rem_activity_levels
-                logger.info("Importing %s (%s) with REM data", file_name, day_data['day'])
-            else:
-                logger.info("Importing %s (%s) without REM data", file_name, day_data['day'])
-                sleep_activity_levels = self.old_activity_levels
             for sleep_level in sleep_levels:
                 start = sleep_level['startGMT']
                 end = sleep_level['endGMT']
-                event = sleep_activity_levels[sleep_level['activityLevel']]
+                if json_data.get('remSleepData', None):
+                    event = RemSleepActivityLevels(sleep_level['activityLevel'])
+                    logger.info("Importing %s (%s) with REM data", file_name, day_data['day'])
+                else:
+                    logger.info("Importing %s (%s) without REM data", file_name, day_data['day'])
+                    event = SleepActivityLevels(sleep_level['activityLevel'])
                 duration = (datetime.datetime.min + (end - start)).time()
                 level_data = {
                     'timestamp' : start,
-                    'event' : event,
+                    'event' : event.name,
                     'duration' : duration
                 }
                 GarminDB.SleepEvents.create_or_update_not_none(garmindb, level_data)

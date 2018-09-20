@@ -5,6 +5,7 @@
 #
 
 from HealthDB import *
+from Fit import FieldEnums
 
 
 logger = logging.getLogger(__name__)
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
-    db_version = 2
+    db_version = 3
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -38,7 +39,7 @@ class Device(GarminDB.Base, DBObject):
 
     serial_number = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
-    manufacturer = Column(String, nullable=False)
+    manufacturer = Column(Enum(FieldEnums.Manufacturer), nullable=False)
     product = Column(String)
     hardware_version = Column(String)
 
@@ -99,7 +100,7 @@ class File(GarminDB.Base, DBObject):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
-    type = Column(String, nullable=False)
+    type = Column(Enum(FieldEnums.FileType), nullable=False)
     serial_number = Column(Integer, ForeignKey('devices.serial_number'))
 
     _col_mappings = {

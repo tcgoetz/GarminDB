@@ -71,7 +71,7 @@ class FitFileProcessor():
                 'serial_number' : parsed_message['serial_number'],
                 'timestamp'     : parsed_message['time_created'],
                 'manufacturer'  : parsed_message['manufacturer'],
-                'product'       : parsed_message['product'],
+                'product'       : parsed_message['product'].name,
             }
             GarminDB.Device.find_or_create(self.garmin_db, device)
         file = {
@@ -174,7 +174,7 @@ class FitFileProcessor():
 
     def write_fitness_equipment_entry(self, fit_file, activity_id, sub_sport, message_dict):
         try:
-            function = getattr(self, 'write_' + sub_sport + '_entry')
+            function = getattr(self, 'write_' + sub_sport.name + '_entry')
             function(fit_file, activity_id, sub_sport, message_dict)
         except AttributeError:
             logger.info("No sub sport handler type %s from %s: %s" % (sub_sport, fit_file.filename, str(message_dict)))
@@ -222,12 +222,12 @@ class FitFileProcessor():
         current = GarminDB.Activities.get_id(self.garmin_act_db, activity_id)
         if current:
             if current.sport is None:
-                activity['sport'] = sport
+                activity['sport'] = sport.name
             if current.sub_sport is None:
-                activity['sub_sport'] = sub_sport
+                activity['sub_sport'] = sub_sport.name
         GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
         try:
-            function = getattr(self, 'write_' + sport + '_entry')
+            function = getattr(self, 'write_' + sport.name + '_entry')
             function(fit_file, activity_id, sub_sport, message_dict)
         except AttributeError:
             logger.info("No sport handler for type %s from %s: %s" % (sport, fit_file.filename, str(message_dict)))
@@ -318,13 +318,13 @@ class FitFileProcessor():
 
     def write_monitoring_info_entry(self, fit_file, message):
         parsed_message = message.to_dict()
-        activity_type = parsed_message['activity_type']
-        if isinstance(activity_type, list):
-            for index, type in enumerate(activity_type):
+        activity_types = parsed_message['activity_type']
+        if isinstance(activity_types, list):
+            for index, activity_type in enumerate(activity_types):
                 entry = {
                     'file_id'                   : GarminDB.File.get(self.garmin_db, fit_file.filename),
                     'timestamp'                 : parsed_message['local_timestamp'],
-                    'activity_type'             : type,
+                    'activity_type'             : activity_type,
                     'resting_metabolic_rate'    : parsed_message['resting_metabolic_rate'],
                     'cycles_to_distance'        : parsed_message['cycles_to_distance'][index],
                     'cycles_to_calories'        : parsed_message['cycles_to_calories'][index]
@@ -354,7 +354,7 @@ class FitFileProcessor():
                 'serial_number'     : parsed_message['serial_number'],
                 'timestamp'         : parsed_message['timestamp'],
                 'manufacturer'      : parsed_message['manufacturer'],
-                'product'           : parsed_message['product'],
+                'product'           : parsed_message['product'].name,
                 'hardware_version'  : parsed_message.get('hardware_version', None),
             }
             try:

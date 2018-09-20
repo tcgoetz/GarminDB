@@ -5,7 +5,7 @@
 #
 
 from HealthDB import *
-from Fit import Conversions
+from Fit import Conversions, FieldEnums
 
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class MonitoringDB(DB):
     Base = declarative_base()
     db_name = 'garmin_monitoring'
-    db_version = 2
+    db_version = 3
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -27,36 +27,16 @@ class MonitoringDB(DB):
         self.version.version_check(self, self.db_version)
 
 
-class ActivityType(MonitoringDB.Base, DBObject):
-    __tablename__ = 'activity_type'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True)
-
-    min_row_values = 1
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.name == values_dict['name'])
-
-    @classmethod
-    def get_id(cls, db, name):
-        return cls.find_or_create_id(db, {'name' : name})
-
-
 class MonitoringInfo(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_info'
 
     timestamp = Column(DateTime, primary_key=True)
     file_id = Column(Integer, nullable=False)
-    activity_type_id = Column(Integer, ForeignKey('activity_type.id'))
+    activity_type = Column(Enum(FieldEnums.ActivityType))
     resting_metabolic_rate = Column(Integer)
     cycles_to_distance = Column(FLOAT)
     cycles_to_calories = Column(FLOAT)
 
-    _relational_mappings = {
-        'activity_type' : ('activity_type_id', ActivityType.get_id)
-    }
     time_col = synonym("timestamp")
     min_row_values = 3
 
@@ -258,27 +238,21 @@ class Monitoring(MonitoringDB.Base, DBObject):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, nullable=False)
-    activity_type_id = Column(Integer, ForeignKey('activity_type.id'))
-
+    activity_type = Column(Enum(FieldEnums.ActivityType))
     intensity = Column(Integer)
-
     duration = Column(Time)
     distance = Column(Float)
     cum_active_time = Column(Time)
     active_calories = Column(Integer)
-
     steps = Column(Integer)
     strokes = Column(Integer)
     cycles = Column(Float)
 
     __table_args__ = (
-        UniqueConstraint("timestamp", "activity_type_id", "intensity", "duration"),
+        UniqueConstraint("timestamp", "activity_type", "intensity", "duration"),
     )
 
     time_col = synonym("timestamp")
-    _relational_mappings = {
-        'activity_type' : ('activity_type_id', ActivityType.get_id)
-    }
     min_row_values = 2
 
     @classmethod
@@ -287,11 +261,11 @@ class Monitoring(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_activity(cls, db, start_ts, end_ts):
-        return db.query_session().query(cls.timestamp, cls.activity_type_id, cls.intensity).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).all()
+        return db.query_session().query(cls.timestamp, cls.activity_type, cls.intensity).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).all()
 
     @classmethod
-    def get_active_calories(cls, db, activity_type_id, start_ts, end_ts):
-        active_calories = cls.get_col_avg_of_max_per_day_for_value(db, cls.active_calories, cls.activity_type_id, activity_type_id, start_ts, end_ts)
+    def get_active_calories(cls, db, activity_type, start_ts, end_ts):
+        active_calories = cls.get_col_avg_of_max_per_day_for_value(db, cls.active_calories, cls.activity_type, activity_type, start_ts, end_ts)
         if active_calories is not None:
             return active_calories
         return 0

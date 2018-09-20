@@ -70,11 +70,11 @@ class GarminTcxData():
             end_time = dateutil.parser.parse(tcx.completed_at, ignoretz=True)
             start_time = dateutil.parser.parse(tcx.started_at, ignoretz=True)
             manufacturer = 'Unknown'
-            product = tcx.creator
+            product = FieldEnums.Product(tcx.creator)
             if product is not None:
                 match = re.search('Microsoft', product)
                 if match:
-                    manufacturer = 'Microsoft'
+                    manufacturer = FieldEnums.Manufacturer.Microsoft
             serial_number = tcx.creator_version
             if serial_number is None or serial_number ==0:
                 serial_number = GarminDB.Device.unknown_device_serial_number
