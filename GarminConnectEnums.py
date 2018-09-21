@@ -15,6 +15,7 @@ class Event(enum.Enum):
     race            = 1
     recreation      = 2
     fitness         = 8
+    uncategorized   = 9
 
     @classmethod
     def from_json(cls, json_data):
