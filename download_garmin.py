@@ -87,7 +87,7 @@ class Download():
             return json.loads(json_text)
 
     def login(self, username, password):
-        logger.debug("login: %s %s" % (username, password))
+        logger.debug("login: %s %s", username, password)
         params = {
             'service': self.garmin_connect_post_login_url,
             'webhost': self.garmin_connect_base_url,
@@ -133,7 +133,7 @@ class Download():
         self.english_units = (self.user_prefs['measurementSystem'] == 'statute_us')
         self.social_profile = self.get_json(response.text, 'VIEWER_SOCIAL_PROFILE')
         self.full_name = self.social_profile['fullName']
-        logger.debug("login: %s (%s) english units %s" % (self.full_name, self.display_name, str(self.english_units)))
+        logger.debug("login: %s (%s) english units %s", self.full_name, self.display_name, str(self.english_units))
         return True
 
     def save_binary_file(self, filename, response):
@@ -158,13 +158,13 @@ class Download():
                 files_zip.close()
 
     def get_monitoring_day(self, date):
-        logger.info("get_monitoring_day: %s" % str(date))
+        logger.info("get_monitoring_day: %s", str(date))
         response = self.get(self.garmin_connect_download_daily_url + '/' + date.strftime("%Y-%m-%d"))
         if response:
             self.save_binary_file(self.temp_dir + '/' + str(date) + '.zip', response)
 
     def get_monitoring(self, date, days):
-        logger.info("get_monitoring: %s : %d" % (str(date), days))
+        logger.info("get_monitoring: %s : %d", str(date), days)
         for day in xrange(0, days):
             day_date = date + datetime.timedelta(day)
             self.get_monitoring_day(day_date)
@@ -172,7 +172,7 @@ class Download():
             time.sleep(1)
 
     def get_weight_chunk(self, start, end):
-        logger.info("get_weight_chunk: %d - %d" % (start, end))
+        logger.info("get_weight_chunk: %d - %d", start, end)
         params = {
             'from' : str(start),
             "until" : str(end)
@@ -228,7 +228,7 @@ class Download():
     def get_sleep_day(self, directory, date):
         filename = directory + '/sleep_' + str(date) + '.json'
         if not os.path.isfile(filename):
-            logger.info("get_sleep_day: %s -> %s" % (str(date), filename))
+            logger.info("get_sleep_day: %s -> %s", str(date), filename)
             params = {
                 'date' : date.strftime("%Y-%m-%d")
             }
@@ -246,7 +246,7 @@ class Download():
     def get_rhr_chunk(self, start, end):
         start_str = start.strftime("%Y-%m-%d")
         end_str = end.strftime("%Y-%m-%d")
-        logger.info("get_rhr_chunk: %s - %s" % (start_str, end_str))
+        logger.info("get_rhr_chunk: %s - %s", start_str, end_str)
         params = {
             'fromDate' : start_str,
             'untilDate' : end_str,

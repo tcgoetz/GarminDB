@@ -41,7 +41,7 @@ class Analyze():
 
     def report_file_type(self, file_type):
         records = GarminDB.File.row_count(self.garmindb, GarminDB.File.type, file_type)
-        logger.info("%s files: %d" % (file_type, records))
+        logger.info("%s files: %d", file_type, records)
         GarminDB.Summary.set(self.garminsumdb, file_type + '_files', records)
 
     def get_files_stats(self):
@@ -63,16 +63,16 @@ class Analyze():
 
     def get_activities_stats(self):
         activities = GarminDB.Activities.row_count(self.garmin_act_db)
-        logger.info("Activity summary records: %d" % activities)
+        logger.info("Activity summary records: %d", activities)
         GarminDB.Summary.set(self.garminsumdb, 'Activities', activities)
         laps = GarminDB.ActivityLaps.row_count(self.garmin_act_db)
-        logger.info("Activities lap records: %d" % laps)
+        logger.info("Activities lap records: %d", laps)
         GarminDB.Summary.set(self.garminsumdb, 'Activity_laps', laps)
         records = GarminDB.ActivityRecords.row_count(self.garmin_act_db)
-        logger.info("Activity records: %d" % records)
+        logger.info("Activity records: %d", records)
         GarminDB.Summary.set(self.garminsumdb, 'Activity_records', records)
         years = GarminDB.Activities.get_years(self.garmin_act_db)
-        logger.info("Activities years: %d %s" % (len(years), str(years)))
+        logger.info("Activities years: %d %s", (len(years), str(years)))
         GarminDB.Summary.set(self.garminsumdb, 'Activity_Years', len(years))
         fitness_activities = GarminDB.Activities.row_count(self.garmin_act_db, GarminDB.Activities.type, 'fitness')
         logger.info("Fitness activities: %d", fitness_activities)
@@ -96,19 +96,19 @@ class Analyze():
 
     def get_col_stats(self, table, col, name, ignore_le_zero=False):
         records = table.row_count(self.garmindb)
-        logger.info("%s records: %d" % (name, records))
+        logger.info("%s records: %d", name, records)
         GarminDB.Summary.set(self.garminsumdb, '%s_Records' % name, records)
         maximum = table.get_col_max(self.garmindb, col)
-        logger.info("Max %s: %s" % (name, str(maximum)))
+        logger.info("Max %s: %s", name, str(maximum))
         GarminDB.Summary.set(self.garminsumdb, 'Max_%s' % name, maximum)
         minimum = table.get_col_min(self.garmindb, col, None, None, ignore_le_zero)
-        logger.info("Min %s: %s" % (name, str(minimum)))
+        logger.info("Min %s: %s", name, str(minimum))
         GarminDB.Summary.set(self.garminsumdb, 'Min_%s' % name, minimum)
         average = table.get_col_avg(self.garmindb, col)
-        logger.info("Avg %s: %s" % (name, str(average)))
+        logger.info("Avg %s: %s", name, str(average))
         GarminDB.Summary.set(self.garminsumdb, 'Avg_%s' % name, average)
         latest = table.get_col_latest(self.garmindb, col)
-        logger.info("Latest %s: %s" % (name, str(latest)))
+        logger.info("Latest %s: %s", name, str(latest))
 
     def get_weight_stats(self):
         self.get_col_stats(GarminDB.Weight, GarminDB.Weight.weight, 'Weight')
@@ -126,8 +126,8 @@ class Analyze():
     def get_monitoring_years(self):
         years = GarminDB.Monitoring.get_years(self.mondb)
         GarminDB.Summary.set(self.garminsumdb, 'Monitoring_Years', len(years))
-        logger.info("Monitoring records: %d" % GarminDB.Monitoring.row_count(self.mondb))
-        logger.info("Monitoring Years (%d): %s" % (len(years), str(years)))
+        logger.info("Monitoring records: %d", GarminDB.Monitoring.row_count(self.mondb))
+        logger.info("Monitoring Years (%d): %s", (len(years), str(years)))
         for year in years:
             self.get_monitoring_months(year)
             self.get_monitoring_days(year)
@@ -135,7 +135,7 @@ class Analyze():
     def get_monitoring_months(self, year):
         months = GarminDB.Monitoring.get_month_names(self.mondb, year)
         GarminDB.Summary.set(self.garminsumdb, str(year) + '_months', len(months))
-        logger.info("%s Months (%s): %s" % (year, len(months) , str(months)))
+        logger.info("%s Months (%s): %s", year, len(months) , str(months))
 
     def get_monitoring_days(self, year):
         days = GarminDB.Monitoring.get_days(self.mondb, year)
@@ -148,14 +148,14 @@ class Analyze():
             span = 0
         GarminDB.Summary.set(self.garminsumdb, str(year) + '_days', days_count)
         GarminDB.Summary.set(self.garminsumdb, str(year) + '_days_span', span)
-        logger.info("%d Days (%d count vs %d span): %s" % (year, days_count, span, str(days)))
+        logger.info("%d Days (%d count vs %d span): %s", year, days_count, span, str(days))
         for index in xrange(days_count - 1):
             day = int(days[index])
             next_day = int(days[index + 1])
             if next_day != day + 1:
                 day_str = str(Conversions.day_of_the_year_to_datetime(year, day))
                 next_day_str = str(Conversions.day_of_the_year_to_datetime(year, next_day))
-                logger.info("Days gap between %d (%s) and %d (%s)" % (day, day_str, next_day, next_day_str))
+                logger.info("Days gap between %d (%s) and %d (%s)", day, day_str, next_day, next_day_str)
 
     def combine_stats(self, stats, stat1_name, stat2_name):
         stat1 = stats.get(stat1_name, 0)

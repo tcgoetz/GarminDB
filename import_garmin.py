@@ -31,7 +31,7 @@ class GarminWeightData():
     def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
-        logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
+        logger.info("Debug: %s English units: %s", str(debug), str(english_units))
         if input_file:
             self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'weight_.*\.json')
         if input_dir:
@@ -56,7 +56,7 @@ class GarminWeightData():
                     'weight' : weight
                 }
                 GarminDB.Weight.create_or_update_not_none(garmindb, point)
-            logger.info("DB updated with %d weight entries" % len(json_data))
+            logger.info("DB updated with %d weight entries", len(json_data))
 
 
 class GarminFitData():
@@ -64,7 +64,7 @@ class GarminFitData():
     def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
-        logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
+        logger.info("Debug: %s English units: %s", str(debug), str(english_units))
         if input_file:
             self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.fit')
         if input_dir:
@@ -160,8 +160,8 @@ class GarminSleepData():
                     'duration' : duration
                 }
                 GarminDB.SleepEvents.create_or_update_not_none(garmindb, level_data)
-            logger.info("DB updated %s with %d sleep level entries" % (str(day), len(sleep_levels)))
-        logger.info("DB updated with %d sleep entries" % self.file_count())
+            logger.info("DB updated %s with %d sleep level entries", str(day), len(sleep_levels))
+        logger.info("DB updated with %d sleep entries", self.file_count())
 
 
 class GarminRhrData():
@@ -187,7 +187,7 @@ class GarminRhrData():
                     'resting_heart_rate' : sample['value']
                 }
                 GarminDB.RestingHeartRate.create_or_update_not_none(garmindb, data)
-            logger.info("DB updated with %d rhr entries" % len(json_data))
+            logger.info("DB updated with %d rhr entries", len(json_data))
 
 
 def usage(program):

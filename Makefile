@@ -36,7 +36,6 @@ FIT_FILE_DIR=$(HEALTH_DATA_DIR)/FitFiles
 FITBIT_FILE_DIR=$(HEALTH_DATA_DIR)/FitBitFiles
 MSHEALTH_FILE_DIR=$(HEALTH_DATA_DIR)/MSHealth
 DB_DIR=$(HEALTH_DATA_DIR)/DBs
-TEST_DB_DIR=/tmp/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/$(YEAR)_Monitoring
 SLEEP_FILES_DIR=$(HEALTH_DATA_DIR)/Sleep
@@ -144,16 +143,10 @@ backup: $(BACKUP_DIR)
 #
 
 ## test monitoring
-$(TEST_DB_DIR):
-	mkdir -p $(TEST_DB_DIR)
-
-test_monitoring_clean:
-	rm -rf $(TEST_DB_DIR)
-
 TEST_FIT_FILE ?= 10724054307
-test_monitoring_file: $(TEST_DB_DIR)
-	#python import_garmin.py -t -e --fit_input_file "$(FIT_FILE_DIR)/2017_Monitoring/$(TEST_FIT_FILE).fit" --sqlite $(TEST_DB_DIR)
-	python import_garmin.py -t -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_FIT_FILE).fit" --sqlite $(TEST_DB_DIR)
+test_monitoring_file: $(DB_DIR)
+	python import_garmin.py -t -e --fit_input_file "$(FIT_FILE_DIR)/2017_Monitoring/$(TEST_FIT_FILE).fit" --sqlite $(DB_DIR)
+	#python import_garmin.py -t -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_FIT_FILE).fit" --sqlite $(DB_DIR)
 
 ##  monitoring
 GARMIN_MON_DB=$(DB_DIR)/garmin_monitoring.db

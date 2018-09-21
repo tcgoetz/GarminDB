@@ -24,7 +24,7 @@ class DB():
     commit_errors = 0
 
     def __init__(self, db_params_dict, debug=False):
-        logger.debug("DB %s debug %s " % (repr(db_params_dict), str(debug)))
+        logger.debug("DB %s debug %s ", repr(db_params_dict), str(debug))
         url_func = getattr(self, db_params_dict['db_type'] + '_url')
         if debug > 0:
             logger.setLevel(logging.DEBUG)
@@ -129,7 +129,7 @@ class DBObject():
     def _filter_columns(cls, values_dict):
         filtered_cols = cls.__filter_columns(values_dict)
         if len(filtered_cols) != len(values_dict):
-            logger.debug("filtered some cols for %s from %s" % (cls.__tablename__, repr(values_dict)))
+            logger.debug("filtered some cols for %s from %s", cls.__tablename__, repr(values_dict))
         if len(filtered_cols) == 0:
             raise ValueError("%s: filtered all cols for %s from %s" % (cls.__name__, cls.__tablename__, repr(values_dict)))
         return filtered_cols
@@ -179,45 +179,45 @@ class DBObject():
 
     @classmethod
     def find_query(cls, session, values_dict):
-        logger.debug("%s::_find %s" % (cls.__name__, repr(values_dict)))
+        logger.debug("%s::_find %s", cls.__name__, repr(values_dict))
         return cls._find_query(session, cls.translate_columns(values_dict))
 
     @classmethod
     def find_all(cls, db, values_dict):
-        logger.debug("%s::find_all %s" % (cls.__name__, repr(values_dict)))
+        logger.debug("%s::find_all %s", cls.__name__, repr(values_dict))
         return cls.find_query(db.query_session(), values_dict).all()
 
     @classmethod
     def _find_one(cls, session, values_dict):
-        logger.debug("%s::_find_one %s" % (cls.__name__, repr(values_dict)))
+        logger.debug("%s::_find_one %s", cls.__name__, repr(values_dict))
         return cls.find_query(session, values_dict).one_or_none()
 
     @classmethod
     def find_one(cls, db, values_dict):
-        logger.debug("%s::find_one %s" % (cls.__name__, repr(values_dict)))
+        logger.debug("%s::find_one %s", cls.__name__, repr(values_dict))
         return cls._find_one(db.query_session(), values_dict)
 
     @classmethod
     def find_id(cls, db, values_dict):
-        logger.debug("%s::find_id %s" % (cls.__name__, repr(values_dict)))
+        logger.debug("%s::find_id %s", cls.__name__, repr(values_dict))
         instance = cls.find_one(db, values_dict)
         if instance is not None:
             return instance.id
 
     @classmethod
     def _create(cls, db, session, values_dict, ignore_none=False):
-        logger.debug("%s::_create %s" % (cls.__name__, repr(values_dict)))
+        logger.debug("%s::_create %s", cls.__name__, repr(values_dict))
         instance = cls.from_dict(db, values_dict)
         if instance.not_none_values < cls.min_row_values:
             if ignore_none:
                 return None
             else:
-                raise ValueError("%d not-None values: %s" % (instance.not_none_values, repr(values_dict)))
+                raise ValueError("%d not-None values: %s", instance.not_none_values, repr(values_dict))
         session.add(instance)
 
     @classmethod
     def create(cls, db, values_dict, ignore_none=False):
-        logger.debug("%s::create %s" % (cls.__name__, repr(values_dict)))
+        logger.debug("%s::create %s", cls.__name__, repr(values_dict))
         session = db.session()
         cls._create(db, session, values_dict)
         DB.commit(session)
@@ -232,7 +232,7 @@ class DBObject():
 
     @classmethod
     def find_or_create_id(cls, db, values_dict):
-        logger.debug("%s::find_or_create_id %s" % (cls.__name__, repr(values_dict)))
+        logger.debug("%s::find_or_create_id %s", cls.__name__, repr(values_dict))
         instance = cls.find_one(db, values_dict)
         if instance is None:
             cls.create(db, values_dict)
@@ -241,7 +241,7 @@ class DBObject():
 
     @classmethod
     def create_or_update(cls, db, values_dict, ignore_none=False):
-        logger.debug("%s::create_or_update %s" % (cls.__name__, repr(values_dict)))
+        logger.debug("%s::create_or_update %s", cls.__name__, repr(values_dict))
         session = db.session()
         instance = cls._find_one(session, values_dict)
         if instance is None:
@@ -252,7 +252,7 @@ class DBObject():
 
     @classmethod
     def create_or_update_not_none(cls, db, values_dict):
-        logger.debug("%s::create_or_update_not_none %s" % (cls.__name__, repr(values_dict)))
+        logger.debug("%s::create_or_update_not_none %s", cls.__name__, repr(values_dict))
         cls.create_or_update(db, values_dict, True)
 
     @classmethod

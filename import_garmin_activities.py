@@ -27,7 +27,7 @@ class GarminFitData():
     def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
-        logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
+        logger.info("Debug: %s English units: %s", str(debug), str(english_units))
         if input_file:
             self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.fit')
         if input_dir:
@@ -42,9 +42,11 @@ class GarminFitData():
             try:
                 fp.write_file(Fit.File(file_name, self.english_units))
             except ValueError as e:
-                logger.info("Failed to parse %s: %s" % (file_name, str(e)))
+                logger.error("Failed to parse %s: %s", file_name, str(e))
+                raise
             except IndexError as e:
-                logger.info("Failed to parse %s: %s" % (file_name, str(e)))
+                logger.error("Failed to parse %s: %s", file_name, str(e))
+                raise
 
 
 class GarminTcxData():
@@ -52,7 +54,7 @@ class GarminTcxData():
     def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
-        logger.info("Debug: %s English units: %s" % (str(debug), str(english_units)))
+        logger.info("Debug: %s English units: %s", str(debug), str(english_units))
         if input_file:
             self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.tcx')
         if input_dir:
@@ -129,7 +131,7 @@ class GarminJsonData():
     def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
-        logger.info("Debug: %s" % str(debug))
+        logger.info("Debug: %s", str(debug))
         if input_file:
             self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.json')
         if input_dir:
@@ -144,7 +146,7 @@ class GarminJsonData():
             if data is not None:
                 return format_func(data)
         except KeyError as e:
-            logger.debug("JSON %s not found in %s: %s" % (fieldname, repr(json), str(e)))
+            logger.error("JSON %s not found in %s: %s", fieldname, repr(json), str(e))
 
     def process_running(self, activity_id, activity_summary):
         avg_vertical_oscillation = Fit.Conversions.centimeters_to_meters(self.get_garmin_json_data(activity_summary, 'avgVerticalOscillation', float))
@@ -326,7 +328,7 @@ class GarminJsonData():
                 function = getattr(self, 'process_' + sub_sport)
                 function(activity_id, json_data)
             except AttributeError:
-                logger.info("No sport handler for type %s from %s" % (sub_sport, activity_id))
+                logger.info("No sport handler for type %s from %s", sub_sport, activity_id)
 
 
 def usage(program):
