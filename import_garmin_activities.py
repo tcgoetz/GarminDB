@@ -10,6 +10,7 @@ import Fit
 import FileProcessor
 import FitFileProcessor
 import GarminDB
+import GarminConnectEnums
 
 
 root_logger = logging.getLogger()
@@ -125,6 +126,7 @@ class GarminTcxData():
             activity_not_zero = {key : value for (key,value) in activity.iteritems() if value}
             print repr(activity_not_zero)
             GarminDB.Activities.create_or_update_not_none(garmin_act_db, activity_not_zero)
+
 
 class GarminJsonData():
 
@@ -274,31 +276,18 @@ class GarminJsonData():
                 max_speed = max_speed_mps
                 max_temperature = max_temperature_c
                 min_temperature = min_temperature_c
-            sport = self.get_garmin_json_data(json_data['activityType'], 'parentTypeId')
-            sub_sport = json_data['activityType']['typeKey']
-            sport_mappings = {
-                1   : 'running',
-                2   : 'cycling',
-                3   : 'hiking',
-                4   : 'other',
-                5   : 'mountain_biking',
-                9   : 'walking',
-                17  : sub_sport,
-                29  : 'fitness_equipment',
-                30  : 'elliptical',
-                57  : 'paddling',
-                63  : 'inline_skating',
-                67  : 'resort_skiing_snowboarding',
-                87  : 'stand_up_paddleboarding'
-            }
-            sport_name = sport_mappings.get(sport, None)
+            event = GarminConnectEnums.Event.from_json(json_data)
+            sport = GarminConnectEnums.Sport.from_json(json_data)
+            sub_sport = GarminConnectEnums.Sport.subsport_from_json(json_data)
+            if sport is GarminConnectEnums.Sport.top_level or sport is GarminConnectEnums.Sport.other:
+                sport = sub_sport
             activity = {
                 'activity_id'               : activity_id,
                 'name'                      : json_data['activityName'],
                 'description'               : self.get_garmin_json_data(json_data, 'description'),
-                'type'                      : self.get_garmin_json_data(json_data['eventType'], 'typeKey'),
-                'sport'                     : sport_name,
-                'sub_sport'                 : sub_sport,
+                'type'                      : event.name,
+                'sport'                     : sport.name,
+                'sub_sport'                 : sub_sport.name,
                 'start_time'                : dateutil.parser.parse(self.get_garmin_json_data(json_data, 'startTimeLocal'), ignoretz=True),
                 #'stop_time'                 : dateutil.parser.parse(self.get_garmin_json_data(json_data, 'EndTimestamp', ignoretz=True)),
                 'elapsed_time'              : Fit.Conversions.secs_to_dt_time(self.get_garmin_json_data(json_data, 'elapsedDuration', int)),
@@ -325,7 +314,7 @@ class GarminJsonData():
             }
             GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
             try:
-                function = getattr(self, 'process_' + sub_sport)
+                function = getattr(self, 'process_' + sub_sport.name)
                 function(activity_id, json_data)
             except AttributeError:
                 logger.info("No sport handler for type %s from %s", sub_sport, activity_id)

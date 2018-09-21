@@ -50,6 +50,9 @@ TEST_DB=$(TMPDIR)/test.db
 DEFAULT_SLEEP_START=22:00
 DEFAULT_SLEEP_STOP=06:00
 
+TEST_GC_ID ?= 10724054307
+
+
 #
 # Master targets
 #
@@ -143,10 +146,9 @@ backup: $(BACKUP_DIR)
 #
 
 ## test monitoring
-TEST_FIT_FILE ?= 10724054307
 test_monitoring_file: $(DB_DIR)
-	python import_garmin.py -t -e --fit_input_file "$(FIT_FILE_DIR)/2017_Monitoring/$(TEST_FIT_FILE).fit" --sqlite $(DB_DIR)
-	#python import_garmin.py -t -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_FIT_FILE).fit" --sqlite $(DB_DIR)
+	#python import_garmin.py -t -e --fit_input_file "$(FIT_FILE_DIR)/2017_Monitoring/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
+	python import_garmin.py -t -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
 
 ##  monitoring
 GARMIN_MON_DB=$(DB_DIR)/garmin_monitoring.db
@@ -184,15 +186,14 @@ clean_activities_db:
 $(ACTIVITES_FIT_FILES_DIR):
 	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
 
-TEST_ACTIVITY_ID ?= 3024080986
 test_import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/$(TEST_ACTIVITY_ID).fit" --sqlite $(DB_DIR)
+	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
 
 test_import_tcx_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/$(TEST_ACTIVITY_ID).tcx" --sqlite $(DB_DIR)
+	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/$(TEST_GC_ID).tcx" --sqlite $(DB_DIR)
 
 test_import_json_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	python import_garmin_activities.py -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_$(TEST_ACTIVITY_ID).json" --sqlite $(DB_DIR)
+	python import_garmin_activities.py -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_$(TEST_GC_ID).json" --sqlite $(DB_DIR)
 
 import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
