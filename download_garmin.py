@@ -253,8 +253,12 @@ class Download():
             'metricId' : 60
         }
         response = self.get(self.garmin_connect_rhr_url + '/' + self.display_name, params)
-        rhr_data = response.json()['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
-        return [entry for entry in rhr_data if entry['value'] is not None]
+        json_data = response.json()
+        try:
+            rhr_data = json_data['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
+            return [entry for entry in rhr_data if entry['value'] is not None]
+        except Exceptions:
+            logger.error("get_rhr_chunk: unexpected format - %s", repr(json_data))
 
     def get_rhr(self):
         logger.info("get_rhr")
@@ -264,7 +268,7 @@ class Download():
         while True:
             start = end - chunk_size
             chunk_data = self.get_rhr_chunk(start, end)
-            if len(chunk_data) == 0:
+            if chunk_data is None or len(chunk_data) == 0:
                 break
             data.extend(chunk_data)
             end -= chunk_size
