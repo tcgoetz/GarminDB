@@ -147,8 +147,8 @@ backup: $(BACKUP_DIR)
 
 ## test monitoring
 test_monitoring_file: $(DB_DIR)
-	#python import_garmin.py -t -e --fit_input_file "$(FIT_FILE_DIR)/2017_Monitoring/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
-	python import_garmin.py -t -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
+	python import_garmin.py -t -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR) || \
+	python import_garmin.py -t -e --fit_input_file "$(FIT_FILE_DIR)/2017_Monitoring/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
 
 ##  monitoring
 GARMIN_MON_DB=$(DB_DIR)/garmin_monitoring.db

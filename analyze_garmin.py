@@ -72,7 +72,7 @@ class Analyze():
         logger.info("Activity records: %d", records)
         GarminDB.Summary.set(self.garminsumdb, 'Activity_records', records)
         years = GarminDB.Activities.get_years(self.garmin_act_db)
-        logger.info("Activities years: %d %s", (len(years), str(years)))
+        logger.info("Activities years: %d %s", len(years), str(years))
         GarminDB.Summary.set(self.garminsumdb, 'Activity_Years', len(years))
         fitness_activities = GarminDB.Activities.row_count(self.garmin_act_db, GarminDB.Activities.type, 'fitness')
         logger.info("Fitness activities: %d", fitness_activities)
@@ -127,7 +127,7 @@ class Analyze():
         years = GarminDB.Monitoring.get_years(self.mondb)
         GarminDB.Summary.set(self.garminsumdb, 'Monitoring_Years', len(years))
         logger.info("Monitoring records: %d", GarminDB.Monitoring.row_count(self.mondb))
-        logger.info("Monitoring Years (%d): %s", (len(years), str(years)))
+        logger.info("Monitoring Years (%d): %s", len(years), str(years))
         for year in years:
             self.get_monitoring_months(year)
             self.get_monitoring_days(year)
