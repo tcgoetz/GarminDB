@@ -197,7 +197,7 @@ class ActivityRecords(ActivitiesDB.Base, DBObject):
 
 class SportActivities(DBObject):
 
-    min_row_values = 2
+    min_row_values = 1
 
     @declared_attr
     def activity_id(cls):
@@ -329,7 +329,6 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
     strokes = Column(Integer)
     # m or ft
     avg_stroke_distance = Column(Float)
-    power = Column(Float)
 
     @classmethod
     def create_view(cls, db):
@@ -357,7 +356,6 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
                 'activities.calories AS calories, ' +
                 'activities.avg_speed AS avg_speed, ' +
                 'activities.max_speed AS max_speed, ' +
-                'paddle_activities.power AS power, ' +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
             'FROM paddle_activities JOIN activities ON activities.activity_id = paddle_activities.activity_id'
@@ -368,10 +366,6 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
 class CycleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'cycle_activities'
     strokes = Column(Integer)
-    # pace in mins/mile
-    avg_pace = Column(Time)
-    avg_moving_pace = Column(Time)
-    max_pace = Column(Time)
     # watts
     power = Column(Float)
     vo2_max = Column(Float)
@@ -394,9 +388,6 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
                 'activities.stop_long AS stop_long, ' +
                 'activities.distance AS distance, ' +
                 'cycle_activities.strokes AS strokes, ' +
-                'cycle_activities.avg_pace AS avg_pace, ' +
-                'cycle_activities.avg_moving_pace AS avg_moving_pace, ' +
-                'cycle_activities.max_pace AS max_pace, ' +
                 'activities.avg_hr AS avg_hr, ' +
                 'activities.max_hr AS max_hr, ' +
                 'activities.calories AS calories, ' +
@@ -416,9 +407,6 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'elliptical_activities'
     steps = Column(Integer)
-    #
-    avg_pace = Column(Time)
-    max_pace = Column(Time)
     # kms or miles
     elliptical_distance = Column(Float)
     power = Column(Float)
@@ -436,7 +424,6 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
                 'activities.stop_time AS stop_time, ' +
                 'activities.elapsed_time AS elapsed_time, ' +
                 'elliptical_activities.steps AS steps, ' +
-                'elliptical_activities.avg_pace AS avg_pace, ' +
                 'elliptical_activities.elliptical_distance AS distance, ' +
                 'activities.cycles AS cycles, ' +
                 'activities.avg_hr AS avg_hr, ' +

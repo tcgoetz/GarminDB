@@ -42,10 +42,7 @@ class GarminFitData():
         for file_name in self.file_names:
             try:
                 fp.write_file(Fit.File(file_name, self.english_units))
-            except ValueError as e:
-                logger.error("Failed to parse %s: %s", file_name, str(e))
-                raise
-            except IndexError as e:
+            except Exception as e:
                 logger.error("Failed to parse %s: %s", file_name, str(e))
                 raise
 
@@ -218,9 +215,6 @@ class GarminJsonData():
         ride = {
                 'activity_id'               : activity_id,
                 'strokes'                   : self.get_garmin_json_data(activity_summary, 'strokes', float),
-                #'avg_pace'                  : pace_to_time(self.get_garmin_json_data(activity_summary, 'WeightedMeanPace')),
-                #'avg_moving_pace'           : pace_to_time(self.get_garmin_json_data(activity_summary, 'WeightedMeanMovingPace')),
-                #'max_pace'                  : pace_to_time(self.get_garmin_json_data(activity_summary, 'MaxPace')),
                 'power'                     : self.get_garmin_json_data(activity_summary, 'avgPower', float),
                 'vo2_max'                   : self.get_garmin_json_data(activity_summary, 'vO2MaxValue', float),
         }

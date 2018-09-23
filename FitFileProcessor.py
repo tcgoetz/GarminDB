@@ -115,8 +115,8 @@ class FitFileProcessor():
         run = {
             'activity_id'                       : activity_id,
             'steps'                             : self.get_field_value(message_dict, 'total_steps'),
-            'avg_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['avg_speed'])).time(),
-            'max_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['max_speed'])).time(),
+            'avg_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('avg_speed', None)),
+            'max_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('max_speed', None)),
             'avg_steps_per_min'                 : self.get_field_value(message_dict, 'avg_cadence') * 2,
             'max_steps_per_min'                 : self.get_field_value(message_dict, 'max_cadence') * 2,
             'avg_step_length'                   : self.get_field_value(message_dict, 'avg_step_length'),
@@ -133,8 +133,8 @@ class FitFileProcessor():
         walk = {
             'activity_id'                       : activity_id,
             'steps'                             : self.get_field_value(message_dict, 'total_steps'),
-            'avg_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['avg_speed'])).time(),
-            'max_pace'                          : (datetime.datetime.min +  datetime.timedelta(0, 3600 / message_dict['max_speed'])).time(),
+            'avg_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('avg_speed', None)),
+            'max_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('max_speed', None)),
         }
         GarminDB.WalkActivities.create_or_update_not_none(self.garmin_act_db, walk)
 
@@ -143,11 +143,11 @@ class FitFileProcessor():
         return self.write_walking_entry(fit_file, activity_id, sub_sport, message_dict)
 
     def write_cycling_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        logger.debug("ride entry: %s", repr(message_dict))
         ride = {
             'activity_id'                        : activity_id,
             'strokes'                            : self.get_field_value(message_dict, 'total_strokes'),
         }
+        logger.debug("ride entry: %s writing %s", repr(message_dict), repr(ride))
         GarminDB.CycleActivities.create_or_update_not_none(self.garmin_act_db, ride)
 
     def write_stand_up_paddleboarding_entry(self, fit_file, activity_id, sub_sport, message_dict):
@@ -196,11 +196,11 @@ class FitFileProcessor():
             'start_time'                        : message_dict['start_time'],
             'stop_time'                         : message_dict['timestamp'],
             'elapsed_time'                      : message_dict['total_elapsed_time'],
-            'moving_time'                       : message_dict.get('total_timer_time', None),
-            'start_lat'                         : message_dict.get('start_position_lat', None),
-            'start_long'                        : message_dict.get('start_position_long', None),
-            'stop_lat'                          : message_dict.get('end_position_lat', None),
-            'stop_long'                         : message_dict.get('end_position_long', None),
+            'moving_time'                       : self.get_field_value(message_dict, 'total_timer_time'),
+            'start_lat'                         : self.get_field_value(message_dict, 'start_position_lat'),
+            'start_long'                        : self.get_field_value(message_dict, 'start_position_long'),
+            'stop_lat'                          : self.get_field_value(message_dict, 'end_position_lat'),
+            'stop_long'                         : self.get_field_value(message_dict, 'end_position_long'),
             'distance'                          : message_dict.get('dev_User_distance', message_dict.get('total_distance', None)),
             'cycles'                            : self.get_field_value(message_dict, 'total_cycles'),
             'laps'                              : self.get_field_value(message_dict, 'num_laps'),
@@ -209,14 +209,14 @@ class FitFileProcessor():
             'calories'                          : self.get_field_value(message_dict, 'total_calories'),
             'avg_cadence'                       : self.get_field_value(message_dict, 'avg_cadence'),
             'max_cadence'                       : self.get_field_value(message_dict, 'max_cadence'),
-            'avg_speed'                         : message_dict['avg_speed'],
-            'max_speed'                         : message_dict['max_speed'],
-            'ascent'                            : message_dict['total_ascent'],
-            'descent'                           : message_dict['total_descent'],
-            'max_temperature'                   : message_dict.get('max_temperature', None),
-            'avg_temperature'                   : message_dict.get('avg_temperature', None),
-            'training_effect'                   : message_dict.get('total_training_effect', None),
-            'anaerobic_training_effect'         : message_dict.get('total_anaerobic_training_effect', None)
+            'avg_speed'                         : self.get_field_value(message_dict, 'avg_speed'),
+            'max_speed'                         : self.get_field_value(message_dict, 'max_speed'),
+            'ascent'                            : self.get_field_value(message_dict, 'total_ascent'),
+            'descent'                           : self.get_field_value(message_dict, 'total_descent'),
+            'max_temperature'                   : self.get_field_value(message_dict, 'max_temperature'),
+            'avg_temperature'                   : self.get_field_value(message_dict, 'avg_temperature'),
+            'training_effect'                   : self.get_field_value(message_dict, 'total_training_effect'),
+            'anaerobic_training_effect'         : self.get_field_value(message_dict, 'total_anaerobic_training_effect')
         }
         # json metadata gives better values for sport and subsport, so use existing value if set
         current = GarminDB.Activities.get_id(self.garmin_act_db, activity_id)
@@ -242,14 +242,14 @@ class FitFileProcessor():
         lap = {
             'activity_id'                       : activity_id,
             'lap'                               : self.lap,
-            'start_time'                        : message_dict['start_time'],
-            'stop_time'                         : message_dict['timestamp'],
-            'elapsed_time'                      : message_dict['total_elapsed_time'],
-            'moving_time'                       : message_dict.get('total_timer_time', None),
-            'start_lat'                         : message_dict.get('start_position_lat', None),
-            'start_long'                        : message_dict.get('start_position_long', None),
-            'stop_lat'                          : message_dict.get('end_position_lat', None),
-            'stop_long'                         : message_dict.get('end_position_long', None),
+            'start_time'                        : self.get_field_value(message_dict, 'start_time'),
+            'stop_time'                         : self.get_field_value(message_dict, 'timestamp'),
+            'elapsed_time'                      : self.get_field_value(message_dict, 'total_elapsed_time'),
+            'moving_time'                       : self.get_field_value(message_dict, 'total_timer_time'),
+            'start_lat'                         : self.get_field_value(message_dict, 'start_position_lat'),
+            'start_long'                        : self.get_field_value(message_dict, 'start_position_long'),
+            'stop_lat'                          : self.get_field_value(message_dict, 'end_position_lat'),
+            'stop_long'                         : self.get_field_value(message_dict, 'end_position_long'),
             'distance'                          : message_dict.get('dev_User_distance', message_dict.get('total_distance', None)),
             'cycles'                            : self.get_field_value(message_dict, 'total_cycles'),
             'avg_hr'                            : self.get_field_value(message_dict, 'avg_heart_rate'),
@@ -257,12 +257,12 @@ class FitFileProcessor():
             'calories'                          : self.get_field_value(message_dict, 'total_calories'),
             'avg_cadence'                       : self.get_field_value(message_dict, 'avg_cadence'),
             'max_cadence'                       : self.get_field_value(message_dict, 'max_cadence'),
-            'avg_speed'                         : message_dict['avg_speed'],
-            'max_speed'                         : message_dict['max_speed'],
-            'ascent'                            : message_dict['total_ascent'],
-            'descent'                           : message_dict['total_descent'],
-            'max_temperature'                   : message_dict.get('max_temperature', None),
-            'avg_temperature'                   : message_dict.get('avg_temperature', None),
+            'avg_speed'                         : self.get_field_value(message_dict, 'avg_speed'),
+            'max_speed'                         : self.get_field_value(message_dict, 'max_speed'),
+            'ascent'                            : self.get_field_value(message_dict, 'total_ascent'),
+            'descent'                           : self.get_field_value(message_dict, 'total_descent'),
+            'max_temperature'                   : self.get_field_value(message_dict, 'max_temperature'),
+            'avg_temperature'                   : self.get_field_value(message_dict, 'avg_temperature'),
         }
         GarminDB.ActivityLaps.create_or_update_not_none(self.garmin_act_db, lap)
         self.lap += 1
@@ -297,15 +297,15 @@ class FitFileProcessor():
         record = {
             'activity_id'                       : activity_id,
             'record'                            : self.record,
-            'timestamp'                         : message_dict['timestamp'],
-            'position_lat'                      : message_dict.get('position_lat', None),
-            'position_long'                     : message_dict.get('position_long', None),
-            'distance'                          : message_dict.get('distance', None),
+            'timestamp'                         : self.get_field_value(message_dict, 'timestamp'),
+            'position_lat'                      : self.get_field_value(message_dict, 'position_lat'),
+            'position_long'                     : self.get_field_value(message_dict, 'position_long'),
+            'distance'                          : self.get_field_value(message_dict, 'distance'),
             'cadence'                           : self.get_field_value(message_dict, 'cadence'),
             'hr'                                : self.get_field_value(message_dict, 'heart_rate'),
-            'alititude'                         : message_dict.get('altitude', None),
-            'speed'                             : message_dict.get('speed', None),
-            'temperature'                       : message_dict.get('temperature', None),
+            'alititude'                         : self.get_field_value(message_dict, 'altitude'),
+            'speed'                             : self.get_field_value(message_dict, 'speed'),
+            'temperature'                       : self.get_field_value(message_dict, 'temperature'),
         }
         GarminDB.ActivityRecords.create_or_update_not_none(self.garmin_act_db, record)
         self.record += 1
@@ -325,7 +325,7 @@ class FitFileProcessor():
                     'file_id'                   : GarminDB.File.get(self.garmin_db, fit_file.filename),
                     'timestamp'                 : parsed_message['local_timestamp'],
                     'activity_type'             : activity_type,
-                    'resting_metabolic_rate'    : parsed_message['resting_metabolic_rate'],
+                    'resting_metabolic_rate'    : self.get_field_value(parsed_message, 'resting_metabolic_rate'),
                     'cycles_to_distance'        : parsed_message['cycles_to_distance'][index],
                     'cycles_to_calories'        : parsed_message['cycles_to_calories'][index]
                 }
@@ -349,7 +349,7 @@ class FitFileProcessor():
 
     def write_device_info_entry(self, fit_file, device_info_message):
         parsed_message = device_info_message.to_dict()
-        if parsed_message['serial_number'] is not None:
+        if parsed_message.get('serial_number', None) is not None:
             device = {
                 'serial_number'     : parsed_message['serial_number'],
                 'timestamp'         : parsed_message['timestamp'],
