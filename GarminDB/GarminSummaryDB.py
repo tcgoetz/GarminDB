@@ -35,6 +35,8 @@ class MonthsSummary(GarminSummaryDB.Base, SummaryBase):
 
     first_day = Column(Date, primary_key=True)
 
+    time_col = synonym("first_day")
+
     @classmethod
     def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.first_day == values_dict['first_day'])
@@ -45,6 +47,8 @@ class WeeksSummary(GarminSummaryDB.Base, SummaryBase):
 
     first_day = Column(Date, primary_key=True)
 
+    time_col = synonym("first_day")
+
     @classmethod
     def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.first_day == values_dict['first_day'])
@@ -54,6 +58,8 @@ class DaysSummary(GarminSummaryDB.Base, SummaryBase):
     __tablename__ = 'days_summary'
 
     day = Column(Date, primary_key=True)
+
+    time_col = synonym("day")
 
     @classmethod
     def _find_query(cls, session, values_dict):

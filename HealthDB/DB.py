@@ -438,15 +438,34 @@ class DBObject():
         return query.count()
 
     @classmethod
-    def get_col_func_for_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None):
+    def get_col_func_for_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
         values_query = db.query_session().query(stat_func(col)).filter(match_col == match_value)
         if start_ts is not None or end_ts is not None:
-            values_query.filter(cls.timestamp >= start_ts).filter(cls.timestamp < end_ts).group_by(func.strftime("%j", cls.timestamp))
+            values_query = values_query.filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
+        if ignore_le_zero:
+            values_query = values_query.filter(col > 0)
         return values_query.scalar()
 
     @classmethod
-    def get_col_sum_for_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None):
-        return cls.get_col_func_for_value(db, col, func.sum, match_col, match_value, start_ts, end_ts)
+    def get_col_sum_for_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
+        return cls.get_col_func_for_value(db, col, func.sum, match_col, match_value, start_ts, end_ts, ignore_le_zero)
+
+    @classmethod
+    def get_col_avg_for_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
+        return cls.get_col_func_for_value(db, col, func.avg, match_col, match_value, start_ts, end_ts, ignore_le_zero)
+
+    @classmethod
+    def get_col_func_greater_than_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
+        values_query = db.query_session().query(stat_func(col)).filter(match_col > match_value)
+        if start_ts is not None or end_ts is not None:
+            values_query = values_query.filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
+        if ignore_le_zero:
+            values_query = values_query.filter(col > 0)
+        return values_query.scalar()
+
+    @classmethod
+    def get_col_avg_greater_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
+        return cls.get_col_func_greater_than_value(db, col, func.avg, match_col, match_value, start_ts, end_ts, ignore_le_zero)
 
     def __repr__(self):
         classname = self.__class__.__name__

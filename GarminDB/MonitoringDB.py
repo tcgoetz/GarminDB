@@ -274,7 +274,11 @@ class Monitoring(MonitoringDB.Base, DBObject):
     def get_stats(cls, db, func, start_ts, end_ts):
         return {
             'steps'                 : func(db, cls.steps, start_ts, end_ts),
-            'calories_active_avg'   : cls.get_active_calories(db, 0, start_ts, end_ts) + cls.get_active_calories(db, 1, start_ts, end_ts)
+            'calories_active_avg'   : (
+                cls.get_active_calories(db, FieldEnums.ActivityType.running, start_ts, end_ts) +
+                cls.get_active_calories(db, FieldEnums.ActivityType.cycling, start_ts, end_ts) +
+                cls.get_active_calories(db, FieldEnums.ActivityType.walking, start_ts, end_ts)
+            )
         }
 
     @classmethod
