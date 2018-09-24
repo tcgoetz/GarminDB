@@ -257,7 +257,7 @@ class Download():
         try:
             rhr_data = json_data['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
             return [entry for entry in rhr_data if entry['value'] is not None]
-        except Exceptions:
+        except Exception:
             logger.error("get_rhr_chunk: unexpected format - %s", repr(json_data))
 
     def get_rhr(self):
