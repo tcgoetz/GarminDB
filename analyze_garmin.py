@@ -57,7 +57,7 @@ class Analyze():
         total_distance = GarminDB.Activities.get_col_sum_for_value(self.garmin_act_db, GarminDB.Activities.distance, sport_col, sport.lower())
         if total_distance is None:
             total_distance = 0
-        logger.info("%s activities: %d Total Distance %d miles", sport, records, total_distance)
+        logger.info("%s activities: %d - total distance %d miles", sport, records, total_distance)
         GarminDB.Summary.set(self.garminsumdb, sport + '_Activities', records)
         GarminDB.Summary.set(self.garminsumdb, sport + '_Miles', total_distance)
 
@@ -72,7 +72,7 @@ class Analyze():
         logger.info("Activity records: %d", records)
         GarminDB.Summary.set(self.garminsumdb, 'Activity_records', records)
         years = GarminDB.Activities.get_years(self.garmin_act_db)
-        logger.info("Activities years: %d %s", len(years), str(years))
+        logger.info("Activities years: %d: %s", len(years), str(years))
         GarminDB.Summary.set(self.garminsumdb, 'Activity_Years', len(years))
         fitness_activities = GarminDB.Activities.row_count(self.garmin_act_db, GarminDB.Activities.type, 'fitness')
         logger.info("Fitness activities: %d", fitness_activities)
@@ -81,9 +81,9 @@ class Analyze():
         logger.info("Recreation activities: %d", recreation_activities)
         GarminDB.Summary.set(self.garminsumdb, 'Recreation_activities', recreation_activities)
         sports = GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sport)
-        logger.info("Sports: %s", repr(sports))
+        logger.info("Sports: %s", str(sports))
         sub_sports = GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sub_sport)
-        logger.info("SubSports: %s", repr(sub_sports))
+        logger.info("SubSports: %s", str(sub_sports))
         self.report_sport(GarminDB.Activities.sport, 'Running')
         self.report_sport(GarminDB.Activities.sport, 'Walking')
         self.report_sport(GarminDB.Activities.sport, 'Cycling')
@@ -236,6 +236,21 @@ class Analyze():
                 end_day_date = datetime.date(year, month, calendar.monthrange(year, month)[1])
                 self.calculate_month_stats(start_day_date, end_day_date)
 
+    def summary_stats(self):
+        stress_avg_with_activities = GarminDB.DaysSummary.get_col_avg_greater_than_value(
+            self.garminsumdb, GarminDB.DaysSummary.stress_avg, GarminDB.DaysSummary.activities, 0, None, None, True)
+        logger.info("Stress avg on days with activities: %f", stress_avg_with_activities)
+        GarminDB.Summary.set(self.garminsumdb, 'Stress_Avg_Activities', stress_avg_with_activities)
+        stress_avg_multiple_activities = GarminDB.DaysSummary.get_col_avg_greater_than_value(
+            self.garminsumdb, GarminDB.DaysSummary.stress_avg, GarminDB.DaysSummary.activities, 1, None, None, True)
+        logger.info("Stress avg on days with multiple activities: %f", stress_avg_multiple_activities)
+        GarminDB.Summary.set(self.garminsumdb, 'Stress_Avg_Activities', stress_avg_with_activities)
+        stress_avg_without_activities = GarminDB.DaysSummary.get_col_avg_for_value(
+            self.garminsumdb, GarminDB.DaysSummary.stress_avg, GarminDB.DaysSummary.activities, 0, None, None, True)
+        logger.info("Stress avg on days without activities: %f", stress_avg_without_activities)
+        GarminDB.Summary.set(self.garminsumdb, 'Stress_Avg_No_Activities', stress_avg_with_activities)
+
+
 def usage(program):
     print '%s -s <sqlite db path> -m ...' % program
     sys.exit()
@@ -299,6 +314,7 @@ def main(argv):
         analyze.get_monitoring_years()
     if summary:
         analyze.summary()
+        analyze.summary_stats()
 
 if __name__ == "__main__":
     main(sys.argv[1:])

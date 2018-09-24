@@ -317,3 +317,11 @@ mshealth_summary: $(MSHEALTH_DB)
 	python analyze_mshealth.py --sqlite $(DB_DIR) --dates
 
 mshealth_db: $(MSHEALTH_DB)
+
+
+#
+# test
+#
+test:
+	export DB_DIR=$(DB_DIR) && python test.py
+
