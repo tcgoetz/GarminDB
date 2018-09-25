@@ -239,15 +239,15 @@ class Analyze():
     def summary_stats(self):
         stress_avg_with_activities = GarminDB.DaysSummary.get_col_avg_greater_than_value(
             self.garminsumdb, GarminDB.DaysSummary.stress_avg, GarminDB.DaysSummary.activities, 0, None, None, True)
-        logger.info("Stress avg on days with activities: %f", stress_avg_with_activities)
+        logger.info("Stress avg on days with activities: " + str(stress_avg_with_activities))
         GarminDB.Summary.set(self.garminsumdb, 'Stress_Avg_Activities', stress_avg_with_activities)
         stress_avg_multiple_activities = GarminDB.DaysSummary.get_col_avg_greater_than_value(
             self.garminsumdb, GarminDB.DaysSummary.stress_avg, GarminDB.DaysSummary.activities, 1, None, None, True)
-        logger.info("Stress avg on days with multiple activities: %f", stress_avg_multiple_activities)
+        logger.info("Stress avg on days with multiple activities: " + str(stress_avg_multiple_activities))
         GarminDB.Summary.set(self.garminsumdb, 'Stress_Avg_Activities', stress_avg_with_activities)
         stress_avg_without_activities = GarminDB.DaysSummary.get_col_avg_for_value(
             self.garminsumdb, GarminDB.DaysSummary.stress_avg, GarminDB.DaysSummary.activities, 0, None, None, True)
-        logger.info("Stress avg on days without activities: %f", stress_avg_without_activities)
+        logger.info("Stress avg on days without activities: " + str(stress_avg_without_activities))
         GarminDB.Summary.set(self.garminsumdb, 'Stress_Avg_No_Activities', stress_avg_with_activities)
 
 
