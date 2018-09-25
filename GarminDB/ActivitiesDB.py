@@ -64,7 +64,6 @@ class Activities(ActivitiesDB.Base, DBObject):
     max_cadence = Column(Integer)
     # kmph or mph
     avg_speed = Column(Float)
-    avg_moving_speed = Column(Float)
     max_speed = Column(Float)
     # feet or meters
     ascent = Column(Float)
@@ -142,7 +141,6 @@ class ActivityLaps(ActivitiesDB.Base, DBObject):
     max_cadence = Column(Integer)
     # kmph or mph
     avg_speed = Column(Float)
-    avg_moving_speed = Column(Float)
     max_speed = Column(Float)
     # feet or meters
     ascent = Column(Float)

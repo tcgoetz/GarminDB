@@ -296,7 +296,6 @@ class GarminJsonData():
                 'max_hr'                    : self.get_garmin_json_data(json_data, 'maxHR', float),
                 'calories'                  : self.get_garmin_json_data(json_data, 'calories', float),
                 'avg_speed'                 : avg_speed,
-                #'avg_moving_speed'          : self.get_garmin_json_data(json_data, 'WeightedMeanMovingSpeed', float),
                 'max_speed'                 : max_speed,
                 'ascent'                    : ascent,
                 'descent'                   : descent,
