@@ -198,7 +198,7 @@ def usage(program):
     sys.exit()
 
 def main(argv):
-    debug = False
+    debug = 0
     english_units = False
     fit_input_dir = None
     fit_input_file = None
@@ -212,8 +212,8 @@ def main(argv):
     db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"f:F:elm:r:R:s:tw:W:",
-            ["trace", "english", "fit_input_dir=", "fit_input_file=", "latest", "mysql=", "sqlite=",
+        opts, args = getopt.getopt(argv,"f:F:elm:r:R:s:t:w:W:",
+            ["trace=", "english", "fit_input_dir=", "fit_input_file=", "latest", "mysql=", "sqlite=",
              "rhr_input_dir=", "rhr_input_file=", "sleep_input_dir=", "sleep_input_file=", "weight_input_dir=", "weight_input_file="])
     except getopt.GetoptError:
         usage(sys.argv[0])
@@ -222,7 +222,7 @@ def main(argv):
         if opt == '-h':
             usage(sys.argv[0])
         elif opt in ("-t", "--trace"):
-            debug = True
+            debug = int(arg)
         elif opt in ("-e", "--english"):
             english_units = True
         elif opt in ("-f", "--fit_input_dir"):
@@ -263,7 +263,7 @@ def main(argv):
             db_params_dict['db_password'] = db_args[1]
             db_params_dict['db_host'] = db_args[2]
 
-    if debug:
+    if debug > 0:
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)

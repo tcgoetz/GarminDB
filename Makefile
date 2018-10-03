@@ -45,7 +45,8 @@ RHR_FILES_DIR=$(HEALTH_DATA_DIR)/RHR
 
 BIN_DIR=$(PWD)/bin
 
-TEST_DB=$(TMPDIR)/test.db
+TEST_FILE_DIR=$(HOME)/Downloads
+TEST_DB_DIR=$(TMPDIR)
 
 DEFAULT_SLEEP_START=22:00
 DEFAULT_SLEEP_STOP=06:00
@@ -146,9 +147,9 @@ backup: $(BACKUP_DIR)
 #
 
 ## test monitoring
-test_monitoring_file: $(DB_DIR)
-	python import_garmin.py -t -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR) || \
-	python import_garmin.py -t -e --fit_input_file "$(FIT_FILE_DIR)/2017_Monitoring/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
+test_import_monitoring: $(DB_DIR)
+	#python import_garmin.py -t1 -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
+	python import_garmin.py -t1 -e --fit_input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR)
 
 ##  monitoring
 GARMIN_MON_DB=$(DB_DIR)/garmin_monitoring.db
