@@ -355,20 +355,24 @@ class FitFileProcessor():
             logger.error("Exception on monitoring entry: %s: %s" % (repr(entry), str(e)))
 
     def write_device_info_entry(self, fit_file, device_info_message):
-        parsed_message = device_info_message.to_dict()
-        device_type = parsed_message.get('device_type', None)
-        serial_number = parsed_message.get('serial_number', None)
-        manufacturer = parsed_message.get('manufacturer', None)
-        product = parsed_message.get('product', None)
-        source_type = parsed_message.get('source_type', None)
-        # local devices are part of the main device. Base missing fields off of the main device.
-        if source_type is Fit.FieldEnums.SourceType.local:
-            if serial_number is None and self.serial_number is not None and device_type is not None:
-                serial_number = '%s%06d' % (self.serial_number, device_type.value)
-            if manufacturer is None and self.manufacturer is not None:
-                manufacturer = self.manufacturer
-            if product is None and self.product is not None:
-                product = self.product
+        try:
+            parsed_message = device_info_message.to_dict()
+            device_type = parsed_message.get('device_type', None)
+            serial_number = parsed_message.get('serial_number', None)
+            manufacturer = parsed_message.get('manufacturer', None)
+            product = parsed_message.get('product', None)
+            source_type = parsed_message.get('source_type', None)
+            # local devices are part of the main device. Base missing fields off of the main device.
+            if source_type is Fit.FieldEnums.SourceType.local:
+                if serial_number is None and self.serial_number is not None and device_type is not None:
+                    serial_number = '%s%06d' % (self.serial_number, device_type.value)
+                if manufacturer is None and self.manufacturer is not None:
+                    manufacturer = self.manufacturer
+                if product is None and self.product is not None:
+                    product = self.product
+        except Exception as e:
+            logger.warning("device_info: %s - %s", repr(parsed_message), str(e))
+            raise ValueError('Failed to translate device_info')
 
         if serial_number is not None:
             device = {

@@ -32,7 +32,7 @@ class GarminJsonData():
             if data is not None:
                 return format_func(data)
         except KeyError as e:
-            logger.error("JSON %s not found in %s: %s", fieldname, repr(json), str(e))
+            logger.debug("JSON %s not found in %s: %s", fieldname, repr(json), str(e))
 
     def process_files(self):
         for file_name in self.file_names:
