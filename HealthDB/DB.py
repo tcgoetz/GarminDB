@@ -40,7 +40,7 @@ class DB():
 
     @classmethod
     def mysql_url(cls, db_params_dict):
-        return "mysql+pymysql://%s:%s@%s/%s" % (db_params_dict['db_username'], db_params_dict['db_password'], db_params_dict['db_host'], cls.dbname)
+        return "mysql+pymysql://%s:%s@%s/%s" % (db_params_dict['db_username'], db_params_dict['db_password'], db_params_dict['db_host'], cls.db_name)
 
     def session(self):
         return self.session_maker()
@@ -530,7 +530,8 @@ class DbVersionObject(KeyValueObject):
         self.set_if_unset(db, 'version', version_number)
         self.version = self.get_int(db, 'version')
         if self.version != version_number:
-            raise RuntimeError("DB %s version mismatch. Please rebuild the DB. (%s vs %s)" % (db.db_name, self.version, version_number))
+            raise RuntimeError("DB %s version mismatch. Please rebuild the %s DB. (%s vs %s)" %
+                    (db.db_name, db.db_name, self.version, version_number))
 
 
 class SummaryBase(DBObject):
