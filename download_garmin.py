@@ -12,6 +12,7 @@ from Fit import Conversions
 
 
 logging.basicConfig(level=logging.INFO)
+root_logger = logging.getLogger()
 logger = logging.getLogger()
 
 
@@ -20,10 +21,9 @@ class Download():
     garmin_connect_base_url = "https://connect.garmin.com"
 
     garmin_connect_sso_url = 'https://sso.garmin.com/sso'
-    garmin_connect_sso_login_url = garmin_connect_sso_url + '/login'
+    garmin_connect_sso_login_url = garmin_connect_sso_url + '/signin'
 
     garmin_connect_login_url = garmin_connect_base_url + "/en-US/signin"
-    garmin_connect_post_login_url = garmin_connect_base_url + "/post-auth/login"
 
     garmin_connect_css_url = 'https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css'
 
@@ -32,6 +32,7 @@ class Download():
 
     garmin_connect_modern_proxy_url = garmin_connect_modern_url + '/proxy'
     garmin_connect_download_url = garmin_connect_modern_proxy_url + "/download-service/files"
+    garmin_connect_download_activity_url = garmin_connect_download_url + "/activity/"
 
     garmin_connect_download_daily_url = garmin_connect_download_url + "/wellness"
     garmin_connect_user_profile_url = garmin_connect_modern_proxy_url + "/userprofile-service/userprofile"
@@ -44,8 +45,12 @@ class Download():
     garmin_connect_rhr_url = garmin_connect_modern_proxy_url + "/userstats-service/wellness/daily"
     garmin_connect_weight_url = garmin_connect_personal_info_url + "/weightWithOutbound/filterByDay"
 
+    garmin_connect_biometric_url = garmin_connect_modern_proxy_url + "/biometric-service/biometric"
+    garmin_connect_weight_by_date_url = garmin_connect_biometric_url + "/weightByDate"
+
     garmin_connect_activity_search_url = garmin_connect_modern_proxy_url + "/activitylist-service/activities/search/activities"
-    garmin_connect_download_activity_url = garmin_connect_download_url + "/activity/"
+
+    garmin_connect_course_url = garmin_connect_modern_proxy_url + "/course-service/course"
 
     agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337 Safari/537.36'
 
@@ -54,31 +59,28 @@ class Download():
         logger.debug("__init__: temp_dir= " + self.temp_dir)
         self.session = requests.session()
 
+    def get_activity_details_url(self, activity_id):
+        return self.garmin_connect_modern_proxy_url + '/activity-service/activity/%s' % str(activity_id)
+
     def get(self, url, params={}):
         logger.debug("get: " + url)
         headers = {
             'User-Agent': self.agent
         }
-        try:
-            response = self.session.get(url, headers=headers, params=params)
-            logger.debug("get: %s (%d)" % (response.url, response.status_code))
-            response.raise_for_status()
-            return response
-        except Exception as e:
-            logger.error("get exception: " + str(e))
+        response = self.session.get(url, headers=headers, params=params)
+        logger.debug("get: %s (%d)", response.url, response.status_code)
+        response.raise_for_status()
+        return response
 
     def post(self, url, params, data):
         logger.debug("post: " + url)
         headers = {
             'User-Agent': self.agent
         }
-        try:
-            response = self.session.post(url, headers=headers, params=params, data=data)
-            logger.debug("post: %s (%d)" % (response.url, response.status_code))
-            response.raise_for_status()
-            return response
-        except Exception as e:
-            logger.error("post exception: " + str(e))
+        response = self.session.post(url, headers=headers, params=params, data=data)
+        logger.debug("post: %s (%d)", response.url, response.status_code)
+        response.raise_for_status()
+        return response
 
     def get_json(self, page_html, key):
         found = re.search(key + r" = JSON.parse\(\"(.*)\"\);", page_html, re.M)
@@ -89,11 +91,11 @@ class Download():
     def login(self, username, password):
         logger.debug("login: %s %s", username, password)
         params = {
-            'service': self.garmin_connect_post_login_url,
+            'service': self.garmin_connect_modern_url,
             'webhost': self.garmin_connect_base_url,
             'source': self.garmin_connect_login_url,
-            'redirectAfterAccountLoginUrl': self.garmin_connect_post_login_url,
-            'redirectAfterAccountCreationUrl': self.garmin_connect_post_login_url,
+            'redirectAfterAccountLoginUrl': self.garmin_connect_modern_url,
+            'redirectAfterAccountCreationUrl': self.garmin_connect_modern_url,
             'gauthHost': self.garmin_connect_sso_url,
             'locale': 'en_US',
             'id': 'gauth-widget',
@@ -127,7 +129,7 @@ class Download():
         params = {
             'ticket' : found.group(1)
         }
-        response = self.get(self.garmin_connect_activities_url, params)
+        response = self.get(self.garmin_connect_modern_url, params)
         self.user_prefs = self.get_json(response.text, 'VIEWER_USERPREFERENCES')
         self.display_name = self.user_prefs['displayName']
         self.english_units = (self.user_prefs['measurementSystem'] == 'statute_us')
@@ -205,6 +207,12 @@ class Download():
         response = self.get(self.garmin_connect_activity_search_url, params)
         return response.json()
 
+    def save_activity_details(self, directory, activity_id_str):
+        logger.debug("save_activity_details")
+        response = self.get(self.get_activity_details_url(activity_id_str))
+        json_filename = directory + '/activity_details_' + activity_id_str
+        self.save_json_file(json_filename, response.json())
+
     def save_activity_file(self, activity_id_str):
         logger.debug("save_activity_file: " + activity_id_str)
         response = self.get(self.garmin_connect_download_activity_url + activity_id_str)
@@ -218,8 +226,9 @@ class Download():
             activity_name_str = Conversions.printable(activity['activityName'])
             logger.info("get_activities: %s (%s)" % (activity_name_str, activity_id_str))
             json_filename = directory + '/activity_' + activity_id_str
-            if not os.path.isfile(json_filename) or overwite:
+            if not os.path.isfile(json_filename + '.json') or overwite:
                 logger.debug("get_activities: %s <- %s" % (json_filename, repr(activity)))
+                self.save_activity_details(directory, activity_id_str)
                 self.save_json_file(json_filename, activity)
                 self.save_activity_file(activity_id_str)
                 # pause for a second between every page access
@@ -300,12 +309,12 @@ def main(argv):
     weight = None
     rhr = None
     sleep = None
-    debug = False
+    debug = 0
 
     try:
-        opts, args = getopt.getopt(argv,"a:c:d:n:lm:op:r:S:s:tu:w:",
-            ["activities=", "activity_count=", "debug", "date=", "days=", "username=", "password=", "latest", "monitoring=", "mysql=",
-             "overwrite", "rhr=", "sqlite=", "sleep=", "weight="])
+        opts, args = getopt.getopt(argv,"a:c:d:n:lm:op:r:S:s:t:u:w:",
+            ["activities=", "activity_count=", "date=", "days=", "username=", "password=", "latest", "monitoring=", "mysql=",
+             "overwrite", "rhr=", "sqlite=", "sleep=", "trace=", "weight="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -318,8 +327,8 @@ def main(argv):
         elif opt in ("-c", "--activity_count"):
             logger.debug("Activity count: " + arg)
             activity_count = int(arg)
-        elif opt in ("-t", "--debug"):
-            debug = True
+        elif opt in ("-t", "--trace"):
+            debug = int(arg)
         elif opt in ("-d", "--date"):
             logger.debug("Date: " + arg)
             date = dateutil.parser.parse(arg).date()
@@ -361,10 +370,10 @@ def main(argv):
             db_params_dict['db_password'] = db_args[1]
             db_params_dict['db_host'] = db_args[2]
 
-    if debug:
-        logger.setLevel(logging.DEBUG)
+    if debug > 0:
+        root_logger.setLevel(logging.DEBUG)
     else:
-        logger.setLevel(logging.INFO)
+        root_logger.setLevel(logging.INFO)
 
     if ((not date or not days) and not latest) and (monitoring or sleep):
         print "Missing arguments: specify date and days or latest when downloading monitoring or sleep data"
