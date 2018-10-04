@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
-    db_version = 3
+    db_version = 4
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -23,7 +23,7 @@ class GarminDB(DB):
         logger.info("GarminDB: %s debug: %s ", repr(db_params_dict), str(debug))
         DB.__init__(self, db_params_dict, debug)
         GarminDB.Base.metadata.create_all(self.engine)
-        self.version = SummaryDB.DbVersion()
+        self.version = GarminDB.DbVersion()
         self.version.version_check(self, self.db_version)
         DeviceInfo.create_view(self)
         File.create_view(self)
@@ -39,7 +39,7 @@ class Device(GarminDB.Base, DBObject):
 
     serial_number = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
-    manufacturer = Column(Enum(FieldEnums.Manufacturer), nullable=False)
+    manufacturer = Column(Enum(FieldEnums.Manufacturer))
     product = Column(String)
     hardware_version = Column(String)
 
@@ -52,7 +52,7 @@ class Device(GarminDB.Base, DBObject):
 
     @classmethod
     def get(cls, db, serial_number):
-        return cls.find_id(db, {'serial_number' : serial_number})
+        return cls.find_one(db, {'serial_number' : serial_number})
 
 
 class DeviceInfo(GarminDB.Base, DBObject):
@@ -62,26 +62,31 @@ class DeviceInfo(GarminDB.Base, DBObject):
     timestamp = Column(DateTime, nullable=False)
     file_id = Column(Integer, ForeignKey('files.id'))
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
+    device_type = Column(String)
     software_version = Column(String)
     cum_operating_time = Column(Time)
     battery_voltage = Column(Float)
 
-    min_row_values = 3
-    _updateable_fields = ['software_version', 'cum_operating_time', 'battery_voltage']
+    min_row_values = 2
 
     @classmethod
     def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
+        return (
+            session.query(cls).
+                filter(cls.timestamp == values_dict['timestamp']).
+                filter(cls.serial_number == values_dict['serial_number']).
+                filter(cls.device_type == values_dict['device_type'])
+        )
 
     @classmethod
     def create_view(cls, db):
         view_name = cls.__tablename__ + '_view'
         query_str = (
             'SELECT ' +
-                'device_info.id AS id, ' +
                 'device_info.timestamp AS timestamp, ' +
                 'device_info.file_id AS file_id, ' +
                 'device_info.serial_number AS serial_number, ' +
+                'device_info.device_type AS device_type, ' +
                 'device_info.software_version AS software_version, ' +
                 'devices.manufacturer AS devices_manufacturer, ' +
                 'devices.product AS devices_product, ' +
