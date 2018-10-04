@@ -61,6 +61,9 @@ class FitFileProcessor():
     def write_file(self, fit_file):
         self.lap = 1
         self.record = 1
+        self.serial_number = None
+        self.manufacturer = None
+        self.product = None
         self.write_message_types(fit_file, fit_file.message_types())
 
     #
@@ -68,18 +71,21 @@ class FitFileProcessor():
     #
     def write_file_id_entry(self, fit_file, message):
         parsed_message = message.to_dict()
-        if parsed_message['serial_number'] is not None:
+        self.serial_number = parsed_message.get('serial_number', None)
+        self.manufacturer = parsed_message.get('manufacturer', None)
+        self.product = parsed_message.get('product', None)
+        if self.serial_number is not None:
             device = {
-                'serial_number' : parsed_message['serial_number'],
+                'serial_number' : self.serial_number,
                 'timestamp'     : parsed_message['time_created'],
-                'manufacturer'  : parsed_message['manufacturer'],
-                'product'       : parsed_message['product'].name,
+                'manufacturer'  : self.manufacturer,
+                'product'       : Fit.FieldEnums.name_for_enum(self.product),
             }
             GarminDB.Device.find_or_create(self.garmin_db, device)
         file = {
             'name'          : fit_file.filename,
             'type'          : parsed_message['type'],
-            'serial_number' : parsed_message['serial_number'],
+            'serial_number' : self.serial_number,
         }
         GarminDB.File.find_or_create(self.garmin_db, file)
 
@@ -351,21 +357,36 @@ class FitFileProcessor():
 
     def write_device_info_entry(self, fit_file, device_info_message):
         parsed_message = device_info_message.to_dict()
-        if parsed_message.get('serial_number', None) is not None:
+        device_type = parsed_message.get('device_type', None)
+        serial_number = parsed_message.get('serial_number', None)
+        manufacturer = parsed_message.get('manufacturer', None)
+        product = parsed_message.get('product', None)
+        source_type = parsed_message.get('source_type', None)
+        # local devices are part of the main device. Base missing fields off of the main device.
+        if source_type is Fit.FieldEnums.SourceType.local:
+            if serial_number is None and self.serial_number is not None and device_type is not None:
+                serial_number = '%s%06d' % (self.serial_number, device_type.value)
+            if manufacturer is None and self.manufacturer is not None:
+                manufacturer = self.manufacturer
+            if product is None and self.product is not None:
+                product = self.product
+
+        if serial_number is not None:
             device = {
-                'serial_number'     : parsed_message['serial_number'],
+                'serial_number'     : serial_number,
                 'timestamp'         : parsed_message['timestamp'],
-                'manufacturer'      : parsed_message['manufacturer'],
-                'product'           : parsed_message['product'].name,
+                'manufacturer'      : manufacturer,
+                'product'           : Fit.FieldEnums.name_for_enum(product),
                 'hardware_version'  : parsed_message.get('hardware_version', None),
             }
             try:
                 GarminDB.Device.create_or_update_not_none(self.garmin_db, device)
-            except Exception:
-                logger.error("Message not written: " + repr(parsed_message))
+            except Exception as e:
+                logger.error("Device not written: %s - %s", repr(parsed_message), str(e))
             device_info = {
                 'file_id'               : GarminDB.File.get(self.garmin_db, fit_file.filename),
-                'serial_number'         : parsed_message['serial_number'],
+                'serial_number'         : serial_number,
+                'device_type'           : Fit.FieldEnums.name_for_enum(device_type),
                 'timestamp'             : parsed_message['timestamp'],
                 'cum_operating_time'    : parsed_message.get('cum_operating_time', None),
                 'battery_voltage'       : parsed_message.get('battery_voltage', None),
@@ -373,5 +394,5 @@ class FitFileProcessor():
             }
             try:
                 GarminDB.DeviceInfo.create_or_update_not_none(self.garmin_db, device_info)
-            except Exception:
-                logger.warning("Device info message not written: " + repr(parsed_message))
+            except Exception as e:
+                logger.warning("device_info not written: %s - %s", repr(parsed_message), str(e))
