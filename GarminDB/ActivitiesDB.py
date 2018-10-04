@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
-    db_version = 6
+    db_version = 7
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -21,7 +21,7 @@ class ActivitiesDB(DB):
         logger.info("ActivitiesDB: %s debug: %s ", repr(db_params_dict), str(debug))
         DB.__init__(self, db_params_dict, debug)
         ActivitiesDB.Base.metadata.create_all(self.engine)
-        self.version = SummaryDB.DbVersion()
+        self.version = ActivitiesDB.DbVersion()
         self.version.version_check(self, self.db_version)
 
         RunActivities.create_view(self)
@@ -38,6 +38,8 @@ class Activities(ActivitiesDB.Base, DBObject):
     name = Column(String)
     description = Column(String)
     type = Column(String)
+    #
+    course_id = Column(Integer)
     #
     start_time = Column(DateTime, unique=True)
     stop_time = Column(DateTime, unique=True)
