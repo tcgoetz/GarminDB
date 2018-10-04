@@ -304,7 +304,6 @@ class GarminJsonDetailsData(GarminJsonData):
             'course_id'                 : self.get_garmin_json_data(metadata_dto, 'associatedCourseId', int),
             'avg_temperature'           : avg_temperature,
         }
-        print repr(activity)
         GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
 
 

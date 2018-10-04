@@ -248,6 +248,7 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
                 'activities.name AS name, ' +
                 'activities.description AS description, ' +
                 'activities.type AS type, ' +
+                'activities.course_id AS course_id, ' +
                 'activities.start_time AS start_time, ' +
                 'activities.stop_time AS stop_time, ' +
                 'activities.elapsed_time AS elapsed_time, ' +
