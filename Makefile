@@ -67,10 +67,11 @@ setup: update deps
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs clean_summary_db
 
 # build dbs from already downloaded data files
-build_dbs: garmin_dbs mshealth_db fitbit_db mshealth_summary fitbit_summary
+build_dbs: build_garmin_dbs mshealth_db fitbit_db mshealth_summary fitbit_summary
 
 # delete the exisitng dbs and build new dbs from already downloaded data files
 rebuild_dbs: clean_dbs build_dbs
+rebuild_activity_db: clean_activities_db build_activities_db
 
 # download data files for the period specified by GC_DATE and GC_DAYS and build the dbs
 create_dbs: download_garmin build_dbs
@@ -181,6 +182,8 @@ import_new_monitoring: download_new_monitoring
 GARMIN_ACT_DB=$(DB_DIR)/garmin_activities.db
 $(GARMIN_ACT_DB): $(DB_DIR) import_activities
 
+build_activities_db: $(GARMIN_ACT_DB)
+
 clean_activities_db:
 	rm -f $(GARMIN_ACT_DB)
 
@@ -275,7 +278,7 @@ update_garmin: import_new_monitoring import_new_activities import_new_weight imp
 
 download_garmin: download_monitoring download_all_activities download_sleep download_weight download_rhr
 
-garmin_dbs: $(GARMIN_DB) $(GARMIN_MON_DB) $(GARMIN_ACT_DB) $(GARMIN_SUM_DB)
+build_garmin_dbs: $(GARMIN_DB) $(GARMIN_MON_DB) build_activities_db $(GARMIN_SUM_DB)
 
 
 #
