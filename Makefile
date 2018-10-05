@@ -156,6 +156,8 @@ test_import_monitoring: $(DB_DIR)
 GARMIN_MON_DB=$(DB_DIR)/garmin_monitoring.db
 $(GARMIN_MON_DB): $(DB_DIR) import_monitoring
 
+build_monitoring_db: $(GARMIN_MON_DB)
+
 clean_monitoring_db:
 	rm -f $(GARMIN_MON_DB)
 
@@ -218,10 +220,9 @@ force_download_all_activities: $(ACTIVITES_FIT_FILES_DIR)
 GARMIN_DB=$(DB_DIR)/garmin.db
 $(GARMIN_DB): $(DB_DIR) garmin_config import_sleep import_weight import_rhr
 
-clean_garmin_summary_db:
-	rm -f $(GARMIN_SUM_DB)
+build_garmin_db: $(GARMIN_DB)
 
-clean_garmin_dbs: clean_garmin_summary_db clean_monitoring_db clean_activities_db
+clean_garmin_db:
 	rm -f $(GARMIN_DB)
 
 ## sleep
@@ -268,17 +269,27 @@ download_rhr: $(DB_DIR) $(RHR_FILES_DIR)
 GARMIN_SUM_DB=$(DB_DIR)/garmin_summary.db
 $(GARMIN_SUM_DB): $(DB_DIR) garmin_summary
 
+build_garmin_summary_db: $(GARMIN_SUM_DB)
+
+clean_garmin_summary_db:
+	rm -f $(GARMIN_SUM_DB)
+
 garmin_summary:
 	python analyze_garmin.py --analyze --dates --sqlite $(DB_DIR)
 
 garmin_config:
 	python analyze_garmin.py -S$(DEFAULT_SLEEP_START),$(DEFAULT_SLEEP_STOP) --sqlite /Users/tgoetz/HealthData/DBs
 
+#
+# These operations work across all garmin dbs
+#
 update_garmin: import_new_monitoring import_new_activities import_new_weight import_new_sleep import_new_rhr garmin_summary
 
 download_garmin: download_monitoring download_all_activities download_sleep download_weight download_rhr
 
-build_garmin_dbs: $(GARMIN_DB) $(GARMIN_MON_DB) build_activities_db $(GARMIN_SUM_DB)
+build_garmin_dbs: build_garmin_db build_monitoring_db build_activities_db build_garmin_summary_db
+
+clean_garmin_dbs: clean_garmin_db clean_garmin_summary_db clean_monitoring_db clean_activities_db
 
 
 #
