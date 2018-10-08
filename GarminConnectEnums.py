@@ -105,8 +105,26 @@ class Sport(enum.Enum):
             raise
 
     @classmethod
+    def from_details_json(cls, json_data):
+        json_activity = json_data['activityTypeDTO']
+        try:
+            return Sport(json_activity['parentTypeId'])
+        except ValueError:
+            logger.info("Unknown sport type: %s", repr(json_activity))
+            raise
+
+    @classmethod
     def subsport_from_json(cls, json_data):
         json_activity = json_data['activityType']
+        try:
+            return Sport(json_activity['typeId'])
+        except ValueError:
+            logger.info("Unknown subsport type: %s", repr(json_activity))
+            raise
+
+    @classmethod
+    def subsport_from_details_json(cls, json_data):
+        json_activity = json_data['activityTypeDTO']
         try:
             return Sport(json_activity['typeId'])
         except ValueError:

@@ -52,7 +52,11 @@ class Download():
 
     garmin_connect_course_url = garmin_connect_modern_proxy_url + "/course-service/course"
 
-    agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337 Safari/537.36'
+    agents = {
+        'Chrome_Linux'  : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337 Safari/537.36',
+        'Firefox_MacOS' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:62.0) Gecko/20100101 Firefox/62.0'
+    }
+    agent = agents['Firefox_MacOS']
 
     def __init__(self):
         self.temp_dir = tempfile.mkdtemp()
@@ -135,7 +139,7 @@ class Download():
         self.english_units = (self.user_prefs['measurementSystem'] == 'statute_us')
         self.social_profile = self.get_json(response.text, 'VIEWER_SOCIAL_PROFILE')
         self.full_name = self.social_profile['fullName']
-        logger.debug("login: %s (%s) english units %s", self.full_name, self.display_name, str(self.english_units))
+        logger.info("login: %s (%s) english units: %s", self.full_name, self.display_name, str(self.english_units))
         return True
 
     def save_binary_file(self, filename, response):

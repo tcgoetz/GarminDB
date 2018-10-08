@@ -233,10 +233,6 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
     # ground contact time in ms
     avg_ground_contact_time = Column(Time)
     avg_stance_time_percent = Column(Float)
-    # bpm
-    lactate_threshold_hr = Column(Float)
-    # watts
-    power = Column(Float)
     vo2_max = Column(Float)
 
     @classmethod
@@ -274,8 +270,6 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
                 'run_activities.avg_gct_balance AS avg_gct_balance, ' +
                 'run_activities.avg_ground_contact_time AS avg_ground_contact_time, ' +
                 'run_activities.avg_stance_time_percent AS avg_stance_time_percent, ' +
-                'run_activities.lactate_threshold_hr AS lactate_threshold_hr, ' +
-                'run_activities.power AS power, ' +
                 'run_activities.vo2_max AS vo2_max, ' +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
@@ -367,8 +361,6 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
 class CycleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'cycle_activities'
     strokes = Column(Integer)
-    # watts
-    power = Column(Float)
     vo2_max = Column(Float)
 
     @classmethod
@@ -396,7 +388,6 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
                 'activities.max_cadence AS max_rpms, ' +
                 'activities.avg_speed AS avg_speed, ' +
                 'activities.max_speed AS max_speed, ' +
-                'cycle_activities.power AS power, ' +
                 'cycle_activities.vo2_max AS vo2_max, ' +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
@@ -410,7 +401,6 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
     steps = Column(Integer)
     # kms or miles
     elliptical_distance = Column(Float)
-    power = Column(Float)
 
     @classmethod
     def create_view(cls, db):
@@ -433,7 +423,6 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
                 'activities.avg_cadence AS avg_rpms, ' +
                 'activities.max_cadence AS max_rpms, ' +
                 'activities.avg_speed AS avg_speed, ' +
-                'elliptical_activities.power AS power, ' +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
             'FROM elliptical_activities JOIN activities ON activities.activity_id = elliptical_activities.activity_id'

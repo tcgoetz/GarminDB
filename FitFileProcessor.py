@@ -25,9 +25,9 @@ class FitFileProcessor():
         self.garmin_act_db = GarminDB.ActivitiesDB(self.db_params_dict, self.debug - 1)
 
         if english_units:
-            GarminDB.Attributes.set_newer(self.garmin_db, 'dist_setting', 'statute')
+            GarminDB.Attributes.set_newer(self.garmin_db, 'dist_setting', str(Fit.FieldEnums.DisplayMeasure.statute))
         else:
-            GarminDB.Attributes.set_newer(self.garmin_db, 'dist_setting', 'metric')
+            GarminDB.Attributes.set_newer(self.garmin_db, 'dist_setting', str(Fit.FieldEnums.DisplayMeasure.metric))
         logger.info("Debug: %s English units: %s", str(debug), str(english_units))
 
     def write_generic(self, fit_file, message_type, messages):

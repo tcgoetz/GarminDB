@@ -144,10 +144,8 @@ class GarminJsonSummaryData(GarminJsonData):
                 'max_steps_per_min'         : self.get_garmin_json_data(activity_summary, 'maxRunningCadenceInStepsPerMinute', float),
                 'avg_step_length'           : avg_step_length,
                 'avg_gct_balance'           : self.get_garmin_json_data(activity_summary, 'avgGroundContactBalance', float),
-                'lactate_threshold_hr'      : self.get_garmin_json_data(activity_summary, 'lactateThresholdBpm', float),
                 'avg_vertical_oscillation'  : avg_vertical_oscillation,
                 'avg_ground_contact_time'   : Fit.Conversions.ms_to_dt_time(self.get_garmin_json_data(activity_summary, 'avgGroundContactTime', float)),
-                'power'                     : self.get_garmin_json_data(activity_summary, 'avgPower', float),
                 'vo2_max'                   : self.get_garmin_json_data(activity_summary, 'vO2MaxValue', float),
         }
         GarminDB.RunActivities.create_or_update_not_none(self.garmin_act_db, run)
@@ -180,7 +178,6 @@ class GarminJsonSummaryData(GarminJsonData):
                 'activity_id'               : activity_id,
                 'strokes'                   : self.get_garmin_json_data(activity_summary, 'strokes', float),
                 'avg_stroke_distance'       : avg_stroke_distance,
-                'power'                     : self.get_garmin_json_data(activity_summary, 'avgPower', float),
         }
         GarminDB.PaddleActivities.create_or_update_not_none(self.garmin_act_db, paddle)
 
@@ -194,7 +191,6 @@ class GarminJsonSummaryData(GarminJsonData):
         ride = {
                 'activity_id'               : activity_id,
                 'strokes'                   : self.get_garmin_json_data(activity_summary, 'strokes', float),
-                'power'                     : self.get_garmin_json_data(activity_summary, 'avgPower', float),
                 'vo2_max'                   : self.get_garmin_json_data(activity_summary, 'vO2MaxValue', float),
         }
         GarminDB.CycleActivities.create_or_update_not_none(self.garmin_act_db, ride)
@@ -213,7 +209,6 @@ class GarminJsonSummaryData(GarminJsonData):
             workout = {
                     'activity_id'               : activity_id,
                     'steps'                     : self.get_garmin_json_data(activity_summary, 'steps', float),
-                    'power'                     : self.get_garmin_json_data(activity_summary, 'avgPower', float),
             }
             GarminDB.EllipticalActivities.create_or_update_not_none(self.garmin_act_db, workout)
 
@@ -290,10 +285,26 @@ class GarminJsonDetailsData(GarminJsonData):
         GarminJsonData.__init__(self, input_file, input_dir, 'activity_details_\\d*\.json', latest, english_units, debug)
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
 
+    def process_running(self, activity_id, json_data):
+        summary_dto = json_data['summaryDTO']
+        avg_moving_speed_mps = summary_dto.get('averageMovingSpeed', None)
+        avg_moving_speed = Fit.Conversions.mps_to_mph(avg_moving_speed_mps)
+        run = {
+            'activity_id'               : activity_id,
+            'avg_moving_pace'           : Fit.Conversions.speed_to_pace(avg_moving_speed),
+        }
+        logger.info("process_running for %d: %s", activity_id, repr(run))
+        GarminDB.RunActivities.create_or_update_not_none(self.garmin_act_db, run)
+
+
     def process_json(self, json_data):
         activity_id = json_data['activityId']
         metadata_dto = json_data['metadataDTO']
         summary_dto = json_data['summaryDTO']
+        sport = GarminConnectEnums.Sport.from_details_json(json_data)
+        sub_sport = GarminConnectEnums.Sport.subsport_from_details_json(json_data)
+        if sport is GarminConnectEnums.Sport.top_level or sport is GarminConnectEnums.Sport.other:
+            sport = sub_sport
         avg_temperature_c = self.get_garmin_json_data(summary_dto, 'averageTemperature', float)
         if self.english_units:
             avg_temperature = Fit.Conversions.celsius_to_fahrenheit(avg_temperature_c)
@@ -305,6 +316,11 @@ class GarminJsonDetailsData(GarminJsonData):
             'avg_temperature'           : avg_temperature,
         }
         GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
+        try:
+            function = getattr(self, 'process_' + sub_sport.name)
+            function(activity_id, json_data)
+        except AttributeError:
+            logger.info("No sport handler for type %s from %s", sub_sport, activity_id)
 
 
 def usage(program):
