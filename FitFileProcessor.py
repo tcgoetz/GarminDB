@@ -74,13 +74,14 @@ class FitFileProcessor():
         self.serial_number = parsed_message.get('serial_number', None)
         self.manufacturer = parsed_message.get('manufacturer', None)
         self.product = parsed_message.get('product', None)
-        device = {
-            'serial_number' : self.serial_number,
-            'timestamp'     : parsed_message['time_created'],
-            'manufacturer'  : self.manufacturer,
-            'product'       : Fit.FieldEnums.name_for_enum(self.product),
-        }
-        GarminDB.Device.find_or_create(self.garmin_db, device)
+        if self.serial_number:
+            device = {
+                'serial_number' : self.serial_number,
+                'timestamp'     : parsed_message['time_created'],
+                'manufacturer'  : self.manufacturer,
+                'product'       : Fit.FieldEnums.name_for_enum(self.product),
+            }
+            GarminDB.Device.find_or_create(self.garmin_db, device)
         file = {
             'name'          : fit_file.filename,
             'type'          : parsed_message['type'],
