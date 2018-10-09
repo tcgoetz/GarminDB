@@ -67,23 +67,19 @@ class Download():
         return self.garmin_connect_modern_proxy_url + '/activity-service/activity/%s' % str(activity_id)
 
     def get(self, url, params={}):
-        logger.debug("get: " + url)
         headers = {
             'User-Agent': self.agent
         }
         response = self.session.get(url, headers=headers, params=params)
         logger.debug("get: %s (%d)", response.url, response.status_code)
-        response.raise_for_status()
         return response
 
     def post(self, url, params, data):
-        logger.debug("post: " + url)
         headers = {
             'User-Agent': self.agent
         }
         response = self.session.post(url, headers=headers, params=params, data=data)
         logger.debug("post: %s (%d)", response.url, response.status_code)
-        response.raise_for_status()
         return response
 
     def get_json(self, page_html, key):
@@ -116,7 +112,10 @@ class Download():
             'embedWidget': 'false',
             'generateExtraServiceTicket': 'false'
         }
-        self.get(self.garmin_connect_sso_login_url, params)
+        response = self.get(self.garmin_connect_sso_login_url, params)
+        if response.status_code != 200:
+            logger.error("Login failed: " + response.text)
+            return False
         data = {
             'username': username,
             'password': password,
@@ -134,6 +133,9 @@ class Download():
             'ticket' : found.group(1)
         }
         response = self.get(self.garmin_connect_modern_url, params)
+        if response.status_code != 200:
+            logger.error("Login failed: " + response.text)
+            return False
         self.user_prefs = self.get_json(response.text, 'VIEWER_USERPREFERENCES')
         self.display_name = self.user_prefs['displayName']
         self.english_units = (self.user_prefs['measurementSystem'] == 'statute_us')
@@ -166,7 +168,7 @@ class Download():
     def get_monitoring_day(self, date):
         logger.info("get_monitoring_day: %s", str(date))
         response = self.get(self.garmin_connect_download_daily_url + '/' + date.strftime("%Y-%m-%d"))
-        if response:
+        if response and response.status_code == 200:
             self.save_binary_file(self.temp_dir + '/' + str(date) + '.zip', response)
 
     def get_monitoring(self, date, days):
@@ -209,18 +211,21 @@ class Download():
             "limit" : str(count)
         }
         response = self.get(self.garmin_connect_activity_search_url, params)
-        return response.json()
+        if response.status_code == 200:
+            return response.json()
 
     def save_activity_details(self, directory, activity_id_str):
         logger.debug("save_activity_details")
         response = self.get(self.get_activity_details_url(activity_id_str))
-        json_filename = directory + '/activity_details_' + activity_id_str
-        self.save_json_file(json_filename, response.json())
+        if response.status_code == 200:
+            json_filename = directory + '/activity_details_' + activity_id_str
+            self.save_json_file(json_filename, response.json())
 
     def save_activity_file(self, activity_id_str):
         logger.debug("save_activity_file: " + activity_id_str)
         response = self.get(self.garmin_connect_download_activity_url + activity_id_str)
-        self.save_binary_file(self.temp_dir + '/activity_' + activity_id_str + '.zip', response)
+        if response.status_code == 200:
+            self.save_binary_file(self.temp_dir + '/activity_' + activity_id_str + '.zip', response)
 
     def get_activities(self, directory, count, overwite=False):
         logger.info("get_activities: '%s' (%d)" % (directory, count))
@@ -246,7 +251,8 @@ class Download():
                 'date' : date.strftime("%Y-%m-%d")
             }
             response = self.get(self.garmin_connect_sleep_daily_url + '/' + self.display_name, params)
-            self.save_binary_file(filename, response)
+            if response.status_code == 200:
+                self.save_binary_file(filename, response)
 
     def get_sleep(self, directory, date, days):
         logger.info("get_sleep: %s : %d" % (str(date), days))
