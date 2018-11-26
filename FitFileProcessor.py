@@ -71,6 +71,7 @@ class FitFileProcessor():
     #
     def write_file_id_entry(self, fit_file, message):
         parsed_message = message.to_dict()
+        logger.info("file_id message: %s", repr(parsed_message))
         self.serial_number = parsed_message.get('serial_number', None)
         self.manufacturer = parsed_message.get('manufacturer', None)
         self.product = parsed_message.get('product', None)
