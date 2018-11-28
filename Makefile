@@ -151,7 +151,7 @@ backup: $(BACKUP_DIR)
 test_import_monitoring: $(DB_DIR)
 	python import_garmin.py -t1 -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
 
-test_monitoring_file: $(DB_DIR)
+test_monitoring_file: $(TEST_DB_DIR)
 	python import_garmin.py -t1 -e --fit_input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR)
 
 ##  monitoring
@@ -196,6 +196,9 @@ $(ACTIVITES_FIT_FILES_DIR):
 
 test_import_fit_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
+
+test_activities_file: $(TEST_DB_DIR)
+	python import_garmin_activities.py -t1 -e --input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR)
 
 test_import_json_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_$(TEST_GC_ID).json" --sqlite $(DB_DIR)
