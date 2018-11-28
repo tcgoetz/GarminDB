@@ -80,10 +80,6 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
     timestamp = Column(DateTime, primary_key=True)
     heart_rate = Column(Integer, nullable=False)
 
-    __table_args__ = (
-        UniqueConstraint("timestamp", "heart_rate"),
-    )
-
     time_col = synonym("timestamp")
     min_row_values = 2
 

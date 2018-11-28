@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
-    db_version = 7
+    db_version = 8
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -123,7 +123,7 @@ class ActivityLaps(ActivitiesDB.Base, DBObject):
     activity_id = Column(Integer, ForeignKey('activities.activity_id'))
     lap = Column(Integer)
     #
-    start_time = Column(DateTime, primary_key=True)
+    start_time = Column(DateTime, unique=True)
     stop_time = Column(DateTime, unique=True)
     elapsed_time = Column(Time)
     moving_time = Column(Time)
@@ -153,7 +153,7 @@ class ActivityLaps(ActivitiesDB.Base, DBObject):
     avg_temperature = Column(Float)
 
     __table_args__ = (
-        UniqueConstraint("activity_id", "lap"),
+        PrimaryKeyConstraint("activity_id", "lap"),
     )
 
     time_col = synonym("start_time")
@@ -169,7 +169,7 @@ class ActivityRecords(ActivitiesDB.Base, DBObject):
 
     activity_id = Column(Integer, ForeignKey('activities.activity_id'))
     record = Column(Integer)
-    timestamp = Column(DateTime, primary_key=True)
+    timestamp = Column(DateTime)
     # degrees
     position_lat = Column(Float)
     position_long = Column(Float)
@@ -184,7 +184,7 @@ class ActivityRecords(ActivitiesDB.Base, DBObject):
     temperature = Column(Float)
 
     __table_args__ = (
-        UniqueConstraint("activity_id", "record"),
+        PrimaryKeyConstraint("activity_id", "record"),
     )
 
     time_col = synonym("timestamp")
