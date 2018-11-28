@@ -76,7 +76,10 @@ class GarminFitData():
     def process_files(self, db_params_dict):
         fp = FitFileProcessor.FitFileProcessor(db_params_dict, self.english_units, self.debug)
         for file_name in self.file_names:
-            fp.write_file(Fit.File(file_name, self.english_units))
+            try:
+                fp.write_file(Fit.File(file_name, self.english_units))
+            except FitFileError as e:
+                logger.error("Failed to parse %s: %s" % (file_name, str(e)))
 
 
 class SleepActivityLevels(enum.Enum):
