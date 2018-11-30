@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
-    db_version = 8
+    db_version = 9
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -123,8 +123,8 @@ class ActivityLaps(ActivitiesDB.Base, DBObject):
     activity_id = Column(Integer, ForeignKey('activities.activity_id'))
     lap = Column(Integer)
     #
-    start_time = Column(DateTime, unique=True)
-    stop_time = Column(DateTime, unique=True)
+    start_time = Column(DateTime)
+    stop_time = Column(DateTime)
     elapsed_time = Column(Time)
     moving_time = Column(Time)
     # degrees
