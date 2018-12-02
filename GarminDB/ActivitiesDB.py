@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
-    db_version = 9
+    db_version = 10
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -41,8 +41,8 @@ class Activities(ActivitiesDB.Base, DBObject):
     #
     course_id = Column(Integer)
     #
-    start_time = Column(DateTime, unique=True)
-    stop_time = Column(DateTime, unique=True)
+    start_time = Column(DateTime)
+    stop_time = Column(DateTime)
     elapsed_time = Column(Time)
     moving_time = Column(Time)
     #
