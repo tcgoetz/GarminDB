@@ -78,7 +78,7 @@ class GarminFitData():
         for file_name in self.file_names:
             try:
                 fp.write_file(Fit.File(file_name, self.english_units))
-            except FitFileError as e:
+            except Fit.FitFileError as e:
                 logger.error("Failed to parse %s: %s" % (file_name, str(e)))
 
 

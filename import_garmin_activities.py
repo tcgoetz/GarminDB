@@ -70,7 +70,7 @@ class GarminTcxData():
             tcx = tcxparser.TCXParser(file_name)
             end_time = dateutil.parser.parse(tcx.completed_at, ignoretz=True)
             start_time = dateutil.parser.parse(tcx.started_at, ignoretz=True)
-            manufacturer = 'Unknown'
+            manufacturer = Fit.FieldEnums.Manufacturer.Unknown
             product = tcx.creator
             if product is not None:
                 match = re.search('Microsoft', product)
@@ -115,12 +115,15 @@ class GarminTcxData():
                 'distance'                  : distance,
                 'avg_hr'                    : tcx.hr_avg,
                 'max_hr'                    : tcx.hr_max,
-                'calories'                  : tcx.calories,
                 'max_cadence'               : tcx.cadence_max,
                 'avg_cadence'               : tcx.cadence_avg,
                 #'ascent'                    : ascent,
                 #'descent'                   : descent
             }
+            try:
+                activity['calories'] = tcx.calories
+            except AttributeError:
+                pass
             activity_not_zero = {key : value for (key,value) in activity.iteritems() if value}
             GarminDB.Activities.create_or_update_not_none(garmin_act_db, activity_not_zero)
 
@@ -273,10 +276,11 @@ class GarminJsonSummaryData(GarminJsonData):
         }
         GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
         try:
-            function = getattr(self, 'process_' + sub_sport.name)
+            process_function = 'process_' + sub_sport.name
+            function = getattr(self, process_function)
             function(activity_id, json_data)
         except AttributeError:
-            logger.info("No sport handler for type %s from %s", sub_sport, activity_id)
+            logger.info("No sport handler %s from %s", process_function, activity_id)
 
 
 class GarminJsonDetailsData(GarminJsonData):
@@ -295,7 +299,6 @@ class GarminJsonDetailsData(GarminJsonData):
         }
         logger.info("process_running for %d: %s", activity_id, repr(run))
         GarminDB.RunActivities.create_or_update_not_none(self.garmin_act_db, run)
-
 
     def process_json(self, json_data):
         activity_id = json_data['activityId']
@@ -317,10 +320,11 @@ class GarminJsonDetailsData(GarminJsonData):
         }
         GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
         try:
-            function = getattr(self, 'process_' + sub_sport.name)
+            process_function = 'process_' + sub_sport.name
+            function = getattr(self, process_function)
             function(activity_id, json_data)
         except AttributeError:
-            logger.info("No sport handler for type %s from %s", sub_sport, activity_id)
+            logger.info("No sport handler %s from %s", process_function, activity_id)
 
 
 def usage(program):
