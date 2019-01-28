@@ -194,9 +194,6 @@ clean_activities_db:
 $(ACTIVITES_FIT_FILES_DIR):
 	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
 
-test_import_fit_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
-
 test_import_fit_activities: $(TEST_DB_DIR)
 	python import_garmin_activities.py -t1 -e --input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR)
 
