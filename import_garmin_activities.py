@@ -108,6 +108,7 @@ class GarminTcxData():
                 'stop_time'                 : end_time,
                 'laps'                      : len(tcx.activity.Lap),
                 # 'sport'                     : tcx.activity_type,
+                'calories'                  : tcx.calories,
                 'start_lat'                 : tcx.start_latitude,
                 'start_long'                : tcx.start_longitude,
                 'stop_lat'                  : tcx.end_latitude,
@@ -120,10 +121,6 @@ class GarminTcxData():
                 #'ascent'                    : ascent,
                 #'descent'                   : descent
             }
-            try:
-                activity['calories'] = tcx.calories
-            except AttributeError:
-                pass
             activity_not_zero = {key : value for (key,value) in activity.iteritems() if value}
             GarminDB.Activities.create_or_update_not_none(garmin_act_db, activity_not_zero)
 
