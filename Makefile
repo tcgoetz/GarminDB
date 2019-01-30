@@ -152,7 +152,12 @@ test_import_monitoring: $(DB_DIR)
 	python import_garmin.py -t1 -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
 
 test_monitoring_file: $(TEST_DB_DIR)
-	python import_garmin.py -t1 -e --fit_input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR)
+	if [ -z "$(TEST_DB_DIR)" ]; then echo "TEST_DB_DIR is not defined"; fi
+	if [ -f "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" ]; then \
+		python import_garmin.py -t1 -e --fit_input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR); \
+	else \
+		echo "Expecting " $(TEST_GC_ID).fit " to be found in " $(TEST_FILE_DIR); \
+	fi
 
 ##  monitoring
 GARMIN_MON_DB=$(DB_DIR)/garmin_monitoring.db
@@ -195,7 +200,12 @@ $(ACTIVITES_FIT_FILES_DIR):
 	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
 
 test_import_fit_activities: $(TEST_DB_DIR)
-	python import_garmin_activities.py -t1 -e --input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR)
+	if [ -z "$(TEST_DB_DIR)" ]; then echo "TEST_DB_DIR is not defined"; fi
+	if [ -f "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" ]; then \
+		python import_garmin_activities.py -t1 -e --input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR); \
+	else \
+		echo "Expecting " $(TEST_GC_ID).fit " to be found in " $(TEST_FILE_DIR); \
+	fi
 
 test_import_details_json_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_details_$(TEST_GC_ID).json" --sqlite $(DB_DIR)
@@ -204,8 +214,12 @@ test_import_tcx_activities: $(TEST_DB_DIR) $(TEST_FILE_DIR)
 	python import_garmin_activities.py -t1 -e --input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).tcx" --sqlite $(TEST_DB_DIR)
 
 test_import_json_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_$(TEST_GC_ID).json" --sqlite $(DB_DIR)
-
+	if [ -z "$(TEST_DB_DIR)" ]; then echo "TEST_DB_DIR is not defined"; fi
+	if [ -f "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" ]; then \
+		python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_$(TEST_GC_ID).json" --sqlite $(DB_DIR); \
+	else \
+		echo "Expecting " $(TEST_GC_ID).fit " to be found in " $(TEST_FILE_DIR); \
+	fi
 import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	python import_garmin_activities.py -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
 
