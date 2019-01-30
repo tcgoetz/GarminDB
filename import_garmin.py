@@ -56,7 +56,7 @@ class GarminWeightData():
                     'weight' : weight
                 }
                 GarminDB.Weight.create_or_update_not_none(garmindb, point)
-            logger.info("DB updated with %d weight entries", len(json_data))
+            logger.info("DB updated with %d weight entries from %s", len(json_data), file_name)
 
 
 class GarminFitData():
@@ -163,7 +163,7 @@ class GarminSleepData():
                     'duration' : duration
                 }
                 GarminDB.SleepEvents.create_or_update_not_none(garmindb, level_data)
-            logger.info("DB updated %s with %d sleep level entries", str(day), len(sleep_levels))
+            logger.info("DB updated %s with %d sleep level entries from %s", str(day), len(sleep_levels), file_name)
         logger.info("DB updated with %d sleep entries", self.file_count())
 
 
@@ -190,7 +190,7 @@ class GarminRhrData():
                     'resting_heart_rate' : sample['value']
                 }
                 GarminDB.RestingHeartRate.create_or_update_not_none(garmindb, data)
-            logger.info("DB updated with %d rhr entries", len(json_data))
+            logger.info("DB updated with %d rhr entries from %s", len(json_data), file_name)
 
 
 def usage(program):
