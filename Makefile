@@ -45,7 +45,7 @@ RHR_FILES_DIR=$(HEALTH_DATA_DIR)/RHR
 
 BIN_DIR=$(PWD)/bin
 
-TMPDIR = $(shell mktemp)
+TMPDIR = $(shell mktemp -d)
 
 TEST_FILE_DIR=$(HOME)/Downloads
 TEST_DB_DIR=$(TMPDIR)
