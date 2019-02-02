@@ -169,7 +169,7 @@ test_monitoring_file: $(TEST_DB_DIR)
 
 ##  monitoring
 GARMIN_MON_DB=$(DB_DIR)/garmin_monitoring.db
-$(GARMIN_MON_DB): $(DB_DIR) import_monitoring
+$(GARMIN_MON_DB): $(DB_DIR) garmin_profile import_monitoring
 
 build_monitoring_db: $(GARMIN_MON_DB)
 
@@ -187,7 +187,7 @@ import_monitoring: $(DB_DIR)
 		python import_garmin.py --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
 	done
 
-download_new_monitoring: $(MONITORING_FIT_FILES_DIR)
+download_new_monitoring: $(MONITORING_FIT_FILES_DIR) garmin_profile
 	python download_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MONITORING_FIT_FILES_DIR)"
 
 import_new_monitoring: download_new_monitoring
