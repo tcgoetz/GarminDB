@@ -74,7 +74,7 @@ class GarminFitData():
         return len(self.file_names)
 
     def process_files(self, db_params_dict):
-        fp = FitFileProcessor.FitFileProcessor(db_params_dict, self.english_units, self.debug)
+        fp = FitFileProcessor.FitFileProcessor(db_params_dict, self.debug)
         for file_name in self.file_names:
             try:
                 fp.write_file(Fit.File(file_name, self.english_units))
@@ -193,6 +193,33 @@ class GarminRhrData():
             logger.info("DB updated with %d rhr entries from %s", len(json_data), file_name)
 
 
+class GarminProfile():
+
+    def __init__(self, input_dir, debug):
+        self.debug = debug
+        logger.info("Debug: %s" % str(debug))
+        if input_dir:
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'profile\.json')
+
+    def file_count(self):
+        return len(self.file_names)
+
+    def process_files(self, db_params_dict):
+        garmindb = GarminDB.GarminDB(db_params_dict)
+        for file_name in self.file_names:
+            json_data = parse_json_file(file_name, {'calendarDate' : dateutil.parser.parse})
+            measurement_system = Fit.FieldEnums.DisplayMeasure.from_string(json_data['measurementSystem'])
+            print measurement_system
+            attributes = {
+                'name'                  : string.replace(json_data['displayName'], '_', ' '),
+                'time_zone'             : json_data['timeZone'],
+                'measurement_system'    : str(measurement_system),
+                'date_format'           : json_data['dateFormat']['formatKey'],
+            }
+            for attribute_name, attribute_value in attributes.items():
+                GarminDB.Attributes.set_newer(garmindb, attribute_name, attribute_value)
+
+
 def usage(program):
     print '%s [-s <sqlite db path> | -m <user,password,host>] [-i <fit_inputfile> | -d <fit_input_dir>] ...' % program
     print '    --trace : turn on debug tracing'
@@ -202,7 +229,7 @@ def usage(program):
 
 def main(argv):
     debug = 0
-    english_units = False
+    profile_dir = None
     fit_input_dir = None
     fit_input_file = None
     weight_input_dir = None
@@ -215,8 +242,8 @@ def main(argv):
     db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"f:F:elm:r:R:s:t:w:W:",
-            ["trace=", "english", "fit_input_dir=", "fit_input_file=", "latest", "mysql=", "sqlite=",
+        opts, args = getopt.getopt(argv,"f:F:lm:p:r:R:s:t:w:W:",
+            ["trace=", "fit_input_dir=", "fit_input_file=", "latest", "mysql=", "profile_dir=", "sqlite=",
              "rhr_input_dir=", "rhr_input_file=", "sleep_input_dir=", "sleep_input_file=", "weight_input_dir=", "weight_input_file="])
     except getopt.GetoptError:
         usage(sys.argv[0])
@@ -226,8 +253,6 @@ def main(argv):
             usage(sys.argv[0])
         elif opt in ("-t", "--trace"):
             debug = int(arg)
-        elif opt in ("-e", "--english"):
-            english_units = True
         elif opt in ("-f", "--fit_input_dir"):
             logging.debug("Fit input dir: %s" % arg)
             fit_input_dir = arg
@@ -236,6 +261,9 @@ def main(argv):
             fit_input_file = arg
         elif opt in ("-l", "--latest"):
             latest = True
+        elif opt in ("-p", "--profile_dir"):
+            logging.debug("RHR input dir: %s" % arg)
+            profile_dir = arg
         elif opt in ("-r", "--rhr_input_dir"):
             logging.debug("RHR input dir: %s" % arg)
             rhr_input_dir = arg
@@ -271,13 +299,21 @@ def main(argv):
     else:
         root_logger.setLevel(logging.INFO)
 
-    if (not (fit_input_file or fit_input_dir) and not (weight_input_file or weight_input_dir)
+    if (not profile_dir  and not (fit_input_file or fit_input_dir) and not (weight_input_file or weight_input_dir)
         and not (sleep_input_file or sleep_input_dir) and not (rhr_input_file or rhr_input_dir)):
         print "Missing or incorrect arguments: Fit or weight input files or directory"
         usage(sys.argv[0])
     if len(db_params_dict) == 0:
         print "Missing or incorrect arguments: db params"
         usage(sys.argv[0])
+
+    if profile_dir:
+        gp = GarminProfile(profile_dir, debug)
+        if gp.file_count() > 0:
+            gp.process_files(db_params_dict)
+
+    garmindb = GarminDB.GarminDB(db_params_dict)
+    english_units = GarminDB.Attributes.measurements_type_metric(garmindb) == False
 
     if weight_input_file or weight_input_dir:
         gwd = GarminWeightData(weight_input_file, weight_input_dir, latest, english_units, debug)

@@ -39,7 +39,7 @@ class GarminFitData():
         return len(self.file_names)
 
     def process_files(self, db_params_dict):
-        fp = FitFileProcessor(db_params_dict, self.english_units, self.debug)
+        fp = FitFileProcessor(db_params_dict, self.debug)
         for file_name in self.file_names:
             try:
                 fp.write_file(Fit.File(file_name, self.english_units))
@@ -333,14 +333,13 @@ def usage(program):
 
 def main(argv):
     debug = 0
-    english_units = False
     input_dir = None
     input_file = None
     latest = False
     db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"d:eilm::s:t:", ["trace=", "english", "latest", "input_dir=", "input_file=", "mysql=", "sqlite="])
+        opts, args = getopt.getopt(argv,"d:eilm::s:t:", ["trace=", "latest", "input_dir=", "input_file=", "mysql=", "sqlite="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -349,8 +348,6 @@ def main(argv):
             usage(sys.argv[0])
         elif opt in ("-t", "--trace"):
             debug = int(arg)
-        elif opt in ("-e", "--english"):
-            english_units = True
         elif opt in ("-d", "--input_dir"):
             input_dir = arg
         elif opt in ("-i", "--input_file"):
@@ -374,6 +371,9 @@ def main(argv):
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)
+
+    garmindb = GarminDB.GarminDB(db_params_dict)
+    english_units = GarminDB.Attributes.measurements_type_metric(garmindb) == False
 
     if not (input_file or input_dir) or len(db_params_dict) == 0:
         print "Missing arguments:"

@@ -15,20 +15,14 @@ logger = logging.getLogger(__file__)
 
 class FitFileProcessor():
 
-    def __init__(self, db_params_dict, english_units, debug):
+    def __init__(self, db_params_dict, debug):
+        logger.info("Debug: %s", str(debug))
         self.db_params_dict = db_params_dict
-        self.english_units = english_units
         self.debug = debug
 
         self.garmin_db = GarminDB.GarminDB(db_params_dict, debug - 1)
         self.garmin_mon_db = GarminDB.MonitoringDB(self.db_params_dict, self.debug - 1)
         self.garmin_act_db = GarminDB.ActivitiesDB(self.db_params_dict, self.debug - 1)
-
-        if english_units:
-            GarminDB.Attributes.set_newer(self.garmin_db, 'dist_setting', str(Fit.FieldEnums.DisplayMeasure.statute))
-        else:
-            GarminDB.Attributes.set_newer(self.garmin_db, 'dist_setting', str(Fit.FieldEnums.DisplayMeasure.metric))
-        logger.info("Debug: %s English units: %s", str(debug), str(english_units))
 
     def write_generic(self, fit_file, message_type, messages):
         for message in messages:

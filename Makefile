@@ -55,6 +55,9 @@ DEFAULT_SLEEP_STOP=06:00
 
 TEST_GC_ID ?= 10724054307
 
+# define UNITS_OPT="" for metric
+UNITS_OPT ?= "-e"
+
 
 #
 # Master targets
@@ -148,15 +151,17 @@ backup: $(BACKUP_DIR)
 #
 # Garmin
 #
+garmin_profile:
+	python import_garmin.py -t1 --profile_dir "$(FIT_FILE_DIR)" --sqlite $(DB_DIR)
 
 ## test monitoring
 test_import_monitoring: $(DB_DIR)
-	python import_garmin.py -t1 -e --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
+	python import_garmin.py -t1 --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
 
 test_monitoring_file: $(TEST_DB_DIR)
 	@if [ -z "$(TEST_DB_DIR)" ]; then echo "TEST_DB_DIR is not defined"; fi
 	@if [ -f "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" ]; then \
-		python import_garmin.py -t1 -e --fit_input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR); \
+		python import_garmin.py -t1 --fit_input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR); \
 	else \
 		echo "Expecting " $(TEST_GC_ID).fit " to be found in " $(TEST_FILE_DIR) " but it contains:"; \
 		ls -l "$(TEST_FILE_DIR)"; \
@@ -175,11 +180,11 @@ $(MONITORING_FIT_FILES_DIR):
 	mkdir -p $(MONITORING_FIT_FILES_DIR)
 
 download_monitoring: $(MONITORING_FIT_FILES_DIR)
-	python download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MONITORING_FIT_FILES_DIR)"
+	python download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -m "$(MONITORING_FIT_FILES_DIR)"
 
 import_monitoring: $(DB_DIR)
 	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
-		python import_garmin.py -e --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
+		python import_garmin.py --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
 	done
 
 download_new_monitoring: $(MONITORING_FIT_FILES_DIR)
@@ -187,7 +192,7 @@ download_new_monitoring: $(MONITORING_FIT_FILES_DIR)
 
 import_new_monitoring: download_new_monitoring
 	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
-		python import_garmin.py -e -l --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
+		python import_garmin.py -l --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
 	done
 
 ## activities
@@ -205,40 +210,40 @@ $(ACTIVITES_FIT_FILES_DIR):
 test_import_fit_activities: $(TEST_DB_DIR)
 	@if [ -z "$(TEST_DB_DIR)" ]; then echo "TEST_DB_DIR is not defined"; fi
 	@if [ -f "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" ]; then \
-		python import_garmin_activities.py -t1 -e --input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR); \
+		python import_garmin_activities.py -t1 --input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR); \
 	else \
 		echo "Expecting " $(TEST_GC_ID).fit " to be found in " $(TEST_FILE_DIR) " but it contains:"; \
 		ls -l "$(TEST_FILE_DIR)"; \
 	fi
 
 test_import_details_json_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_details_$(TEST_GC_ID).json" --sqlite $(DB_DIR)
+	python import_garmin_activities.py -t1 --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_details_$(TEST_GC_ID).json" --sqlite $(DB_DIR)
 
 test_import_tcx_activities: $(TEST_DB_DIR) $(TEST_FILE_DIR)
-	python import_garmin_activities.py -t1 -e --input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).tcx" --sqlite $(TEST_DB_DIR)
+	python import_garmin_activities.py -t1 --input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).tcx" --sqlite $(TEST_DB_DIR)
 
 test_import_json_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
 	@if [ -z "$(TEST_DB_DIR)" ]; then echo "TEST_DB_DIR is not defined"; fi
 	@if [ -f "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" ]; then \
-		python import_garmin_activities.py -t1 -e --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_$(TEST_GC_ID).json" --sqlite $(DB_DIR); \
+		python import_garmin_activities.py -t1 --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_$(TEST_GC_ID).json" --sqlite $(DB_DIR); \
 	else \
 		echo "Expecting " $(TEST_GC_ID).fit " to be found in " $(TEST_FILE_DIR) " but it contains:"; \
 		ls -l "$(TEST_FILE_DIR)"; \
 	fi
 import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	python import_garmin_activities.py -e --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
+	python import_garmin_activities.py --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
 
 import_new_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR) download_new_activities
-	python import_garmin_activities.py -e -l --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
+	python import_garmin_activities.py -l --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
 
 download_new_activities: $(ACTIVITES_FIT_FILES_DIR)
-	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -a "$(ACTIVITES_FIT_FILES_DIR)" -c 10
+	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -a "$(ACTIVITES_FIT_FILES_DIR)" -c 10
 
 download_all_activities: $(ACTIVITES_FIT_FILES_DIR)
-	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -a "$(ACTIVITES_FIT_FILES_DIR)"
+	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -a "$(ACTIVITES_FIT_FILES_DIR)"
 
 force_download_all_activities: $(ACTIVITES_FIT_FILES_DIR)
-	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -a "$(ACTIVITES_FIT_FILES_DIR)" -o
+	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -a "$(ACTIVITES_FIT_FILES_DIR)" -o
 
 ## generic garmin
 GARMIN_DB=$(DB_DIR)/garmin.db
@@ -254,23 +259,23 @@ $(SLEEP_FILES_DIR):
 	mkdir -p $(SLEEP_FILES_DIR)
 
 download_sleep: $(SLEEP_FILES_DIR)
-	python download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -S "$(SLEEP_FILES_DIR)"
+	python download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -S "$(SLEEP_FILES_DIR)"
 
 import_sleep: $(SLEEP_FILES_DIR)
-	python import_garmin.py -e --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
+	python import_garmin.py --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
 
 download_new_sleep: $(SLEEP_FILES_DIR)
 	python download_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -S "$(SLEEP_FILES_DIR)"
 
 import_new_sleep: download_new_sleep
-	python import_garmin.py -e -l --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
+	python import_garmin.py -l --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
 
 ## weight
 $(WEIGHT_FILES_DIR):
 	mkdir -p $(WEIGHT_FILES_DIR)
 
 import_weight: $(DB_DIR)
-	python import_garmin.py -e --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
+	python import_garmin.py --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
 
 import_new_weight: download_weight import_weight
 
@@ -282,12 +287,12 @@ $(RHR_FILES_DIR):
 	mkdir -p $(RHR_FILES_DIR)
 
 import_rhr: $(DB_DIR)
-	python import_garmin.py -e --rhr_input_dir "$(RHR_FILES_DIR)" --sqlite $(DB_DIR)
+	python import_garmin.py --rhr_input_dir "$(RHR_FILES_DIR)" --sqlite $(DB_DIR)
 
 import_new_rhr: download_rhr import_rhr
 
 download_rhr: $(DB_DIR) $(RHR_FILES_DIR)
-	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -r "$(RHR_FILES_DIR)"
+	python download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -r "$(RHR_FILES_DIR)"
 
 ## digested garmin data
 GARMIN_SUM_DB=$(DB_DIR)/garmin_summary.db
@@ -329,7 +334,7 @@ $(FITBIT_FILE_DIR):
 	mkdir -p $(FITBIT_FILE_DIR)
 
 import_fitbit_file: $(DB_DIR) $(FITBIT_FILE_DIR)
-	python import_fitbit_csv.py -e --input_dir "$(FITBIT_FILE_DIR)" --sqlite $(DB_DIR)
+	python import_fitbit_csv.py $(UNITS_OPT) --input_dir "$(FITBIT_FILE_DIR)" --sqlite $(DB_DIR)
 
 fitbit_summary: $(FITBIT_DB)
 	python analyze_fitbit.py --sqlite $(DB_DIR) --dates
@@ -350,7 +355,7 @@ $(MSHEALTH_FILE_DIR):
 	mkdir -p $(MSHEALTH_FILE_DIR)
 
 import_mshealth: $(DB_DIR) $(MSHEALTH_FILE_DIR)
-	python import_mshealth_csv.py -e --input_dir "$(MSHEALTH_FILE_DIR)" --sqlite $(DB_DIR)
+	python import_mshealth_csv.py $(UNITS_OPT) --input_dir "$(MSHEALTH_FILE_DIR)" --sqlite $(DB_DIR)
 
 mshealth_summary: $(MSHEALTH_DB)
 	python analyze_mshealth.py --sqlite $(DB_DIR) --dates

@@ -32,6 +32,10 @@ class GarminDB(DB):
 class Attributes(GarminDB.Base, KeyValueObject):
     __tablename__ = 'attributes'
 
+    @classmethod
+    def measurements_type_metric(cls, db):
+        return (cls.get(db, 'measurement_system') == str(FieldEnums.DisplayMeasure.metric))
+
 
 class Device(GarminDB.Base, DBObject):
     __tablename__ = 'devices'

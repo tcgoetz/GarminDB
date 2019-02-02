@@ -48,6 +48,7 @@ class Download():
     garmin_connect_biometric_url = garmin_connect_modern_proxy_url + "/biometric-service/biometric"
     garmin_connect_weight_by_date_url = garmin_connect_biometric_url + "/weightByDate"
 
+    garmin_connect_activity_types_url = garmin_connect_modern_proxy_url + "/activity-service/activity/activityTypes"
     garmin_connect_activity_search_url = garmin_connect_modern_proxy_url + "/activitylist-service/activities/search/activities"
 
     garmin_connect_course_url = garmin_connect_modern_proxy_url + "/course-service/course"
@@ -88,7 +89,7 @@ class Download():
             json_text = found.group(1).replace('\\"', '"')
             return json.loads(json_text)
 
-    def login(self, username, password):
+    def login(self, username, password, profile_dir=None):
         logger.debug("login: %s %s", username, password)
         params = {
             'service': self.garmin_connect_modern_url,
@@ -137,6 +138,8 @@ class Download():
             logger.error("Login failed: " + response.text)
             return False
         self.user_prefs = self.get_json(response.text, 'VIEWER_USERPREFERENCES')
+        if profile_dir:
+            self.save_json_file(profile_dir + "/profile", self.user_prefs)
         self.display_name = self.user_prefs['displayName']
         self.english_units = (self.user_prefs['measurementSystem'] == 'statute_us')
         self.social_profile = self.get_json(response.text, 'VIEWER_SOCIAL_PROFILE')
@@ -228,7 +231,7 @@ class Download():
             self.save_binary_file(self.temp_dir + '/activity_' + activity_id_str + '.zip', response)
 
     def get_activities(self, directory, count, overwite=False):
-        logger.info("get_activities: '%s' (%d)" % (directory, count))
+        logger.info("get_activities: '%s' (%d)", directory, count)
         activities = self.get_activity_summaries(0, count)
         for activity in activities:
             activity_id_str = str(activity['activityId'])
@@ -242,6 +245,13 @@ class Download():
                 self.save_activity_file(activity_id_str)
                 # pause for a second between every page access
                 time.sleep(1)
+
+    def get_activity_types(self, directory):
+        logger.info("get_activity_types: '%s'", directory)
+        response = self.get(self.garmin_connect_activity_types_url)
+        if response.status_code == 200:
+            json_filename = directory + '/activity_types'
+            self.save_json_file(json_filename, response.json())
 
     def get_sleep_day(self, directory, date):
         filename = directory + '/sleep_' + str(date) + '.json'
@@ -312,8 +322,10 @@ def main(argv):
     db_params_dict = {}
     username = None
     password = None
+    profile = None
     activities = None
     activity_count = 1000
+    activity_types = False
     monitoring = None
     overwite = False
     weight = None
@@ -322,8 +334,8 @@ def main(argv):
     debug = 0
 
     try:
-        opts, args = getopt.getopt(argv,"a:c:d:n:lm:op:r:S:s:t:u:w:",
-            ["activities=", "activity_count=", "date=", "days=", "username=", "password=", "latest", "monitoring=", "mysql=",
+        opts, args = getopt.getopt(argv,"a:c:d:n:lm:oP:p:r:S:s:t:u:w:",
+            ["activities=", "activity_count=", "date=", "days=", "username=", "password=", "profile=", "latest", "monitoring=", "mysql=",
              "overwrite", "rhr=", "sqlite=", "sleep=", "trace=", "weight="])
     except getopt.GetoptError:
         usage(sys.argv[0])
@@ -354,6 +366,9 @@ def main(argv):
         elif opt in ("-p", "--password"):
             logger.debug("Password: " + arg)
             password = arg
+        elif opt in ("-P", "--profile"):
+            logger.info("Profile: " + arg)
+            profile = arg
         elif opt in ("-m", "--monitoring"):
             logger.debug("Monitoring: " + arg)
             monitoring = arg
@@ -396,10 +411,11 @@ def main(argv):
         usage(sys.argv[0])
 
     download = Download()
-    download.login(username, password)
+    download.login(username, password, profile)
 
     if activities and activity_count > 0:
         logger.info("Fetching %d activities" % activity_count)
+        download.get_activity_types(activities)
         download.get_activities(activities, activity_count, overwite)
         download.unzip_files(activities)
 
