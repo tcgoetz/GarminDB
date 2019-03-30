@@ -86,6 +86,7 @@ class SleepActivityLevels(enum.Enum):
     deep_sleep = 0.0
     light_sleep = 1.0
     awake = 2.0
+    more_awake = 3.0
 
 
 class RemSleepActivityLevels(enum.Enum):
