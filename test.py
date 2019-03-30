@@ -4,12 +4,18 @@
 # copyright Tom Goetz
 #
 
-import unittest, os, logging
+import unittest, os, logging, sys, datetime
 
 import GarminDB
 
 
+root_logger = logging.getLogger()
+handler = logging.FileHandler('unitests.log', 'w')
+root_logger.addHandler(handler)
+root_logger.setLevel(logging.INFO)
+
 logger = logging.getLogger(__name__)
+
 
 db_dir = None
 
@@ -21,6 +27,46 @@ class TestGarminDb(unittest.TestCase):
         cls.db_params_dict = {}
         cls.db_params_dict['db_type'] = 'sqlite'
         cls.db_params_dict['db_path'] = db_dir
+
+    def check_col_stats(self, db, table, col, name, ignore_le_zero, time_col,
+        records_bounds, max_bounds, min_bounds, avg_bounds, latest_bounds):
+        records = table.row_count(db)
+        records_min, records_max = records_bounds
+        self.assertGreater(records, records_min)
+        self.assertLess(records, records_max)
+        logger.info("%s records: %d", name, records)
+        if time_col:
+            maximum = table.get_time_col_max(db, col)
+        else:
+            maximum = table.get_col_max(db, col)
+        max_min, max_max = max_bounds
+        self.assertGreater(maximum, max_min)
+        self.assertLess(maximum, max_max)
+        logger.info("Max %s: %s", name, str(maximum))
+        if time_col:
+            minimum = table.get_time_col_min(db, col, None, None, ignore_le_zero)
+        else:
+            minimum = table.get_col_min(db, col, None, None, ignore_le_zero)
+        min_min, min_max = min_bounds
+        if time_col:
+            self.assertGreaterEqual(minimum, min_min)
+        else:
+            self.assertGreater(minimum, min_min)
+        self.assertLess(minimum, min_max)
+        logger.info("Min %s: %s", name, str(minimum))
+        if time_col:
+            average = table.get_time_col_avg(db, col, None, None, ignore_le_zero)
+        else:
+            average = table.get_col_avg(db, col, None, None, ignore_le_zero)
+        avg_min, avg_max = avg_bounds
+        self.assertGreater(average, avg_min)
+        self.assertLess(average, avg_max)
+        logger.info("Avg %s: %s", name, str(average))
+        latest = table.get_col_latest(db, col)
+        latest_min, latest_max = latest_bounds
+        self.assertGreater(latest, latest_min)
+        self.assertLess(latest, latest_max)
+        logger.info("Latest %s: %s", name, str(latest))
 
     def test_garmindb_exists(self):
         garmindb = GarminDB.GarminDB(self.db_params_dict)
@@ -38,6 +84,21 @@ class TestGarminDb(unittest.TestCase):
         self.assertGreater(GarminDB.SleepEvents.row_count(garmindb), 0)
         self.assertGreater(GarminDB.RestingHeartRate.row_count(garmindb), 0)
 
+    def test_garmindb_tables_bounds(self):
+        garmindb = GarminDB.GarminDB(self.db_params_dict)
+        self.check_col_stats(garmindb, GarminDB.Weight, GarminDB.Weight.weight, 'Weight', False, False,
+            (0, 10*365), (25, 300), (25, 300), (25, 300), (25, 300))
+        self.check_col_stats(garmindb, GarminDB.Stress, GarminDB.Stress.stress, 'Stress', True, False,
+            (1, 10000000), (25, 100), (0, 2), (0, 100), (0, 100))
+        self.check_col_stats(garmindb, GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'RHR', True, False,
+            (1, 10000000), (30, 100), (30, 100), (30, 100), (30, 100))
+        self.check_col_stats(garmindb, GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'Sleep', True, True,
+            (1, 10000000), (datetime.time(8), datetime.time(12)), (datetime.time(0), datetime.time(4)),
+            (datetime.time(4), datetime.time(10)), (datetime.time(2), datetime.time(12)))
+        self.check_col_stats(garmindb, GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True, True,
+            (1, 10000000), (datetime.time(2), datetime.time(4)), (datetime.time(0), datetime.time(2)),
+            (datetime.time(1), datetime.time(6)), (datetime.time(2), datetime.time(6)))
+
 
 class TestActivitiesDb(unittest.TestCase):
 
@@ -46,10 +107,6 @@ class TestActivitiesDb(unittest.TestCase):
         cls.db_params_dict = {}
         cls.db_params_dict['db_type'] = 'sqlite'
         cls.db_params_dict['db_path'] = db_dir
-
-    def test_garmin_act_db_exists(self):
-        garmin_act_db = GarminDB.ActivitiesDB(self.db_params_dict)
-        self.assertIsNotNone(garmin_act_db)
 
     def test_garmin_act_db_tables_exists(self):
         garmin_act_db = GarminDB.ActivitiesDB(self.db_params_dict)
