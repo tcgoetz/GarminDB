@@ -107,19 +107,17 @@ clean_deps_tcxparser:
 	cd python-tcxparser && cat files.txt | xargs rm -rf
 
 install_deps: deps_tcxparser
-	pip install --upgrade sqlalchemy
-	pip install --upgrade requests
-	pip install --upgrade python-dateutil || true
-	pip install --upgrade enum34
+	for package in $(PYTHON_PACKAGES); do \
+		pip install --upgrade  $$package; \
+	done
 
 deps:
 	$(DEPS_SUDO) $(MAKE) install_deps
 
 remove_deps: clean_deps_tcxparser
-	pip uninstall sqlalchemy
-	pip uninstall selenium
-	pip uninstall python-dateutil
-	pip uninstall enum34
+	for package in $(PYTHON_PACKAGES); do \
+		pip uninstall -y $$package; \
+	done
 
 clean_deps:
 	$(DEPS_SUDO) $(MAKE) remove_deps
