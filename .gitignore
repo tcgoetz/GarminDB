@@ -106,3 +106,5 @@ ENV/
 # project specific
 bin/
 
+bugreport.txt
+
