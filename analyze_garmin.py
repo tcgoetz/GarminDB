@@ -63,6 +63,7 @@ class Analyze():
         GarminDB.Summary.set(self.garminsumdb, sport + '_Miles', total_distance)
 
     def get_activities_stats(self):
+        logger.info("___Activities Statistics___")
         activities = GarminDB.Activities.row_count(self.garmin_act_db)
         logger.info("Activity summary records: %d", activities)
         GarminDB.Summary.set(self.garminsumdb, 'Activities', activities)
@@ -95,36 +96,41 @@ class Analyze():
         self.report_sport(GarminDB.Activities.sub_sport, 'Paddling')
         self.report_sport(GarminDB.Activities.sub_sport, 'Resort_Skiing_Snowboarding')
 
-    def get_col_stats(self, table, col, name, ignore_le_zero=False):
+    def get_col_stats(self, table, col, name, ignore_le_zero=False, time_col=False):
         records = table.row_count(self.garmindb)
         logger.info("%s records: %d", name, records)
         GarminDB.Summary.set(self.garminsumdb, '%s_Records' % name, records)
-        maximum = table.get_col_max(self.garmindb, col)
+        if time_col:
+            maximum = table.get_time_col_max(self.garmindb, col)
+        else:
+            maximum = table.get_col_max(self.garmindb, col)
         logger.info("Max %s: %s", name, str(maximum))
         GarminDB.Summary.set(self.garminsumdb, 'Max_%s' % name, maximum)
-        minimum = table.get_col_min(self.garmindb, col, None, None, ignore_le_zero)
+        if time_col:
+            minimum = table.get_time_col_min(self.garmindb, col, None, None, ignore_le_zero)
+        else:
+            minimum = table.get_col_min(self.garmindb, col, None, None, ignore_le_zero)
         logger.info("Min %s: %s", name, str(minimum))
         GarminDB.Summary.set(self.garminsumdb, 'Min_%s' % name, minimum)
-        average = table.get_col_avg(self.garmindb, col)
+        if time_col:
+            average = table.get_time_col_avg(self.garmindb, col, None, None, ignore_le_zero)
+        else:
+            average = table.get_col_avg(self.garmindb, col, None, None, ignore_le_zero)
         logger.info("Avg %s: %s", name, str(average))
         GarminDB.Summary.set(self.garminsumdb, 'Avg_%s' % name, average)
         latest = table.get_col_latest(self.garmindb, col)
         logger.info("Latest %s: %s", name, str(latest))
 
-    def get_weight_stats(self):
+    def get_monitoring_stats(self):
+        logger.info("___Monitoring Statistics___")
         self.get_col_stats(GarminDB.Weight, GarminDB.Weight.weight, 'Weight')
-
-    def get_stress_stats(self):
         self.get_col_stats(GarminDB.Stress, GarminDB.Stress.stress, 'Stress', True)
-
-    def get_rhr_stats(self):
         self.get_col_stats(GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'RHR', True)
-
-    def get_sleep_stats(self):
-        self.get_col_stats(GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'Sleep', True)
-        self.get_col_stats(GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True)
+        self.get_col_stats(GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'Sleep', True, True)
+        self.get_col_stats(GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True, True)
 
     def get_monitoring_years(self):
+        logger.info("___Monitoring Records Coverage___")
         years = GarminDB.Monitoring.get_years(self.mondb)
         GarminDB.Summary.set(self.garminsumdb, 'Monitoring_Years', len(years))
         logger.info("Monitoring records: %d", GarminDB.Monitoring.row_count(self.mondb))
@@ -237,20 +243,6 @@ class Analyze():
                 end_day_date = datetime.date(year, month, calendar.monthrange(year, month)[1])
                 self.calculate_month_stats(start_day_date, end_day_date)
 
-    def summary_stats(self):
-        stress_avg_with_activities = GarminDB.DaysSummary.get_col_avg_greater_than_value(
-            self.garminsumdb, GarminDB.DaysSummary.stress_avg, GarminDB.DaysSummary.activities, 0, None, None, True)
-        logger.info("Stress avg on days with activities: " + str(stress_avg_with_activities))
-        GarminDB.Summary.set(self.garminsumdb, 'Stress_Avg_Activities', stress_avg_with_activities)
-        stress_avg_multiple_activities = GarminDB.DaysSummary.get_col_avg_greater_than_value(
-            self.garminsumdb, GarminDB.DaysSummary.stress_avg, GarminDB.DaysSummary.activities, 1, None, None, True)
-        logger.info("Stress avg on days with multiple activities: " + str(stress_avg_multiple_activities))
-        GarminDB.Summary.set(self.garminsumdb, 'Stress_Avg_Activities', stress_avg_with_activities)
-        stress_avg_without_activities = GarminDB.DaysSummary.get_col_avg_for_value(
-            self.garminsumdb, GarminDB.DaysSummary.stress_avg, GarminDB.DaysSummary.activities, 0, None, None, True)
-        logger.info("Stress avg on days without activities: " + str(stress_avg_without_activities))
-        GarminDB.Summary.set(self.garminsumdb, 'Stress_Avg_No_Activities', stress_avg_with_activities)
-
 
 def usage(program):
     print '%s -s <sqlite db path> -m ...' % program
@@ -307,15 +299,11 @@ def main(argv):
     analyze = Analyze(db_params_dict, debug - 1)
     if dates:
         analyze.get_files_stats()
-        analyze.get_weight_stats()
-        analyze.get_stress_stats()
-        analyze.get_rhr_stats()
-        analyze.get_sleep_stats()
         analyze.get_activities_stats()
+        analyze.get_monitoring_stats()
         analyze.get_monitoring_years()
     if summary:
         analyze.summary()
-        analyze.summary_stats()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
