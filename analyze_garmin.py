@@ -135,9 +135,11 @@ class Analyze():
         GarminDB.Summary.set(self.garminsumdb, 'Monitoring_Years', len(years))
         logger.info("Monitoring records: %d", GarminDB.Monitoring.row_count(self.mondb))
         logger.info("Monitoring Years (%d): %s", len(years), str(years))
+        total_days = 0
         for year in years:
             self.get_monitoring_months(year)
-            self.get_monitoring_days(year)
+            total_days += self.get_monitoring_days(year)
+        logger.info("Total monitoring days: %d", total_days)
 
     def get_monitoring_months(self, year):
         months = GarminDB.Monitoring.get_month_names(self.mondb, year)
@@ -163,16 +165,16 @@ class Analyze():
                 day_str = str(Conversions.day_of_the_year_to_datetime(year, day))
                 next_day_str = str(Conversions.day_of_the_year_to_datetime(year, next_day))
                 logger.info("Days gap between %d (%s) and %d (%s)", day, day_str, next_day, next_day_str)
+        return days_count
 
     def combine_stats(self, stats, stat1_name, stat2_name):
         stat1 = stats.get(stat1_name, 0)
         stat2 = stats.get(stat2_name, 0)
-        if stat1 is not None and stat2 is not None:
-            return stat1 + stat2
-        if stat1 is not None:
-            return stat1
-        if stat2 is not None:
+        if stat1 is  None:
             return stat2
+        if stat2 is  None:
+            return stat1
+        return stat1 + stat2
 
     def calculate_day_stats(self, day_date):
         stats = GarminDB.MonitoringHeartRate.get_daily_stats(self.mondb, day_date)
