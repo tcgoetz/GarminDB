@@ -411,7 +411,8 @@ def main(argv):
         usage(sys.argv[0])
 
     download = Download()
-    download.login(username, password, profile)
+    if not download.login(username, password, profile):
+        sys.exit()
 
     if activities and activity_count > 0:
         logger.info("Fetching %d activities" % activity_count)
