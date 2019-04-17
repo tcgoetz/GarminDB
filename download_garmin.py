@@ -19,13 +19,16 @@ logger = logging.getLogger()
 class Download():
 
     garmin_connect_base_url = "https://connect.garmin.com"
+    garmin_connect_enus_url = garmin_connect_base_url + "/en-US"
 
-    garmin_connect_sso_url = 'https://sso.garmin.com/sso'
-    garmin_connect_sso_login_url = garmin_connect_sso_url + '/signin'
+    garmin_sso_base_url = 'https://sso.garmin.com/sso'
+    garmin_connect_sso_login_url = garmin_sso_base_url + '/signin'
 
-    garmin_connect_login_url = garmin_connect_base_url + "/en-US/signin"
+    garmin_connect_login_url = garmin_connect_enus_url + "/signin"
 
     garmin_connect_css_url = 'https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css'
+
+    garmin_connect_privacy_url = "//connect.garmin.com/en-U/privacy"
 
     garmin_connect_modern_url = garmin_connect_base_url + "/modern"
     garmin_connect_activities_url = garmin_connect_modern_url + "/activities"
@@ -55,9 +58,14 @@ class Download():
 
     agents = {
         'Chrome_Linux'  : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337 Safari/537.36',
-        'Firefox_MacOS' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:62.0) Gecko/20100101 Firefox/62.0'
+        'Firefox_MacOS' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:66.0) Gecko/20100101 Firefox/66.0'
     }
     agent = agents['Firefox_MacOS']
+
+    default_headers = {
+        'User-Agent'    : agent,
+        'Accept'        : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+    }
 
     def __init__(self):
         self.temp_dir = tempfile.mkdtemp()
@@ -67,19 +75,17 @@ class Download():
     def get_activity_details_url(self, activity_id):
         return self.garmin_connect_modern_proxy_url + '/activity-service/activity/%s' % str(activity_id)
 
-    def get(self, url, params={}):
-        headers = {
-            'User-Agent': self.agent
-        }
-        response = self.session.get(url, headers=headers, params=params)
+    def get(self, url, aaditional_headers={}, params={}):
+        total_headers = self.default_headers.copy()
+        total_headers.update(aaditional_headers)
+        response = self.session.get(url, headers=total_headers, params=params)
         logger.debug("get: %s (%d)", response.url, response.status_code)
         return response
 
-    def post(self, url, params, data):
-        headers = {
-            'User-Agent': self.agent
-        }
-        response = self.session.post(url, headers=headers, params=params, data=data)
+    def post(self, url, aaditional_headers, params, data):
+        total_headers = self.default_headers.copy()
+        total_headers.update(aaditional_headers)
+        response = self.session.post(url, headers=total_headers, params=params, data=data)
         logger.debug("post: %s (%d)", response.url, response.status_code)
         return response
 
@@ -91,51 +97,77 @@ class Download():
 
     def login(self, username, password, profile_dir=None):
         logger.debug("login: %s %s", username, password)
-        params = {
-            'service': self.garmin_connect_modern_url,
-            'webhost': self.garmin_connect_base_url,
-            'source': self.garmin_connect_login_url,
-            'redirectAfterAccountLoginUrl': self.garmin_connect_modern_url,
-            'redirectAfterAccountCreationUrl': self.garmin_connect_modern_url,
-            'gauthHost': self.garmin_connect_sso_url,
-            'locale': 'en_US',
-            'id': 'gauth-widget',
-            'cssUrl': self.garmin_connect_css_url,
-            'clientId': 'GarminConnect',
-            'rememberMeShown': 'true',
-            'rememberMeChecked': 'false',
-            'createAccountShown': 'true',
-            'openCreateAccount': 'false',
-            'usernameShown': 'false',
-            'displayNameShown': 'false',
-            'consumeServiceTicket': 'false',
-            'initialFocus': 'true',
-            'embedWidget': 'false',
-            'generateExtraServiceTicket': 'false'
+        get_headers = {
+            'Referer'                           : self.garmin_connect_login_url
         }
-        response = self.get(self.garmin_connect_sso_login_url, params)
+        params = {
+            'service'                           : self.garmin_connect_modern_url,
+            'webhost'                           : self.garmin_connect_base_url,
+            'source'                            : self.garmin_connect_login_url,
+            'redirectAfterAccountLoginUrl'      : self.garmin_connect_modern_url,
+            'redirectAfterAccountCreationUrl'   : self.garmin_connect_modern_url,
+            'gauthHost'                         : self.garmin_sso_base_url,
+            'locale'                            : 'en_US',
+            'id'                                : 'gauth-widget',
+            'cssUrl'                            : self.garmin_connect_css_url,
+            'privacyStatementUrl'               : '//connect.garmin.com/en-US/privacy/',
+            'clientId'                          : 'GarminConnect',
+            'rememberMeShown'                   : 'true',
+            'rememberMeChecked'                 : 'false',
+            # 'customerId'                        : '',
+            'createAccountShown'                : 'true',
+            'openCreateAccount'                 : 'false',
+            'displayNameShown'                  : 'false',
+            'consumeServiceTicket'              : 'false',
+            'initialFocus'                      : 'true',
+            'embedWidget'                       : 'false',
+            'generateExtraServiceTicket'        : 'true',
+            'generateTwoExtraServiceTickets'    : 'false',
+            'generateNoServiceTicket'           : 'false',
+            'globalOptInShown'                  : 'true',
+            'globalOptInChecked'                : 'false',
+            'mobile'                            : 'false',
+            'connectLegalTerms'                 : 'true',
+            'locationPromptShown'               : 'true',
+            'showPassword'                      : 'true'
+        }
+        response = self.get(self.garmin_connect_sso_login_url, get_headers, params)
         if response.status_code != 200:
-            logger.error("Login failed: " + response.text)
+            logger.error("Login get failed (%d).", response.status_code)
+            self.save_binary_file('login1', response)
             return False
+        self.save_binary_file('login_get.html', response)
+        found = re.search(r"name=\"_csrf\" value=\"(\w*)", response.text, re.M)
+        if not found:
+            logger.error("_csrf not found.", response.status_code)
+            self.save_binary_file('login2.html', response)
+            return False
+        logger.debug("_csrf found (%s).", found.group(1))
         data = {
             'username': username,
             'password': password,
-            'embed': 'true',
-            'lt': 'e1s1',
-            '_eventId': 'submit',
-            'displayNameRequired': 'false'
+            'embed': 'false',
+            '_csrf' : found.group(1)
         }
-        response = self.post(self.garmin_connect_sso_login_url, params, data)
+
+        post_headers = {
+            'Referer'                           : response.url,
+            'Content-Type'                      : 'application/x-www-form-urlencoded'
+        }
+        response = self.post(self.garmin_connect_sso_login_url, post_headers, params, data)
         found = re.search(r"\?ticket=([\w-]*)", response.text, re.M)
         if not found:
-            logger.error("Login failed: " + response.text)
+            logger.error("Login ticket not found (%d).", response.status_code)
+            self.save_binary_file('login_post.html', response)
             return False
         params = {
             'ticket' : found.group(1)
         }
+
         response = self.get(self.garmin_connect_modern_url, params)
         if response.status_code != 200:
-            logger.error("Login failed: " + response.text)
+            logger.error("Login get homepage failed (%d).", response.status_code)
+            self.save_binary_file('login_home.html', response)
             return False
         self.user_prefs = self.get_json(response.text, 'VIEWER_USERPREFERENCES')
         if profile_dir:
