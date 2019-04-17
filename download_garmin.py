@@ -4,7 +4,8 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, logging, datetime, time, tempfile, zipfile, json, dateutil.parser
+import os, sys, getopt, re, logging, datetime, time, tempfile, zipfile, json
+import dateutil.parser
 import requests
 
 import GarminDB
@@ -46,7 +47,7 @@ class Download():
     garmin_connect_sleep_daily_url = garmin_connect_wellness_url + "/dailySleepData"
 
     garmin_connect_rhr_url = garmin_connect_modern_proxy_url + "/userstats-service/wellness/daily"
-    garmin_connect_weight_url = garmin_connect_personal_info_url + "/weightWithOutbound/filterByDay"
+    garmin_connect_weight_url = garmin_connect_modern_proxy_url + "/weight-service/weight/dateRange"
 
     garmin_connect_biometric_url = garmin_connect_modern_proxy_url + "/biometric-service/biometric"
     garmin_connect_weight_by_date_url = garmin_connect_biometric_url + "/weightByDate"
@@ -134,13 +135,12 @@ class Download():
         response = self.get(self.garmin_connect_sso_login_url, get_headers, params)
         if response.status_code != 200:
             logger.error("Login get failed (%d).", response.status_code)
-            self.save_binary_file('login1', response)
+            self.save_binary_file('login_get.html', response)
             return False
-        self.save_binary_file('login_get.html', response)
         found = re.search(r"name=\"_csrf\" value=\"(\w*)", response.text, re.M)
         if not found:
             logger.error("_csrf not found.", response.status_code)
-            self.save_binary_file('login2.html', response)
+            self.save_binary_file('login_get.html', response)
             return False
         logger.debug("_csrf found (%s).", found.group(1))
         data = {
@@ -164,7 +164,7 @@ class Download():
             'ticket' : found.group(1)
         }
 
-        response = self.get(self.garmin_connect_modern_url, params)
+        response = self.get(self.garmin_connect_modern_url, params=params)
         if response.status_code != 200:
             logger.error("Login get homepage failed (%d).", response.status_code)
             self.save_binary_file('login_home.html', response)
@@ -214,30 +214,33 @@ class Download():
             # pause for a second between every page access
             time.sleep(1)
 
-    def get_weight_chunk(self, start, end):
-        logger.info("get_weight_chunk: %d - %d", start, end)
-        params = {
-            'from' : str(start),
-            "until" : str(end)
-        }
-        response = self.get(self.garmin_connect_weight_url, params)
-        return response.json()
+    def get_weight_day(self, directory, day, overwite=False):
+        date_str = day.strftime('%Y-%m-%d')
+        json_filename = directory + '/weight_' + date_str
+        if not os.path.isfile(json_filename + '.json') or overwite:
+            logger.info("get_weight_day: %s", date_str)
+            params = {
+                'startDate' : date_str,
+                'endDate'   : date_str,
+                '_'         : str(Conversions.dt_to_epoch_ms(day))
+            }
+            response = self.get(self.garmin_connect_weight_url, params=params)
+            if response.status_code == 200:
+                self.save_json_file(json_filename, response.json())
+                return True
+            logger.error("get_weight_chunk failed (%d): %s", response.status_code, response.url)
+        return False
 
-    def get_weight(self):
-        logger.info("get_weight")
-        data = []
-        chunk_size = int((86400 * 365) * 1000)
-        end = Conversions.dt_to_epoch_ms(datetime.datetime.now())
-        while True:
-            start = end - chunk_size
-            chunk_data = self.get_weight_chunk(start, end)
-            if len(chunk_data) <= 1:
+    def get_weight(self, directory, date, days):
+        logger.info("get_weight: %s going back %d days", date, days)
+        day = date
+        end_day = date - datetime.timedelta(days)
+        while self.get_weight_day(directory, day):
+            day = day - datetime.timedelta(1)
+            if day < end_day:
                 break
-            data.extend(chunk_data)
-            end -= chunk_size
             # pause for a second between every page access
             time.sleep(1)
-        return data
 
     def get_activity_summaries(self, start, count):
         logger.info("get_activity_summaries")
@@ -245,7 +248,7 @@ class Download():
             'start' : str(start),
             "limit" : str(count)
         }
-        response = self.get(self.garmin_connect_activity_search_url, params)
+        response = self.get(self.garmin_connect_activity_search_url, params=params)
         if response.status_code == 200:
             return response.json()
 
@@ -313,7 +316,7 @@ class Download():
             'untilDate' : end_str,
             'metricId' : 60
         }
-        response = self.get(self.garmin_connect_rhr_url + '/' + self.display_name, params)
+        response = self.get(self.garmin_connect_rhr_url + '/' + self.display_name, params=params)
         json_data = response.json()
         try:
             rhr_data = json_data['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
@@ -478,6 +481,19 @@ def main(argv):
             date = last_ts + datetime.timedelta(1)
             days = (datetime.datetime.now().date() - date).days
 
+    if latest and weight:
+        garmindb = GarminDB.GarminDB(db_params_dict)
+        last_ts = GarminDB.Weight.latest_time(garmindb)
+        if last_ts is None:
+            days = 31
+            date = datetime.datetime.now()
+            logger.info("Automatic date not found, using: " + str(date))
+        else:
+            # start from the day after the last day in the DB
+            logger.info("Automatically downloading weight data from: " + str(last_ts))
+            date = datetime.datetime.now()
+            days = (date - last_ts).days
+
     if monitoring and days > 0:
         logger.info("Date range to update: %s (%d)" % (str(date), days))
         download.get_monitoring(date, days)
@@ -489,8 +505,8 @@ def main(argv):
         download.get_sleep(sleep, date, days)
         logger.info("Saved sleep files for %s (%d) to %s for processing" % (str(date), days, sleep))
 
-    if weight:
-       download.save_json_file(weight + '/weight_' + str(int(time.time())), download.get_weight())
+    if weight and days > 0:
+       download.get_weight(weight, date, days)
 
     if rhr:
         download.save_json_file(rhr + '/rhr_' + str(int(time.time())), download.get_rhr())

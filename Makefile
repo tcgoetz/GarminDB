@@ -281,10 +281,13 @@ $(WEIGHT_FILES_DIR):
 import_weight: $(DB_DIR)
 	$(PYTHON) import_garmin.py --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
 
-import_new_weight: download_weight import_weight
+import_new_weight: download_new_weight import_weight
 
 download_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
-	$(PYTHON) download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
+	$(PYTHON) download_garmin.py -d $(GC_DATE) --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
+
+download_new_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
+	$(PYTHON) download_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
 
 ## rhr
 $(RHR_FILES_DIR):

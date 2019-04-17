@@ -5,6 +5,7 @@
 #
 
 import os, sys, getopt, string, logging, datetime, traceback, json, dateutil.parser, enum
+import dateutil.parser
 
 import Fit
 import FileProcessor
@@ -41,22 +42,24 @@ class GarminWeightData():
         return len(self.file_names)
 
     def process_files(self, db_params_dict):
+        logger.info("Processing %d weight files", len(self.file_names))
         garmindb = GarminDB.GarminDB(db_params_dict)
         for file_name in self.file_names:
             json_data = parse_json_file(file_name, {'timestamp' : dateutil.parser.parse})
-            for sample in json_data:
-                timestamp_ms = sample.get('date', None)
-                if timestamp_ms is None:
-                    break
-                weight = sample['weight'] / 1000.0
+            date_str = json_data['startDate']
+            date = dateutil.parser.parse(date_str)
+            weight_list = json_data['dateWeightList']
+            if len(weight_list) > 0:
+                weight = weight_list[0]['weight'] / 1000.0
                 if self.english_units:
                     weight *= 2.204623
                 point = {
-                    'timestamp' : Fit.Conversions.epoch_ms_to_dt(timestamp_ms),
+                    'timestamp' : date,
                     'weight' : weight
                 }
                 GarminDB.Weight.create_or_update_not_none(garmindb, point)
-            logger.info("DB updated with %d weight entries from %s", len(json_data), file_name)
+            else:
+                logger.debug("empty weight file: %s: %s", file_name, repr(json_data))
 
 
 class GarminFitData():
