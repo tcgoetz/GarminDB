@@ -228,16 +228,15 @@ class Download():
             if response.status_code == 200:
                 self.save_json_file(json_filename, response.json())
                 return True
-            logger.error("get_weight_chunk failed (%d): %s", response.status_code, response.url)
+            logger.error("get_weight_day failed (%d): %s", response.status_code, response.url)
         return False
 
     def get_weight(self, directory, date, days):
-        logger.info("get_weight: %s going back %d days", date, days)
-        day = date
-        end_day = date - datetime.timedelta(days)
+        day = date - datetime.timedelta(days)
+        logger.info("get_weight: %s - %s", day, date)
         while self.get_weight_day(directory, day):
-            day = day - datetime.timedelta(1)
-            if day < end_day:
+            day = day + datetime.timedelta(1)
+            if day > date:
                 break
             # pause for a second between every page access
             time.sleep(1)
@@ -307,39 +306,33 @@ class Download():
             # pause for a second between every page access
             time.sleep(1)
 
-    def get_rhr_chunk(self, start, end):
-        start_str = start.strftime("%Y-%m-%d")
-        end_str = end.strftime("%Y-%m-%d")
-        logger.info("get_rhr_chunk: %s - %s", start_str, end_str)
-        params = {
-            'fromDate' : start_str,
-            'untilDate' : end_str,
-            'metricId' : 60
-        }
-        response = self.get(self.garmin_connect_rhr_url + '/' + self.display_name, params=params)
-        json_data = response.json()
-        try:
-            rhr_data = json_data['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
-            return [entry for entry in rhr_data if entry['value'] is not None]
-        except Exception:
-            logger.error("get_rhr_chunk: unexpected format - %s", repr(json_data))
 
-    def get_rhr(self):
-        logger.info("get_rhr")
-        data = []
-        chunk_size = datetime.timedelta(30)
-        end = datetime.datetime.now()
-        while True:
-            start = end - chunk_size
-            chunk_data = self.get_rhr_chunk(start, end)
-            if chunk_data is None or len(chunk_data) == 0:
+    def get_rhr_day(self, directory, day, overwite=False):
+        date_str = day.strftime('%Y-%m-%d')
+        json_filename = directory + '/rhr_' + date_str
+        if not os.path.isfile(json_filename + '.json') or overwite:
+            logger.info("get_rhr_day: %s", date_str)
+            params = {
+                'fromDate'  : date_str,
+                'untilDate' : date_str,
+                'metricId'  : 60
+            }
+            response = self.get(self.garmin_connect_rhr_url + '/' + self.display_name, params=params)
+            if response.status_code == 200:
+                self.save_json_file(json_filename, response.json())
+                return True
+            logger.error("get_rhr_day failed (%d): %s", response.status_code, response.url)
+        return False
+
+    def get_rhr(self, directory, date, days):
+        day = date - datetime.timedelta(days)
+        logger.info("get_rhr: %s - %s", day, date)
+        while self.get_rhr_day(directory, day):
+            day = day + datetime.timedelta(1)
+            if day > date:
                 break
-            data.extend(chunk_data)
-            end -= chunk_size
             # pause for a second between every page access
             time.sleep(1)
-        return data
-
 
 
 def usage(program):
@@ -484,14 +477,25 @@ def main(argv):
     if latest and weight:
         garmindb = GarminDB.GarminDB(db_params_dict)
         last_ts = GarminDB.Weight.latest_time(garmindb)
+        date = datetime.datetime.now()
         if last_ts is None:
             days = 31
-            date = datetime.datetime.now()
             logger.info("Automatic date not found, using: " + str(date))
         else:
             # start from the day after the last day in the DB
             logger.info("Automatically downloading weight data from: " + str(last_ts))
-            date = datetime.datetime.now()
+            days = (date - last_ts).days
+
+    if latest and rhr:
+        garmindb = GarminDB.GarminDB(db_params_dict)
+        last_ts = GarminDB.RestingHeartRate.latest_time(garmindb)
+        date = datetime.datetime.now().date()
+        if last_ts is None:
+            days = 31
+            logger.info("Automatic date not found, using: " + str(date))
+        else:
+            # start from the day after the last day in the DB
+            logger.info("Automatically downloading rhr data from: " + str(last_ts))
             days = (date - last_ts).days
 
     if monitoring and days > 0:
@@ -508,8 +512,8 @@ def main(argv):
     if weight and days > 0:
        download.get_weight(weight, date, days)
 
-    if rhr:
-        download.save_json_file(rhr + '/rhr_' + str(int(time.time())), download.get_rhr())
+    if rhr and days > 0:
+        download.get_rhr(rhr, date, days)
 
 
 if __name__ == "__main__":

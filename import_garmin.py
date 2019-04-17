@@ -34,32 +34,31 @@ class GarminWeightData():
         self.debug = debug
         logger.info("Debug: %s English units: %s", str(debug), str(english_units))
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'weight_.*\.json')
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'weight_\d{4}-\d{2}-\d{2}\.json')
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'weight_.*\.json', latest)
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'weight_\d{4}-\d{2}-\d{2}\.json', latest)
 
     def file_count(self):
         return len(self.file_names)
 
     def process_files(self, db_params_dict):
-        logger.info("Processing %d weight files", len(self.file_names))
+        logger.info("Processing %d weight files", self.file_count())
         garmindb = GarminDB.GarminDB(db_params_dict)
         for file_name in self.file_names:
-            json_data = parse_json_file(file_name, {'timestamp' : dateutil.parser.parse})
-            date_str = json_data['startDate']
-            date = dateutil.parser.parse(date_str)
+            json_data = parse_json_file(file_name, {'startDate' : dateutil.parser.parse})
             weight_list = json_data['dateWeightList']
             if len(weight_list) > 0:
                 weight = weight_list[0]['weight'] / 1000.0
                 if self.english_units:
                     weight *= 2.204623
                 point = {
-                    'timestamp' : date,
-                    'weight' : weight
+                    'timestamp' : json_data['startDate'],
+                    'weight'    : weight
                 }
                 GarminDB.Weight.create_or_update_not_none(garmindb, point)
             else:
                 logger.debug("empty weight file: %s: %s", file_name, repr(json_data))
+        logger.info("DB updated with %d weight entries", self.file_count())
 
 
 class GarminFitData():
@@ -177,9 +176,9 @@ class GarminRhrData():
         self.debug = debug
         logger.info("Debug: %s" % str(debug))
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'rhr_.*\.json')
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'rhr_\d{4}-\d{2}-\d{2}\.json')
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'rhr_.*\.json', latest)
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'rhr_\d{4}-\d{2}-\d{2}\.json', latest)
 
     def file_count(self):
         return len(self.file_names)
@@ -194,7 +193,24 @@ class GarminRhrData():
                     'resting_heart_rate' : sample['value']
                 }
                 GarminDB.RestingHeartRate.create_or_update_not_none(garmindb, data)
-            logger.info("DB updated with %d rhr entries from %s", len(json_data), file_name)
+
+    def process_files(self, db_params_dict):
+        logger.info("Processing %d rhr files", self.file_count())
+        garmindb = GarminDB.GarminDB(db_params_dict)
+        for file_name in self.file_names:
+            json_data = parse_json_file(file_name, {'statisticsStartDate' : dateutil.parser.parse})
+            rhr_list = json_data['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
+            if len(rhr_list) > 0:
+                rhr = rhr_list[0].get('value')
+                if rhr:
+                    point = {
+                        'day'                   : json_data['statisticsStartDate'].date(),
+                        'resting_heart_rate'    : rhr
+                    }
+                    GarminDB.RestingHeartRate.create_or_update_not_none(garmindb, point)
+            else:
+                logger.debug("empty rhr file: %s: %s", file_name, repr(json_data))
+        logger.info("DB updated with %d rhr entries.", self.file_count())
 
 
 class GarminProfile():
