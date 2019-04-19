@@ -18,7 +18,7 @@ from Fit import Conversions
 logger = logging.getLogger(__name__)
 
 
-class DB():
+class DB(object):
 
     max_commit_attempts = 5
     commit_errors = 0
@@ -69,7 +69,7 @@ class DB():
         raise IOError("Failed to commit")
 
 
-class DBObject():
+class DBObject(object):
 
     # defaults, overridden by subclasses
     UPDATE_ALL_FIELDS = 0xff

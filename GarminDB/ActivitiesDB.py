@@ -19,7 +19,7 @@ class ActivitiesDB(DB):
 
     def __init__(self, db_params_dict, debug=False):
         logger.info("ActivitiesDB: %s debug: %s ", repr(db_params_dict), str(debug))
-        DB.__init__(self, db_params_dict, debug)
+        super(ActivitiesDB, self).__init__(db_params_dict, debug)
         ActivitiesDB.Base.metadata.create_all(self.engine)
         self.version = ActivitiesDB.DbVersion()
         self.version.version_check(self, self.db_version)
