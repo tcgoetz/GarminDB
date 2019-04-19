@@ -4,12 +4,13 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, string, logging, datetime, traceback, json, dateutil.parser, enum
+import os, sys, getopt, string, logging, datetime, traceback, enum
 import dateutil.parser
 
 import Fit
-import FileProcessor
-import FitFileProcessor
+from JsonFileProcessor import *
+from FileProcessor import *
+from FitFileProcessor import *
 import GarminDB
 
 
@@ -17,48 +18,27 @@ root_logger = logging.getLogger()
 logger = logging.getLogger(__file__)
 
 
-def parse_json_file(filename, conversions):
-    def json_parser(entry):
-        for (conversion_key, conversion_func) in conversions.iteritems():
-            entry_value = entry.get(conversion_key, None)
-            if entry_value is not None:
-                entry[conversion_key] = conversion_func(entry_value)
-        return entry
-    return json.load(open(filename), object_hook=json_parser)
+class GarminWeightData(JsonFileProcessor):
 
-
-class GarminWeightData():
-
-    def __init__(self, input_file, input_dir, latest, english_units, debug):
+    def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
+        super(GarminWeightData, self).__init__(input_file, input_dir, 'weight_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.english_units = english_units
-        self.debug = debug
-        logger.info("Debug: %s English units: %s", str(debug), str(english_units))
-        if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'weight_\d{4}-\d{2}-\d{2}\.json')
-        if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'weight_\d{4}-\d{2}-\d{2}\.json', latest)
+        self.garmindb = GarminDB.GarminDB(db_params_dict)
 
-    def file_count(self):
-        return len(self.file_names)
-
-    def process_files(self, db_params_dict):
-        logger.info("Processing %d weight files", self.file_count())
-        garmindb = GarminDB.GarminDB(db_params_dict)
-        for file_name in self.file_names:
-            json_data = parse_json_file(file_name, {'startDate' : dateutil.parser.parse})
-            weight_list = json_data['dateWeightList']
-            if len(weight_list) > 0:
-                weight = weight_list[0]['weight'] / 1000.0
-                if self.english_units:
-                    weight *= 2.204623
-                point = {
-                    'timestamp' : json_data['startDate'],
-                    'weight'    : weight
-                }
-                GarminDB.Weight.create_or_update_not_none(garmindb, point)
-            else:
-                logger.debug("empty weight file: %s: %s", file_name, repr(json_data))
-        logger.info("DB updated with %d weight entries", self.file_count())
+    def process_file(self, file_name):
+        json_data = self.parse_file(file_name, {'startDate' : dateutil.parser.parse})
+        weight_list = json_data['dateWeightList']
+        if len(weight_list) > 0:
+            weight = weight_list[0]['weight'] / 1000.0
+            if self.english_units:
+                weight *= 2.204623
+            point = {
+                'timestamp' : json_data['startDate'],
+                'weight'    : weight
+            }
+            GarminDB.Weight.create_or_update_not_none(self.garmindb, point)
+        else:
+            logger.debug("empty weight file: %s: %s", file_name, repr(json_data))
 
 
 class GarminFitData():
@@ -68,15 +48,15 @@ class GarminFitData():
         self.debug = debug
         logger.info("Debug: %s English units: %s", str(debug), str(english_units))
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.fit')
+            self.file_names = FileProcessor.match_file(input_file, '.*\.fit')
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, '.*\.fit', latest)
+            self.file_names = FileProcessor.dir_to_files(input_dir, '.*\.fit', latest)
 
     def file_count(self):
         return len(self.file_names)
 
     def process_files(self, db_params_dict):
-        fp = FitFileProcessor.FitFileProcessor(db_params_dict, self.debug)
+        fp = FitFileProcessor(db_params_dict, self.debug)
         for file_name in self.file_names:
             try:
                 fp.write_file(Fit.File(file_name, self.english_units))
@@ -99,22 +79,13 @@ class RemSleepActivityLevels(enum.Enum):
     awake = 3.0
 
 
-class GarminSleepData():
+class GarminSleepData(JsonFileProcessor):
 
-    def __init__(self, input_file, input_dir, latest, debug):
-        self.debug = debug
-        logger.info("Debug: %s" % str(debug))
-        if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'sleep_.*\.json')
-        if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'sleep_.*\.json', latest)
+    def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
+        super(GarminSleepData, self).__init__(input_file, input_dir, 'sleep_.*\.json', latest, debug)
+        self.garmindb = GarminDB.GarminDB(db_params_dict)
 
-    def file_count(self):
-        return len(self.file_names)
-
-    def process_files(self, db_params_dict):
-        garmindb = GarminDB.GarminDB(db_params_dict)
-        for file_name in self.file_names:
+    def process_file(self, file_name):
             conversions = {
                 'calendarDate'              : dateutil.parser.parse,
                 'sleepTimeSeconds'          : Fit.Conversions.secs_to_dt_time,
@@ -127,13 +98,13 @@ class GarminSleepData():
                 'startGMT'                  : dateutil.parser.parse,
                 'endGMT'                    : dateutil.parser.parse
             }
-            json_data = parse_json_file(file_name, conversions)
+            json_data = self.parse_file(file_name, conversions)
             daily_sleep = json_data.get('dailySleepDTO', None)
             if daily_sleep is None:
-                continue
+                return
             date = daily_sleep.get('calendarDate', None)
             if date is None:
-                continue
+                return
             logger.debug("Importing %s" % file_name)
             day = date.date()
             day_data = {
@@ -146,10 +117,10 @@ class GarminSleepData():
                 'rem_sleep' : daily_sleep.get('remSleepSeconds', None),
                 'awake' : daily_sleep.get('awakeSleepSeconds', None)
             }
-            GarminDB.Sleep.create_or_update_not_none(garmindb, day_data)
+            GarminDB.Sleep.create_or_update_not_none(self.garmindb, day_data)
             sleep_levels = json_data.get('sleepLevels', None)
             if sleep_levels is None:
-                continue
+                return
             for sleep_level in sleep_levels:
                 start = sleep_level['startGMT']
                 end = sleep_level['endGMT']
@@ -165,79 +136,48 @@ class GarminSleepData():
                     'event' : event.name,
                     'duration' : duration
                 }
-                GarminDB.SleepEvents.create_or_update_not_none(garmindb, level_data)
+                GarminDB.SleepEvents.create_or_update_not_none(self.garmindb, level_data)
             logger.info("DB updated %s with %d sleep level entries from %s", str(day), len(sleep_levels), file_name)
-        logger.info("DB updated with %d sleep entries", self.file_count())
 
 
-class GarminRhrData():
+class GarminRhrData(JsonFileProcessor):
 
-    def __init__(self, input_file, input_dir, latest, debug):
-        self.debug = debug
-        logger.info("Debug: %s" % str(debug))
-        if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'rhr_\d{4}-\d{2}-\d{2}\.json')
-        if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'rhr_\d{4}-\d{2}-\d{2}\.json', latest)
+    def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
+        super(GarminRhrData, self).__init__(input_file, input_dir, 'rhr_\d{4}-\d{2}-\d{2}\.json', latest, debug)
+        self.garmindb = GarminDB.GarminDB(db_params_dict)
 
-    def file_count(self):
-        return len(self.file_names)
-
-    def process_files(self, db_params_dict):
-        garmindb = GarminDB.GarminDB(db_params_dict)
-        for file_name in self.file_names:
-            json_data = parse_json_file(file_name, {'calendarDate' : dateutil.parser.parse})
-            for sample in json_data:
-                data = {
-                    'day' : sample['calendarDate'].date(),
-                    'resting_heart_rate' : sample['value']
+    def process_file(self, file_name):
+        json_data = self.parse_file(file_name, {'statisticsStartDate' : dateutil.parser.parse})
+        rhr_list = json_data['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
+        if len(rhr_list) > 0:
+            rhr = rhr_list[0].get('value')
+            if rhr:
+                point = {
+                    'day'                   : json_data['statisticsStartDate'].date(),
+                    'resting_heart_rate'    : rhr
                 }
-                GarminDB.RestingHeartRate.create_or_update_not_none(garmindb, data)
-
-    def process_files(self, db_params_dict):
-        logger.info("Processing %d rhr files", self.file_count())
-        garmindb = GarminDB.GarminDB(db_params_dict)
-        for file_name in self.file_names:
-            json_data = parse_json_file(file_name, {'statisticsStartDate' : dateutil.parser.parse})
-            rhr_list = json_data['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
-            if len(rhr_list) > 0:
-                rhr = rhr_list[0].get('value')
-                if rhr:
-                    point = {
-                        'day'                   : json_data['statisticsStartDate'].date(),
-                        'resting_heart_rate'    : rhr
-                    }
-                    GarminDB.RestingHeartRate.create_or_update_not_none(garmindb, point)
-            else:
-                logger.debug("empty rhr file: %s: %s", file_name, repr(json_data))
-        logger.info("DB updated with %d rhr entries.", self.file_count())
+                GarminDB.RestingHeartRate.create_or_update_not_none(self.garmindb, point)
+        else:
+            logger.debug("empty rhr file: %s: %s", file_name, repr(json_data))
 
 
-class GarminProfile():
+class GarminProfile(JsonFileProcessor):
 
-    def __init__(self, input_dir, debug):
-        self.debug = debug
-        logger.info("Debug: %s" % str(debug))
-        if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'profile\.json')
+    def __init__(self, db_params_dict, input_dir, debug):
+        super(GarminProfile, self).__init__(None, input_dir, 'profile\.json', False, debug)
+        self.garmindb = GarminDB.GarminDB(db_params_dict)
 
-    def file_count(self):
-        return len(self.file_names)
-
-    def process_files(self, db_params_dict):
-        garmindb = GarminDB.GarminDB(db_params_dict)
-        for file_name in self.file_names:
-            json_data = parse_json_file(file_name, {'calendarDate' : dateutil.parser.parse})
-            measurement_system = Fit.FieldEnums.DisplayMeasure.from_string(json_data['measurementSystem'])
-            print measurement_system
-            attributes = {
-                'name'                  : string.replace(json_data['displayName'], '_', ' '),
-                'time_zone'             : json_data['timeZone'],
-                'measurement_system'    : str(measurement_system),
-                'date_format'           : json_data['dateFormat']['formatKey'],
-            }
-            for attribute_name, attribute_value in attributes.items():
-                GarminDB.Attributes.set_newer(garmindb, attribute_name, attribute_value)
+    def process_file(self, file_name):
+        json_data = self.parse_file(file_name, {'calendarDate' : dateutil.parser.parse})
+        measurement_system = Fit.FieldEnums.DisplayMeasure.from_string(json_data['measurementSystem'])
+        attributes = {
+            'name'                  : string.replace(json_data['displayName'], '_', ' '),
+            'time_zone'             : json_data['timeZone'],
+            'measurement_system'    : str(measurement_system),
+            'date_format'           : json_data['dateFormat']['formatKey'],
+        }
+        for attribute_name, attribute_value in attributes.items():
+            GarminDB.Attributes.set_newer(self.garmindb, attribute_name, attribute_value)
 
 
 def usage(program):
@@ -282,7 +222,7 @@ def main(argv):
         elif opt in ("-l", "--latest"):
             latest = True
         elif opt in ("-p", "--profile_dir"):
-            logging.debug("RHR input dir: %s" % arg)
+            logging.debug("Profile input dir: %s" % arg)
             profile_dir = arg
         elif opt in ("-r", "--rhr_input_dir"):
             logging.debug("RHR input dir: %s" % arg)
@@ -328,17 +268,17 @@ def main(argv):
         usage(sys.argv[0])
 
     if profile_dir:
-        gp = GarminProfile(profile_dir, debug)
+        gp = GarminProfile(db_params_dict, profile_dir, debug)
         if gp.file_count() > 0:
-            gp.process_files(db_params_dict)
+            gp.process_files()
 
     garmindb = GarminDB.GarminDB(db_params_dict)
     english_units = GarminDB.Attributes.measurements_type_metric(garmindb) == False
 
     if weight_input_file or weight_input_dir:
-        gwd = GarminWeightData(weight_input_file, weight_input_dir, latest, english_units, debug)
+        gwd = GarminWeightData(db_params_dict, weight_input_file, weight_input_dir, latest, english_units, debug)
         if gwd.file_count() > 0:
-            gwd.process_files(db_params_dict)
+            gwd.process_files()
 
     if fit_input_file or fit_input_dir:
         gfd = GarminFitData(fit_input_file, fit_input_dir, latest, english_units, debug)
@@ -346,14 +286,14 @@ def main(argv):
             gfd.process_files(db_params_dict)
 
     if sleep_input_file or sleep_input_dir:
-        gsd = GarminSleepData(sleep_input_file, sleep_input_dir, latest, debug)
+        gsd = GarminSleepData(db_params_dict, sleep_input_file, sleep_input_dir, latest, debug)
         if gsd.file_count() > 0:
-            gsd.process_files(db_params_dict)
+            gsd.process_files()
 
     if rhr_input_file or rhr_input_dir:
-        grhrd = GarminRhrData(rhr_input_file, rhr_input_dir, latest, debug)
+        grhrd = GarminRhrData(db_params_dict, rhr_input_file, rhr_input_dir, latest, debug)
         if grhrd.file_count() > 0:
-            grhrd.process_files(db_params_dict)
+            grhrd.process_files()
 
 
 if __name__ == "__main__":
