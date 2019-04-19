@@ -24,21 +24,18 @@ class GarminWeightData(JsonFileProcessor):
         super(GarminWeightData, self).__init__(input_file, input_dir, 'weight_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.english_units = english_units
         self.garmindb = GarminDB.GarminDB(db_params_dict)
+        self.conversions = {'startDate' : dateutil.parser.parse}
 
-    def process_file(self, file_name):
-        json_data = self.parse_file(file_name, {'startDate' : dateutil.parser.parse})
+    def process_json(self, json_data):
         weight_list = json_data['dateWeightList']
         if len(weight_list) > 0:
-            weight = weight_list[0]['weight'] / 1000.0
-            if self.english_units:
-                weight *= 2.204623
+            weight = Fit.Conversions.Weight.from_grams(weight_list[0]['weight'])
             point = {
                 'timestamp' : json_data['startDate'],
-                'weight'    : weight
+                'weight'    : weight.kgs_or_lbs(not self.english_units)
             }
             GarminDB.Weight.create_or_update_not_none(self.garmindb, point)
-        else:
-            logger.debug("empty weight file: %s: %s", file_name, repr(json_data))
+            return 1
 
 
 class GarminFitData():
@@ -82,31 +79,35 @@ class RemSleepActivityLevels(enum.Enum):
 class GarminSleepData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
-        super(GarminSleepData, self).__init__(input_file, input_dir, 'sleep_.*\.json', latest, debug)
+        super(GarminSleepData, self).__init__(input_file, input_dir, 'sleep_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.garmindb = GarminDB.GarminDB(db_params_dict)
+        self.conversions = {
+            'calendarDate'              : dateutil.parser.parse,
+            'sleepTimeSeconds'          : Fit.Conversions.secs_to_dt_time,
+            'sleepStartTimestampGMT'    : Fit.Conversions.epoch_ms_to_dt,
+            'sleepEndTimestampGMT'      : Fit.Conversions.epoch_ms_to_dt,
+            'deepSleepSeconds'          : Fit.Conversions.secs_to_dt_time,
+            'lightSleepSeconds'         : Fit.Conversions.secs_to_dt_time,
+            'remSleepSeconds'           : Fit.Conversions.secs_to_dt_time,
+            'awakeSleepSeconds'         : Fit.Conversions.secs_to_dt_time,
+            'startGMT'                  : dateutil.parser.parse,
+            'endGMT'                    : dateutil.parser.parse
+        }
 
-    def process_file(self, file_name):
-            conversions = {
-                'calendarDate'              : dateutil.parser.parse,
-                'sleepTimeSeconds'          : Fit.Conversions.secs_to_dt_time,
-                'sleepStartTimestampGMT'    : Fit.Conversions.epoch_ms_to_dt,
-                'sleepEndTimestampGMT'      : Fit.Conversions.epoch_ms_to_dt,
-                'deepSleepSeconds'          : Fit.Conversions.secs_to_dt_time,
-                'lightSleepSeconds'         : Fit.Conversions.secs_to_dt_time,
-                'remSleepSeconds'           : Fit.Conversions.secs_to_dt_time,
-                'awakeSleepSeconds'         : Fit.Conversions.secs_to_dt_time,
-                'startGMT'                  : dateutil.parser.parse,
-                'endGMT'                    : dateutil.parser.parse
-            }
-            json_data = self.parse_file(file_name, conversions)
+    def process_json(self, json_data):
             daily_sleep = json_data.get('dailySleepDTO', None)
             if daily_sleep is None:
-                return
+                return 0
             date = daily_sleep.get('calendarDate', None)
             if date is None:
-                return
-            logger.debug("Importing %s" % file_name)
+                return 0
             day = date.date()
+            if json_data.get('remSleepData', None):
+                logger.info("Importing %s with REM data", day)
+                sleep_activity_levels = RemSleepActivityLevels
+            else:
+                logger.info("Importing %s without REM data", day)
+                sleep_activity_levels = SleepActivityLevels
             day_data = {
                 'day' : day,
                 'start' : daily_sleep.get('sleepStartTimestampGMT', None),
@@ -120,16 +121,11 @@ class GarminSleepData(JsonFileProcessor):
             GarminDB.Sleep.create_or_update_not_none(self.garmindb, day_data)
             sleep_levels = json_data.get('sleepLevels', None)
             if sleep_levels is None:
-                return
+                return 0
             for sleep_level in sleep_levels:
                 start = sleep_level['startGMT']
                 end = sleep_level['endGMT']
-                if json_data.get('remSleepData', None):
-                    event = RemSleepActivityLevels(sleep_level['activityLevel'])
-                    logger.info("Importing %s (%s) with REM data", file_name, day_data['day'])
-                else:
-                    logger.info("Importing %s (%s) without REM data", file_name, day_data['day'])
-                    event = SleepActivityLevels(sleep_level['activityLevel'])
+                event = sleep_activity_levels(sleep_level['activityLevel'])
                 duration = (datetime.datetime.min + (end - start)).time()
                 level_data = {
                     'timestamp' : start,
@@ -137,7 +133,7 @@ class GarminSleepData(JsonFileProcessor):
                     'duration' : duration
                 }
                 GarminDB.SleepEvents.create_or_update_not_none(self.garmindb, level_data)
-            logger.info("DB updated %s with %d sleep level entries from %s", str(day), len(sleep_levels), file_name)
+            return len(sleep_levels)
 
 
 class GarminRhrData(JsonFileProcessor):
@@ -145,9 +141,9 @@ class GarminRhrData(JsonFileProcessor):
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
         super(GarminRhrData, self).__init__(input_file, input_dir, 'rhr_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.garmindb = GarminDB.GarminDB(db_params_dict)
+        self.conversions = {'statisticsStartDate' : dateutil.parser.parse}
 
-    def process_file(self, file_name):
-        json_data = self.parse_file(file_name, {'statisticsStartDate' : dateutil.parser.parse})
+    def process_json(self, json_data):
         rhr_list = json_data['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
         if len(rhr_list) > 0:
             rhr = rhr_list[0].get('value')
@@ -157,8 +153,7 @@ class GarminRhrData(JsonFileProcessor):
                     'resting_heart_rate'    : rhr
                 }
                 GarminDB.RestingHeartRate.create_or_update_not_none(self.garmindb, point)
-        else:
-            logger.debug("empty rhr file: %s: %s", file_name, repr(json_data))
+                return 1
 
 
 class GarminProfile(JsonFileProcessor):
@@ -166,9 +161,9 @@ class GarminProfile(JsonFileProcessor):
     def __init__(self, db_params_dict, input_dir, debug):
         super(GarminProfile, self).__init__(None, input_dir, 'profile\.json', False, debug)
         self.garmindb = GarminDB.GarminDB(db_params_dict)
+        self.conversions = {'calendarDate' : dateutil.parser.parse}
 
-    def process_file(self, file_name):
-        json_data = self.parse_file(file_name, {'calendarDate' : dateutil.parser.parse})
+    def process_json(self, json_data):
         measurement_system = Fit.FieldEnums.DisplayMeasure.from_string(json_data['measurementSystem'])
         attributes = {
             'name'                  : string.replace(json_data['displayName'], '_', ' '),
@@ -178,6 +173,7 @@ class GarminProfile(JsonFileProcessor):
         }
         for attribute_name, attribute_value in attributes.items():
             GarminDB.Attributes.set_newer(self.garmindb, attribute_name, attribute_value)
+        return len(attributes)
 
 
 def usage(program):
