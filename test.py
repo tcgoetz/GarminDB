@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import unittest, os, logging, sys, datetime
+import unittest, os, logging, sys, datetime, re
 
 import GarminDB
 import Fit
@@ -243,6 +243,7 @@ class TestFit(unittest.TestCase):
 
     def check_message_fields(self, message):
         self.check_timestamp(message)
+        self.check_temperature(message)
         for field_name in message:
             if field_name.startswith('unknown'):
                 message_type = message.type()
@@ -270,6 +271,12 @@ class TestFit(unittest.TestCase):
     def check_timestamp(self, message):
         self.check_value_range(message, 'timestamp', datetime.datetime(2000, 1, 1), datetime.datetime.now())
 
+    def check_temperature(self, message):
+        for field_name in message:
+            if re.search('temperature_?\a{3}', field_name):
+                print "checking " + field_name
+                self.check_value_range(message, field_name, 0, 100)
+
     def check_file_id(self, fit_file, file_type):
         messages = fit_file[Fit.MessageType.file_id]
         for message in messages:
@@ -288,8 +295,6 @@ class TestFit(unittest.TestCase):
             # print repr(message._fields)
             self.check_message_fields(message)
             self.check_value_range(message, 'distance', 0, 100 * 5280)
-            self.check_value_range(message, 'temperature_min', 0, 80)
-            self.check_value_range(message, 'temperature_max', 0, 100)
             self.check_value_range(message, 'cum_ascent', 0, 5280)
             self.check_value_range(message, 'cum_descent', 0, 5280)
 
@@ -299,22 +304,27 @@ class TestFit(unittest.TestCase):
         for file_name in file_names:
             self.check_monitoring_file(file_name)
 
+    def check_lap_or_record(self, message):
+        self.check_message_fields(message)
+        # print repr(message._fields)
+        if 'distance' in message and message['distance'].value > 0.1:
+            self.check_value_range(message, 'distance', 0, 100 * 5280)
+            self.check_value_range(message, 'avg_vertical_oscillation', 0, 10)
+            self.check_value_range(message, 'step_length', 24, 64)
+            self.check_value_range(message, 'speed', 0, 25)
+
     def check_activity_file(self, filename):
         print ''
         fit_file = Fit.File(filename, self.english_units)
         print filename + ' message types: ' + repr(fit_file.message_types())
         self.check_message_types(fit_file)
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.activity)
-        messages = fit_file[Fit.MessageType.record]
-        for message in messages:
-            self.check_message_fields(message)
-            # print repr(message._fields)
-            self.check_value_range(message, 'temperature', 0, 100)
-            if 'distance' in message and message['distance'].value > 0.1:
-                self.check_value_range(message, 'distance', 0, 100 * 5280)
-                self.check_value_range(message, 'avg_vertical_oscillation', 0, 10)
-                self.check_value_range(message, 'step_length', 24, 64)
-                self.check_value_range(message, 'speed', 0, 25)
+        for message in fit_file[Fit.MessageType.record]:
+            self.check_lap_or_record(message)
+        for message in fit_file[Fit.MessageType.lap]:
+            self.check_lap_or_record(message)
+        for message in fit_file[Fit.MessageType.session]:
+            self.check_lap_or_record(message)
 
     def test_parse_activity(self):
         activity_path = self.file_path + '/activity'
