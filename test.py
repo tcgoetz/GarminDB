@@ -7,6 +7,8 @@
 import unittest, os, logging, sys, datetime
 
 import GarminDB
+import Fit
+from FileProcessor import *
 
 
 root_logger = logging.getLogger()
@@ -86,18 +88,46 @@ class TestGarminDb(unittest.TestCase):
 
     def test_garmindb_tables_bounds(self):
         garmindb = GarminDB.GarminDB(self.db_params_dict)
-        self.check_col_stats(garmindb, GarminDB.Weight, GarminDB.Weight.weight, 'Weight', False, False,
-            (0, 10*365), (25, 300), (25, 300), (25, 300), (25, 300))
-        self.check_col_stats(garmindb, GarminDB.Stress, GarminDB.Stress.stress, 'Stress', True, False,
-            (1, 10000000), (25, 100), (0, 2), (0, 100), (0, 100))
-        self.check_col_stats(garmindb, GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'RHR', True, False,
-            (1, 10000000), (30, 100), (30, 100), (30, 100), (30, 100))
-        self.check_col_stats(garmindb, GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'Sleep', True, True,
-            (1, 10000000), (datetime.time(8), datetime.time(12)), (datetime.time(0), datetime.time(4)),
-            (datetime.time(4), datetime.time(10)), (datetime.time(2), datetime.time(12)))
-        self.check_col_stats(garmindb, GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True, True,
-            (1, 10000000), (datetime.time(2), datetime.time(4)), (datetime.time(0), datetime.time(2)),
-            (datetime.time(1), datetime.time(6)), (datetime.time(2), datetime.time(6)))
+        self.check_col_stats(
+            garmindb, GarminDB.Weight, GarminDB.Weight.weight, 'Weight', False, False,
+            (0, 10*365),
+            (25, 300),
+            (25, 300),
+            (25, 300),
+            (25, 300)
+        )
+        self.check_col_stats(
+            garmindb, GarminDB.Stress, GarminDB.Stress.stress, 'Stress', True, False,
+            (1, 10000000),
+            (25, 100),
+            (0, 2),
+            (0, 100),
+            (0, 100)
+        )
+        self.check_col_stats(
+            garmindb, GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'RHR', True, False,
+            (1, 10000000),
+            (30, 100),
+            (30, 100),
+            (30, 100),
+            (30, 100)
+        )
+        self.check_col_stats(
+            garmindb, GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'Sleep', True, True,
+            (1, 10000000),
+            (datetime.time(8), datetime.time(12)),
+            (datetime.time(0), datetime.time(4)),
+            (datetime.time(4), datetime.time(10)),
+            (datetime.time(2), datetime.time(12))
+        )
+        self.check_col_stats(
+            garmindb, GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True, True,
+            (1, 10000000),
+            (datetime.time(2), datetime.time(4)),
+            (datetime.time(0), datetime.time(2)),
+            (datetime.time(1), datetime.time(6)),
+            (datetime.time(1), datetime.time(6))
+        )
 
 
 class TestActivitiesDb(unittest.TestCase):
@@ -186,6 +216,73 @@ class TestGarminSummaryDB(unittest.TestCase):
         self.assertGreater(GarminDB.MonthsSummary.get_col_max(garminsumdb, GarminDB.MonthsSummary.activities), 0)
         self.assertGreater(GarminDB.MonthsSummary.get_col_max(garminsumdb, GarminDB.MonthsSummary.activities_calories), 0)
         self.assertGreater(GarminDB.MonthsSummary.get_col_max(garminsumdb, GarminDB.MonthsSummary.activities_distance), 0)
+
+class TestFit(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.english_units = True
+        cls.file_path = 'test_files/fit'
+
+    def check_value(self, message, key, expected_value):
+        if key in message:
+            value = message[key].value
+            # print '\t' + repr(message[key])
+            self.assertEqual(value, expected_value)
+
+    def check_value_range(self, message, key, min_value, max_value):
+        if key in message:
+            value = message[key].value
+            # print '\t' + repr(message[key])
+            self.assertGreaterEqual(value, min_value)
+            self.assertLess(value, max_value)
+
+    def check_file_id(self, fit_file, file_type):
+        messages = fit_file[Fit.MessageType.file_id]
+        for message in messages:
+            # print repr(message._fields)
+            self.check_value(message, 'manufacturer', Fit.FieldEnums.Manufacturer.Garmin)
+            self.check_value(message, 'type', file_type)
+
+    def check_monitoring_file(self, filename):
+        fit_file = Fit.File(filename, self.english_units)
+        self.check_file_id(fit_file, Fit.FieldEnums.FileType.monitoring_b)
+        messages = fit_file[Fit.MessageType.monitoring]
+        print ''
+        for message in messages:
+            # print repr(message._fields)
+            self.check_value_range(message, 'distance', 0, 100 * 5280)
+            self.check_value_range(message, 'temperature_min', 0, 80)
+            self.check_value_range(message, 'temperature_max', 0, 100)
+            self.check_value_range(message, 'cum_ascent', 0, 5280)
+            self.check_value_range(message, 'cum_descent', 0, 5280)
+
+    def test_parse_monitoring(self):
+        monitoring_path = self.file_path + '/monitoring'
+        file_names = FileProcessor.dir_to_files(monitoring_path, '.*\.fit', False)
+        for file_name in file_names:
+            self.check_monitoring_file(file_name)
+
+    def check_activity_file(self, filename):
+        fit_file = Fit.File(filename, self.english_units)
+        self.check_file_id(fit_file, Fit.FieldEnums.FileType.activity)
+        messages = fit_file[Fit.MessageType.record]
+        print ''
+        # print repr (fit_file.message_types())
+        for message in messages:
+            # print repr(message._fields)
+            self.check_value_range(message, 'temperature', 0, 100)
+            if 'distance' in message and message['distance'].value > 0.1:
+                self.check_value_range(message, 'distance', 0, 100 * 5280)
+                self.check_value_range(message, 'avg_vertical_oscillation', 0, 10)
+                self.check_value_range(message, 'step_length', 24, 64)
+                self.check_value_range(message, 'speed', 0, 25)
+
+    def test_parse_activity(self):
+        activity_path = self.file_path + '/activity'
+        file_names = FileProcessor.dir_to_files(activity_path, '.*\.fit', False)
+        for file_name in file_names:
+            self.check_activity_file(file_name)
 
 
 if __name__ == '__main__':

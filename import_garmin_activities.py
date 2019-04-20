@@ -210,8 +210,8 @@ class GarminJsonSummaryData(JsonFileProcessor):
         distance = self.get_field_obj(json_data, 'distance', Fit.Conversions.Distance.from_meters)
         ascent = self.get_field_obj(json_data, 'elevationGain', Fit.Conversions.Distance.from_meters)
         descent = self.get_field_obj(json_data, 'elevationLoss', Fit.Conversions.Distance.from_meters)
-        avg_speed = self.get_field(json_data, 'averageSpeed', Fit.Conversions.Speed.from_mps)
-        max_speed = self.get_field(json_data, 'maxSpeed', Fit.Conversions.Speed.from_mps)
+        avg_speed = self.get_field_obj(json_data, 'averageSpeed', Fit.Conversions.Speed.from_mps)
+        max_speed = self.get_field_obj(json_data, 'maxSpeed', Fit.Conversions.Speed.from_mps)
         max_temperature = self.get_field_obj(json_data, 'maxTemperature', Fit.Conversions.Temperature.from_celsius)
         min_temperature = self.get_field_obj(json_data, 'minTemperature', Fit.Conversions.Temperature.from_celsius)
         event = GarminConnectEnums.Event.from_json(json_data)
@@ -288,7 +288,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
         activity = {
             'activity_id'               : activity_id,
             'course_id'                 : self.get_field(metadata_dto, 'associatedCourseId', int),
-            'avg_temperature'           : avg_temperature.c_or_f(not self.english_units),
+            'avg_temperature'           : avg_temperature.c_or_f(not self.english_units) if avg_temperature is not None else None,
         }
         GarminDB.Activities.create_or_update_not_none(self.garmin_act_db, activity)
         try:
@@ -358,8 +358,6 @@ def main(argv):
     gjsd = GarminJsonSummaryData(db_params_dict, input_file, input_dir, latest, english_units, debug)
     if gjsd.file_count() > 0:
         gjsd.process_files()
-
-    sys.exit()
 
     gdjd = GarminJsonDetailsData(db_params_dict, input_file, input_dir, latest, english_units, debug)
     if gdjd.file_count() > 0:
