@@ -376,8 +376,12 @@ mshealth_db: $(MSHEALTH_DB)
 #
 # test
 #
-test:
-	export DB_DIR=$(DB_DIR) && $(PYTHON) test.py
+test_all:
+	export DB_DIR=$(DB_DIR); export DB_SKIP="False" && $(PYTHON) test.py
+
+test_fit:
+	export DB_DIR=$(DB_DIR); export DB_SKIP="True" && $(PYTHON) test.py
+
 
 #
 # bugreport

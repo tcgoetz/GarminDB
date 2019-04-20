@@ -18,10 +18,11 @@ root_logger.setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
 
+db_dir = os.environ['DB_DIR']
+db_skip = os.environ['DB_SKIP'] == 'True'
 
-db_dir = None
 
-
+@unittest.skipIf(db_skip, 'Skip DB tests')
 class TestGarminDb(unittest.TestCase):
 
     @classmethod
@@ -130,6 +131,7 @@ class TestGarminDb(unittest.TestCase):
         )
 
 
+@unittest.skipIf(db_skip, 'Skip DB tests')
 class TestActivitiesDb(unittest.TestCase):
 
     @classmethod
@@ -150,6 +152,7 @@ class TestActivitiesDb(unittest.TestCase):
         self.assertGreater(GarminDB.EllipticalActivities.row_count(garmin_act_db), 0)
 
 
+@unittest.skipIf(db_skip, 'Skip DB tests')
 class TestMonitoringDB(unittest.TestCase):
 
     @classmethod
@@ -179,6 +182,7 @@ class TestMonitoringDB(unittest.TestCase):
         self.assertLess(max, 100000)
 
 
+@unittest.skipIf(db_skip, 'Skip DB tests')
 class TestGarminSummaryDB(unittest.TestCase):
 
     @classmethod
@@ -223,6 +227,32 @@ class TestFit(unittest.TestCase):
     def setUpClass(cls):
         cls.english_units = True
         cls.file_path = 'test_files/fit'
+        cls.unknown_messages = []
+        cls.unknown_message_fields = {}
+
+    def check_message_types(self, fit_file):
+        message_types = fit_file.message_types()
+        for message_type in message_types:
+            if message_type.name.startswith('unknown'):
+                if message_type.name not in self.unknown_messages:
+                    print ("Unknown message type: %s in %s" % (message_type.name, fit_file.type()))
+                    self.unknown_messages.append(message_type.name)
+            messages = fit_file[message_type]
+            for message in messages:
+                self.check_message_fields(message)
+
+    def check_message_fields(self, message):
+        self.check_timestamp(message)
+        for field_name in message:
+            if field_name.startswith('unknown'):
+                message_type = message.type()
+                field_value = str(message[field_name].value)
+                if message_type not in self.unknown_message_fields:
+                    print ("Unknown %s message field: %s value %s" % (message_type, field_name, field_value))
+                    self.unknown_message_fields[message_type] = [field_name]
+                elif field_name not in self.unknown_message_fields[message_type]:
+                    print ("Unknown %s message field: %s value: %s" % (message_type, field_name, field_value))
+                    self.unknown_message_fields[message_type].append(field_name)
 
     def check_value(self, message, key, expected_value):
         if key in message:
@@ -237,6 +267,9 @@ class TestFit(unittest.TestCase):
             self.assertGreaterEqual(value, min_value)
             self.assertLess(value, max_value)
 
+    def check_timestamp(self, message):
+        self.check_value_range(message, 'timestamp', datetime.datetime(2000, 1, 1), datetime.datetime.now())
+
     def check_file_id(self, fit_file, file_type):
         messages = fit_file[Fit.MessageType.file_id]
         for message in messages:
@@ -245,12 +278,15 @@ class TestFit(unittest.TestCase):
             self.check_value(message, 'type', file_type)
 
     def check_monitoring_file(self, filename):
+        print ''
         fit_file = Fit.File(filename, self.english_units)
+        self.check_message_types(fit_file)
+        print filename + ' message types: ' + repr(fit_file.message_types())
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.monitoring_b)
         messages = fit_file[Fit.MessageType.monitoring]
-        print ''
         for message in messages:
             # print repr(message._fields)
+            self.check_message_fields(message)
             self.check_value_range(message, 'distance', 0, 100 * 5280)
             self.check_value_range(message, 'temperature_min', 0, 80)
             self.check_value_range(message, 'temperature_max', 0, 100)
@@ -264,12 +300,14 @@ class TestFit(unittest.TestCase):
             self.check_monitoring_file(file_name)
 
     def check_activity_file(self, filename):
+        print ''
         fit_file = Fit.File(filename, self.english_units)
+        print filename + ' message types: ' + repr(fit_file.message_types())
+        self.check_message_types(fit_file)
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.activity)
         messages = fit_file[Fit.MessageType.record]
-        print ''
-        # print repr (fit_file.message_types())
         for message in messages:
+            self.check_message_fields(message)
             # print repr(message._fields)
             self.check_value_range(message, 'temperature', 0, 100)
             if 'distance' in message and message['distance'].value > 0.1:
@@ -284,8 +322,6 @@ class TestFit(unittest.TestCase):
         for file_name in file_names:
             self.check_activity_file(file_name)
 
-
 if __name__ == '__main__':
-    db_dir = os.environ['DB_DIR']
     unittest.main(verbosity=2)
 
