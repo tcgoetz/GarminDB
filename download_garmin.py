@@ -294,9 +294,12 @@ class Download():
             params = {
                 'date' : date.strftime("%Y-%m-%d")
             }
-            response = self.get(self.garmin_connect_sleep_daily_url + '/' + self.display_name, params)
+            response = self.get(self.garmin_connect_sleep_daily_url + '/' + self.display_name, params=params)
             if response.status_code == 200:
                 self.save_binary_file(filename, response)
+            else:
+                logger.error("get_sleep_day: %s failed (%d): %s", response.url, response.status_code, response.text)
+
 
     def get_sleep(self, directory, date, days):
         logger.info("get_sleep: %s : %d" % (str(date), days))
