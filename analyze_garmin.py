@@ -131,6 +131,8 @@ class Analyze():
 
     def get_monitoring_years(self):
         logger.info("___Monitoring Records Coverage___")
+        logger.info("This shows periods that data has been downloaded for.")
+        logger.info("Not seeing data for days you know Garmin has data? Change the starting day and the number of days your passing to the dowloader.")
         years = GarminDB.Monitoring.get_years(self.mondb)
         GarminDB.Summary.set(self.garminsumdb, 'Monitoring_Years', len(years))
         logger.info("Monitoring records: %d", GarminDB.Monitoring.row_count(self.mondb))
@@ -167,6 +169,24 @@ class Analyze():
                 logger.info("Days gap between %d (%s) and %d (%s)", day, day_str, next_day, next_day_str)
         return days_count
 
+    def populate_hr_intensity(self, day_date, overwrite=False):
+        if GarminDB.IntensityHR.row_count_for_day(self.garminsumdb, day_date) == 0 or overwrite:
+            monitoring_rows = GarminDB.Monitoring.get_for_day(self.mondb, GarminDB.Monitoring, day_date)
+            previous_ts = None
+            for monitoring in monitoring_rows:
+                if monitoring.intensity is not None:
+                    if previous_ts is not None:
+                        hr_rows = GarminDB.MonitoringHeartRate.get_for_period(self.mondb, GarminDB.MonitoringHeartRate, previous_ts, monitoring.timestamp)
+                        for hr in hr_rows:
+                            if hr.heart_rate > 0:
+                                entry = {
+                                    'timestamp'     : hr.timestamp,
+                                    'intensity'     : monitoring.intensity,
+                                    'heart_rate'    : hr.heart_rate
+                                }
+                                GarminDB.IntensityHR.create_or_update_not_none(self.garminsumdb, entry)
+                    previous_ts = monitoring.timestamp
+
     def combine_stats(self, stats, stat1_name, stat2_name):
         stat1 = stats.get(stat1_name, 0)
         stat2 = stats.get(stat2_name, 0)
@@ -177,8 +197,10 @@ class Analyze():
         return stat1 + stat2
 
     def calculate_day_stats(self, day_date):
+        self.populate_hr_intensity(day_date)
         stats = GarminDB.MonitoringHeartRate.get_daily_stats(self.mondb, day_date)
         stats.update(GarminDB.RestingHeartRate.get_daily_stats(self.garmindb, day_date))
+        stats.update(GarminDB.IntensityHR.get_daily_stats(self.garminsumdb, day_date))
         stats.update(GarminDB.Weight.get_daily_stats(self.garmindb, day_date))
         stats.update(GarminDB.Stress.get_daily_stats(self.garmindb, day_date))
         stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.mondb, day_date, self.english_units))
@@ -189,12 +211,16 @@ class Analyze():
         stats.update(GarminDB.MonitoringInfo.get_daily_stats(self.mondb, day_date))
         stats.update(GarminDB.Activities.get_daily_stats(self.garmin_act_db, day_date))
         stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
+        # calculate hr for inactive periods
+        GarminDB.Monitoring.get_daily_stats(self.mondb, day_date)
+        # save it to the db
         GarminDB.DaysSummary.create_or_update_not_none(self.garminsumdb, stats)
         HealthDB.DaysSummary.create_or_update_not_none(self.sumdb, stats)
 
     def calculate_week_stats(self, day_date):
         stats = GarminDB.MonitoringHeartRate.get_weekly_stats(self.mondb, day_date)
         stats.update(GarminDB.RestingHeartRate.get_weekly_stats(self.garmindb, day_date))
+        stats.update(GarminDB.IntensityHR.get_weekly_stats(self.garminsumdb, day_date))
         stats.update(GarminDB.Weight.get_weekly_stats(self.garmindb, day_date))
         stats.update(GarminDB.Stress.get_weekly_stats(self.garmindb, day_date))
         stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.mondb, day_date, self.english_units))
@@ -211,6 +237,7 @@ class Analyze():
     def calculate_month_stats(self, start_day_date, end_day_date):
         stats = GarminDB.MonitoringHeartRate.get_monthly_stats(self.mondb, start_day_date, end_day_date)
         stats.update(GarminDB.RestingHeartRate.get_monthly_stats(self.garmindb, start_day_date, end_day_date))
+        stats.update(GarminDB.IntensityHR.get_monthly_stats(self.garminsumdb, start_day_date, end_day_date))
         stats.update(GarminDB.Weight.get_monthly_stats(self.garmindb, start_day_date, end_day_date))
         stats.update(GarminDB.Stress.get_monthly_stats(self.garmindb, start_day_date, end_day_date))
         stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.mondb, start_day_date, end_day_date, self.english_units))
@@ -225,6 +252,7 @@ class Analyze():
         HealthDB.MonthsSummary.create_or_update_not_none(self.sumdb, stats)
 
     def summary(self):
+        logger.info("___Summary Table Generation___")
         sleep_period_start = GarminDB.Attributes.get_time(self.garmindb, 'sleep_time')
         sleep_period_stop = GarminDB.Attributes.get_time(self.garmindb, 'wake_time')
 

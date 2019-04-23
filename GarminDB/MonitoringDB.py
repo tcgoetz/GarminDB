@@ -119,6 +119,10 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
         start_ts = wake_ts - datetime.timedelta(0, 0, 0, 0, 10)
         return cls.get_col_min(db, cls.heart_rate, start_ts, wake_ts, True)
 
+    @classmethod
+    def get_heartrate_for_period(cls, db, start_ts, end_ts):
+        return cls.get_col_for_period(db, cls.heart_rate, start_ts, end_ts)
+
 
 class MonitoringIntensity(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_intensity'
@@ -296,6 +300,12 @@ class Monitoring(MonitoringDB.Base, DBObject):
         return stats
 
     @classmethod
-    def get_inactive(cls, db, func, start_ts, end_ts):
-        return session.query(cls).filter(cls.intensity == 0)
+    def get_inactive(cls, db, start_ts, end_ts):
+        return db.query_session().query(cls.timestamp).filter(cls.intensity == 0).all()
+
+    @classmethod
+    def get_daily_inactive(cls, db, day_date):
+        start_ts = datetime.datetime.combine(day_date, datetime.time.min)
+        end_ts = start_ts + datetime.timedelta(1)
+        return cls.get_inactive(db, start_ts, end_ts)
 

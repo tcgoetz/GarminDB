@@ -82,6 +82,7 @@ build_dbs: build_garmin_dbs mshealth_db fitbit_db mshealth_summary fitbit_summar
 # delete the exisitng dbs and build new dbs from already downloaded data files
 rebuild_dbs: clean_dbs build_dbs
 rebuild_activity_db: clean_activities_db build_activities_db
+rebuild_summary_db: clean_garmin_summary_db clean_summary_db build_garmin_summary_db
 
 # download data files for the period specified by GC_DATE and GC_DAYS and build the dbs
 create_dbs: download_garmin build_dbs

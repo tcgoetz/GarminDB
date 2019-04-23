@@ -69,6 +69,11 @@ class DB(object):
         raise IOError("Failed to commit")
 
 
+#
+####
+#
+
+
 class DBObject(object):
 
     # defaults, overridden by subclasses
@@ -78,7 +83,6 @@ class DBObject(object):
     _col_translations = {}
     _col_mappings = {}
     min_row_values = 1
-
 
     def _from_dict(self, db, values_dict, update=False, ignore_none=False):
         if update:
@@ -297,6 +301,22 @@ class DBObject(object):
         return cls.rows_to_ints(db.session().query(func.strftime("%j", cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
 
     @classmethod
+    def get_for_period(cls, db, table, start_ts, end_ts):
+        query = db.query_session().query(table).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).order_by(cls.time_col)
+        return query.all()
+
+    @classmethod
+    def get_for_day(cls, db, table, day_date):
+        start_ts = datetime.datetime.combine(day_date, datetime.time.min)
+        end_ts = start_ts + datetime.timedelta(1)
+        return cls.get_for_period(db, table, start_ts, end_ts)
+
+    @classmethod
+    def get_col_for_period(cls, db, col, start_ts, end_ts):
+        query = db.query_session().query(col).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).order_by(cls.time_col)
+        return query.all()
+
+    @classmethod
     def get_col_values(cls, db, get_col, match_col, match_value, start_ts=None, end_ts=None):
         query = db.query_session().query(get_col).order_by(cls.time_col)
         if start_ts is not None:
@@ -438,6 +458,12 @@ class DBObject(object):
         return query.count()
 
     @classmethod
+    def row_count_for_day(cls, db, day_date):
+        start_ts = datetime.datetime.combine(day_date, datetime.time.min)
+        end_ts = start_ts + datetime.timedelta(1)
+        return cls.row_count_for_period(db, start_ts, end_ts)
+
+    @classmethod
     def get_col_func_for_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
         values_query = db.query_session().query(stat_func(col)).filter(match_col == match_value)
         if start_ts is not None or end_ts is not None:
@@ -455,6 +481,14 @@ class DBObject(object):
         return cls.get_col_func_for_value(db, col, func.avg, match_col, match_value, start_ts, end_ts, ignore_le_zero)
 
     @classmethod
+    def get_col_min_for_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
+        return cls.get_col_func_for_value(db, col, func.min, match_col, match_value, start_ts, end_ts, ignore_le_zero)
+
+    @classmethod
+    def get_col_max_for_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
+        return cls.get_col_func_for_value(db, col, func.max, match_col, match_value, start_ts, end_ts, ignore_le_zero)
+
+    @classmethod
     def get_col_func_greater_than_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
         values_query = db.query_session().query(stat_func(col)).filter(match_col > match_value)
         if start_ts is not None or end_ts is not None:
@@ -467,11 +501,53 @@ class DBObject(object):
     def get_col_avg_greater_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
         return cls.get_col_func_greater_than_value(db, col, func.avg, match_col, match_value, start_ts, end_ts, ignore_le_zero)
 
+    @classmethod
+    def get_col_func_less_than_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
+        values_query = db.query_session().query(stat_func(col)).filter(match_col < match_value)
+        if start_ts is not None or end_ts is not None:
+            values_query = values_query.filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
+        if ignore_le_zero:
+            values_query = values_query.filter(col > 0)
+        return values_query.scalar()
+
+    @classmethod
+    def get_col_avg_less_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
+        return cls.get_col_func_less_than_value(db, col, func.avg, match_col, match_value, start_ts, end_ts, ignore_le_zero)
+
+    @classmethod
+    def get_col_min_less_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
+        return cls.get_col_func_less_than_value(db, col, func.min, match_col, match_value, start_ts, end_ts, ignore_le_zero)
+
+    @classmethod
+    def get_col_max_less_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
+        return cls.get_col_func_less_than_value(db, col, func.max, match_col, match_value, start_ts, end_ts, ignore_le_zero)
+
+    @classmethod
+    def get_daily_stats(cls, db, day_ts):
+        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
+        stats['day'] = day_ts
+        return stats
+
+    @classmethod
+    def get_weekly_stats(cls, db, first_day_ts):
+        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats['first_day'] = first_day_ts
+        return stats
+
+    @classmethod
+    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
+        stats = cls.get_stats(db, first_day_ts, last_day_ts)
+        stats['first_day'] = first_day_ts
+        return stats
+
     def __repr__(self):
         classname = self.__class__.__name__
-        col_name = cls.find_col.name
-        col_value = self.__dict__[col_name]
-        return ("<%s(%s=%s)>" % (classname, col.name, col_value))
+        return ("<%s()>" % (classname))
+
+
+#
+####
+#
 
 
 class KeyValueObject(DBObject):
@@ -541,6 +617,9 @@ class SummaryBase(DBObject):
     rhr_avg = Column(Float)
     rhr_min = Column(Float)
     rhr_max = Column(Float)
+    inactive_hr_avg = Column(Float)
+    inactive_hr_min = Column(Float)
+    inactive_hr_max = Column(Float)
     weight_avg = Column(Float)
     weight_min = Column(Float)
     weight_max = Column(Float)
