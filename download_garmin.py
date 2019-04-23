@@ -198,9 +198,10 @@ class Download():
             response = self.get(url, params=params)
             if response.status_code == 200:
                 self.save_json_file(json_full_filname, response.json())
-                return True
-            logger.error("%s: %s failed (%d): %s", job_name, response.url, response.status_code, response.text)
-        return False
+            else:
+                logger.error("%s: %s failed (%d): %s", job_name, response.url, response.status_code, response.text)
+                return False
+        return True
 
     def unzip_files(self, outdir):
         logger.info("unzip_files: " + outdir)
