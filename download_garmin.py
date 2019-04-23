@@ -187,9 +187,20 @@ class Download():
     def convert_to_json(self, object):
         return object.__str__()
 
-    def save_json_file(self, json_filename, json_data):
-        with open(json_filename + '.json', 'w') as file:
+    def save_json_file(self, json_full_filname, json_data):
+        with open(json_full_filname, 'w') as file:
+            logger.info("save_json_file: %s", json_full_filname)
             file.write(json.dumps(json_data, default=self.convert_to_json))
+
+    def download_json_file(self, job_name, url, params, json_filename, overwite):
+        json_full_filname = json_filename + '.json'
+        if not os.path.isfile(json_full_filname) or overwite:
+            response = self.get(url, params=params)
+            if response.status_code == 200:
+                self.save_json_file(json_full_filname, response.json())
+                return True
+            logger.error("%s: %s failed (%d): %s", job_name, response.url, response.status_code, response.text)
+        return False
 
     def unzip_files(self, outdir):
         logger.info("unzip_files: " + outdir)
@@ -216,20 +227,12 @@ class Download():
 
     def get_weight_day(self, directory, day, overwite=False):
         date_str = day.strftime('%Y-%m-%d')
-        json_filename = directory + '/weight_' + date_str
-        if not os.path.isfile(json_filename + '.json') or overwite:
-            logger.info("get_weight_day: %s", date_str)
-            params = {
-                'startDate' : date_str,
-                'endDate'   : date_str,
-                '_'         : str(Conversions.dt_to_epoch_ms(day))
-            }
-            response = self.get(self.garmin_connect_weight_url, params=params)
-            if response.status_code == 200:
-                self.save_json_file(json_filename, response.json())
-                return True
-            logger.error("get_weight_day failed (%d): %s", response.status_code, response.url)
-        return False
+        params = {
+            'startDate' : date_str,
+            'endDate'   : date_str,
+            '_'         : str(Conversions.dt_to_epoch_ms(day))
+        }
+        return self.download_json_file('get_weight_day', self.garmin_connect_weight_url, params, directory + '/weight_' + date_str, overwite)
 
     def get_weight(self, directory, date, days):
         day = date - datetime.timedelta(days)
@@ -251,18 +254,18 @@ class Download():
         if response.status_code == 200:
             return response.json()
 
-    def save_activity_details(self, directory, activity_id_str):
+    def save_activity_details(self, directory, activity_id_str, overwite):
         logger.debug("save_activity_details")
-        response = self.get(self.get_activity_details_url(activity_id_str))
-        if response.status_code == 200:
-            json_filename = directory + '/activity_details_' + activity_id_str
-            self.save_json_file(json_filename, response.json())
+        json_filename = directory + '/activity_details_' + activity_id_str
+        return self.download_json_file('save_activity_details', self.get_activity_details_url(activity_id_str), None, json_filename, overwite)
 
     def save_activity_file(self, activity_id_str):
         logger.debug("save_activity_file: " + activity_id_str)
         response = self.get(self.garmin_connect_download_activity_url + activity_id_str)
         if response.status_code == 200:
             self.save_binary_file(self.temp_dir + '/activity_' + activity_id_str + '.zip', response)
+        else:
+            logger.error("save_activity_file: %s failed (%d): %s", response.url, response.status_code, response.text)
 
     def get_activities(self, directory, count, overwite=False):
         logger.info("get_activities: '%s' (%d)", directory, count)
@@ -271,35 +274,26 @@ class Download():
             activity_id_str = str(activity['activityId'])
             activity_name_str = Conversions.printable(activity['activityName'])
             logger.info("get_activities: %s (%s)" % (activity_name_str, activity_id_str))
-            json_filename = directory + '/activity_' + activity_id_str
-            if not os.path.isfile(json_filename + '.json') or overwite:
+            json_filename = directory + '/activity_' + activity_id_str + '.json'
+            if not os.path.isfile(json_filename) or overwite:
                 logger.debug("get_activities: %s <- %s" % (json_filename, repr(activity)))
-                self.save_activity_details(directory, activity_id_str)
+                self.save_activity_details(directory, activity_id_str, overwite)
                 self.save_json_file(json_filename, activity)
-                self.save_activity_file(activity_id_str)
+                if not os.path.isfile(directory + '/' + activity_id_str + '.fit') or overwite:
+                    self.save_activity_file(activity_id_str)
                 # pause for a second between every page access
                 time.sleep(1)
 
-    def get_activity_types(self, directory):
+    def get_activity_types(self, directory, overwite):
         logger.info("get_activity_types: '%s'", directory)
-        response = self.get(self.garmin_connect_activity_types_url)
-        if response.status_code == 200:
-            json_filename = directory + '/activity_types'
-            self.save_json_file(json_filename, response.json())
+        return self.download_json_file('get_activity_types', self.garmin_connect_activity_types_url, None, directory + '/activity_types', overwite)
 
-    def get_sleep_day(self, directory, date):
-        filename = directory + '/sleep_' + str(date) + '.json'
-        if not os.path.isfile(filename):
-            logger.info("get_sleep_day: %s -> %s", str(date), filename)
-            params = {
-                'date' : date.strftime("%Y-%m-%d")
-            }
-            response = self.get(self.garmin_connect_sleep_daily_url + '/' + self.display_name, params=params)
-            if response.status_code == 200:
-                self.save_binary_file(filename, response)
-            else:
-                logger.error("get_sleep_day: %s failed (%d): %s", response.url, response.status_code, response.text)
-
+    def get_sleep_day(self, directory, date, overwite=False):
+        json_filename = directory + '/sleep_' + str(date)
+        params = {
+            'date' : date.strftime("%Y-%m-%d")
+        }
+        return self.download_json_file('get_sleep_day', self.garmin_connect_sleep_daily_url + '/' + self.display_name, params, json_filename, overwite)
 
     def get_sleep(self, directory, date, days):
         logger.info("get_sleep: %s : %d" % (str(date), days))
@@ -309,23 +303,15 @@ class Download():
             # pause for a second between every page access
             time.sleep(1)
 
-
     def get_rhr_day(self, directory, day, overwite=False):
         date_str = day.strftime('%Y-%m-%d')
         json_filename = directory + '/rhr_' + date_str
-        if not os.path.isfile(json_filename + '.json') or overwite:
-            logger.info("get_rhr_day: %s", date_str)
-            params = {
-                'fromDate'  : date_str,
-                'untilDate' : date_str,
-                'metricId'  : 60
-            }
-            response = self.get(self.garmin_connect_rhr_url + '/' + self.display_name, params=params)
-            if response.status_code == 200:
-                self.save_json_file(json_filename, response.json())
-                return True
-            logger.error("get_rhr_day failed (%d): %s", response.status_code, response.url)
-        return False
+        params = {
+            'fromDate'  : date_str,
+            'untilDate' : date_str,
+            'metricId'  : 60
+        }
+        return self.download_json_file('get_rhr_day', self.garmin_connect_rhr_url + '/' + self.display_name, params, json_filename, overwite)
 
     def get_rhr(self, directory, date, days):
         day = date - datetime.timedelta(days)
@@ -447,7 +433,7 @@ def main(argv):
 
     if activities and activity_count > 0:
         logger.info("Fetching %d activities" % activity_count)
-        download.get_activity_types(activities)
+        download.get_activity_types(activities, overwite)
         download.get_activities(activities, activity_count, overwite)
         download.unzip_files(activities)
 
