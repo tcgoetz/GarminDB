@@ -279,10 +279,11 @@ import_new_sleep: download_new_sleep
 $(WEIGHT_FILES_DIR):
 	mkdir -p $(WEIGHT_FILES_DIR)
 
-import_weight: $(DB_DIR)
+import_weight: download_weight
 	$(PYTHON) import_garmin.py --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
 
-import_new_weight: download_new_weight import_weight
+import_new_weight: download_new_weight
+	$(PYTHON) import_garmin.py -l --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
 
 download_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
 	$(PYTHON) download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
@@ -294,10 +295,11 @@ download_new_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
 $(RHR_FILES_DIR):
 	mkdir -p $(RHR_FILES_DIR)
 
-import_rhr: $(DB_DIR)
+import_rhr: download_rhr
 	$(PYTHON) import_garmin.py --rhr_input_dir "$(RHR_FILES_DIR)" --sqlite $(DB_DIR)
 
-import_new_rhr: download_new_rhr import_rhr
+import_new_rhr: download_new_rhr
+	$(PYTHON) import_garmin.py -l --rhr_input_dir "$(RHR_FILES_DIR)" --sqlite $(DB_DIR)
 
 download_rhr: $(DB_DIR) $(RHR_FILES_DIR)
 	$(PYTHON) download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -r "$(RHR_FILES_DIR)"
