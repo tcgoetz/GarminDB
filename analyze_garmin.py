@@ -185,7 +185,7 @@ class Analyze():
                                     'heart_rate'    : hr.heart_rate
                                 }
                                 GarminDB.IntensityHR.create_or_update_not_none(self.garminsumdb, entry)
-                    previous_ts = monitoring.timestamp
+                    previous_ts = monitoring.timestamp + datetime.timedelta(0, 1)
 
     def combine_stats(self, stats, stat1_name, stat2_name):
         stat1 = stats.get(stat1_name, 0)
