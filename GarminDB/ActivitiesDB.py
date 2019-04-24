@@ -211,6 +211,8 @@ class SportActivities(DBObject):
     def create_activity_view(cls, db):
         cls.create_join_view(db, cls.__tablename__ + '_view', Activities)
 
+def sqlite_goole_maps_url(lat_str, long_str):
+    return '"http://maps.google.com/?ie=UTF8&q=" || %s || "," || %s || "&z=13"' % (lat_str, long_str)
 
 class RunActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'run_activities'
@@ -248,10 +250,6 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
                 'activities.start_time AS start_time, ' +
                 'activities.stop_time AS stop_time, ' +
                 'activities.elapsed_time AS elapsed_time, ' +
-                'activities.start_lat AS start_lat, ' +
-                'activities.start_long AS start_long, ' +
-                'activities.stop_lat AS stop_lat, ' +
-                'activities.stop_long AS stop_long, ' +
                 'activities.distance AS distance, ' +
                 'run_activities.steps AS steps, ' +
                 'run_activities.avg_pace AS avg_pace, ' +
@@ -272,8 +270,11 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
                 'run_activities.avg_stance_time_percent AS avg_stance_time_percent, ' +
                 'run_activities.vo2_max AS vo2_max, ' +
                 'activities.training_effect AS training_effect, ' +
-                'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
-            'FROM run_activities JOIN activities ON activities.activity_id = run_activities.activity_id'
+                'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
+                sqlite_goole_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
+                sqlite_goole_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
+            'FROM run_activities JOIN activities ON activities.activity_id = run_activities.activity_id ' +
+            'ORDER BY activities.start_time DESC'
         )
         cls._create_view(db, view_name, query_str)
 
@@ -298,10 +299,6 @@ class WalkActivities(ActivitiesDB.Base, SportActivities):
                 'activities.start_time AS start_time, ' +
                 'activities.stop_time AS stop_time, ' +
                 'activities.elapsed_time AS elapsed_time, ' +
-                'activities.start_lat AS start_lat, ' +
-                'activities.start_long AS start_long, ' +
-                'activities.stop_lat AS stop_lat, ' +
-                'activities.stop_long AS stop_long, ' +
                 'activities.distance AS distance, ' +
                 'walk_activities.steps AS steps, ' +
                 'walk_activities.avg_pace AS avg_pace, ' +
@@ -313,8 +310,11 @@ class WalkActivities(ActivitiesDB.Base, SportActivities):
                 'activities.max_speed AS max_speed, ' +
                 'walk_activities.vo2_max AS vo2_max, ' +
                 'activities.training_effect AS training_effect, ' +
-                'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
-            'FROM walk_activities JOIN activities ON activities.activity_id = walk_activities.activity_id'
+                'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
+                sqlite_goole_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
+                sqlite_goole_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
+            'FROM walk_activities JOIN activities ON activities.activity_id = walk_activities.activity_id ' +
+            'ORDER BY activities.start_time DESC'
         )
         cls._create_view(db, view_name, query_str)
 
@@ -337,10 +337,6 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
                 'activities.start_time AS start_time, ' +
                 'activities.stop_time AS stop_time, ' +
                 'activities.elapsed_time AS elapsed_time, ' +
-                'activities.start_lat AS start_lat, ' +
-                'activities.start_long AS start_long, ' +
-                'activities.stop_lat AS stop_lat, ' +
-                'activities.stop_long AS stop_long, ' +
                 'activities.distance AS distance, ' +
                 'paddle_activities.strokes AS strokes, ' +
                 'paddle_activities.avg_stroke_distance AS avg_stroke_distance, ' +
@@ -352,8 +348,11 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
                 'activities.avg_speed AS avg_speed, ' +
                 'activities.max_speed AS max_speed, ' +
                 'activities.training_effect AS training_effect, ' +
-                'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
-            'FROM paddle_activities JOIN activities ON activities.activity_id = paddle_activities.activity_id'
+                'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
+                sqlite_goole_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
+                sqlite_goole_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
+            'FROM paddle_activities JOIN activities ON activities.activity_id = paddle_activities.activity_id ' +
+            'ORDER BY activities.start_time DESC'
         )
         cls._create_view(db, view_name, query_str)
 
@@ -375,10 +374,6 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
                 'activities.start_time AS start_time, ' +
                 'activities.stop_time AS stop_time, ' +
                 'activities.elapsed_time AS elapsed_time, ' +
-                'activities.start_lat AS start_lat, ' +
-                'activities.start_long AS start_long, ' +
-                'activities.stop_lat AS stop_lat, ' +
-                'activities.stop_long AS stop_long, ' +
                 'activities.distance AS distance, ' +
                 'cycle_activities.strokes AS strokes, ' +
                 'activities.avg_hr AS avg_hr, ' +
@@ -390,8 +385,11 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
                 'activities.max_speed AS max_speed, ' +
                 'cycle_activities.vo2_max AS vo2_max, ' +
                 'activities.training_effect AS training_effect, ' +
-                'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
-            'FROM cycle_activities JOIN activities ON activities.activity_id = cycle_activities.activity_id'
+                'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
+                sqlite_goole_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
+                sqlite_goole_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
+            'FROM cycle_activities JOIN activities ON activities.activity_id = cycle_activities.activity_id ' +
+            'ORDER BY activities.start_time DESC'
         )
         cls._create_view(db, view_name, query_str)
 
@@ -425,7 +423,8 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
                 'activities.avg_speed AS avg_speed, ' +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
-            'FROM elliptical_activities JOIN activities ON activities.activity_id = elliptical_activities.activity_id'
+            'FROM elliptical_activities JOIN activities ON activities.activity_id = elliptical_activities.activity_id ' +
+            'ORDER BY activities.start_time DESC'
         )
         cls._create_view(db, view_name, query_str)
 
