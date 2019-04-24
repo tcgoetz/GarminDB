@@ -24,6 +24,8 @@ class GarminSummaryDB(DB):
         GarminSummaryDB.Base.metadata.create_all(self.engine)
         self.version = SummaryDB.DbVersion()
         self.version.version_check(self, self.db_version)
+        MonthsSummary.create_view(self)
+        WeeksSummary.create_view(self)
         DaysSummary.create_view(self)
 
 class Summary(GarminSummaryDB.Base, KeyValueObject):
@@ -41,6 +43,28 @@ class MonthsSummary(GarminSummaryDB.Base, SummaryBase):
     def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.first_day == values_dict['first_day'])
 
+    @classmethod
+    def create_view(cls, db):
+        view_name = cls.__tablename__ + '_view'
+        query_str = (
+            'SELECT ' +
+                'first_day,' +
+                'rhr_avg, rhr_min, rhr_max,' +
+                'inactive_hr_avg,' +
+                'weight_avg, weight_min, weight_max,' +
+                'intensity_time, moderate_activity_time, vigorous_activity_time,' +
+                'steps, floors,' +
+                'sleep_avg,' +
+                'rem_sleep_avg,' +
+                'stress_avg,' +
+                'calories_avg,' +
+                'calories_bmr_avg,' +
+                'calories_active_avg,' +
+                'activities, activities_calories, activities_distance '
+            'FROM %s ORDER BY first_day DESC' % cls.__tablename__
+        )
+        cls._create_view(db, view_name, query_str)
+
 
 class WeeksSummary(GarminSummaryDB.Base, SummaryBase):
     __tablename__ = 'weeks_summary'
@@ -52,6 +76,28 @@ class WeeksSummary(GarminSummaryDB.Base, SummaryBase):
     @classmethod
     def _find_query(cls, session, values_dict):
         return  session.query(cls).filter(cls.first_day == values_dict['first_day'])
+
+    @classmethod
+    def create_view(cls, db):
+        view_name = cls.__tablename__ + '_view'
+        query_str = (
+            'SELECT ' +
+                'first_day,' +
+                'rhr_avg, rhr_min, rhr_max,' +
+                'inactive_hr_avg,' +
+                'weight_avg, weight_min, weight_max,' +
+                'intensity_time, moderate_activity_time, vigorous_activity_time,' +
+                'steps, floors,' +
+                'sleep_avg,' +
+                'rem_sleep_avg,' +
+                'stress_avg,' +
+                'calories_avg,' +
+                'calories_bmr_avg,' +
+                'calories_active_avg,' +
+                'activities, activities_calories, activities_distance '
+            'FROM %s ORDER BY first_day DESC' % cls.__tablename__
+        )
+        cls._create_view(db, view_name, query_str)
 
 
 class DaysSummary(GarminSummaryDB.Base, SummaryBase):
@@ -73,7 +119,7 @@ class DaysSummary(GarminSummaryDB.Base, SummaryBase):
                 'day,' +
                 'hr_avg, hr_min, hr_max,' +
                 'rhr_avg as rhr,' +
-                'inactive_hr_avg, inactive_hr_min, inactive_hr_max,' +
+                'inactive_hr_avg,' +
                 'weight_avg as weight,' +
                 'intensity_time, moderate_activity_time, vigorous_activity_time,' +
                 'steps, floors,' +
@@ -84,7 +130,7 @@ class DaysSummary(GarminSummaryDB.Base, SummaryBase):
                 'calories_bmr_avg as calories_bmr,' +
                 'calories_active_avg as calories_active,' +
                 'activities, activities_calories, activities_distance '
-            'FROM days_summary ORDER BY day DESC'
+            'FROM %s ORDER BY day DESC' % cls.__tablename__
         )
         cls._create_view(db, view_name, query_str)
 
