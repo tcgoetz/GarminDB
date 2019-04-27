@@ -98,24 +98,6 @@ class Activities(ActivitiesDB.Base, DBObject):
         }
         return stats
 
-    @classmethod
-    def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
-        stats['day'] = day_ts
-        return stats
-
-    @classmethod
-    def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
-        stats['first_day'] = first_day_ts
-        return stats
-
-    @classmethod
-    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
-        stats = cls.get_stats(db, first_day_ts, last_day_ts)
-        stats['first_day'] = first_day_ts
-        return stats
-
 
 class ActivityLaps(ActivitiesDB.Base, DBObject):
     __tablename__ = 'activity_laps'

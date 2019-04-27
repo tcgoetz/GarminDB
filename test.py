@@ -119,6 +119,28 @@ class TestGarminDb(unittest.TestCase):
         )
 
 
+class TestGarminDbObjects(unittest.TestCase):
+
+    def test_file(self):
+        file_id = '123345678'
+        filename = file_id + '.fit'
+        filename_with_path = '/test/directory/' + filename
+        file_type = Fit.FieldEnums.FileType.goals
+        file_serial_number = '987654321'
+        (file_id, file_name) = GarminDB.File.name_and_id_from_path(filename_with_path)
+        file_dict = {
+            'id'            : file_id,
+            'name'          : file_name,
+            'type'          : file_type,
+            'serial_number' : file_serial_number,
+        }
+        file = GarminDB.File.from_dict(file_dict)
+        self.assertEqual(file.id, file_id)
+        self.assertEqual(file.name, filename)
+        self.assertEqual(file.type, file_type)
+        self.assertEqual(file.serial_number, file_serial_number)
+
+
 @unittest.skipIf(db_skip, 'Skip DB tests')
 class TestActivitiesDb(unittest.TestCase):
 
@@ -208,6 +230,7 @@ class TestGarminSummaryDB(unittest.TestCase):
         self.assertGreater(GarminDB.MonthsSummary.get_col_max(garminsumdb, GarminDB.MonthsSummary.activities), 0)
         self.assertGreater(GarminDB.MonthsSummary.get_col_max(garminsumdb, GarminDB.MonthsSummary.activities_calories), 0)
         self.assertGreater(GarminDB.MonthsSummary.get_col_max(garminsumdb, GarminDB.MonthsSummary.activities_distance), 0)
+
 
 class TestFit(unittest.TestCase):
 

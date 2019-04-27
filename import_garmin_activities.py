@@ -86,7 +86,9 @@ class GarminTcxData():
                 'hardware_version'  : None,
             }
             GarminDB.Device.create_or_update_not_none(garmin_db, device)
+            (file_id, file_name) = GarminDB.File.name_and_id_from_path(file_name)
             file = {
+                'id'            : file_id,
                 'name'          : file_name,
                 'type'          : Fit.FieldEnums.FileType.tcx,
                 'serial_number' : serial_number,

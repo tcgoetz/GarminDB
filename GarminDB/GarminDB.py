@@ -48,7 +48,6 @@ class Device(GarminDB.Base, DBObject):
     hardware_version = Column(String)
 
     min_row_values = 2
-    _updateable_fields = ['hardware_version', 'product']
 
     @classmethod
     def _find_query(cls, session, values_dict):
@@ -100,10 +99,6 @@ class DeviceInfo(GarminDB.Base, DBObject):
         cls._create_view(db, view_name, query_str)
 
 
-def gc_id_from_path(pathname):
-    return DBObject.filename_from_pathname(pathname).split('.')[0]
-
-
 class File(GarminDB.Base, DBObject):
     __tablename__ = 'files'
 
@@ -112,36 +107,37 @@ class File(GarminDB.Base, DBObject):
     type = Column(Enum(FieldEnums.FileType), nullable=False)
     serial_number = Column(Integer, ForeignKey('devices.serial_number'))
 
-    _col_mappings = {
-        'name' : ('id', gc_id_from_path)
-    }
-    _col_translations = {
-        'name' : DBObject.filename_from_pathname
-    }
     min_row_values = 1
 
     @classmethod
     def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.name == values_dict['name'])
+        return session.query(cls).filter(cls.name == values_dict['name'])
 
     @classmethod
     def get(cls, db, name):
-        return cls.find_id(db, {'name' : DBObject.filename_from_pathname(name)})
+        return cls.find_id(db, {'name' : cls.filename_from_pathname(name)})
 
     @classmethod
     def create_view(cls, db):
         view_name = cls.__tablename__ + '_view'
         query_str = (
             'SELECT ' +
+                'device_info.timestamp AS timestamp, ' +
                 'files.id AS id, ' +
                 'files.name AS name, ' +
                 'files.type AS type, ' +
                 'devices.serial_number AS device_serial_number, ' +
                 'devices.manufacturer AS device_manufacturer, ' +
                 'devices.product AS device_product ' +
-            'FROM files JOIN devices ON devices.serial_number = files.serial_number'
+            'FROM files JOIN devices ON devices.serial_number = files.serial_number JOIN device_info ON device_info.file_id = files.id'
         )
         cls._create_view(db, view_name, query_str)
+
+    @classmethod
+    def name_and_id_from_path(cls, pathanme):
+        name = cls.filename_from_pathname(pathanme)
+        id = name.split('.')[0]
+        return (id, name)
 
 
 class Weight(GarminDB.Base, DBObject):
@@ -152,7 +148,6 @@ class Weight(GarminDB.Base, DBObject):
 
     time_col = synonym("timestamp")
     min_row_values = 2
-    _updateable_fields = ['weight']
 
     @classmethod
     def _find_query(cls, session, values_dict):
@@ -165,24 +160,6 @@ class Weight(GarminDB.Base, DBObject):
             'weight_min' : cls.get_col_min(db, cls.weight, start_ts, end_ts, True),
             'weight_max' : cls.get_col_max(db, cls.weight, start_ts, end_ts),
         }
-        return stats
-
-    @classmethod
-    def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
-        stats['day'] = day_ts
-        return stats
-
-    @classmethod
-    def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
-        stats['first_day'] = first_day_ts
-        return stats
-
-    @classmethod
-    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
-        stats = cls.get_stats(db, first_day_ts, last_day_ts)
-        stats['first_day'] = first_day_ts
         return stats
 
 
@@ -204,24 +181,6 @@ class Stress(GarminDB.Base, DBObject):
         stats = {
             'stress_avg' : cls.get_col_avg(db, cls.stress, start_ts, end_ts, True),
         }
-        return stats
-
-    @classmethod
-    def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
-        stats['day'] = day_ts
-        return stats
-
-    @classmethod
-    def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
-        stats['first_day'] = first_day_ts
-        return stats
-
-    @classmethod
-    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
-        stats = cls.get_stats(db, first_day_ts, last_day_ts)
-        stats['first_day'] = first_day_ts
         return stats
 
 
@@ -254,24 +213,6 @@ class Sleep(GarminDB.Base, DBObject):
             'rem_sleep_min' : cls.get_time_col_min(db, cls.rem_sleep, start_ts, end_ts, True),
             'rem_sleep_max' : cls.get_time_col_max(db, cls.rem_sleep, start_ts, end_ts),
         }
-
-    @classmethod
-    def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
-        stats['day'] = day_ts
-        return stats
-
-    @classmethod
-    def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
-        stats['first_day'] = first_day_ts
-        return stats
-
-    @classmethod
-    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
-        stats = cls.get_stats(db, first_day_ts, last_day_ts)
-        stats['first_day'] = first_day_ts
-        return stats
 
 
 class SleepEvents(GarminDB.Base, DBObject):
@@ -320,20 +261,3 @@ class RestingHeartRate(GarminDB.Base, DBObject):
         }
         return stats
 
-    @classmethod
-    def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
-        stats['day'] = day_ts
-        return stats
-
-    @classmethod
-    def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
-        stats['first_day'] = first_day_ts
-        return stats
-
-    @classmethod
-    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
-        stats = cls.get_stats(db, first_day_ts, last_day_ts)
-        stats['first_day'] = first_day_ts
-        return stats

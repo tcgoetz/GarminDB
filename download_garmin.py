@@ -231,7 +231,7 @@ class Download():
         params = {
             'startDate' : date_str,
             'endDate'   : date_str,
-            '_'         : str(Conversions.dt_to_epoch_ms(day))
+            '_'         : str(Conversions.dt_to_epoch_ms(Conversions.date_to_dt(day)))
         }
         return self.download_json_file('get_weight_day', self.garmin_connect_weight_url, params, directory + '/weight_' + date_str, overwite)
 

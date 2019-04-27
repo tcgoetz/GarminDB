@@ -384,7 +384,7 @@ test: test_all
 test_all:
 	export DB_DIR=$(DB_DIR); export DB_SKIP="False" && $(PYTHON) test.py
 
-test_fit:
+test_non_db:
 	export DB_DIR=$(DB_DIR); export DB_SKIP="True" && $(PYTHON) test.py
 
 

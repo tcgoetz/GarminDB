@@ -77,35 +77,31 @@ class DB(object):
 class DBObject(object):
 
     # defaults, overridden by subclasses
-    UPDATE_ALL_FIELDS = 0xff
-    _updateable_fields = UPDATE_ALL_FIELDS
-    _relational_mappings = {}
     _col_translations = {}
     _col_mappings = {}
     min_row_values = 1
 
-    def _from_dict(self, db, values_dict, update=False, ignore_none=False):
-        if update:
-            if self._updateable_fields == self.UPDATE_ALL_FIELDS:
-                test_key_dict = None
-            else:
-                test_key_dict = self._updateable_fields
-        else:
-            test_key_dict = self.__class__.__dict__
+    @classmethod
+    def col_names(cls):
+        return [col.name for col in cls.__table__.columns]
+
+    def set_col_value(self, name, value):
+        if name in self.col_names():
+            set_attribute(self, name, value)
+
+    def _from_dict(self, values_dict, ignore_none=False):
         self.not_none_values = 0
-        processed_dict = self.translate_columns(self.relational_mappings(db, self.map_columns(self.__filter_columns(values_dict))))
-        for key, value in processed_dict.iteritems():
-            if test_key_dict is None or key in test_key_dict:
-                if value is not None:
-                    self.not_none_values += 1
-                    set_attribute(self, key, value)
-                elif not ignore_none:
-                    set_attribute(self, key, value)
+        for key, value in values_dict.iteritems():
+            if value is not None:
+                self.not_none_values += 1
+                self.set_col_value(key, value)
+            elif not ignore_none:
+                self.set_col_value(key, value)
         return self
 
     @classmethod
-    def from_dict(cls, db, values_dict):
-        return cls()._from_dict(db, values_dict)
+    def from_dict(cls, values_dict):
+        return cls()._from_dict(values_dict)
 
     @classmethod
     def _delete_view(cls, db, view_name):
@@ -126,75 +122,22 @@ class DBObject(object):
         return os.path.basename(pathname)
 
     @classmethod
-    def __filter_columns(cls, values_dict):
-        return { key : value for key, value in values_dict.iteritems() if key in cls.__dict__}
-
-    @classmethod
     def _filter_columns(cls, values_dict):
-        filtered_cols = cls.__filter_columns(values_dict)
-        if len(filtered_cols) != len(values_dict):
-            logger.debug("filtered some cols for %s from %s", cls.__tablename__, repr(values_dict))
-        if len(filtered_cols) == 0:
-            raise ValueError("%s: filtered all cols for %s from %s" % (cls.__name__, cls.__tablename__, repr(values_dict)))
-        return filtered_cols
+        return {col : value for col, value in values_dict.iteritems() if col in cls.col_names()}
 
     @classmethod
     def matches(cls, values_dict):
-        return len(cls.__filter_columns(values_dict)) >= cls.min_row_values
-
-    @classmethod
-    def map_columns(cls, values_dict):
-        if len(cls._col_mappings) == 0:
-            return values_dict
-        for key, value in cls._col_mappings.iteritems():
-            if key in values_dict:
-                values_dict[value[0]] = value[1](values_dict[key])
-        return values_dict
-
-    @classmethod
-    def relational_mappings(cls, db, values_dict):
-        if len(cls._relational_mappings) == 0:
-            return values_dict
-        return {
-            (cls._relational_mappings[key][0] if key in cls._relational_mappings else key) :
-            (cls._relational_mappings[key][1](db, value) if key in cls._relational_mappings else value)
-            for key, value in values_dict.iteritems()
-        }
-
-    @classmethod
-    def translate_columns(cls, values_dict):
-        if len(cls._col_translations) == 0:
-            return values_dict
-        return {
-            key :
-            (cls._col_translations[key](value) if key in cls._col_translations else value)
-            for key, value in values_dict.iteritems()
-        }
-
-    @classmethod
-    def massage_columns(cls, db, values_dict):
-        return cls._filter_columns(cls.translate_columns(cls.relational_mappings(db, cls.map_columns(values_dict))))
-
-    @classmethod
-    def translate_column(cls, col_name, col_value):
-        if len(cls._col_translations) == 0:
-            return col_value
-        return (cls._col_translations[col_name](col_value) if col_name in cls._col_translations else col_value)
-
-    @classmethod
-    def find_query(cls, session, values_dict):
-        logger.debug("%s::_find %s", cls.__name__, repr(values_dict))
-        return cls._find_query(session, cls.translate_columns(values_dict))
+        return len(cls._filter_columns(values_dict)) >= cls.min_row_values
 
     @classmethod
     def find_all(cls, db, values_dict):
         logger.debug("%s::find_all %s", cls.__name__, repr(values_dict))
-        return cls.find_query(db.query_session(), values_dict).all()
+        return cls._find_query(db.query_session(), values_dict).all()
 
     @classmethod
     def _find_one(cls, session, values_dict):
         logger.debug("%s::_find_one %s", cls.__name__, repr(values_dict))
-        return cls.find_query(session, values_dict).one_or_none()
+        return cls._find_query(session, values_dict).one_or_none()
 
     @classmethod
     def find_one(cls, db, values_dict):
@@ -211,12 +154,11 @@ class DBObject(object):
     @classmethod
     def _create(cls, db, session, values_dict, ignore_none=False):
         logger.debug("%s::_create %s", cls.__name__, repr(values_dict))
-        instance = cls.from_dict(db, values_dict)
+        instance = cls.from_dict(values_dict)
         if instance.not_none_values < cls.min_row_values:
             if ignore_none:
                 return None
-            else:
-                raise ValueError("%d not-None values: %s", instance.not_none_values, repr(values_dict))
+            raise ValueError("%d not-None values: %s", instance.not_none_values, repr(values_dict))
         session.add(instance)
 
     @classmethod
@@ -235,15 +177,6 @@ class DBObject(object):
             DB.commit(session)
 
     @classmethod
-    def find_or_create_id(cls, db, values_dict):
-        logger.debug("%s::find_or_create_id %s", cls.__name__, repr(values_dict))
-        instance = cls.find_one(db, values_dict)
-        if instance is None:
-            cls.create(db, values_dict)
-            instance = cls.find_one(db, values_dict)
-        return instance.id
-
-    @classmethod
     def create_or_update(cls, db, values_dict, ignore_none=False):
         logger.debug("%s::create_or_update %s", cls.__name__, repr(values_dict))
         session = db.session()
@@ -251,7 +184,7 @@ class DBObject(object):
         if instance is None:
             cls._create(db, session, values_dict, ignore_none)
         else:
-            instance._from_dict(db, values_dict, True, ignore_none)
+            instance._from_dict(values_dict, ignore_none)
         DB.commit(session)
 
     @classmethod
@@ -543,105 +476,4 @@ class DBObject(object):
     def __repr__(self):
         classname = self.__class__.__name__
         return ("<%s()>" % (classname))
-
-
-#
-####
-#
-
-
-class KeyValueObject(DBObject):
-
-    timestamp = Column(DateTime)
-    key = Column(String, primary_key=True)
-    value = Column(String)
-
-    _col_translations = {
-        'value' : str,
-    }
-    min_row_values = 2
-    _updateable_fields = ['value']
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.key == values_dict['key'])
-
-    @classmethod
-    def set(cls, db, key, value, timestamp=datetime.datetime.now()):
-        cls.create_or_update(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
-
-    @classmethod
-    def set_newer(cls, db, key, value, timestamp=datetime.datetime.now()):
-        item = cls.find_one(db, {'key' : key})
-        if item is None or item.timestamp < timestamp:
-            cls.create_or_update(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
-
-    @classmethod
-    def set_if_unset(cls, db, key, value, timestamp=datetime.datetime.now()):
-        return cls.find_or_create(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
-
-    @classmethod
-    def get(cls, db, key):
-        try:
-            return cls.find_one(db, {'key' : key}).value
-        except Exception:
-            return None
-
-    @classmethod
-    def get_int(cls, db, key):
-        return int(cls.get(db, key))
-
-    @classmethod
-    def get_time(cls, db, key):
-        try:
-            return datetime.datetime.strptime(cls.get(db, key), "%H:%M:%S").time()
-        except Exception:
-            return None
-
-
-class DbVersionObject(KeyValueObject):
-    __tablename__ = 'version'
-
-    def version_check(self, db, version_number):
-        self.set_if_unset(db, 'version', version_number)
-        self.version = self.get_int(db, 'version')
-        if self.version != version_number:
-            raise RuntimeError("DB %s version mismatch. Please rebuild the %s DB. (%s vs %s)" %
-                    (db.db_name, db.db_name, self.version, version_number))
-
-
-class SummaryBase(DBObject):
-    hr_avg = Column(Float)
-    hr_min = Column(Float)
-    hr_max = Column(Float)
-    rhr_avg = Column(Float)
-    rhr_min = Column(Float)
-    rhr_max = Column(Float)
-    inactive_hr_avg = Column(Float)
-    inactive_hr_min = Column(Float)
-    inactive_hr_max = Column(Float)
-    weight_avg = Column(Float)
-    weight_min = Column(Float)
-    weight_max = Column(Float)
-    stress_avg = Column(Float)
-    intensity_time = Column(Time)
-    moderate_activity_time = Column(Time)
-    vigorous_activity_time = Column(Time)
-    steps = Column(Integer)
-    floors = Column(Float)
-    sleep_avg = Column(Time)
-    sleep_min = Column(Time)
-    sleep_max = Column(Time)
-    rem_sleep_avg = Column(Time)
-    rem_sleep_min = Column(Time)
-    rem_sleep_max = Column(Time)
-    stress_avg = Column(Integer)
-    calories_avg = Column(Integer)
-    calories_bmr_avg = Column(Integer)
-    calories_active_avg = Column(Integer)
-    activities = Column(Integer)
-    activities_calories = Column(Integer)
-    activities_distance = Column(Integer)
-
-    min_row_values = 2
 

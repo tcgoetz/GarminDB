@@ -55,24 +55,6 @@ class MonitoringInfo(MonitoringDB.Base, DBObject):
         }
         return stats
 
-    @classmethod
-    def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
-        stats['day'] = day_ts
-        return stats
-
-    @classmethod
-    def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
-        stats['first_day'] = first_day_ts
-        return stats
-
-    @classmethod
-    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
-        stats = cls.get_stats(db, first_day_ts, last_day_ts)
-        stats['first_day'] = first_day_ts
-        return stats
-
 
 class MonitoringHeartRate(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_hr'
@@ -94,24 +76,6 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
             'hr_min' : cls.get_col_min(db, cls.heart_rate, start_ts, end_ts, True),
             'hr_max' : cls.get_col_max(db, cls.heart_rate, start_ts, end_ts),
         }
-        return stats
-
-    @classmethod
-    def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
-        stats['day'] = day_ts
-        return stats
-
-    @classmethod
-    def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
-        stats['first_day'] = first_day_ts
-        return stats
-
-    @classmethod
-    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
-        stats = cls.get_stats(db, first_day_ts, last_day_ts)
-        stats['first_day'] = first_day_ts
         return stats
 
     @classmethod
@@ -156,24 +120,6 @@ class MonitoringIntensity(MonitoringDB.Base, DBObject):
             'moderate_activity_time'    : moderate_activity_time,
             'vigorous_activity_time'    : vigorous_activity_time,
         }
-        return stats
-
-    @classmethod
-    def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, day_ts, day_ts + datetime.timedelta(1))
-        stats['day'] = day_ts
-        return stats
-
-    @classmethod
-    def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7))
-        stats['first_day'] = first_day_ts
-        return stats
-
-    @classmethod
-    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
-        stats = cls.get_stats(db, first_day_ts, last_day_ts)
-        stats['first_day'] = first_day_ts
         return stats
 
 

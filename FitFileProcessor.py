@@ -77,8 +77,10 @@ class FitFileProcessor():
                 'product'       : Fit.FieldEnums.name_for_enum(self.product),
             }
             GarminDB.Device.find_or_create(self.garmin_db, device)
+        (file_id, file_name) = GarminDB.File.name_and_id_from_path(fit_file.filename)
         file = {
-            'name'          : fit_file.filename,
+            'id'            : file_id,
+            'name'          : file_name,
             'type'          : parsed_message['type'],
             'serial_number' : self.serial_number,
         }
