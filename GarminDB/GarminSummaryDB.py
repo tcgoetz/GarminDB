@@ -22,11 +22,20 @@ class GarminSummaryDB(DB):
         logger.info("GarminSummaryDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(GarminSummaryDB, self).__init__(db_params_dict, debug)
         GarminSummaryDB.Base.metadata.create_all(self.engine)
+        # Init all table objects after SqlAlchemy's meta data create, but before using any tables.
+        SummaryDB.DbVersion.setup()
+        Summary.setup()
+        MonthsSummary.setup()
+        WeeksSummary.setup()
+        DaysSummary.setup()
+        IntensityHR.setup()
+        #
         self.version = SummaryDB.DbVersion()
         self.version.version_check(self, self.db_version)
         MonthsSummary.create_view(self)
         WeeksSummary.create_view(self)
         DaysSummary.create_view(self)
+
 
 class Summary(GarminSummaryDB.Base, KeyValueObject):
     __tablename__ = 'summary'
@@ -37,11 +46,7 @@ class MonthsSummary(GarminSummaryDB.Base, SummaryBase):
 
     first_day = Column(Date, primary_key=True)
 
-    time_col = synonym("first_day")
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.first_day == values_dict['first_day'])
+    time_col_name = 'first_day'
 
     @classmethod
     def create_view(cls, db):
@@ -71,11 +76,7 @@ class WeeksSummary(GarminSummaryDB.Base, SummaryBase):
 
     first_day = Column(Date, primary_key=True)
 
-    time_col = synonym("first_day")
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.first_day == values_dict['first_day'])
+    time_col_name = 'first_day'
 
     @classmethod
     def create_view(cls, db):
@@ -105,11 +106,7 @@ class DaysSummary(GarminSummaryDB.Base, SummaryBase):
 
     day = Column(Date, primary_key=True)
 
-    time_col = synonym("day")
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.day == values_dict['day'])
+    time_col_name = 'day'
 
     @classmethod
     def create_view(cls, db):
@@ -142,12 +139,8 @@ class IntensityHR(GarminSummaryDB.Base, DBObject):
     intensity = Column(Integer, nullable=False)
     heart_rate = Column(Integer, nullable=False)
 
-    time_col = synonym("timestamp")
+    time_col_name = 'timestamp'
     min_row_values = 2
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):

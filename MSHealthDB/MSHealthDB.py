@@ -19,6 +19,11 @@ class MSHealthDB(DB):
         logger.info("MSHealthDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(MSHealthDB, self).__init__(db_params_dict, debug)
         MSHealthDB.Base.metadata.create_all(self.engine)
+        # Init all table objects after SqlAlchemy's meta data create, but before using any tables.
+        MSHealthDB.DbVersion.setup()
+        Attributes.setup()
+        DaysSummary.setup()
+        MSVaultWeight.setup()
 
 
 class Attributes(MSHealthDB.Base, KeyValueObject):
@@ -66,12 +71,8 @@ class DaysSummary(MSHealthDB.Base, DBObject):
     guided_workout_calories = Column(Integer)
     guided_workout_secs = Column(Integer)
 
-    time_col = synonym("day")
+    time_col_name = 'day'
     min_row_values = 1
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.day == values_dict['day'])
 
     @classmethod
     def get_hr_stats(cls, db, start_ts, end_ts):
@@ -166,12 +167,8 @@ class MSVaultWeight(MSHealthDB.Base, DBObject):
     timestamp = Column(DateTime, primary_key=True, unique=True)
     weight = Column(Float)
 
-    time_col = synonym("timestamp")
+    time_col_name = 'timestamp'
     min_row_values = 2
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):

@@ -21,9 +21,20 @@ class ActivitiesDB(DB):
         logger.info("ActivitiesDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(ActivitiesDB, self).__init__(db_params_dict, debug)
         ActivitiesDB.Base.metadata.create_all(self.engine)
+        # Init all table objects after SqlAlchemy's meta data create, but before using any tables.
+        ActivitiesDB.DbVersion.setup()
+        Activities.setup()
+        ActivityLaps.setup()
+        ActivityRecords.setup()
+        RunActivities.setup()
+        WalkActivities.setup()
+        PaddleActivities.setup()
+        CycleActivities.setup()
+        EllipticalActivities.setup()
+        #
         self.version = ActivitiesDB.DbVersion()
         self.version.version_check(self, self.db_version)
-
+        #
         RunActivities.create_view(self)
         WalkActivities.create_view(self)
         PaddleActivities.create_view(self)
@@ -78,12 +89,9 @@ class Activities(ActivitiesDB.Base, DBObject):
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)
 
-    time_col = synonym("start_time")
+    time_col_name = 'start_time'
+    match_col_names = ['activity_id']
     min_row_values = 3
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id'])
 
     @classmethod
     def get_id(cls, db, activity_id):
@@ -138,12 +146,9 @@ class ActivityLaps(ActivitiesDB.Base, DBObject):
         PrimaryKeyConstraint("activity_id", "lap"),
     )
 
-    time_col = synonym("start_time")
+    time_col_name = 'start_time'
+    match_col_names = ['activity_id', 'lap']
     min_row_values = 2
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.lap == values_dict['lap'])
 
 
 class ActivityRecords(ActivitiesDB.Base, DBObject):
@@ -169,25 +174,19 @@ class ActivityRecords(ActivitiesDB.Base, DBObject):
         PrimaryKeyConstraint("activity_id", "record"),
     )
 
-    time_col = synonym("timestamp")
+    time_col_name = 'timestamp'
+    match_col_names = ['activity_id', 'record']
     min_row_values = 2
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.record == values_dict['record'])
 
 
 class SportActivities(DBObject):
 
     min_row_values = 1
+    match_col_names = ['activity_id']
 
     @declared_attr
     def activity_id(cls):
         return Column(Integer, ForeignKey(Activities.activity_id), primary_key=True)
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id'])
 
     @classmethod
     def create_activity_view(cls, db):
@@ -409,4 +408,3 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
             'ORDER BY activities.start_time DESC'
         )
         cls._create_view(db, view_name, query_str)
-

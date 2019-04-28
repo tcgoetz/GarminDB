@@ -22,6 +22,13 @@ class SummaryDB(DB):
         logger.info("SummaryDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(SummaryDB, self).__init__(db_params_dict, debug)
         SummaryDB.Base.metadata.create_all(self.engine)
+        # Init all table objects after SqlAlchemy's meta data create, but before using any tables.
+        SummaryDB.DbVersion.setup()
+        Summary.setup()
+        MonthsSummary.setup()
+        WeeksSummary.setup()
+        DaysSummary.setup()
+        #
         self.version = SummaryDB.DbVersion()
         self.version.version_check(self, self.db_version)
 
@@ -34,29 +41,19 @@ class MonthsSummary(SummaryDB.Base, SummaryBase):
     __tablename__ = 'months_summary'
 
     first_day = Column(Date, primary_key=True)
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.first_day == values_dict['first_day'])
+    time_col_name = 'first_day'
 
 
 class WeeksSummary(SummaryDB.Base, SummaryBase):
     __tablename__ = 'weeks_summary'
 
     first_day = Column(Date, primary_key=True)
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.first_day == values_dict['first_day'])
+    time_col_name = 'first_day'
 
 
 class DaysSummary(SummaryDB.Base, SummaryBase):
     __tablename__ = 'days_summary'
 
     day = Column(Date, primary_key=True)
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.day == values_dict['day'])
-
+    time_col_name = 'day'
 

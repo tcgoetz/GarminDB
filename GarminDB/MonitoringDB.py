@@ -23,6 +23,14 @@ class MonitoringDB(DB):
         logger.info("MonitoringDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(MonitoringDB, self).__init__(db_params_dict, debug)
         MonitoringDB.Base.metadata.create_all(self.engine)
+        # Init all table objects after SqlAlchemy's meta data create, but before using any tables.
+        MonitoringDB.DbVersion.setup()
+        MonitoringInfo.setup()
+        MonitoringHeartRate.setup()
+        MonitoringIntensity.setup()
+        MonitoringClimb.setup()
+        Monitoring.setup()
+        #
         self.version = MonitoringDB.DbVersion()
         self.version.version_check(self, self.db_version)
 
@@ -37,12 +45,8 @@ class MonitoringInfo(MonitoringDB.Base, DBObject):
     cycles_to_distance = Column(FLOAT)
     cycles_to_calories = Column(FLOAT)
 
-    time_col = synonym("timestamp")
+    time_col_name = 'timestamp'
     min_row_values = 3
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
     def get_daily_bmr(cls, db, day_ts):
@@ -62,12 +66,8 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
     timestamp = Column(DateTime, primary_key=True)
     heart_rate = Column(Integer, nullable=False)
 
-    time_col = synonym("timestamp")
+    time_col_name = 'timestamp'
     min_row_values = 2
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
@@ -99,12 +99,8 @@ class MonitoringIntensity(MonitoringDB.Base, DBObject):
         UniqueConstraint("timestamp", "moderate_activity_time", "vigorous_activity_time"),
     )
 
-    time_col = synonym("timestamp")
+    time_col_name = 'timestamp'
     min_row_values = 2
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
@@ -141,12 +137,8 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
         UniqueConstraint("timestamp", "ascent", "descent", "cum_ascent", "cum_descent"),
     )
 
-    time_col = synonym("timestamp")
+    time_col_name = 'timestamp'
     min_row_values = 2
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
     def get_stats(cls, db, func, start_ts, end_ts, english_units=False):
@@ -198,12 +190,8 @@ class Monitoring(MonitoringDB.Base, DBObject):
         UniqueConstraint("timestamp", "activity_type", "intensity", "duration"),
     )
 
-    time_col = synonym("timestamp")
+    time_col_name = 'timestamp'
     min_row_values = 2
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.timestamp == values_dict['timestamp'])
 
     @classmethod
     def get_activity(cls, db, start_ts, end_ts):

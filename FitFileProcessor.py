@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import logging, sys, datetime
+import logging, sys, datetime, traceback
 
 import Fit
 import GarminDB
@@ -348,9 +348,9 @@ class FitFileProcessor():
             else:
                 GarminDB.Monitoring.create_or_update_not_none(self.garmin_mon_db, entry)
         except ValueError as e:
-            logger.error("ValueError: %s" % str(e))
+            logger.error("write_monitoring_entry: ValueError for %s: %s", repr(entry), traceback.format_exc())
         except Exception as e:
-            logger.error("Exception on monitoring entry: %s: %s" % (repr(entry), str(e)))
+            logger.error("Exception on monitoring entry: %s: %s", repr(entry), str(e))
 
     def write_device_info_entry(self, fit_file, device_info_message):
         try:

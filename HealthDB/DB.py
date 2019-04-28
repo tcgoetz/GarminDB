@@ -73,20 +73,39 @@ class DB(object):
 ####
 #
 
-
 class DBObject(object):
 
     # defaults, overridden by subclasses
-    _col_translations = {}
-    _col_mappings = {}
+    time_col_name = None
+    time_col = None
+    match_cols = None
+    match_col_names = None
     min_row_values = 1
 
     @classmethod
-    def col_names(cls):
+    def get_col_names(cls):
         return [col.name for col in cls.__table__.columns]
 
+    @classmethod
+    def get_col_by_name(cls, name):
+        for col in cls.__table__._columns:
+            if col.name == name:
+                return col
+
+    @classmethod
+    def setup(cls):
+        if cls.time_col_name:
+            cls.time_col = cls.get_col_by_name(cls.time_col_name)
+        if  cls.match_col_names is not None:
+            cls.match_cols = {col_name : cls.get_col_by_name(col_name) for col_name in cls.match_col_names}
+        else:
+            cls.match_cols = {cls.time_col_name : cls.time_col}
+        for match_col_name, match_col in cls.match_cols.iteritems():
+            if match_col is None:
+                raise ValueError('match_col is None')
+
     def set_col_value(self, name, value):
-        if name in self.col_names():
+        if name in self.get_col_names():
             set_attribute(self, name, value)
 
     def _from_dict(self, values_dict, ignore_none=False):
@@ -118,16 +137,19 @@ class DBObject(object):
         cls._create_view(db, view_name, str(query))
 
     @classmethod
-    def filename_from_pathname(cls, pathname):
-        return os.path.basename(pathname)
-
-    @classmethod
     def _filter_columns(cls, values_dict):
-        return {col : value for col, value in values_dict.iteritems() if col in cls.col_names()}
+        return {col : value for col, value in values_dict.iteritems() if col in cls.get_col_names()}
 
     @classmethod
     def matches(cls, values_dict):
         return len(cls._filter_columns(values_dict)) >= cls.min_row_values
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        query = session.query(cls)
+        for match_col_name, match_col in cls.match_cols.iteritems():
+            query = query.filter(match_col == values_dict[match_col_name])
+        return query
 
     @classmethod
     def find_all(cls, db, values_dict):

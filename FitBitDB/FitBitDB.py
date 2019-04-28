@@ -53,12 +53,8 @@ class DaysSummary(FitBitDB.Base, DBObject):
     weight = Column(Float)
     bmi = Column(Float)
 
-    time_col = synonym("day")
+    time_col_name = 'day'
     min_row_values = 1
-
-    @classmethod
-    def _find_query(cls, session, values_dict):
-        return  session.query(cls).filter(cls.day == values_dict['day'])
 
     @classmethod
     def get_activity_mins_stats(cls, db, func, start_ts, end_ts):
