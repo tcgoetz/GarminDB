@@ -6,6 +6,7 @@
 
 from HealthDB import *
 
+
 class KeyValueObject(DBObject):
 
     timestamp = Column(DateTime)
@@ -14,7 +15,10 @@ class KeyValueObject(DBObject):
 
     time_col_name = 'timestamp'
     match_col_names = ['key']
-    min_row_values = 2
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.key == values_dict['key'])
 
     @classmethod
     def set(cls, db, key, value, timestamp=datetime.datetime.now()):

@@ -73,14 +73,29 @@ class DB(object):
 ####
 #
 
+def list_in_list(list1, list2):
+    for list_item in list1:
+        if list_item not in list2:
+            return False
+    return True
+
+
 class DBObject(object):
 
     # defaults, overridden by subclasses
     time_col_name = None
-    time_col = None
-    match_cols = None
     match_col_names = None
-    min_row_values = 1
+
+    @declared_attr
+    def time_col(cls):
+        if cls.time_col_name is not None:
+            return synonym(cls.time_col_name)
+
+    @declared_attr
+    def match_cols(cls):
+        if cls.match_col_names is not None:
+            return {col_name : synonym(col_name) for col_name in cls.match_col_names}
+        return {cls.time_col_name : synonym(cls.time_col_name)}
 
     @classmethod
     def get_col_names(cls):
@@ -92,29 +107,13 @@ class DBObject(object):
             if col.name == name:
                 return col
 
-    @classmethod
-    def setup(cls):
-        if cls.time_col_name:
-            cls.time_col = cls.get_col_by_name(cls.time_col_name)
-        if  cls.match_col_names is not None:
-            cls.match_cols = {col_name : cls.get_col_by_name(col_name) for col_name in cls.match_col_names}
-        else:
-            cls.match_cols = {cls.time_col_name : cls.time_col}
-        for match_col_name, match_col in cls.match_cols.iteritems():
-            if match_col is None:
-                raise ValueError('match_col is None')
-
     def set_col_value(self, name, value):
         if name in self.get_col_names():
             set_attribute(self, name, value)
 
     def _from_dict(self, values_dict, ignore_none=False):
-        self.not_none_values = 0
         for key, value in values_dict.iteritems():
             if value is not None:
-                self.not_none_values += 1
-                self.set_col_value(key, value)
-            elif not ignore_none:
                 self.set_col_value(key, value)
         return self
 
@@ -137,18 +136,19 @@ class DBObject(object):
         cls._create_view(db, view_name, str(query))
 
     @classmethod
-    def _filter_columns(cls, values_dict):
-        return {col : value for col, value in values_dict.iteritems() if col in cls.get_col_names()}
-
-    @classmethod
     def matches(cls, values_dict):
-        return len(cls._filter_columns(values_dict)) >= cls.min_row_values
+        return cls.match_col_names is not None and list_in_list(cls.match_col_names, values_dict)
 
     @classmethod
     def _find_query(cls, session, values_dict):
         query = session.query(cls)
-        for match_col_name, match_col in cls.match_cols.iteritems():
-            query = query.filter(match_col == values_dict[match_col_name])
+        if cls.match_col_names is not None:
+            # for match_col_name, match_col in cls.match_cols.iteritems():
+            #     query = query.filter(match_col == values_dict[match_col_name])
+            for match_col_name in cls.match_col_names:
+                query = query.filter(cls.get_col_by_name(match_col_name) == values_dict[match_col_name])
+        else:
+            query = query.filter(cls.time_col == values_dict[cls.time_col_name])
         return query
 
     @classmethod
@@ -177,10 +177,6 @@ class DBObject(object):
     def _create(cls, db, session, values_dict, ignore_none=False):
         logger.debug("%s::_create %s", cls.__name__, repr(values_dict))
         instance = cls.from_dict(values_dict)
-        if instance.not_none_values < cls.min_row_values:
-            if ignore_none:
-                return None
-            raise ValueError("%d not-None values: %s", instance.not_none_values, repr(values_dict))
         session.add(instance)
 
     @classmethod

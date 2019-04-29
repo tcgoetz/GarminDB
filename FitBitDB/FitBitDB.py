@@ -54,7 +54,6 @@ class DaysSummary(FitBitDB.Base, DBObject):
     bmi = Column(Float)
 
     time_col_name = 'day'
-    min_row_values = 1
 
     @classmethod
     def get_activity_mins_stats(cls, db, func, start_ts, end_ts):

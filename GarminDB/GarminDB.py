@@ -23,18 +23,6 @@ class GarminDB(DB):
         logger.info("GarminDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(GarminDB, self).__init__(db_params_dict, debug)
         GarminDB.Base.metadata.create_all(self.engine)
-        # Init all table objects after SqlAlchemy's meta data create, but before using any tables.
-        GarminDB.DbVersion.setup()
-        Attributes.setup()
-        Device.setup()
-        DeviceInfo.setup()
-        File.setup()
-        Weight.setup()
-        Stress.setup()
-        Sleep.setup()
-        SleepEvents.setup()
-        RestingHeartRate.setup()
-        #
         self.version = GarminDB.DbVersion()
         self.version.version_check(self, self.db_version)
         DeviceInfo.create_view(self)
@@ -61,7 +49,6 @@ class Device(GarminDB.Base, DBObject):
 
     time_col_name = 'timestamp'
     match_col_names = ['serial_number']
-    min_row_values = 2
 
     @classmethod
     def get(cls, db, serial_number):
@@ -82,7 +69,6 @@ class DeviceInfo(GarminDB.Base, DBObject):
 
     time_col_name = 'timestamp'
     match_col_names = ['timestamp', 'serial_number', 'device_type']
-    min_row_values = 2
 
     @classmethod
     def create_view(cls, db):
@@ -111,7 +97,6 @@ class File(GarminDB.Base, DBObject):
     serial_number = Column(Integer, ForeignKey('devices.serial_number'))
 
     match_col_names = ['name']
-    min_row_values = 1
 
     @classmethod
     def get(cls, db, pathname):
@@ -147,7 +132,6 @@ class Weight(GarminDB.Base, DBObject):
     weight = Column(Float, nullable=False)
 
     time_col_name = 'timestamp'
-    min_row_values = 2
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
@@ -166,7 +150,6 @@ class Stress(GarminDB.Base, DBObject):
     stress = Column(Integer, nullable=False)
 
     time_col_name = 'timestamp'
-    min_row_values = 2
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
@@ -189,7 +172,6 @@ class Sleep(GarminDB.Base, DBObject):
     awake = Column(Time)
 
     time_col_name = 'day'
-    min_row_values = 2
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
@@ -212,7 +194,6 @@ class SleepEvents(GarminDB.Base, DBObject):
     duration = Column(Time)
 
     time_col_name = 'timestamp'
-    min_row_values = 2
 
     @classmethod
     def get_wake_time(cls, db, day_date):
@@ -230,7 +211,6 @@ class RestingHeartRate(GarminDB.Base, DBObject):
     resting_heart_rate = Column(Float)
 
     time_col_name = 'day'
-    min_row_values = 2
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):

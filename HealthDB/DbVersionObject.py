@@ -10,10 +10,6 @@ from HealthDB import *
 class DbVersionObject(KeyValueObject):
     __tablename__ = 'version'
 
-    def __init__(self):
-        self.set_query_params()
-        super(DbVersionObject, self).__init()
-
     def version_check(self, db, version_number):
         self.set_if_unset(db, 'version', version_number)
         self.version = self.get_int(db, 'version')

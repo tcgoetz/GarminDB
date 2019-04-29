@@ -22,13 +22,6 @@ class SummaryDB(DB):
         logger.info("SummaryDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(SummaryDB, self).__init__(db_params_dict, debug)
         SummaryDB.Base.metadata.create_all(self.engine)
-        # Init all table objects after SqlAlchemy's meta data create, but before using any tables.
-        SummaryDB.DbVersion.setup()
-        Summary.setup()
-        MonthsSummary.setup()
-        WeeksSummary.setup()
-        DaysSummary.setup()
-        #
         self.version = SummaryDB.DbVersion()
         self.version.version_check(self, self.db_version)
 

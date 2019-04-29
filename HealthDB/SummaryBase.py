@@ -38,5 +38,3 @@ class SummaryBase(DBObject):
     activities = Column(Integer)
     activities_calories = Column(Integer)
     activities_distance = Column(Integer)
-
-    min_row_values = 2

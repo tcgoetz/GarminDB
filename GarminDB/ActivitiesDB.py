@@ -21,17 +21,6 @@ class ActivitiesDB(DB):
         logger.info("ActivitiesDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(ActivitiesDB, self).__init__(db_params_dict, debug)
         ActivitiesDB.Base.metadata.create_all(self.engine)
-        # Init all table objects after SqlAlchemy's meta data create, but before using any tables.
-        ActivitiesDB.DbVersion.setup()
-        Activities.setup()
-        ActivityLaps.setup()
-        ActivityRecords.setup()
-        RunActivities.setup()
-        WalkActivities.setup()
-        PaddleActivities.setup()
-        CycleActivities.setup()
-        EllipticalActivities.setup()
-        #
         self.version = ActivitiesDB.DbVersion()
         self.version.version_check(self, self.db_version)
         #
@@ -91,7 +80,6 @@ class Activities(ActivitiesDB.Base, DBObject):
 
     time_col_name = 'start_time'
     match_col_names = ['activity_id']
-    min_row_values = 3
 
     @classmethod
     def get_id(cls, db, activity_id):
@@ -148,7 +136,6 @@ class ActivityLaps(ActivitiesDB.Base, DBObject):
 
     time_col_name = 'start_time'
     match_col_names = ['activity_id', 'lap']
-    min_row_values = 2
 
 
 class ActivityRecords(ActivitiesDB.Base, DBObject):
@@ -176,12 +163,10 @@ class ActivityRecords(ActivitiesDB.Base, DBObject):
 
     time_col_name = 'timestamp'
     match_col_names = ['activity_id', 'record']
-    min_row_values = 2
 
 
 class SportActivities(DBObject):
 
-    min_row_values = 1
     match_col_names = ['activity_id']
 
     @declared_attr
