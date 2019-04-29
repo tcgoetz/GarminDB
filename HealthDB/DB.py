@@ -79,15 +79,17 @@ def list_in_list(list1, list2):
             return False
     return True
 
-def list_matches(list1, list2):
-    matches = 0
-    for list_item in list1:
-        if list_item not in list2:
-            matches += 1
-    return matches
+def list_intersection(list1, list2):
+   return [list_item for list_item in list1 if list_item in list2]
+
+def list_intersection_count(list1, list2):
+    return len(list_intersection(list1, list2))
 
 def dict_filter_none_values(in_dict):
     return {key : value for key, value in in_dict.iteritems() if value is not None}
+
+def filter_dict_by_list(in_dict, in_list):
+    return {key : value for key, value in in_dict.iteritems() if key in in_list}
 
 
 class DBObject(object):
@@ -95,6 +97,11 @@ class DBObject(object):
     # defaults, overridden by subclasses
     time_col_name = None
     match_col_names = None
+
+    @declared_attr
+    def col_count(cls):
+        if hasattr(cls, '__table__'):
+            return len(cls.__table__.columns)
 
     @declared_attr
     def time_col(cls):
@@ -107,6 +114,10 @@ class DBObject(object):
             return {col_name : synonym(col_name) for col_name in cls.match_col_names}
         cls.match_col_names = [cls.time_col_name]
         return {cls.time_col_name : synonym(cls.time_col_name)}
+
+    @classmethod
+    def get_default_view_name(cls):
+        return cls.__tablename__ + '_view'
 
     @classmethod
     def get_col_names(cls):
@@ -122,19 +133,21 @@ class DBObject(object):
         if name in self.get_col_names():
             set_attribute(self, name, value)
 
-    def _from_dict(self, values_dict, ignore_none=False):
+    def update_from_dict(self, values_dict, ignore_none=False):
         for key, value in values_dict.iteritems():
-            if value is not None:
+            if not ignore_none or value is not None:
                 self.set_col_value(key, value)
         return self
 
     @classmethod
-    def from_dict(cls, values_dict):
-        return cls()._from_dict(values_dict)
-
-    @classmethod
     def _delete_view(cls, db, view_name):
         db.engine.execute('DROP VIEW IF EXISTS ' + view_name)
+
+    @classmethod
+    def delete_view(cls, db, view_name=None):
+        if view_name is None:
+            view_name = cls.get_default_view_name()
+        cls._delete_view(db, view_name)
 
     @classmethod
     def _create_view(cls, db, view_name, query_str):
@@ -147,8 +160,8 @@ class DBObject(object):
         cls._create_view(db, view_name, str(query))
 
     @classmethod
-    def matches(cls, values_dict):
-        return list_matches(cls.get_col_names(), values_dict) > 1
+    def intersection(cls, values_dict):
+        return filter_dict_by_list(values_dict, cls.get_col_names())
 
     @classmethod
     def _find_query(cls, session, values_dict):
@@ -189,7 +202,7 @@ class DBObject(object):
         logger.debug("%s::_create %s", cls.__name__, repr(values_dict))
         if ignore_none:
             values_dict = dict_filter_none_values(values_dict)
-        instance = cls.from_dict(values_dict)
+        instance = cls(**values_dict)
         session.add(instance)
 
     @classmethod
@@ -215,7 +228,7 @@ class DBObject(object):
         if instance is None:
             cls._create(db, session, values_dict, ignore_none)
         else:
-            instance._from_dict(values_dict, ignore_none)
+            instance.update_from_dict(values_dict, ignore_none)
         DB.commit(session)
 
     @classmethod

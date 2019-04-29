@@ -13,6 +13,7 @@ class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
     db_version = 10
+    view_version = 1
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -21,9 +22,16 @@ class ActivitiesDB(DB):
         logger.info("ActivitiesDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(ActivitiesDB, self).__init__(db_params_dict, debug)
         ActivitiesDB.Base.metadata.create_all(self.engine)
-        self.version = ActivitiesDB.DbVersion()
-        self.version.version_check(self, self.db_version)
+        version = ActivitiesDB.DbVersion()
+        version.version_check(self, self.db_version)
         #
+        db_view_version = version.version_check_key(self, 'view_version', self.view_version)
+        if db_view_version != self.view_version:
+            RunActivities.delete_view(self)
+            WalkActivities.delete_view(self)
+            PaddleActivities.delete_view(self)
+            EllipticalActivities.delete_view(self)
+            version.update_version(self, 'view_version', self.view_version)
         RunActivities.create_view(self)
         WalkActivities.create_view(self)
         PaddleActivities.create_view(self)
@@ -177,8 +185,10 @@ class SportActivities(DBObject):
     def create_activity_view(cls, db):
         cls.create_join_view(db, cls.__tablename__ + '_view', Activities)
 
+
 def sqlite_goole_maps_url(lat_str, long_str):
     return '"http://maps.google.com/?ie=UTF8&q=" || %s || "," || %s || "&z=13"' % (lat_str, long_str)
+
 
 class RunActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'run_activities'
@@ -205,7 +215,7 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.__tablename__ + '_view'
+        view_name = cls.get_default_view_name()
         query_str = (
             'SELECT ' +
                 'activities.activity_id AS activity_id, ' +
@@ -255,7 +265,7 @@ class WalkActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.__tablename__ + '_view'
+        view_name = cls.get_default_view_name()
         query_str = (
             'SELECT ' +
                 'activities.activity_id AS activity_id, ' +
@@ -293,7 +303,7 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.__tablename__ + '_view'
+        view_name = cls.get_default_view_name()
         query_str = (
             'SELECT ' +
                 'activities.activity_id AS activity_id, ' +
@@ -330,7 +340,7 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.__tablename__ + '_view'
+        view_name = cls.get_default_view_name()
         query_str = (
             'SELECT ' +
                 'activities.activity_id AS activity_id, ' +
@@ -368,7 +378,7 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.__tablename__ + '_view'
+        view_name = cls.get_default_view_name()
         query_str = (
             'SELECT ' +
                 'activities.activity_id AS activity_id, ' +

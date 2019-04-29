@@ -15,6 +15,7 @@ class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
     db_version = 4
+    view_version = 1
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -23,8 +24,13 @@ class GarminDB(DB):
         logger.info("GarminDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(GarminDB, self).__init__(db_params_dict, debug)
         GarminDB.Base.metadata.create_all(self.engine)
-        self.version = GarminDB.DbVersion()
-        self.version.version_check(self, self.db_version)
+        version = GarminDB.DbVersion()
+        version.version_check(self, self.db_version)
+        db_view_version = version.version_check_key(self, 'view_version', self.view_version)
+        if db_view_version != self.view_version:
+            DeviceInfo.delete_view(self)
+            File.delete_view(self)
+            version.update_version(self, 'view_version', self.view_version)
         DeviceInfo.create_view(self)
         File.create_view(self)
 
@@ -50,6 +56,10 @@ class Device(GarminDB.Base, DBObject):
     time_col_name = 'timestamp'
     match_col_names = ['serial_number']
 
+    @property
+    def product_as_enum(self):
+        return FieldEnums.product_enum(self.manufacturer, self.product)
+
     @classmethod
     def get(cls, db, serial_number):
         return cls.find_one(db, {'serial_number' : serial_number})
@@ -72,7 +82,7 @@ class DeviceInfo(GarminDB.Base, DBObject):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.__tablename__ + '_view'
+        view_name = cls.get_default_view_name()
         query_str = (
             'SELECT ' +
                 'device_info.timestamp AS timestamp, ' +
@@ -104,7 +114,7 @@ class File(GarminDB.Base, DBObject):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.__tablename__ + '_view'
+        view_name = cls.get_default_view_name()
         query_str = (
             'SELECT ' +
                 'device_info.timestamp AS timestamp, ' +

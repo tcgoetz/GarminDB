@@ -340,14 +340,18 @@ class FitFileProcessor():
         # Only include not None values so that we match and update only if a column has values.
         entry = message.to_dict(ignore_none_values=True)
         try:
-            if GarminDB.MonitoringHeartRate.matches(entry):
-                GarminDB.MonitoringHeartRate.create_or_update(self.garmin_mon_db, entry)
-            if GarminDB.MonitoringIntensity.matches(entry):
-                GarminDB.MonitoringIntensity.create_or_update(self.garmin_mon_db, entry)
-            if GarminDB.MonitoringClimb.matches(entry):
-                GarminDB.MonitoringClimb.create_or_update(self.garmin_mon_db, entry)
-            if GarminDB.Monitoring.matches(entry):
-                GarminDB.Monitoring.create_or_update(self.garmin_mon_db, entry)
+            intersection = GarminDB.MonitoringHeartRate.intersection(entry)
+            if len(intersection) > 1 and intersection['heart_rate'] > 0:
+                GarminDB.MonitoringHeartRate.create_or_update(self.garmin_mon_db, intersection)
+            intersection = GarminDB.MonitoringIntensity.intersection(entry)
+            if len(intersection) > 1:
+                GarminDB.MonitoringIntensity.create_or_update(self.garmin_mon_db, intersection)
+            intersection = GarminDB.MonitoringClimb.intersection(entry)
+            if len(intersection) > 1:
+                GarminDB.MonitoringClimb.create_or_update(self.garmin_mon_db, intersection)
+            intersection = GarminDB.Monitoring.intersection(entry)
+            if len(intersection) > 1:
+                GarminDB.Monitoring.create_or_update(self.garmin_mon_db, intersection)
         except ValueError as e:
             logger.error("write_monitoring_entry: ValueError for %s: %s", repr(entry), traceback.format_exc())
         except Exception as e:

@@ -134,7 +134,7 @@ class TestGarminDbObjects(unittest.TestCase):
             'type'          : file_type,
             'serial_number' : file_serial_number,
         }
-        file = GarminDB.File.from_dict(file_dict)
+        file = GarminDB.File(**file_dict)
         self.assertEqual(file.id, file_id)
         self.assertEqual(file.name, filename)
         self.assertEqual(file.type, file_type)
