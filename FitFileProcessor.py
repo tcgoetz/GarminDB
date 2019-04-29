@@ -337,16 +337,17 @@ class FitFileProcessor():
                 GarminDB.MonitoringInfo.find_or_create(self.garmin_mon_db, entry)
 
     def write_monitoring_entry(self, fit_file, message):
-        entry = message.to_dict()
+        # Only include not None values so that we match and update only if a column has values.
+        entry = message.to_dict(ignore_none_values=True)
         try:
             if GarminDB.MonitoringHeartRate.matches(entry):
-                GarminDB.MonitoringHeartRate.create_or_update_not_none(self.garmin_mon_db, entry)
+                GarminDB.MonitoringHeartRate.create_or_update(self.garmin_mon_db, entry)
             if GarminDB.MonitoringIntensity.matches(entry):
-                GarminDB.MonitoringIntensity.create_or_update_not_none(self.garmin_mon_db, entry)
+                GarminDB.MonitoringIntensity.create_or_update(self.garmin_mon_db, entry)
             if GarminDB.MonitoringClimb.matches(entry):
-                GarminDB.MonitoringClimb.create_or_update_not_none(self.garmin_mon_db, entry)
+                GarminDB.MonitoringClimb.create_or_update(self.garmin_mon_db, entry)
             if GarminDB.Monitoring.matches(entry):
-                GarminDB.Monitoring.create_or_update_not_none(self.garmin_mon_db, entry)
+                GarminDB.Monitoring.create_or_update(self.garmin_mon_db, entry)
         except ValueError as e:
             logger.error("write_monitoring_entry: ValueError for %s: %s", repr(entry), traceback.format_exc())
         except Exception as e:

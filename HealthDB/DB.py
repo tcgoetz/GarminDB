@@ -148,7 +148,7 @@ class DBObject(object):
 
     @classmethod
     def matches(cls, values_dict):
-        return list_matches(cls.get_col_names(), dict_filter_none_values(values_dict)) > 1
+        return list_matches(cls.get_col_names(), values_dict) > 1
 
     @classmethod
     def _find_query(cls, session, values_dict):
@@ -187,6 +187,8 @@ class DBObject(object):
     @classmethod
     def _create(cls, db, session, values_dict, ignore_none=False):
         logger.debug("%s::_create %s", cls.__name__, repr(values_dict))
+        if ignore_none:
+            values_dict = dict_filter_none_values(values_dict)
         instance = cls.from_dict(values_dict)
         session.add(instance)
 
