@@ -79,6 +79,16 @@ def list_in_list(list1, list2):
             return False
     return True
 
+def list_matches(list1, list2):
+    matches = 0
+    for list_item in list1:
+        if list_item not in list2:
+            matches += 1
+    return matches
+
+def dict_filter_none_values(in_dict):
+    return {key : value for key, value in in_dict.iteritems() if value is not None}
+
 
 class DBObject(object):
 
@@ -95,6 +105,7 @@ class DBObject(object):
     def match_cols(cls):
         if cls.match_col_names is not None:
             return {col_name : synonym(col_name) for col_name in cls.match_col_names}
+        cls.match_col_names = [cls.time_col_name]
         return {cls.time_col_name : synonym(cls.time_col_name)}
 
     @classmethod
@@ -137,7 +148,7 @@ class DBObject(object):
 
     @classmethod
     def matches(cls, values_dict):
-        return cls.match_col_names is not None and list_in_list(cls.match_col_names, values_dict)
+        return list_matches(cls.get_col_names(), dict_filter_none_values(values_dict)) > 1
 
     @classmethod
     def _find_query(cls, session, values_dict):
