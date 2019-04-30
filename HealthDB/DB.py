@@ -176,11 +176,6 @@ class DBObject(object):
         return query
 
     @classmethod
-    def find_all(cls, db, values_dict):
-        logger.debug("%s::find_all %s", cls.__name__, repr(values_dict))
-        return cls._find_query(db.query_session(), values_dict).all()
-
-    @classmethod
     def _find_one(cls, session, values_dict):
         logger.debug("%s::_find_one %s", cls.__name__, repr(values_dict))
         return cls._find_query(session, values_dict).one_or_none()
@@ -193,9 +188,7 @@ class DBObject(object):
     @classmethod
     def find_id(cls, db, values_dict):
         logger.debug("%s::find_id %s", cls.__name__, repr(values_dict))
-        instance = cls.find_one(db, values_dict)
-        if instance is not None:
-            return instance.id
+        return cls.find_one(db, values_dict).id
 
     @classmethod
     def _create(cls, db, session, values_dict, ignore_none=False):
@@ -243,7 +236,7 @@ class DBObject(object):
     @classmethod
     def row_to_int_not_none(cls, row):
         if row[0] is not None:
-            return int(row[0])
+            return cls.row_to_int(row)
 
     @classmethod
     def rows_to_ints(cls, rows):
@@ -278,8 +271,8 @@ class DBObject(object):
         return cls.rows_to_ints(db.session().query(func.strftime("%j", cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
 
     @classmethod
-    def get_for_period(cls, db, table, start_ts, end_ts):
-        query = db.query_session().query(table).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).order_by(cls.time_col)
+    def get_for_period(cls, db, selectable, start_ts, end_ts):
+        query = db.query_session().query(selectable).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).order_by(cls.time_col)
         return query.all()
 
     @classmethod
@@ -287,11 +280,6 @@ class DBObject(object):
         start_ts = datetime.datetime.combine(day_date, datetime.time.min)
         end_ts = start_ts + datetime.timedelta(1)
         return cls.get_for_period(db, table, start_ts, end_ts)
-
-    @classmethod
-    def get_col_for_period(cls, db, col, start_ts, end_ts):
-        query = db.query_session().query(col).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).order_by(cls.time_col)
-        return query.all()
 
     @classmethod
     def get_col_values(cls, db, get_col, match_col, match_value, start_ts=None, end_ts=None):
@@ -304,19 +292,7 @@ class DBObject(object):
         return query.all()
 
     @classmethod
-    def get_col_distinct(cls, db, col, start_ts=None, end_ts=None, ignore_le_zero=False):
-        query = db.query_session().query(distinct(col))
-        if start_ts is not None:
-            query = query.filter(cls.time_col >= start_ts)
-        if end_ts is not None:
-            query = query.filter(cls.time_col < end_ts)
-        if ignore_le_zero:
-            query = query.filter(col > 0)
-        rows = query.all()
-        return [row[0] for row in rows]
-
-    @classmethod
-    def get_col_func(cls, db, col, func, start_ts=None, end_ts=None, ignore_le_zero=False):
+    def get_col_func_query(cls, db, col, func, start_ts=None, end_ts=None, ignore_le_zero=False):
         query = db.query_session().query(func(col))
         if start_ts is not None:
             query = query.filter(cls.time_col >= start_ts)
@@ -324,23 +300,55 @@ class DBObject(object):
             query = query.filter(cls.time_col < end_ts)
         if ignore_le_zero:
             query = query.filter(col > 0)
-        return query.scalar()
+        return query
+
+    @classmethod
+    def get_col_distinct(cls, db, col, start_ts=None, end_ts=None, ignore_le_zero=False):
+        rows = cls.get_col_func_query(db, col, distinct, start_ts=None, end_ts=None, ignore_le_zero=False).all()
+        return [row[0] for row in rows]
 
     @classmethod
     def get_col_avg(cls, db, col, start_ts=None, end_ts=None, ignore_le_zero=False):
-        return cls.get_col_func(db, col, func.avg, start_ts, end_ts, ignore_le_zero)
+        return cls.get_col_func_query(db, col, func.avg, start_ts, end_ts, ignore_le_zero).scalar()
 
     @classmethod
     def get_col_min(cls, db, col, start_ts=None, end_ts=None, ignore_le_zero=False):
-        return cls.get_col_func(db, col, func.min, start_ts, end_ts, ignore_le_zero)
+        return cls.get_col_func_query(db, col, func.min, start_ts, end_ts, ignore_le_zero).scalar()
 
     @classmethod
     def get_col_max(cls, db, col, start_ts=None, end_ts=None):
-        return cls.get_col_func(db, col, func.max, start_ts, end_ts, False)
+        return cls.get_col_func_query(db, col, func.max, start_ts, end_ts, False).scalar()
 
     @classmethod
     def get_col_sum(cls, db, col, start_ts=None, end_ts=None):
-        return cls.get_col_func(db, col, func.sum, start_ts, end_ts, False)
+        return cls.get_col_func_query(db, col, func.sum, start_ts, end_ts, False).scalar()
+
+    @classmethod
+    def get_time_col_func(cls, db, col, stat_func, start_ts=None, end_ts=None, ignore_le_zero=False):
+        query = db.query_session().query(stat_func(func.strftime('%s', col) - func.strftime('%s', '00:00')))
+        if start_ts is not None:
+            query = query.filter(cls.time_col >= start_ts)
+        if end_ts is not None:
+            query = query.filter(cls.time_col < end_ts)
+        if ignore_le_zero:
+            query = query.filter(col > 0)
+        return Conversions.secs_to_dt_time(query.scalar())
+
+    @classmethod
+    def get_time_col_avg(cls, db, col, start_ts, end_ts, ignore_le_zero=False):
+        return cls.get_time_col_func(db, col, func.avg, start_ts, end_ts, ignore_le_zero)
+
+    @classmethod
+    def get_time_col_min(cls, db, col, start_ts, end_ts, ignore_le_zero=False):
+        return cls.get_time_col_func(db, col, func.min, start_ts, end_ts, ignore_le_zero)
+
+    @classmethod
+    def get_time_col_max(cls, db, col, start_ts=None, end_ts=None):
+        return cls.get_time_col_func(db, col, func.max, start_ts, end_ts)
+
+    @classmethod
+    def get_time_col_sum(cls, db, col, start_ts, end_ts):
+        return cls.get_time_col_func(db, col, func.sum, start_ts, end_ts)
 
     @classmethod
     def get_col_latest(cls, db, col):
@@ -392,33 +400,6 @@ class DBObject(object):
        return cls.get_col_func_of_max_per_day_for_value(db, col, func.avg, match_col, match_value, start_ts, end_ts)
 
     @classmethod
-    def get_time_col_func(cls, db, col, stat_func, start_ts=None, end_ts=None, ignore_le_zero=False):
-        query = db.query_session().query(stat_func(func.strftime('%s', col) - func.strftime('%s', '00:00')))
-        if start_ts is not None:
-            query = query.filter(cls.time_col >= start_ts)
-        if end_ts is not None:
-            query = query.filter(cls.time_col < end_ts)
-        if ignore_le_zero:
-            query = query.filter(col > 0)
-        return Conversions.secs_to_dt_time(query.scalar())
-
-    @classmethod
-    def get_time_col_avg(cls, db, col, start_ts, end_ts, ignore_le_zero=False):
-        return cls.get_time_col_func(db, col, func.avg, start_ts, end_ts, ignore_le_zero)
-
-    @classmethod
-    def get_time_col_min(cls, db, col, start_ts, end_ts, ignore_le_zero=False):
-        return cls.get_time_col_func(db, col, func.min, start_ts, end_ts, ignore_le_zero)
-
-    @classmethod
-    def get_time_col_max(cls, db, col, start_ts=None, end_ts=None):
-        return cls.get_time_col_func(db, col, func.max, start_ts, end_ts)
-
-    @classmethod
-    def get_time_col_sum(cls, db, col, start_ts, end_ts):
-        return cls.get_time_col_func(db, col, func.sum, start_ts, end_ts)
-
-    @classmethod
     def latest_time(cls, db):
         return cls.get_col_max(db, cls.time_col)
 
@@ -431,8 +412,7 @@ class DBObject(object):
 
     @classmethod
     def row_count_for_period(cls, db, start_ts, end_ts):
-        query = db.query_session().query(cls).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
-        return query.count()
+        return db.query_session().query(cls).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).count()
 
     @classmethod
     def row_count_for_day(cls, db, day_date):
@@ -519,5 +499,6 @@ class DBObject(object):
 
     def __repr__(self):
         classname = self.__class__.__name__
-        return ("<%s()>" % (classname))
+        values = {col_name : getattr(col_name) for col_name in cls.get_col_names()}
+        return ("<%s() %s>" % (classname, repr(values)))
 

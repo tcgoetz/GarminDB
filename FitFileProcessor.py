@@ -193,7 +193,7 @@ class FitFileProcessor():
     def write_session_entry(self, fit_file, message):
         logger.debug("session message: %s", repr(message.to_dict()))
         message_dict = message.to_dict()
-        activity_id = GarminDB.File.get(self.garmin_db, fit_file.filename)
+        activity_id = GarminDB.File.get_id(self.garmin_db, fit_file.filename)
         sport = message_dict['sport']
         sub_sport = message_dict['sub_sport']
         activity = {
@@ -243,7 +243,7 @@ class FitFileProcessor():
     def write_lap_entry(self, fit_file, lap_message):
         message_dict = lap_message.to_dict()
         logger.debug("lap message: " + repr(message_dict))
-        activity_id = GarminDB.File.get(self.garmin_db, fit_file.filename)
+        activity_id = GarminDB.File.get_id(self.garmin_db, fit_file.filename)
         lap = {
             'activity_id'                       : activity_id,
             'lap'                               : self.lap,
@@ -298,7 +298,7 @@ class FitFileProcessor():
     def write_record_entry(self, fit_file, record_message):
         message_dict = record_message.to_dict()
         logger.debug("record message: %s", repr(message_dict))
-        activity_id = GarminDB.File.get(self.garmin_db, fit_file.filename)
+        activity_id = GarminDB.File.get_id(self.garmin_db, fit_file.filename)
         record = {
             'activity_id'                       : activity_id,
             'record'                            : self.record,
@@ -327,7 +327,7 @@ class FitFileProcessor():
         if isinstance(activity_types, list):
             for index, activity_type in enumerate(activity_types):
                 entry = {
-                    'file_id'                   : GarminDB.File.get(self.garmin_db, fit_file.filename),
+                    'file_id'                   : GarminDB.File.get_id(self.garmin_db, fit_file.filename),
                     'timestamp'                 : parsed_message['local_timestamp'],
                     'activity_type'             : activity_type,
                     'resting_metabolic_rate'    : self.get_field_value(parsed_message, 'resting_metabolic_rate'),
@@ -390,7 +390,7 @@ class FitFileProcessor():
             except Exception as e:
                 logger.error("Device not written: %s - %s", repr(parsed_message), str(e))
             device_info = {
-                'file_id'               : GarminDB.File.get(self.garmin_db, fit_file.filename),
+                'file_id'               : GarminDB.File.get_id(self.garmin_db, fit_file.filename),
                 'serial_number'         : serial_number,
                 'device_type'           : Fit.FieldEnums.name_for_enum(device_type),
                 'timestamp'             : parsed_message['timestamp'],

@@ -15,7 +15,7 @@ class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
     db_version = 4
-    view_version = 1
+    view_version = 2
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -109,7 +109,7 @@ class File(GarminDB.Base, DBObject):
     match_col_names = ['name']
 
     @classmethod
-    def get(cls, db, pathname):
+    def get_id(cls, db, pathname):
         return cls.find_id(db, {'name' : os.path.basename(pathname)})
 
     @classmethod
@@ -118,7 +118,7 @@ class File(GarminDB.Base, DBObject):
         query_str = (
             'SELECT ' +
                 'device_info.timestamp AS timestamp, ' +
-                'files.id AS id, ' +
+                'files.id AS activity_id, ' +
                 'files.name AS name, ' +
                 'files.type AS type, ' +
                 'devices.serial_number AS device_serial_number, ' +

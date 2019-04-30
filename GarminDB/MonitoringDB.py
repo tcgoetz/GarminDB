@@ -75,7 +75,7 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_heartrate_for_period(cls, db, start_ts, end_ts):
-        return cls.get_col_for_period(db, cls.heart_rate, start_ts, end_ts)
+        return cls.get_for_period(db, cls.heart_rate, start_ts, end_ts)
 
 
 class MonitoringIntensity(MonitoringDB.Base, DBObject):
