@@ -23,7 +23,7 @@ class GarminWeightData(JsonFileProcessor):
     def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
         super(GarminWeightData, self).__init__(input_file, input_dir, 'weight_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.english_units = english_units
-        self.garmindb = GarminDB.GarminDB(db_params_dict)
+        self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'startDate' : dateutil.parser.parse}
 
     def process_json(self, json_data):
@@ -34,7 +34,7 @@ class GarminWeightData(JsonFileProcessor):
                 'timestamp' : json_data['startDate'],
                 'weight'    : weight.kgs_or_lbs(not self.english_units)
             }
-            GarminDB.Weight.create_or_update_not_none(self.garmindb, point)
+            GarminDB.Weight.create_or_update_not_none(self.garmin_db, point)
             return 1
 
 
@@ -80,7 +80,7 @@ class GarminSleepData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
         super(GarminSleepData, self).__init__(input_file, input_dir, 'sleep_\d{4}-\d{2}-\d{2}\.json', latest, debug)
-        self.garmindb = GarminDB.GarminDB(db_params_dict)
+        self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {
             'calendarDate'              : dateutil.parser.parse,
             'sleepTimeSeconds'          : Fit.Conversions.secs_to_dt_time,
@@ -118,7 +118,7 @@ class GarminSleepData(JsonFileProcessor):
                 'rem_sleep' : daily_sleep.get('remSleepSeconds', None),
                 'awake' : daily_sleep.get('awakeSleepSeconds', None)
             }
-            GarminDB.Sleep.create_or_update_not_none(self.garmindb, day_data)
+            GarminDB.Sleep.create_or_update_not_none(self.garmin_db, day_data)
             sleep_levels = json_data.get('sleepLevels', None)
             if sleep_levels is None:
                 return 0
@@ -132,7 +132,7 @@ class GarminSleepData(JsonFileProcessor):
                     'event' : event.name,
                     'duration' : duration
                 }
-                GarminDB.SleepEvents.create_or_update_not_none(self.garmindb, level_data)
+                GarminDB.SleepEvents.create_or_update_not_none(self.garmin_db, level_data)
             return len(sleep_levels)
 
 
@@ -140,7 +140,7 @@ class GarminRhrData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
         super(GarminRhrData, self).__init__(input_file, input_dir, 'rhr_\d{4}-\d{2}-\d{2}\.json', latest, debug)
-        self.garmindb = GarminDB.GarminDB(db_params_dict)
+        self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'statisticsStartDate' : dateutil.parser.parse}
 
     def process_json(self, json_data):
@@ -152,7 +152,7 @@ class GarminRhrData(JsonFileProcessor):
                     'day'                   : json_data['statisticsStartDate'].date(),
                     'resting_heart_rate'    : rhr
                 }
-                GarminDB.RestingHeartRate.create_or_update_not_none(self.garmindb, point)
+                GarminDB.RestingHeartRate.create_or_update_not_none(self.garmin_db, point)
                 return 1
 
 
@@ -160,7 +160,7 @@ class GarminProfile(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_dir, debug):
         super(GarminProfile, self).__init__(None, input_dir, 'profile\.json', False, debug)
-        self.garmindb = GarminDB.GarminDB(db_params_dict)
+        self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'calendarDate' : dateutil.parser.parse}
 
     def process_json(self, json_data):
@@ -172,7 +172,7 @@ class GarminProfile(JsonFileProcessor):
             'date_format'           : json_data['dateFormat']['formatKey'],
         }
         for attribute_name, attribute_value in attributes.items():
-            GarminDB.Attributes.set_newer(self.garmindb, attribute_name, attribute_value)
+            GarminDB.Attributes.set_newer(self.garmin_db, attribute_name, attribute_value)
         return len(attributes)
 
 
@@ -266,7 +266,7 @@ def main(argv):
     if profile_dir:
         gp = GarminProfile(db_params_dict, profile_dir, debug)
         if gp.file_count() > 0:
-            gp.process_files()
+            gp.process()
 
     garmindb = GarminDB.GarminDB(db_params_dict)
     english_units = GarminDB.Attributes.measurements_type_metric(garmindb) == False
@@ -274,7 +274,7 @@ def main(argv):
     if weight_input_file or weight_input_dir:
         gwd = GarminWeightData(db_params_dict, weight_input_file, weight_input_dir, latest, english_units, debug)
         if gwd.file_count() > 0:
-            gwd.process_files()
+            gwd.process()
 
     if fit_input_file or fit_input_dir:
         gfd = GarminFitData(fit_input_file, fit_input_dir, latest, english_units, debug)
@@ -284,12 +284,12 @@ def main(argv):
     if sleep_input_file or sleep_input_dir:
         gsd = GarminSleepData(db_params_dict, sleep_input_file, sleep_input_dir, latest, debug)
         if gsd.file_count() > 0:
-            gsd.process_files()
+            gsd.process()
 
     if rhr_input_file or rhr_input_dir:
         grhrd = GarminRhrData(db_params_dict, rhr_input_file, rhr_input_dir, latest, debug)
         if grhrd.file_count() > 0:
-            grhrd.process_files()
+            grhrd.process()
 
 
 if __name__ == "__main__":

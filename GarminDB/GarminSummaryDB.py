@@ -60,7 +60,7 @@ class MonthsSummary(GarminSummaryDB.Base, SummaryBase):
                 'activities, activities_calories, activities_distance '
             'FROM %s ORDER BY first_day DESC' % cls.__tablename__
         )
-        cls._create_view(db, view_name, query_str)
+        cls.create_view_if_not_exists(db, view_name, query_str)
 
 
 class WeeksSummary(GarminSummaryDB.Base, SummaryBase):
@@ -90,7 +90,7 @@ class WeeksSummary(GarminSummaryDB.Base, SummaryBase):
                 'activities, activities_calories, activities_distance '
             'FROM %s ORDER BY first_day DESC' % cls.__tablename__
         )
-        cls._create_view(db, view_name, query_str)
+        cls.create_view_if_not_exists(db, view_name, query_str)
 
 
 class DaysSummary(GarminSummaryDB.Base, SummaryBase):
@@ -121,7 +121,7 @@ class DaysSummary(GarminSummaryDB.Base, SummaryBase):
                 'activities, activities_calories, activities_distance '
             'FROM %s ORDER BY day DESC' % cls.__tablename__
         )
-        cls._create_view(db, view_name, query_str)
+        cls.create_view_if_not_exists(db, view_name, query_str)
 
 
 class IntensityHR(GarminSummaryDB.Base, DBObject):

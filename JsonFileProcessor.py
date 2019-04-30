@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import json, logging
+import json, logging, traceback
 import dateutil.parser
 
 import FileProcessor
@@ -55,6 +55,9 @@ class JsonFileProcessor(object):
     def process_json(self, json_data):
         pass
 
+    def commit(self):
+        pass
+
     def process_files(self):
         logger.info("Processing %d json files", self.file_count())
         for file_name in self.file_names:
@@ -66,5 +69,9 @@ class JsonFileProcessor(object):
                 else:
                     logger.info("No data saved for %s", file_name)
             except Exception as e:
-                logger.error("Failed to parse %s: %s", file_name, str(e))
+                logger.error("Failed to parse %s: %s", file_name, traceback.format_exc())
+            self.commit()
         logger.info("DB updated with %d entries.", self.file_count())
+
+    def process(self):
+        self.process_files()

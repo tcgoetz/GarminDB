@@ -90,7 +90,7 @@ class Activities(ActivitiesDB.Base, DBObject):
     match_col_names = ['activity_id']
 
     @classmethod
-    def get_id(cls, db, activity_id):
+    def get(cls, db, activity_id):
         return cls.find_one(db, {'activity_id' : activity_id})
 
     @classmethod
@@ -252,7 +252,7 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
             'FROM run_activities JOIN activities ON activities.activity_id = run_activities.activity_id ' +
             'ORDER BY activities.start_time DESC'
         )
-        cls._create_view(db, view_name, query_str)
+        cls.create_view_if_not_exists(db, view_name, query_str)
 
 
 class WalkActivities(ActivitiesDB.Base, SportActivities):
@@ -292,7 +292,7 @@ class WalkActivities(ActivitiesDB.Base, SportActivities):
             'FROM walk_activities JOIN activities ON activities.activity_id = walk_activities.activity_id ' +
             'ORDER BY activities.start_time DESC'
         )
-        cls._create_view(db, view_name, query_str)
+        cls.create_view_if_not_exists(db, view_name, query_str)
 
 
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
@@ -330,7 +330,7 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
             'FROM paddle_activities JOIN activities ON activities.activity_id = paddle_activities.activity_id ' +
             'ORDER BY activities.start_time DESC'
         )
-        cls._create_view(db, view_name, query_str)
+        cls.create_view_if_not_exists(db, view_name, query_str)
 
 
 class CycleActivities(ActivitiesDB.Base, SportActivities):
@@ -367,7 +367,7 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
             'FROM cycle_activities JOIN activities ON activities.activity_id = cycle_activities.activity_id ' +
             'ORDER BY activities.start_time DESC'
         )
-        cls._create_view(db, view_name, query_str)
+        cls.create_view_if_not_exists(db, view_name, query_str)
 
 
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
@@ -402,4 +402,4 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
             'FROM elliptical_activities JOIN activities ON activities.activity_id = elliptical_activities.activity_id ' +
             'ORDER BY activities.start_time DESC'
         )
-        cls._create_view(db, view_name, query_str)
+        cls.create_view_if_not_exists(db, view_name, query_str)

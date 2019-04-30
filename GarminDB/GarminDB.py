@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
-    db_version = 4
-    view_version = 2
+    db_version = 5
+    view_version = 3
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -93,9 +93,10 @@ class DeviceInfo(GarminDB.Base, DBObject):
                 'devices.manufacturer AS devices_manufacturer, ' +
                 'devices.product AS devices_product, ' +
                 'devices.hardware_version AS devices_hardware_version ' +
-            'FROM device_info JOIN devices ON devices.serial_number = device_info.serial_number'
+            'FROM device_info JOIN devices ON devices.serial_number = device_info.serial_number ' +
+            'ORDER BY device_info.timestamp DESC'
         )
-        cls._create_view(db, view_name, query_str)
+        cls.create_view_if_not_exists(db, view_name, query_str)
 
 
 class File(GarminDB.Base, DBObject):
@@ -107,6 +108,10 @@ class File(GarminDB.Base, DBObject):
     serial_number = Column(Integer, ForeignKey('devices.serial_number'))
 
     match_col_names = ['name']
+
+    @classmethod
+    def _get_id(cls, session, pathname):
+        return cls._find_id(session, {'name' : os.path.basename(pathname)})
 
     @classmethod
     def get_id(cls, db, pathname):
@@ -124,15 +129,20 @@ class File(GarminDB.Base, DBObject):
                 'devices.serial_number AS device_serial_number, ' +
                 'devices.manufacturer AS device_manufacturer, ' +
                 'devices.product AS device_product ' +
-            'FROM files JOIN devices ON devices.serial_number = files.serial_number JOIN device_info ON device_info.file_id = files.id'
+            'FROM files JOIN devices ON devices.serial_number = files.serial_number JOIN device_info ON device_info.file_id = files.id ' +
+            'ORDER BY device_info.timestamp DESC'
         )
-        cls._create_view(db, view_name, query_str)
+        cls.create_view_if_not_exists(db, view_name, query_str)
 
     @classmethod
     def name_and_id_from_path(cls, pathname):
         name = os.path.basename(pathname)
         id = name.split('.')[0]
         return (id, name)
+
+    @classmethod
+    def id_from_path(cls, pathname):
+        return os.path.basename(pathname).split('.')[0]
 
 
 class Weight(GarminDB.Base, DBObject):

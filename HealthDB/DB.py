@@ -6,6 +6,8 @@
 
 import os, logging, datetime, time
 
+from contextlib import contextmanager
+
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import *
 from sqlalchemy.exc import *
@@ -31,8 +33,7 @@ class DB(object):
         else:
             logger.setLevel(logging.INFO)
         self.engine = create_engine(url_func(db_params_dict), echo=(debug > 1))
-        self.session_maker = sessionmaker(bind=self.engine)
-        self._query_session = None
+        self.session_maker = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     @classmethod
     def sqlite_url(cls, db_params_dict):
@@ -45,28 +46,17 @@ class DB(object):
     def session(self):
         return self.session_maker()
 
-    def query_session(self):
-        if self._query_session is None:
-            self._query_session = self.session()
-        return self._query_session
-
-    @classmethod
-    def commit(cls, session):
-        attempts = 0
-        while attempts < DB.max_commit_attempts:
-            try:
-                session.commit()
-                session.close()
-                return
-            except OperationalError as e:
-                attempts += 1
-                logger.error("Exeption '%s' on commit %s attempt %d" % (str(e), str(session), attempts))
-                session.rollback()
-                cls.commit_errors += 1
-                time.sleep(attempts)
-                continue
-            break
-        raise IOError("Failed to commit")
+    @contextmanager
+    def managed_session(self):
+        session = self.session()
+        try:
+            yield session
+            session.commit()
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
 
 #
@@ -141,7 +131,8 @@ class DBObject(object):
 
     @classmethod
     def _delete_view(cls, db, view_name):
-        db.engine.execute('DROP VIEW IF EXISTS ' + view_name)
+        with db.managed_session() as session:
+            session.execute('DROP VIEW IF EXISTS ' + view_name)
 
     @classmethod
     def delete_view(cls, db, view_name=None):
@@ -150,14 +141,19 @@ class DBObject(object):
         cls._delete_view(db, view_name)
 
     @classmethod
-    def _create_view(cls, db, view_name, query_str):
-        cls._delete_view(db, view_name)
-        db.engine.execute('CREATE VIEW IF NOT EXISTS ' + view_name + ' AS ' + query_str)
+    def _create_view_if_not_exists(cls, session, view_name, query_str):
+        session.execute('CREATE VIEW IF NOT EXISTS ' + view_name + ' AS ' + query_str)
+
+    @classmethod
+    def create_view_if_not_exists(cls, db, view_name, query_str):
+        with db.managed_session() as session:
+            cls._create_view_if_not_exists(session, view_name, query_str)
 
     @classmethod
     def create_join_view(cls, db, view_name, join_table):
-        query = db.session().query(cls, join_table).join(join_table)
-        cls._create_view(db, view_name, str(query))
+        with db.managed_session() as session:
+            query = session.query(cls, join_table).join(join_table)
+            cls._create_view_if_not_exists(db, view_name, str(query))
 
     @classmethod
     def intersection(cls, values_dict):
@@ -182,16 +178,21 @@ class DBObject(object):
 
     @classmethod
     def find_one(cls, db, values_dict):
-        logger.debug("%s::find_one %s", cls.__name__, repr(values_dict))
-        return cls._find_one(db.query_session(), values_dict)
+        with db.managed_session() as session:
+            return cls._find_one(session, values_dict)
 
     @classmethod
-    def find_id(cls, db, values_dict):
+    def _find_id(cls, session, values_dict):
         logger.debug("%s::find_id %s", cls.__name__, repr(values_dict))
-        return cls.find_one(db, values_dict).id
+        return cls._find_one(session, values_dict).id
 
     @classmethod
-    def _create(cls, db, session, values_dict, ignore_none=False):
+    def find_id(cls, session, values_dict):
+        with db.managed_session() as session:
+            return cls._find_id(session, values_dict)
+
+    @classmethod
+    def _create(cls, session, values_dict, ignore_none=False):
         logger.debug("%s::_create %s", cls.__name__, repr(values_dict))
         if ignore_none:
             values_dict = dict_filter_none_values(values_dict)
@@ -199,34 +200,37 @@ class DBObject(object):
         session.add(instance)
 
     @classmethod
-    def create(cls, db, values_dict, ignore_none=False):
-        logger.debug("%s::create %s", cls.__name__, repr(values_dict))
-        session = db.session()
-        cls._create(db, session, values_dict)
-        DB.commit(session)
+    def _find_or_create(cls, session, values_dict):
+        logger.debug("%s::find_or_create %s" % (cls.__name__, repr(values_dict)))
+        if cls._find_one(session, values_dict) is None:
+            cls._create(session, values_dict)
 
     @classmethod
     def find_or_create(cls, db, values_dict):
-        logger.debug("%s::find_or_create %s" % (cls.__name__, repr(values_dict)))
-        session = db.session()
-        if cls._find_one(session, values_dict) is None:
-            cls._create(db, session, values_dict)
-            DB.commit(session)
+        with db.managed_session() as session:
+            cls._find_or_create(session, values_dict)
+
+    @classmethod
+    def _create_or_update(cls, session, values_dict, ignore_none=False):
+        logger.debug("%s::create_or_update %s", cls.__name__, repr(values_dict))
+        instance = cls._find_one(session, values_dict)
+        if instance is None:
+            cls._create(session, values_dict, ignore_none)
+        else:
+            instance.update_from_dict(values_dict, ignore_none)
 
     @classmethod
     def create_or_update(cls, db, values_dict, ignore_none=False):
-        logger.debug("%s::create_or_update %s", cls.__name__, repr(values_dict))
-        session = db.session()
-        instance = cls._find_one(session, values_dict)
-        if instance is None:
-            cls._create(db, session, values_dict, ignore_none)
-        else:
-            instance.update_from_dict(values_dict, ignore_none)
-        DB.commit(session)
+        with db.managed_session() as session:
+            cls._create_or_update(session, values_dict, ignore_none)
+
+    @classmethod
+    def _create_or_update_not_none(cls, session, values_dict):
+        logger.debug("%s::_create_or_update_not_none %s", cls.__name__, repr(values_dict))
+        cls._create_or_update(session, values_dict, True)
 
     @classmethod
     def create_or_update_not_none(cls, db, values_dict):
-        logger.debug("%s::create_or_update_not_none %s", cls.__name__, repr(values_dict))
         cls.create_or_update(db, values_dict, True)
 
     @classmethod
@@ -256,11 +260,13 @@ class DBObject(object):
 
     @classmethod
     def get_years(cls, db):
-        return cls.rows_to_ints_not_none(db.session().query(extract('year', cls.time_col)).distinct().all())
+        with db.managed_session() as session:
+            return cls.rows_to_ints_not_none(session.query(extract('year', cls.time_col)).distinct().all())
 
     @classmethod
     def get_months(cls, db, year):
-          return cls.rows_to_ints_not_none(db.query_session().query(extract('month', cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
+        with db.managed_session() as session:
+            return cls.rows_to_ints_not_none(session.query(extract('month', cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
 
     @classmethod
     def get_month_names(cls, db, year):
@@ -268,12 +274,13 @@ class DBObject(object):
 
     @classmethod
     def get_days(cls, db, year):
-        return cls.rows_to_ints(db.session().query(func.strftime("%j", cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
+        with db.managed_session() as session:
+            return cls.rows_to_ints(session.query(func.strftime("%j", cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
 
     @classmethod
     def get_for_period(cls, db, selectable, start_ts, end_ts):
-        query = db.query_session().query(selectable).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).order_by(cls.time_col)
-        return query.all()
+        with db.managed_session() as session:
+            return session.query(selectable).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).order_by(cls.time_col).all()
 
     @classmethod
     def get_for_day(cls, db, table, day_date):
@@ -283,24 +290,26 @@ class DBObject(object):
 
     @classmethod
     def get_col_values(cls, db, get_col, match_col, match_value, start_ts=None, end_ts=None):
-        query = db.query_session().query(get_col).order_by(cls.time_col)
-        if start_ts is not None:
-            query = query.filter(cls.time_col >= start_ts)
-        if end_ts is not None:
-            query = query.filter(cls.time_col < end_ts)
-        query = query.filter(match_col == match_value)
-        return query.all()
+        with db.managed_session() as session:
+            query = session.query(get_col).order_by(cls.time_col)
+            if start_ts is not None:
+                query = query.filter(cls.time_col >= start_ts)
+            if end_ts is not None:
+                query = query.filter(cls.time_col < end_ts)
+            query = query.filter(match_col == match_value)
+            return query.all()
 
     @classmethod
     def get_col_func_query(cls, db, col, func, start_ts=None, end_ts=None, ignore_le_zero=False):
-        query = db.query_session().query(func(col))
-        if start_ts is not None:
-            query = query.filter(cls.time_col >= start_ts)
-        if end_ts is not None:
-            query = query.filter(cls.time_col < end_ts)
-        if ignore_le_zero:
-            query = query.filter(col > 0)
-        return query
+        with db.managed_session() as session:
+            query = session.query(func(col))
+            if start_ts is not None:
+                query = query.filter(cls.time_col >= start_ts)
+            if end_ts is not None:
+                query = query.filter(cls.time_col < end_ts)
+            if ignore_le_zero:
+                query = query.filter(col > 0)
+            return query
 
     @classmethod
     def get_col_distinct(cls, db, col, start_ts=None, end_ts=None, ignore_le_zero=False):
@@ -325,14 +334,15 @@ class DBObject(object):
 
     @classmethod
     def get_time_col_func(cls, db, col, stat_func, start_ts=None, end_ts=None, ignore_le_zero=False):
-        query = db.query_session().query(stat_func(func.strftime('%s', col) - func.strftime('%s', '00:00')))
-        if start_ts is not None:
-            query = query.filter(cls.time_col >= start_ts)
-        if end_ts is not None:
-            query = query.filter(cls.time_col < end_ts)
-        if ignore_le_zero:
-            query = query.filter(col > 0)
-        return Conversions.secs_to_dt_time(query.scalar())
+        with db.managed_session() as session:
+            query = session.query(stat_func(func.strftime('%s', col) - func.strftime('%s', '00:00')))
+            if start_ts is not None:
+                query = query.filter(cls.time_col >= start_ts)
+            if end_ts is not None:
+                query = query.filter(cls.time_col < end_ts)
+            if ignore_le_zero:
+                query = query.filter(col > 0)
+            return Conversions.secs_to_dt_time(query.scalar())
 
     @classmethod
     def get_time_col_avg(cls, db, col, start_ts, end_ts, ignore_le_zero=False):
@@ -352,17 +362,19 @@ class DBObject(object):
 
     @classmethod
     def get_col_latest(cls, db, col):
-        return db.query_session().query(col).order_by(desc(cls.time_col)).limit(1).scalar()
+        with db.managed_session() as session:
+            return session.query(col).order_by(desc(cls.time_col)).limit(1).scalar()
 
     @classmethod
     def get_col_func_of_max_per_day(cls, db, col, stat_func, start_ts, end_ts):
-        max_daily_query = (
-            db.query_session().query(func.max(col).label('maxes'))
-                .filter(cls.timestamp >= start_ts)
-                .filter(cls.timestamp < end_ts)
-                .group_by(func.strftime("%j", cls.timestamp))
-        )
-        return db.query_session().query(stat_func(max_daily_query.subquery().columns.maxes)).scalar()
+        with db.managed_session() as session:
+            max_daily_query = (
+                session.query(func.max(col).label('maxes'))
+                    .filter(cls.timestamp >= start_ts)
+                    .filter(cls.timestamp < end_ts)
+                    .group_by(func.strftime("%j", cls.timestamp))
+            )
+            return session.query(stat_func(max_daily_query.subquery().columns.maxes)).scalar()
 
     @classmethod
     def get_col_sum_of_max_per_day(cls, db, col, start_ts, end_ts):
@@ -382,14 +394,15 @@ class DBObject(object):
 
     @classmethod
     def get_col_func_of_max_per_day_for_value(cls, db, col, stat_func, match_col, match_value, start_ts, end_ts):
-        max_daily_query = (
-            db.query_session().query(func.max(col).label('maxes'))
-                .filter(match_col == match_value)
-                .filter(cls.timestamp >= start_ts)
-                .filter(cls.timestamp < end_ts)
-                .group_by(func.strftime("%j", cls.timestamp))
-        )
-        return db.query_session().query(stat_func(max_daily_query.subquery().columns.maxes)).scalar()
+        with db.managed_session() as session:
+            max_daily_query = (
+                session.query(func.max(col).label('maxes'))
+                    .filter(match_col == match_value)
+                    .filter(cls.timestamp >= start_ts)
+                    .filter(cls.timestamp < end_ts)
+                    .group_by(func.strftime("%j", cls.timestamp))
+            )
+            return session.query(stat_func(max_daily_query.subquery().columns.maxes)).scalar()
 
     @classmethod
     def get_col_sum_of_max_per_day_for_value(cls, db, col, match_col, match_value, start_ts, end_ts):
@@ -405,14 +418,16 @@ class DBObject(object):
 
     @classmethod
     def row_count(cls, db, col=None, col_value=None):
-        query = db.query_session().query(cls)
-        if col and col_value:
-            query = query.filter(col == col_value)
-        return query.count()
+        with db.managed_session() as session:
+            query = session.query(cls)
+            if col and col_value:
+                query = query.filter(col == col_value)
+            return query.count()
 
     @classmethod
     def row_count_for_period(cls, db, start_ts, end_ts):
-        return db.query_session().query(cls).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).count()
+        with db.managed_session() as session:
+            return session.query(cls).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).count()
 
     @classmethod
     def row_count_for_day(cls, db, day_date):
@@ -422,12 +437,13 @@ class DBObject(object):
 
     @classmethod
     def get_col_func_for_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
-        values_query = db.query_session().query(stat_func(col)).filter(match_col == match_value)
-        if start_ts is not None or end_ts is not None:
-            values_query = values_query.filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
-        if ignore_le_zero:
-            values_query = values_query.filter(col > 0)
-        return values_query.scalar()
+        with db.managed_session() as session:
+            values_query = session.query(stat_func(col)).filter(match_col == match_value)
+            if start_ts is not None or end_ts is not None:
+                values_query = values_query.filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
+            if ignore_le_zero:
+                values_query = values_query.filter(col > 0)
+            return values_query.scalar()
 
     @classmethod
     def get_col_sum_for_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
@@ -447,12 +463,13 @@ class DBObject(object):
 
     @classmethod
     def get_col_func_greater_than_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
-        values_query = db.query_session().query(stat_func(col)).filter(match_col > match_value)
-        if start_ts is not None or end_ts is not None:
-            values_query = values_query.filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
-        if ignore_le_zero:
-            values_query = values_query.filter(col > 0)
-        return values_query.scalar()
+        with db.managed_session() as session:
+            values_query = session.query(stat_func(col)).filter(match_col > match_value)
+            if start_ts is not None or end_ts is not None:
+                values_query = values_query.filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
+            if ignore_le_zero:
+                values_query = values_query.filter(col > 0)
+            return values_query.scalar()
 
     @classmethod
     def get_col_avg_greater_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
@@ -460,12 +477,13 @@ class DBObject(object):
 
     @classmethod
     def get_col_func_less_than_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
-        values_query = db.query_session().query(stat_func(col)).filter(match_col < match_value)
-        if start_ts is not None or end_ts is not None:
-            values_query = values_query.filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
-        if ignore_le_zero:
-            values_query = values_query.filter(col > 0)
-        return values_query.scalar()
+        with db.managed_session() as session:
+            values_query = session.query(stat_func(col)).filter(match_col < match_value)
+            if start_ts is not None or end_ts is not None:
+                values_query = values_query.filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
+            if ignore_le_zero:
+                values_query = values_query.filter(col > 0)
+            return values_query.scalar()
 
     @classmethod
     def get_col_avg_less_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
@@ -499,6 +517,6 @@ class DBObject(object):
 
     def __repr__(self):
         classname = self.__class__.__name__
-        values = {col_name : getattr(col_name) for col_name in cls.get_col_names()}
+        values = {col_name : getattr(self, col_name) for col_name in self.get_col_names()}
         return ("<%s() %s>" % (classname, repr(values)))
 

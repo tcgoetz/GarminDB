@@ -182,7 +182,8 @@ class Monitoring(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_activity(cls, db, start_ts, end_ts):
-        return db.query_session().query(cls.timestamp, cls.activity_type, cls.intensity).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).all()
+        with db.managed_session() as session:
+            return session.query(cls.timestamp, cls.activity_type, cls.intensity).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).all()
 
     @classmethod
     def get_active_calories(cls, db, activity_type, start_ts, end_ts):
@@ -222,7 +223,8 @@ class Monitoring(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_inactive(cls, db, start_ts, end_ts):
-        return db.query_session().query(cls.timestamp).filter(cls.intensity == 0).all()
+        with db.managed_session() as session:
+            return session.query(cls.timestamp).filter(cls.intensity == 0).all()
 
     @classmethod
     def get_daily_inactive(cls, db, day_date):
