@@ -56,7 +56,7 @@ class FitBitData():
         return len(self.file_names)
 
     def write_entry(self, db_entry):
-        FitBitDB.DaysSummary.find_or_create(self.fitbitdb, db_entry)
+        FitBitDB.DaysSummary.find_or_create(self.fitbitdb, FitBitDB.DaysSummary.intersection(db_entry))
 
     def process_files(self):
         for file_name in self.file_names:

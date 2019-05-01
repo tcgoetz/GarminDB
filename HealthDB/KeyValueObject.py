@@ -23,8 +23,8 @@ class KeyValueObject(DBObject):
         return session.query(cls).filter(cls.key == values_dict['key'])
 
     @classmethod
-    def set(cls, session, key, value, timestamp=datetime.datetime.now()):
-        cls._create_or_update(session, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
+    def set(cls, db, key, value, timestamp=datetime.datetime.now()):
+        cls.create_or_update(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
 
     @classmethod
     def _set_newer(cls, session, key, value, timestamp=datetime.datetime.now()):

@@ -132,7 +132,7 @@ class Analyze():
     def get_monitoring_years(self):
         logger.info("___Monitoring Records Coverage___")
         logger.info("This shows periods that data has been downloaded for.")
-        logger.info("Not seeing data for days you know Garmin has data? Change the starting day and the number of days your passing to the dowloader.")
+        logger.info("Not seeing data for days you know Garmin has data? Change the starting day and the number of days your passing to the downloader.")
         years = GarminDB.Monitoring.get_years(self.garmin_mon_db)
         GarminDB.Summary.set(self.garmin_sum_db, 'Monitoring_Years', len(years))
         logger.info("Monitoring records: %d", GarminDB.Monitoring.row_count(self.garmin_mon_db))
@@ -221,7 +221,7 @@ class Analyze():
         GarminDB.Monitoring.get_daily_stats(self.garmin_mon_db, day_date)
         # save it to the db
         GarminDB.DaysSummary.create_or_update_not_none(self.garmin_sum_db, stats)
-        HealthDB.DaysSummary.create_or_update_not_none(self.sumdb, stats)
+        HealthDB.DaysSummary.create_or_update_not_none(self.sum_db, stats)
 
     def calculate_week_stats(self, day_date):
         stats = GarminDB.MonitoringHeartRate.get_weekly_stats(self.garmin_mon_db, day_date)
@@ -238,7 +238,7 @@ class Analyze():
         stats.update(GarminDB.Activities.get_weekly_stats(self.garmin_act_db, day_date))
         stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
         GarminDB.WeeksSummary.create_or_update_not_none(self.garmin_sum_db, stats)
-        HealthDB.WeeksSummary.create_or_update_not_none(self.sumdb, stats)
+        HealthDB.WeeksSummary.create_or_update_not_none(self.sum_db, stats)
 
     def calculate_month_stats(self, start_day_date, end_day_date):
         stats = GarminDB.MonitoringHeartRate.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date)
@@ -255,7 +255,7 @@ class Analyze():
         stats.update(GarminDB.Activities.get_monthly_stats(self.garmin_act_db, start_day_date, end_day_date))
         stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
         GarminDB.MonthsSummary.create_or_update_not_none(self.garmin_sum_db, stats)
-        HealthDB.MonthsSummary.create_or_update_not_none(self.sumdb, stats)
+        HealthDB.MonthsSummary.create_or_update_not_none(self.sum_db, stats)
 
     def summary(self):
         logger.info("___Summary Table Generation___")

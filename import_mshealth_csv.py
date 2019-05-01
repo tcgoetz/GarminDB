@@ -58,7 +58,7 @@ class MSHealthData():
 
     def __init__(self, input_file, input_dir, db_params_dict, english_units, debug):
         self.english_units = english_units
-        self.mshealthdb = MSHealthDB.MSHealthDB(db_params_dict, debug)
+        self.mshealth_db = MSHealthDB.MSHealthDB(db_params_dict, debug)
         if input_file:
             self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'Daily_Summary_.*.csv')
         if input_dir:
@@ -68,7 +68,7 @@ class MSHealthData():
         return len(self.file_names)
 
     def write_entry(self, db_entry):
-        MSHealthDB.DaysSummary.find_or_create(self.mshealthdb, db_entry)
+        MSHealthDB.DaysSummary.find_or_create(self.mshealth_db, db_entry)
 
     def process_files(self):
         for file_name in self.file_names:
@@ -81,7 +81,7 @@ class MSVaultData():
 
     def __init__(self, input_file, input_dir, db_params_dict, english_units, debug):
         self.english_units = english_units
-        self.mshealthdb = MSHealthDB.MSHealthDB(db_params_dict, debug)
+        self.mshealth_db = MSHealthDB.MSHealthDB(db_params_dict, debug)
         self.cols_map = {
             'Date': ('timestamp', CsvImporter.map_mdy_date),
             'Weight': ('weight', MSVaultData.map_weight),
@@ -95,7 +95,7 @@ class MSVaultData():
         return len(self.file_names)
 
     def write_entry(self, db_entry):
-        MSHealthDB.MSVaultWeight.find_or_create(self.mshealthdb, db_entry)
+        MSHealthDB.MSVaultWeight.find_or_create(self.mshealth_db, MSHealthDB.MSVaultWeight.intersection(db_entry))
 
     def process_files(self):
         for file_name in self.file_names:
