@@ -226,7 +226,7 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
                 'activities.start_time AS start_time, ' +
                 'activities.stop_time AS stop_time, ' +
                 'activities.elapsed_time AS elapsed_time, ' +
-                'activities.distance AS distance, ' +
+                cls.round_col_text('activities.distance', 'distance') +
                 'run_activities.steps AS steps, ' +
                 'run_activities.avg_pace AS avg_pace, ' +
                 'run_activities.avg_moving_pace AS avg_moving_pace, ' +
@@ -236,11 +236,11 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
                 'activities.avg_hr AS avg_hr, ' +
                 'activities.max_hr AS max_hr, ' +
                 'activities.calories AS calories, ' +
-                'activities.avg_speed AS avg_speed, ' +
-                'activities.max_speed AS max_speed, ' +
-                'run_activities.avg_step_length AS avg_step_length, ' +
-                'run_activities.avg_vertical_ratio AS avg_vertical_ratio, ' +
-                'run_activities.avg_vertical_oscillation AS avg_vertical_oscillation, ' +
+                cls.round_col_text('activities.avg_speed', 'avg_speed') +
+                cls.round_col_text('activities.max_speed', 'max_speed') +
+                cls.round_col_text('run_activities.avg_step_length', 'avg_step_length') +
+                cls.round_col_text('run_activities.avg_vertical_ratio', 'avg_vertical_ratio') +
+                cls.round_col_text('run_activities.avg_vertical_oscillation', 'avg_vertical_oscillation') +
                 'run_activities.avg_gct_balance AS avg_gct_balance, ' +
                 'run_activities.avg_ground_contact_time AS avg_ground_contact_time, ' +
                 'run_activities.avg_stance_time_percent AS avg_stance_time_percent, ' +
@@ -275,15 +275,15 @@ class WalkActivities(ActivitiesDB.Base, SportActivities):
                 'activities.start_time AS start_time, ' +
                 'activities.stop_time AS stop_time, ' +
                 'activities.elapsed_time AS elapsed_time, ' +
-                'activities.distance AS distance, ' +
+                cls.round_col_text('activities.distance', 'distance') +
                 'walk_activities.steps AS steps, ' +
                 'walk_activities.avg_pace AS avg_pace, ' +
                 'walk_activities.max_pace AS max_pace, ' +
                 'activities.avg_hr AS avg_hr, ' +
                 'activities.max_hr AS max_hr, ' +
                 'activities.calories AS calories, ' +
-                'activities.avg_speed AS avg_speed, ' +
-                'activities.max_speed AS max_speed, ' +
+                cls.round_col_text('activities.avg_speed', 'avg_speed') +
+                cls.round_col_text('activities.max_speed', 'max_speed') +
                 'walk_activities.vo2_max AS vo2_max, ' +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
@@ -313,16 +313,16 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
                 'activities.start_time AS start_time, ' +
                 'activities.stop_time AS stop_time, ' +
                 'activities.elapsed_time AS elapsed_time, ' +
-                'activities.distance AS distance, ' +
+                cls.round_col_text('activities.distance', 'distance') +
                 'paddle_activities.strokes AS strokes, ' +
-                'paddle_activities.avg_stroke_distance AS avg_stroke_distance, ' +
+                cls.round_col_text('paddle_activities.avg_stroke_distance', 'avg_stroke_distance') +
                 'activities.avg_cadence AS avg_strokes_per_min, ' +
                 'activities.max_cadence AS max_strokes_per_min, ' +
                 'activities.avg_hr AS avg_hr, ' +
                 'activities.max_hr AS max_hr, ' +
                 'activities.calories AS calories, ' +
-                'activities.avg_speed AS avg_speed, ' +
-                'activities.max_speed AS max_speed, ' +
+                cls.round_col_text('activities.avg_speed', 'avg_speed') +
+                cls.round_col_text('activities.max_speed', 'max_speed') +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
                 sqlite_goole_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
@@ -350,15 +350,15 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
                 'activities.start_time AS start_time, ' +
                 'activities.stop_time AS stop_time, ' +
                 'activities.elapsed_time AS elapsed_time, ' +
-                'activities.distance AS distance, ' +
+                cls.round_col_text('activities.distance', 'distance') +
                 'cycle_activities.strokes AS strokes, ' +
                 'activities.avg_hr AS avg_hr, ' +
                 'activities.max_hr AS max_hr, ' +
                 'activities.calories AS calories, ' +
                 'activities.avg_cadence AS avg_rpms, ' +
                 'activities.max_cadence AS max_rpms, ' +
-                'activities.avg_speed AS avg_speed, ' +
-                'activities.max_speed AS max_speed, ' +
+                cls.round_col_text('activities.avg_speed', 'avg_speed') +
+                cls.round_col_text('activities.max_speed', 'max_speed') +
                 'cycle_activities.vo2_max AS vo2_max, ' +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
@@ -389,14 +389,13 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
                 'activities.stop_time AS stop_time, ' +
                 'activities.elapsed_time AS elapsed_time, ' +
                 'elliptical_activities.steps AS steps, ' +
-                'elliptical_activities.elliptical_distance AS distance, ' +
-                'activities.cycles AS cycles, ' +
+                cls.round_col_text('elliptical_activities.elliptical_distance', 'distance') +
                 'activities.avg_hr AS avg_hr, ' +
                 'activities.max_hr AS max_hr, ' +
                 'activities.calories AS calories, ' +
-                'activities.avg_cadence AS avg_rpms, ' +
+                cls.round_col_text('activities.avg_cadence', 'avg_rpms') +
                 'activities.max_cadence AS max_rpms, ' +
-                'activities.avg_speed AS avg_speed, ' +
+                cls.round_col_text('activities.avg_speed', 'avg_speed') +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
             'FROM elliptical_activities JOIN activities ON activities.activity_id = elliptical_activities.activity_id ' +

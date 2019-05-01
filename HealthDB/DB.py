@@ -88,6 +88,12 @@ class DBObject(object):
     time_col_name = None
     match_col_names = None
 
+    @classmethod
+    def round_col_text(cls, col_name, alt_col_name=None, places=1, seperator=','):
+        if alt_col_name is None:
+            alt_col_name = col_name
+        return 'ROUND(%s, %d) AS %s%s ' % (col_name, places, alt_col_name, seperator)
+
     @declared_attr
     def col_count(cls):
         if hasattr(cls, '__table__'):
