@@ -181,8 +181,11 @@ class Analyze():
             previous_ts = None
             for monitoring in monitoring_rows:
                 if monitoring.intensity is not None:
-                    if previous_ts is not None:
-                        hr_rows = GarminDB.MonitoringHeartRate.get_for_period(self.garmin_mon_db, GarminDB.MonitoringHeartRate, previous_ts, monitoring.timestamp)
+                    # Heart rate value is for one minute, reported at the end of the minute. Only take HR values where the
+                    # measurement period falls within the activity period.
+                    if previous_ts is not None and (monitoring.timestamp - previous_ts).total_seconds() > 60:
+                        hr_rows = GarminDB.MonitoringHeartRate.get_for_period(self.garmin_mon_db, GarminDB.MonitoringHeartRate,
+                            previous_ts + datetime.timedelta(seconds=60), monitoring.timestamp)
                         for hr in hr_rows:
                             if hr.heart_rate > 0:
                                 entry = {
@@ -191,7 +194,7 @@ class Analyze():
                                     'heart_rate'    : hr.heart_rate
                                 }
                                 GarminDB.IntensityHR.create_or_update_not_none(self.garmin_sum_db, entry)
-                    previous_ts = monitoring.timestamp + datetime.timedelta(0, 1)
+                    previous_ts = monitoring.timestamp
 
     def combine_stats(self, stats, stat1_name, stat2_name):
         stat1 = stats.get(stat1_name, 0)

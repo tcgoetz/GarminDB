@@ -66,6 +66,7 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
             'hr_min' : cls.get_col_min(db, cls.heart_rate, start_ts, end_ts, True),
             'hr_max' : cls.get_col_max(db, cls.heart_rate, start_ts, end_ts),
         }
+        logger.debug("MonitoringHeartRate::get_stats returned %s", repr(stats))
         return stats
 
     @classmethod
