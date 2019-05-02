@@ -112,6 +112,31 @@ class DBObject(object):
         cls.match_col_names = [cls.time_col_name]
         return {cls.time_col_name : synonym(cls.time_col_name)}
 
+    @hybrid_method
+    def during(self, start_ts, end_ts):
+        return cls.time_col >= start_ts and cls.time_col < end_ts
+
+    @during.expression
+    def during(cls, start_ts, end_ts):
+        return and_(cls.time_col >= start_ts, cls.time_col < end_ts)
+
+    @hybrid_method
+    def after(self, start_ts):
+        if start_ts is not None:
+            return cls.time_col >= start_ts
+
+    @after.expression
+    def after(cls, start_ts):
+        return cls.time_col >= start_ts
+
+    @hybrid_method
+    def before(self, end_ts):
+        return cls.time_col < end_ts
+
+    @before.expression
+    def before(cls, end_ts):
+        return cls.time_col < end_ts
+
     @classmethod
     def get_default_view_name(cls):
         return cls.__tablename__ + '_view'
@@ -297,10 +322,12 @@ class DBObject(object):
         query = session.query(selectable)
         if order_by is not None:
             query = query.order_by(order_by)
-        if start_ts is not None:
-            query = query.filter(cls.time_col >= start_ts)
-        if end_ts is not None:
-            query = query.filter(cls.time_col < end_ts)
+        if start_ts is not None and end_ts is not None:
+            query = query.filter(cls.during(start_ts, end_ts))
+        elif start_ts is not None:
+            query = query.filter(cls.after(start_ts))
+        elif end_ts is not None:
+            query = query.filter(cls.before(end_ts))
         if ignore_le_zero_col is not None:
             query = query.filter(ignore_le_zero_col > 0)
         return query
@@ -385,8 +412,7 @@ class DBObject(object):
         with db.managed_session() as session:
             max_daily_query = (
                 session.query(func.max(col).label('maxes'))
-                    .filter(cls.time_col >= start_ts)
-                    .filter(cls.time_col < end_ts)
+                    .filter(cls.during(start_ts, end_ts))
                     .group_by(func.strftime("%j", cls.time_col))
             )
             if match_col is not None and match_value is not None:
@@ -429,7 +455,7 @@ class DBObject(object):
     def row_count(cls, db, col=None, col_value=None):
         with db.managed_session() as session:
             query = session.query(cls)
-            if col and col_value:
+            if col is not None and col_value is not None:
                 query = query.filter(col == col_value)
             return query.count()
 
