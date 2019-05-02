@@ -22,17 +22,17 @@ class SummaryBase(DBObject):
     weight_avg = Column(Float)
     weight_min = Column(Float)
     weight_max = Column(Float)
-    intensity_time = Column(Time)
-    moderate_activity_time = Column(Time)
-    vigorous_activity_time = Column(Time)
+    intensity_time = Column(Time, nullable=False, default=datetime.time.min)
+    moderate_activity_time = Column(Time, nullable=False, default=datetime.time.min)
+    vigorous_activity_time = Column(Time, nullable=False, default=datetime.time.min)
     steps = Column(Integer)
     floors = Column(Float)
-    sleep_avg = Column(Time)
-    sleep_min = Column(Time)
-    sleep_max = Column(Time)
-    rem_sleep_avg = Column(Time)
-    rem_sleep_min = Column(Time)
-    rem_sleep_max = Column(Time)
+    sleep_avg = Column(Time, nullable=False, default=datetime.time.min)
+    sleep_min = Column(Time, nullable=False, default=datetime.time.min)
+    sleep_max = Column(Time, nullable=False, default=datetime.time.min)
+    rem_sleep_avg = Column(Time, nullable=False, default=datetime.time.min)
+    rem_sleep_min = Column(Time, nullable=False, default=datetime.time.min)
+    rem_sleep_max = Column(Time, nullable=False, default=datetime.time.min)
     stress_avg = Column(Integer)
     calories_avg = Column(Integer)
     calories_bmr_avg = Column(Integer)
@@ -110,7 +110,7 @@ class SummaryBase(DBObject):
                 'sleep_avg as sleep, ' +
                 'rem_sleep_avg as rem_sleep, ' +
                 cls.round_col_text('stress_avg', 'stress', places=0) +
-                'calories_avg as calories, ' +
+                cls.round_col_text('calories_avg', 'calories', places=0) +
                 cls.round_col_text('calories_avg', 'calories', places=0) +
                 cls.round_col_text('calories_bmr_avg', 'calories_bmr', places=0) +
                 cls.round_col_text('calories_active_avg', 'calories_active', places=0) +

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class MonitoringDB(DB):
     Base = declarative_base()
     db_name = 'garmin_monitoring'
-    db_version = 3
+    db_version = 5
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -61,13 +61,11 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
-        stats = {
+        return {
             'hr_avg' : cls.get_col_avg(db, cls.heart_rate, start_ts, end_ts, True),
             'hr_min' : cls.get_col_min(db, cls.heart_rate, start_ts, end_ts, True),
             'hr_max' : cls.get_col_max(db, cls.heart_rate, start_ts, end_ts),
         }
-        logger.debug("MonitoringHeartRate::get_stats returned %s", repr(stats))
-        return stats
 
     @classmethod
     def get_resting_heartrate(cls, db, wake_ts):
@@ -83,8 +81,8 @@ class MonitoringIntensity(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_intensity'
 
     timestamp = Column(DateTime, primary_key=True)
-    moderate_activity_time = Column(Time)
-    vigorous_activity_time = Column(Time)
+    moderate_activity_time = Column(Time, nullable=False, default=datetime.time.min)
+    vigorous_activity_time = Column(Time, nullable=False, default=datetime.time.min)
 
     __table_args__ = (
         UniqueConstraint("timestamp", "moderate_activity_time", "vigorous_activity_time"),
@@ -92,21 +90,21 @@ class MonitoringIntensity(MonitoringDB.Base, DBObject):
 
     time_col_name = 'timestamp'
 
+    @hybrid_property
+    def intensity_time(self):
+        return Conversions.add_time(self.moderate_activity_time, self.vigorous_activity_time, 2)
+
+    @intensity_time.expression
+    def intensity_time(cls):
+        return cls.time_from_secs(2 * cls.secs_from_time(cls.vigorous_activity_time) + cls.secs_from_time(cls.moderate_activity_time))
+
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
-        moderate_activity_time = cls.get_time_col_sum(db, cls.moderate_activity_time, start_ts, end_ts)
-        vigorous_activity_time = cls.get_time_col_sum(db, cls.vigorous_activity_time, start_ts, end_ts)
-        intensity_time = datetime.time.min
-        if moderate_activity_time:
-            intensity_time = Conversions.add_time(intensity_time, moderate_activity_time)
-        if vigorous_activity_time:
-            intensity_time = Conversions.add_time(intensity_time, vigorous_activity_time, 2)
-        stats = {
-            'intensity_time'            : intensity_time,
-            'moderate_activity_time'    : moderate_activity_time,
-            'vigorous_activity_time'    : vigorous_activity_time,
+        return {
+            'intensity_time'            : cls.get_time_col_sum(db, cls.intensity_time, start_ts, end_ts),
+            'moderate_activity_time'    : cls.get_time_col_sum(db, cls.moderate_activity_time, start_ts, end_ts),
+            'vigorous_activity_time'    : cls.get_time_col_sum(db, cls.vigorous_activity_time, start_ts, end_ts),
         }
-        return stats
 
 
 class MonitoringClimb(MonitoringDB.Base, DBObject):
@@ -167,9 +165,9 @@ class Monitoring(MonitoringDB.Base, DBObject):
     timestamp = Column(DateTime, nullable=False)
     activity_type = Column(Enum(FieldEnums.ActivityType))
     intensity = Column(Integer)
-    duration = Column(Time)
+    duration = Column(Time, nullable=False, default=datetime.time.min)
     distance = Column(Float)
-    cum_active_time = Column(Time)
+    cum_active_time = Column(Time, nullable=False, default=datetime.time.min)
     active_calories = Column(Integer)
     steps = Column(Integer)
     strokes = Column(Integer)
@@ -180,11 +178,6 @@ class Monitoring(MonitoringDB.Base, DBObject):
     )
 
     time_col_name = 'timestamp'
-
-    @classmethod
-    def get_activity(cls, db, start_ts, end_ts):
-        with db.managed_session() as session:
-            return session.query(cls.timestamp, cls.activity_type, cls.intensity).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).all()
 
     @classmethod
     def get_active_calories(cls, db, activity_type, start_ts, end_ts):

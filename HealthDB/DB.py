@@ -13,6 +13,7 @@ from sqlalchemy.ext.declarative import *
 from sqlalchemy.exc import *
 from sqlalchemy.orm import *
 from sqlalchemy.orm.attributes import *
+from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 
 from Fit import Conversions
 
@@ -240,6 +241,14 @@ class DBObject(object):
         cls.create_or_update(db, values_dict, True)
 
     @classmethod
+    def secs_from_time(cls, col):
+        return func.strftime('%s', col) - func.strftime('%s', '00:00')
+
+    @classmethod
+    def time_from_secs(cls, value):
+        return func.time(value, 'unixepoch')
+
+    @classmethod
     def row_to_int(cls, row):
         return int(row[0])
 
@@ -284,9 +293,22 @@ class DBObject(object):
             return cls.rows_to_ints(session.query(func.strftime("%j", cls.time_col)).filter(extract('year', cls.time_col) == str(year)).distinct().all())
 
     @classmethod
+    def _query(cls, session, selectable, order_by=None, start_ts=None, end_ts=None, ignore_le_zero_col=None):
+        query = session.query(selectable)
+        if order_by is not None:
+            query = query.order_by(order_by)
+        if start_ts is not None:
+            query = query.filter(cls.time_col >= start_ts)
+        if end_ts is not None:
+            query = query.filter(cls.time_col < end_ts)
+        if ignore_le_zero_col is not None:
+            query = query.filter(ignore_le_zero_col > 0)
+        return query
+
+    @classmethod
     def get_for_period(cls, db, selectable, start_ts, end_ts):
         with db.managed_session() as session:
-            return session.query(selectable).filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts).order_by(cls.time_col).all()
+            return cls._query(session, selectable, cls.time_col, start_ts, end_ts).all()
 
     @classmethod
     def get_for_day(cls, db, table, day_date):
@@ -295,75 +317,62 @@ class DBObject(object):
         return cls.get_for_period(db, table, start_ts, end_ts)
 
     @classmethod
-    def get_col_values(cls, db, get_col, match_col, match_value, start_ts=None, end_ts=None):
+    def get_col_values(cls, db, get_col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
         with db.managed_session() as session:
-            query = session.query(get_col).order_by(cls.time_col)
-            if start_ts is not None:
-                query = query.filter(cls.time_col >= start_ts)
-            if end_ts is not None:
-                query = query.filter(cls.time_col < end_ts)
-            query = query.filter(match_col == match_value)
-            return query.all()
+            return cls._query(session, get_col, cls.time_col, start_ts, end_ts, ignore_le_zero).filter(match_col == match_value).all()
 
     @classmethod
-    def get_col_func_query(cls, db, col, func, start_ts=None, end_ts=None, ignore_le_zero=False):
-        with db.managed_session() as session:
-            query = session.query(func(col))
-            if start_ts is not None:
-                query = query.filter(cls.time_col >= start_ts)
-            if end_ts is not None:
-                query = query.filter(cls.time_col < end_ts)
-            if ignore_le_zero:
-                query = query.filter(col > 0)
-            return query
+    def _get_col_func_query(cls, session, col, func, start_ts=None, end_ts=None, ignore_le_zero=False):
+        return cls._query(session, func(col), None, start_ts, end_ts, col if ignore_le_zero else None)
 
     @classmethod
-    def get_col_distinct(cls, db, col, start_ts=None, end_ts=None, ignore_le_zero=False):
-        rows = cls.get_col_func_query(db, col, distinct, start_ts=None, end_ts=None, ignore_le_zero=False).all()
-        return [row[0] for row in rows]
+    def get_col_distinct(cls, db, col, start_ts=None, end_ts=None):
+        with db.managed_session() as session:
+            return [row[0] for row in cls._get_col_func_query(session, col, distinct, start_ts, end_ts).all()]
 
     @classmethod
     def get_col_avg(cls, db, col, start_ts=None, end_ts=None, ignore_le_zero=False):
-        return cls.get_col_func_query(db, col, func.avg, start_ts, end_ts, ignore_le_zero).scalar()
+        with db.managed_session() as session:
+            return cls._get_col_func_query(session, col, func.avg, start_ts, end_ts, col if ignore_le_zero else None).scalar()
 
     @classmethod
     def get_col_min(cls, db, col, start_ts=None, end_ts=None, ignore_le_zero=False):
-        return cls.get_col_func_query(db, col, func.min, start_ts, end_ts, ignore_le_zero).scalar()
+        with db.managed_session() as session:
+            return cls._get_col_func_query(session, col, func.min, start_ts, end_ts, col if ignore_le_zero else None).scalar()
 
     @classmethod
     def get_col_max(cls, db, col, start_ts=None, end_ts=None):
-        return cls.get_col_func_query(db, col, func.max, start_ts, end_ts, False).scalar()
+        with db.managed_session() as session:
+            return cls._get_col_func_query(session, col, func.max, start_ts, end_ts).scalar()
 
     @classmethod
     def get_col_sum(cls, db, col, start_ts=None, end_ts=None):
-        return cls.get_col_func_query(db, col, func.sum, start_ts, end_ts, False).scalar()
-
-    @classmethod
-    def get_time_col_func(cls, db, col, stat_func, start_ts=None, end_ts=None, ignore_le_zero=False):
         with db.managed_session() as session:
-            query = session.query(stat_func(func.strftime('%s', col) - func.strftime('%s', '00:00')))
-            if start_ts is not None:
-                query = query.filter(cls.time_col >= start_ts)
-            if end_ts is not None:
-                query = query.filter(cls.time_col < end_ts)
-            if ignore_le_zero:
-                query = query.filter(col > 0)
-            return Conversions.secs_to_dt_time(query.scalar())
+            return cls._get_col_func_query(session, col, func.sum, start_ts, end_ts).scalar()
 
     @classmethod
-    def get_time_col_avg(cls, db, col, start_ts, end_ts, ignore_le_zero=False):
-        return cls.get_time_col_func(db, col, func.avg, start_ts, end_ts, ignore_le_zero)
+    def get_time_col_func(cls, db, col, stat_func, start_ts=None, end_ts=None):
+        with db.managed_session() as session:
+            result = (
+                cls._query(session, cls.time_from_secs(stat_func(cls.secs_from_time(col))),
+                    None, start_ts, end_ts, cls.secs_from_time(col)).scalar()
+            )
+            return datetime.datetime.strptime(result, '%H:%M:%S').time() if result is not None else datetime.time.min
 
     @classmethod
-    def get_time_col_min(cls, db, col, start_ts, end_ts, ignore_le_zero=False):
-        return cls.get_time_col_func(db, col, func.min, start_ts, end_ts, ignore_le_zero)
+    def get_time_col_avg(cls, db, col, start_ts=None, end_ts=None):
+        return cls.get_time_col_func(db, col, func.avg, start_ts, end_ts)
+
+    @classmethod
+    def get_time_col_min(cls, db, col, start_ts=None, end_ts=None):
+        return cls.get_time_col_func(db, col, func.min, start_ts, end_ts)
 
     @classmethod
     def get_time_col_max(cls, db, col, start_ts=None, end_ts=None):
         return cls.get_time_col_func(db, col, func.max, start_ts, end_ts)
 
     @classmethod
-    def get_time_col_sum(cls, db, col, start_ts, end_ts):
+    def get_time_col_sum(cls, db, col, start_ts=None, end_ts=None):
         return cls.get_time_col_func(db, col, func.sum, start_ts, end_ts)
 
     @classmethod
@@ -372,15 +381,29 @@ class DBObject(object):
             return session.query(col).order_by(desc(cls.time_col)).limit(1).scalar()
 
     @classmethod
-    def get_col_func_of_max_per_day(cls, db, col, stat_func, start_ts, end_ts):
+    def get_col_func_of_max_per_day_for_value(cls, db, col, stat_func, start_ts, end_ts, match_col=None, match_value=None):
         with db.managed_session() as session:
             max_daily_query = (
                 session.query(func.max(col).label('maxes'))
-                    .filter(cls.timestamp >= start_ts)
-                    .filter(cls.timestamp < end_ts)
-                    .group_by(func.strftime("%j", cls.timestamp))
+                    .filter(cls.time_col >= start_ts)
+                    .filter(cls.time_col < end_ts)
+                    .group_by(func.strftime("%j", cls.time_col))
             )
+            if match_col is not None and match_value is not None:
+                 max_daily_query.filter(match_col == match_value)
             return session.query(stat_func(max_daily_query.subquery().columns.maxes)).scalar()
+
+    @classmethod
+    def get_col_sum_of_max_per_day_for_value(cls, db, col, match_col, match_value, start_ts, end_ts):
+       return cls.get_col_func_of_max_per_day_for_value(db, col, func.sum, start_ts, end_ts, match_col, match_value)
+
+    @classmethod
+    def get_col_avg_of_max_per_day_for_value(cls, db, col, match_col, match_value, start_ts, end_ts):
+       return cls.get_col_func_of_max_per_day_for_value(db, col, func.avg, start_ts, end_ts, match_col, match_value)
+
+    @classmethod
+    def get_col_func_of_max_per_day(cls, db, col, stat_func, start_ts, end_ts):
+        return cls.get_col_func_of_max_per_day_for_value(db, col, func.sum, start_ts, end_ts)
 
     @classmethod
     def get_col_sum_of_max_per_day(cls, db, col, start_ts, end_ts):
@@ -397,26 +420,6 @@ class DBObject(object):
     @classmethod
     def get_col_max_of_max_per_day(cls, db, col, start_ts, end_ts):
        return cls.get_col_func_of_max_per_day(db, col, func.max, start_ts, end_ts)
-
-    @classmethod
-    def get_col_func_of_max_per_day_for_value(cls, db, col, stat_func, match_col, match_value, start_ts, end_ts):
-        with db.managed_session() as session:
-            max_daily_query = (
-                session.query(func.max(col).label('maxes'))
-                    .filter(match_col == match_value)
-                    .filter(cls.timestamp >= start_ts)
-                    .filter(cls.timestamp < end_ts)
-                    .group_by(func.strftime("%j", cls.timestamp))
-            )
-            return session.query(stat_func(max_daily_query.subquery().columns.maxes)).scalar()
-
-    @classmethod
-    def get_col_sum_of_max_per_day_for_value(cls, db, col, match_col, match_value, start_ts, end_ts):
-       return cls.get_col_func_of_max_per_day_for_value(db, col, func.sum, match_col, match_value, start_ts, end_ts)
-
-    @classmethod
-    def get_col_avg_of_max_per_day_for_value(cls, db, col, match_col, match_value, start_ts, end_ts):
-       return cls.get_col_func_of_max_per_day_for_value(db, col, func.avg, match_col, match_value, start_ts, end_ts)
 
     @classmethod
     def latest_time(cls, db):
@@ -444,12 +447,7 @@ class DBObject(object):
     @classmethod
     def get_col_func_for_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
         with db.managed_session() as session:
-            values_query = session.query(stat_func(col)).filter(match_col == match_value)
-            if start_ts is not None or end_ts is not None:
-                values_query = values_query.filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
-            if ignore_le_zero:
-                values_query = values_query.filter(col > 0)
-            return values_query.scalar()
+            return cls._query(session, stat_func(col), None, start_ts, end_ts, col if ignore_le_zero else None).filter(match_col == match_value).scalar()
 
     @classmethod
     def get_col_sum_for_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
@@ -469,13 +467,7 @@ class DBObject(object):
 
     @classmethod
     def get_col_func_greater_than_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
-        with db.managed_session() as session:
-            values_query = session.query(stat_func(col)).filter(match_col > match_value)
-            if start_ts is not None or end_ts is not None:
-                values_query = values_query.filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
-            if ignore_le_zero:
-                values_query = values_query.filter(col > 0)
-            return values_query.scalar()
+        return cls._query(db, stat_func(col), None, start_ts, end_ts, col if ignore_le_zero else None).filter(match_col > match_value).scalar()
 
     @classmethod
     def get_col_avg_greater_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
@@ -483,13 +475,7 @@ class DBObject(object):
 
     @classmethod
     def get_col_func_less_than_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
-        with db.managed_session() as session:
-            values_query = session.query(stat_func(col)).filter(match_col < match_value)
-            if start_ts is not None or end_ts is not None:
-                values_query = values_query.filter(cls.time_col >= start_ts).filter(cls.time_col < end_ts)
-            if ignore_le_zero:
-                values_query = values_query.filter(col > 0)
-            return values_query.scalar()
+        return cls._query(db, stat_func(col), None, start_ts, end_ts, col if ignore_le_zero else None).filter(match_col < match_value).scalar()
 
     @classmethod
     def get_col_avg_less_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
-    db_version = 5
+    db_version = 6
     view_version = 3
 
     class DbVersion(Base, DbVersionObject):
@@ -74,7 +74,7 @@ class DeviceInfo(GarminDB.Base, DBObject):
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
     device_type = Column(String)
     software_version = Column(String)
-    cum_operating_time = Column(Time)
+    cum_operating_time = Column(Time, nullable=False, default=datetime.time.min)
     battery_voltage = Column(Float)
 
     time_col_name = 'timestamp'
@@ -185,22 +185,22 @@ class Sleep(GarminDB.Base, DBObject):
     day = Column(Date, primary_key=True)
     start = Column(DateTime)
     end = Column(DateTime)
-    total_sleep = Column(Time)
-    deep_sleep = Column(Time)
-    light_sleep = Column(Time)
-    rem_sleep = Column(Time)
-    awake = Column(Time)
+    total_sleep = Column(Time, nullable=False, default=datetime.time.min)
+    deep_sleep = Column(Time, nullable=False, default=datetime.time.min)
+    light_sleep = Column(Time, nullable=False, default=datetime.time.min)
+    rem_sleep = Column(Time, nullable=False, default=datetime.time.min)
+    awake = Column(Time, nullable=False, default=datetime.time.min)
 
     time_col_name = 'day'
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
         return {
-            'sleep_avg'     : cls.get_time_col_avg(db, cls.total_sleep, start_ts, end_ts, True),
-            'sleep_min'     : cls.get_time_col_min(db, cls.total_sleep, start_ts, end_ts, True),
+            'sleep_avg'     : cls.get_time_col_avg(db, cls.total_sleep, start_ts, end_ts),
+            'sleep_min'     : cls.get_time_col_min(db, cls.total_sleep, start_ts, end_ts),
             'sleep_max'     : cls.get_time_col_max(db, cls.total_sleep, start_ts, end_ts),
-            'rem_sleep_avg' : cls.get_time_col_avg(db, cls.rem_sleep, start_ts, end_ts, True),
-            'rem_sleep_min' : cls.get_time_col_min(db, cls.rem_sleep, start_ts, end_ts, True),
+            'rem_sleep_avg' : cls.get_time_col_avg(db, cls.rem_sleep, start_ts, end_ts),
+            'rem_sleep_min' : cls.get_time_col_min(db, cls.rem_sleep, start_ts, end_ts),
             'rem_sleep_max' : cls.get_time_col_max(db, cls.rem_sleep, start_ts, end_ts),
         }
 
@@ -211,7 +211,7 @@ class SleepEvents(GarminDB.Base, DBObject):
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, unique=True)
     event = Column(String)
-    duration = Column(Time)
+    duration = Column(Time, nullable=False, default=datetime.time.min)
 
     time_col_name = 'timestamp'
 

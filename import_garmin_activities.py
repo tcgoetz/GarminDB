@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, string, logging, datetime, traceback, json, tcxparser, dateutil.parser
+import os, sys, getopt, re, string, logging, datetime, traceback, json, tcxparser, dateutil.parser, traceback
 
 import Fit
 import FileProcessor
@@ -139,6 +139,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
         self.garmin_act_db_session.commit()
 
     def process_running(self, activity_id, activity_summary):
+        logger.debug("process_running for %s", activity_id)
         avg_vertical_oscillation = self.get_field_obj(activity_summary, 'avgVerticalOscillation', Fit.Conversions.Distance.from_meters)
         avg_step_length = self.get_field_obj(activity_summary, 'avgStrideLength', Fit.Conversions.Distance.from_meters)
         run = {
@@ -152,7 +153,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
             'avg_ground_contact_time'   : Fit.Conversions.ms_to_dt_time(self.get_field(activity_summary, 'avgGroundContactTime', float)),
             'vo2_max'                   : self.get_field(activity_summary, 'vO2MaxValue', float),
         }
-        GarminDB.RunActivities.create_or_update_not_none(self.garmin_act_db_session, run)
+        GarminDB.RunActivities._create_or_update_not_none(self.garmin_act_db_session, run)
 
     def process_treadmill_running(self, activity_id, activity_summary):
         return self.process_running(activity_id, activity_summary)

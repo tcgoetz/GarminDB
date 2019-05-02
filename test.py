@@ -46,12 +46,12 @@ class TestGarminDb(unittest.TestCase):
             maximum = table.get_col_max(db, col)
         self.check_col_stat(col_name + ' max', maximum, max_bounds)
         if time_col:
-            minimum = table.get_time_col_min(db, col, None, None, ignore_le_zero)
+            minimum = table.get_time_col_min(db, col, None, None)
         else:
             minimum = table.get_col_min(db, col, None, None, ignore_le_zero)
         self.check_col_stat(col_name + ' min', minimum, min_bounds)
         if time_col:
-            average = table.get_time_col_avg(db, col, None, None, ignore_le_zero)
+            average = table.get_time_col_avg(db, col, None, None)
         else:
             average = table.get_col_avg(db, col, None, None, ignore_le_zero)
         self.check_col_stat(col_name + ' avg', average, avg_bounds)

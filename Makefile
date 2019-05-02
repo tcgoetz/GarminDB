@@ -252,7 +252,7 @@ force_download_all_activities: $(ACTIVITES_FIT_FILES_DIR)
 
 ## generic garmin
 GARMIN_DB=$(DB_DIR)/garmin.db
-$(GARMIN_DB): $(DB_DIR) garmin_config import_sleep import_weight import_rhr
+$(GARMIN_DB): $(DB_DIR) garmin_profile garmin_config import_sleep import_weight import_rhr
 
 build_garmin_db: $(GARMIN_DB)
 

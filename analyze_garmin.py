@@ -107,13 +107,13 @@ class Analyze():
         logger.info("Max %s: %s", name, str(maximum))
         GarminDB.Summary.set(self.garmin_sum_db, 'Max_%s' % name, maximum)
         if time_col:
-            minimum = table.get_time_col_min(self.garmin_db, col, None, None, ignore_le_zero)
+            minimum = table.get_time_col_min(self.garmin_db, col)
         else:
             minimum = table.get_col_min(self.garmin_db, col, None, None, ignore_le_zero)
         logger.info("Min %s: %s", name, str(minimum))
         GarminDB.Summary.set(self.garmin_sum_db, 'Min_%s' % name, minimum)
         if time_col:
-            average = table.get_time_col_avg(self.garmin_db, col, None, None, ignore_le_zero)
+            average = table.get_time_col_avg(self.garmin_db, col)
         else:
             average = table.get_col_avg(self.garmin_db, col, None, None, ignore_le_zero)
         logger.info("Avg %s: %s", name, str(average))

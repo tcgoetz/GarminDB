@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
-    db_version = 10
-    view_version = 1
+    db_version = 11
+    view_version = 2
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -39,7 +39,33 @@ class ActivitiesDB(DB):
         EllipticalActivities.create_view(self)
 
 
-class Activities(ActivitiesDB.Base, DBObject):
+class ActivitiesLocationSegment(DBObject):
+    # degrees
+    start_lat = Column(Float)
+    start_long = Column(Float)
+    stop_lat = Column(Float)
+    stop_long = Column(Float)
+
+    @hybrid_property
+    def start_loc(self):
+        return Location(self.start_lat, self.start_long)
+
+    @start_loc.setter
+    def start_loc(self, start_location):
+        self.start_lat = start_location.lat_deg
+        self.start_long = start_location.long_deg
+
+    @hybrid_property
+    def stop_loc(self):
+        return Location(self.stop_lat, self.stop_long)
+
+    @stop_loc.setter
+    def stop_loc(self, stop_location):
+        self.stop_lat = stop_location.lat_deg
+        self.stop_long = stop_location.long_deg
+
+
+class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     __tablename__ = 'activities'
 
     activity_id = Column(Integer, primary_key=True)
@@ -51,16 +77,11 @@ class Activities(ActivitiesDB.Base, DBObject):
     #
     start_time = Column(DateTime)
     stop_time = Column(DateTime)
-    elapsed_time = Column(Time)
-    moving_time = Column(Time)
+    elapsed_time = Column(Time, nullable=False, default=datetime.time.min)
+    moving_time = Column(Time, nullable=False, default=datetime.time.min)
     #
     sport = Column(String)
     sub_sport = Column(String)
-    # degrees
-    start_lat = Column(Float)
-    start_long = Column(Float)
-    stop_lat = Column(Float)
-    stop_long = Column(Float)
     # kms or miles
     distance = Column(Float)
     #
@@ -103,7 +124,7 @@ class Activities(ActivitiesDB.Base, DBObject):
         return stats
 
 
-class ActivityLaps(ActivitiesDB.Base, DBObject):
+class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
     __tablename__ = 'activity_laps'
 
     activity_id = Column(Integer, ForeignKey('activities.activity_id'))
@@ -111,13 +132,8 @@ class ActivityLaps(ActivitiesDB.Base, DBObject):
     #
     start_time = Column(DateTime)
     stop_time = Column(DateTime)
-    elapsed_time = Column(Time)
-    moving_time = Column(Time)
-    # degrees
-    start_lat = Column(Float)
-    start_long = Column(Float)
-    stop_lat = Column(Float)
-    stop_long = Column(Float)
+    elapsed_time = Column(Time, nullable=False, default=datetime.time.min)
+    moving_time = Column(Time, nullable=False, default=datetime.time.min)
     # kms or miles
     distance = Column(Float)
     cycles = Column(Float)
@@ -144,6 +160,15 @@ class ActivityLaps(ActivitiesDB.Base, DBObject):
 
     time_col_name = 'start_time'
     match_col_names = ['activity_id', 'lap']
+
+    @hybrid_property
+    def start_loc(self):
+        return Location(self.start_lat, self.start_long)
+
+    @start_loc.setter
+    def start_loc(self, start_location):
+        self.start_lat = start_location.lat_deg
+        self.start_long = start_location.long_deg
 
 
 class ActivityRecords(ActivitiesDB.Base, DBObject):
@@ -172,6 +197,15 @@ class ActivityRecords(ActivitiesDB.Base, DBObject):
     time_col_name = 'timestamp'
     match_col_names = ['activity_id', 'record']
 
+    @hybrid_property
+    def position(self):
+        return Location(self.position_lat, self.position_long)
+
+    @position.setter
+    def position(self, location):
+        self.position_lat = location.lat_deg
+        self.position_long = location.long_deg
+
 
 class SportActivities(DBObject):
 
@@ -186,17 +220,13 @@ class SportActivities(DBObject):
         cls.create_join_view(db, cls.__tablename__ + '_view', Activities)
 
 
-def sqlite_goole_maps_url(lat_str, long_str):
-    return '"http://maps.google.com/?ie=UTF8&q=" || %s || "," || %s || "&z=13"' % (lat_str, long_str)
-
-
 class RunActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'run_activities'
     steps = Column(Integer)
     # pace in mins/mile
-    avg_pace = Column(Time)
-    avg_moving_pace = Column(Time)
-    max_pace = Column(Time)
+    avg_pace = Column(Time, nullable=False, default=datetime.time.min)
+    avg_moving_pace = Column(Time, nullable=False, default=datetime.time.min)
+    max_pace = Column(Time, nullable=False, default=datetime.time.min)
     # steps per minute
     avg_steps_per_min = Column(Integer)
     max_steps_per_min = Column(Integer)
@@ -209,7 +239,7 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
     # left % of left right balance
     avg_gct_balance = Column(Float)
     # ground contact time in ms
-    avg_ground_contact_time = Column(Time)
+    avg_ground_contact_time = Column(Time, nullable=False, default=datetime.time.min)
     avg_stance_time_percent = Column(Float)
     vo2_max = Column(Float)
 
@@ -236,6 +266,7 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
                 'activities.avg_hr AS avg_hr, ' +
                 'activities.max_hr AS max_hr, ' +
                 'activities.calories AS calories, ' +
+                'activities.avg_temperature AS avg_temperature, ' +
                 cls.round_col_text('activities.avg_speed', 'avg_speed') +
                 cls.round_col_text('activities.max_speed', 'max_speed') +
                 cls.round_col_text('run_activities.avg_step_length', 'avg_step_length') +
@@ -247,8 +278,8 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
                 'run_activities.vo2_max AS vo2_max, ' +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
-                sqlite_goole_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
-                sqlite_goole_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
+                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
+                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
             'FROM run_activities JOIN activities ON activities.activity_id = run_activities.activity_id ' +
             'ORDER BY activities.start_time DESC'
         )
@@ -259,8 +290,8 @@ class WalkActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'walk_activities'
     steps = Column(Integer)
     # pace in mins/mile
-    avg_pace = Column(Time)
-    max_pace = Column(Time)
+    avg_pace = Column(Time, nullable=False, default=datetime.time.min)
+    max_pace = Column(Time, nullable=False, default=datetime.time.min)
     vo2_max = Column(Float)
 
     @classmethod
@@ -282,13 +313,14 @@ class WalkActivities(ActivitiesDB.Base, SportActivities):
                 'activities.avg_hr AS avg_hr, ' +
                 'activities.max_hr AS max_hr, ' +
                 'activities.calories AS calories, ' +
+                'activities.avg_temperature AS avg_temperature, ' +
                 cls.round_col_text('activities.avg_speed', 'avg_speed') +
                 cls.round_col_text('activities.max_speed', 'max_speed') +
                 'walk_activities.vo2_max AS vo2_max, ' +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
-                sqlite_goole_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
-                sqlite_goole_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
+                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
+                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
             'FROM walk_activities JOIN activities ON activities.activity_id = walk_activities.activity_id ' +
             'ORDER BY activities.start_time DESC'
         )
@@ -321,12 +353,13 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
                 'activities.avg_hr AS avg_hr, ' +
                 'activities.max_hr AS max_hr, ' +
                 'activities.calories AS calories, ' +
+                'activities.avg_temperature AS avg_temperature, ' +
                 cls.round_col_text('activities.avg_speed', 'avg_speed') +
                 cls.round_col_text('activities.max_speed', 'max_speed') +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
-                sqlite_goole_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
-                sqlite_goole_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
+                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
+                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
             'FROM paddle_activities JOIN activities ON activities.activity_id = paddle_activities.activity_id ' +
             'ORDER BY activities.start_time DESC'
         )
@@ -355,6 +388,7 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
                 'activities.avg_hr AS avg_hr, ' +
                 'activities.max_hr AS max_hr, ' +
                 'activities.calories AS calories, ' +
+                'activities.avg_temperature AS avg_temperature, ' +
                 'activities.avg_cadence AS avg_rpms, ' +
                 'activities.max_cadence AS max_rpms, ' +
                 cls.round_col_text('activities.avg_speed', 'avg_speed') +
@@ -362,8 +396,8 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
                 'cycle_activities.vo2_max AS vo2_max, ' +
                 'activities.training_effect AS training_effect, ' +
                 'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
-                sqlite_goole_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
-                sqlite_goole_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
+                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
+                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
             'FROM cycle_activities JOIN activities ON activities.activity_id = cycle_activities.activity_id ' +
             'ORDER BY activities.start_time DESC'
         )
