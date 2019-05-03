@@ -65,7 +65,7 @@ class SummaryBase(DBObject):
                 cls.round_col_text('activities_distance', seperator='') +
             'FROM %s ORDER BY first_day DESC' % cls.__tablename__
         )
-        cls.create_view_if_not_exists(db, view_name, query_str)
+        cls.create_view_if_doesnt_exist(db, view_name, query_str)
 
     @classmethod
     def create_weeks_view(cls, db):
@@ -91,7 +91,7 @@ class SummaryBase(DBObject):
                 cls.round_col_text('activities_distance', seperator='') +
             'FROM %s ORDER BY first_day DESC' % cls.__tablename__
         )
-        cls.create_view_if_not_exists(db, view_name, query_str)
+        cls.create_view_if_doesnt_exist(db, view_name, query_str)
 
     @classmethod
     def create_days_view(cls, db):
@@ -118,4 +118,4 @@ class SummaryBase(DBObject):
                 cls.round_col_text('activities_distance', seperator='') +
             'FROM %s ORDER BY day DESC' % cls.__tablename__
         )
-        cls.create_view_if_not_exists(db, view_name, query_str)
+        cls.create_view_if_doesnt_exist(db, view_name, query_str)

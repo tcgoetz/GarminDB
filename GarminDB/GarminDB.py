@@ -96,7 +96,7 @@ class DeviceInfo(GarminDB.Base, DBObject):
             'FROM device_info JOIN devices ON devices.serial_number = device_info.serial_number ' +
             'ORDER BY device_info.timestamp DESC'
         )
-        cls.create_view_if_not_exists(db, view_name, query_str)
+        cls.create_view_if_doesnt_exist(db, view_name, query_str)
 
 
 class File(GarminDB.Base, DBObject):
@@ -132,7 +132,7 @@ class File(GarminDB.Base, DBObject):
             'FROM files JOIN devices ON devices.serial_number = files.serial_number JOIN device_info ON device_info.file_id = files.id ' +
             'ORDER BY device_info.timestamp DESC'
         )
-        cls.create_view_if_not_exists(db, view_name, query_str)
+        cls.create_view_if_doesnt_exist(db, view_name, query_str)
 
     @classmethod
     def name_and_id_from_path(cls, pathname):

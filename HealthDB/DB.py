@@ -15,6 +15,8 @@ from sqlalchemy.orm import *
 from sqlalchemy.orm.attributes import *
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 
+from Utilities import *
+
 from Fit import Conversions
 
 
@@ -63,24 +65,6 @@ class DB(object):
 #
 ####
 #
-
-def list_in_list(list1, list2):
-    for list_item in list1:
-        if list_item not in list2:
-            return False
-    return True
-
-def list_intersection(list1, list2):
-   return [list_item for list_item in list1 if list_item in list2]
-
-def list_intersection_count(list1, list2):
-    return len(list_intersection(list1, list2))
-
-def dict_filter_none_values(in_dict):
-    return {key : value for key, value in in_dict.iteritems() if value is not None}
-
-def filter_dict_by_list(in_dict, in_list):
-    return {key : value for key, value in in_dict.iteritems() if key in in_list}
 
 
 class DBObject(object):
@@ -177,7 +161,7 @@ class DBObject(object):
         session.execute('CREATE VIEW IF NOT EXISTS ' + view_name + ' AS ' + query_str)
 
     @classmethod
-    def create_view_if_not_exists(cls, db, view_name, query_str):
+    def create_view_if_doesnt_exist(cls, db, view_name, query_str):
         with db.managed_session() as session:
             cls._create_view_if_not_exists(session, view_name, query_str)
 
