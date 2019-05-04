@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
-    db_version = 6
+    db_version = 7
     view_version = 3
 
     class DbVersion(Base, DbVersionObject):
@@ -47,9 +47,11 @@ class Device(GarminDB.Base, DBObject):
     __tablename__ = 'devices'
     unknown_device_serial_number = 9999999999
 
+    Manufacturer = derived_enum('Manufacturer', FieldEnums.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
+
     serial_number = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
-    manufacturer = Column(Enum(FieldEnums.Manufacturer))
+    manufacturer = Column(Enum(Manufacturer))
     product = Column(String)
     hardware_version = Column(String)
 
@@ -63,6 +65,10 @@ class Device(GarminDB.Base, DBObject):
     @classmethod
     def get(cls, db, serial_number):
         return cls.find_one(db, {'serial_number' : serial_number})
+
+    @classmethod
+    def local_device_serial_number(cls, db, serial_number, device_type):
+        return '%s%06d' % (serial_number, device_type.value)
 
 
 class DeviceInfo(GarminDB.Base, DBObject):
@@ -102,9 +108,12 @@ class DeviceInfo(GarminDB.Base, DBObject):
 class File(GarminDB.Base, DBObject):
     __tablename__ = 'files'
 
+    fit_file_types_prefix = 'fit_'
+    FileType = derived_enum('FileType', FieldEnums.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
+
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
-    type = Column(Enum(FieldEnums.FileType), nullable=False)
+    type = Column(Enum(FileType), nullable=False)
     serial_number = Column(Integer, ForeignKey('devices.serial_number'))
 
     match_col_names = ['name']

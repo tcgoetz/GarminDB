@@ -75,7 +75,9 @@ class FitFileProcessor():
         parsed_message = message.to_dict()
         logger.info("file_id message: %s", repr(parsed_message))
         self.serial_number = parsed_message.get('serial_number', None)
-        self.manufacturer = parsed_message.get('manufacturer', None)
+        _manufacturer = GarminDB.Device.Manufacturer.convert(parsed_message.get('manufacturer', None))
+        if _manufacturer is not None:
+            self.manufacturer = _manufacturer
         self.product = parsed_message.get('product', None)
         if self.serial_number:
             device = {
@@ -89,7 +91,7 @@ class FitFileProcessor():
         file = {
             'id'            : file_id,
             'name'          : file_name,
-            'type'          : parsed_message['type'],
+            'type'          : GarminDB.File.FileType.convert(parsed_message['type']),
             'serial_number' : self.serial_number,
         }
         GarminDB.File._find_or_create(self.garmin_db_session, file)
@@ -343,7 +345,7 @@ class FitFileProcessor():
                 GarminDB.MonitoringInfo._find_or_create(self.garmin_mon_db_session, entry)
 
     def write_monitoring_entry(self, fit_file, message):
-        # Only include not None values so that we match and update only if a column has values.
+        # Only include not None values so that we match and update only if a table's columns if it has values.
         entry = message.to_dict(ignore_none_values=True)
         try:
             intersection = GarminDB.MonitoringHeartRate.intersection(entry)
@@ -368,13 +370,13 @@ class FitFileProcessor():
             parsed_message = device_info_message.to_dict()
             device_type = parsed_message.get('device_type', None)
             serial_number = parsed_message.get('serial_number', None)
-            manufacturer = parsed_message.get('manufacturer', None)
+            manufacturer = GarminDB.Device.Manufacturer.convert(parsed_message.get('manufacturer', None))
             product = parsed_message.get('product', None)
             source_type = parsed_message.get('source_type', None)
             # local devices are part of the main device. Base missing fields off of the main device.
             if source_type is Fit.FieldEnums.SourceType.local:
                 if serial_number is None and self.serial_number is not None and device_type is not None:
-                    serial_number = '%s%06d' % (self.serial_number, device_type.value)
+                    serial_number = GarminDB.Device.local_device_serial_number(self.serial_number, device_type)
                 if manufacturer is None and self.manufacturer is not None:
                     manufacturer = self.manufacturer
                 if product is None and self.product is not None:

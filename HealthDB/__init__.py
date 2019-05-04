@@ -1,4 +1,5 @@
 from Utilities import *
+from DerivedEnum import *
 from DB import *
 from SummaryBase import *
 from KeyValueObject import *
