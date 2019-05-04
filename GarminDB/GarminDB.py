@@ -67,7 +67,7 @@ class Device(GarminDB.Base, DBObject):
         return cls.find_one(db, {'serial_number' : serial_number})
 
     @classmethod
-    def local_device_serial_number(cls, db, serial_number, device_type):
+    def local_device_serial_number(cls, serial_number, device_type):
         return '%s%06d' % (serial_number, device_type.value)
 
 
