@@ -112,21 +112,16 @@ class TestGarminDb(unittest.TestCase):
         self.check_col_stats(
             garmindb, GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True, True,
             (1, 10000000),
-            (datetime.time(2), datetime.time(4)),
-            (datetime.time(0), datetime.time(2)),
-            (datetime.time(1), datetime.time(6)),
-            (datetime.time(1), datetime.time(6))
+            (datetime.time(2), datetime.time(4)),           # max
+            (datetime.time(0), datetime.time(2)),           # min
+            (datetime.time(1), datetime.time(6)),           # avg
+            (datetime.time(minute=10), datetime.time(6))    # latest
         )
 
 
 class TestGarminDbObjects(unittest.TestCase):
 
-    def test_file(self):
-        file_id = '123345678'
-        filename = file_id + '.fit'
-        filename_with_path = '/test/directory/' + filename
-        file_type = Fit.FieldEnums.FileType.goals
-        file_serial_number = '987654321'
+    def check_file_table(self, filename_with_path, file_type, file_serial_number):
         (file_id, file_name) = GarminDB.File.name_and_id_from_path(filename_with_path)
         file_dict = {
             'id'            : file_id,
@@ -134,11 +129,24 @@ class TestGarminDbObjects(unittest.TestCase):
             'type'          : file_type,
             'serial_number' : file_serial_number,
         }
+        logger.info("check_file_table: %s", repr(file_dict))
         file = GarminDB.File(**file_dict)
-        self.assertEqual(file.id, file_id)
-        self.assertEqual(file.name, filename)
-        self.assertEqual(file.type, file_type)
-        self.assertEqual(file.serial_number, file_serial_number)
+        self.assertEqual(file.id, file_dict['id'])
+        self.assertEqual(file.name, file_dict['name'])
+        self.assertEqual(file.type, file_dict['type'])
+        self.assertEqual(file.serial_number, file_dict['serial_number'])
+
+    def test_file_good(self):
+        file_id = '123345678'
+        filename = file_id + '.fit'
+        filename_with_path = '/test/directory/' + filename
+        file_type = Fit.FieldEnums.FileType.goals
+        file_serial_number = '987654321'
+        self.check_file_table(filename_with_path, file_type, file_serial_number)
+
+    def test_file_type(self):
+        file_types_list = list(GarminDB.File.FileType)
+        self.assertIn(GarminDB.File.FileType.convert(Fit.FieldEnums.FileType.goals), file_types_list)
 
 
 @unittest.skipIf(db_skip, 'Skip DB tests')
@@ -246,7 +254,7 @@ class TestFit(unittest.TestCase):
         for message_type in message_types:
             if message_type.name.startswith('unknown'):
                 if message_type.name not in self.unknown_messages:
-                    print ("Unknown message type: %s in %s" % (message_type.name, fit_file.type()))
+                    logger.info("Unknown message type: %s in %s" % (message_type.name, fit_file.type()))
                     self.unknown_messages.append(message_type.name)
             messages = fit_file[message_type]
             for message in messages:
@@ -260,10 +268,10 @@ class TestFit(unittest.TestCase):
                 message_type = message.type()
                 field_value = str(message[field_name].value)
                 if message_type not in self.unknown_message_fields:
-                    print ("Unknown %s message field: %s value %s" % (message_type, field_name, field_value))
+                    logger.info("Unknown %s message field: %s value %s" % (message_type, field_name, field_value))
                     self.unknown_message_fields[message_type] = [field_name]
                 elif field_name not in self.unknown_message_fields[message_type]:
-                    print ("Unknown %s message field: %s value: %s" % (message_type, field_name, field_value))
+                    logger.info("Unknown %s message field: %s value: %s" % (message_type, field_name, field_value))
                     self.unknown_message_fields[message_type].append(field_name)
 
     def check_value(self, message, key, expected_value):
@@ -285,7 +293,7 @@ class TestFit(unittest.TestCase):
     def check_temperature(self, message):
         for field_name in message:
             if re.search('temperature_?\a{3}', field_name):
-                print "checking " + field_name
+                logger.info("checking " + field_name)
                 self.check_value_range(message, field_name, 0, 100)
 
     def check_file_id(self, fit_file, file_type):
@@ -299,7 +307,7 @@ class TestFit(unittest.TestCase):
         print ''
         fit_file = Fit.File(filename, self.english_units)
         self.check_message_types(fit_file)
-        print filename + ' message types: ' + repr(fit_file.message_types())
+        logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.monitoring_b)
         messages = fit_file[Fit.MessageType.monitoring]
         for message in messages:
@@ -327,7 +335,7 @@ class TestFit(unittest.TestCase):
     def check_activity_file(self, filename):
         print ''
         fit_file = Fit.File(filename, self.english_units)
-        print filename + ' message types: ' + repr(fit_file.message_types())
+        logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
         self.check_message_types(fit_file)
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.activity)
         for message in fit_file[Fit.MessageType.record]:
