@@ -25,9 +25,6 @@ logger = logging.getLogger(__name__)
 
 class DB(object):
 
-    max_commit_attempts = 5
-    commit_errors = 0
-
     def __init__(self, db_params_dict, debug=False):
         logger.debug("DB %s debug %s ", repr(db_params_dict), str(debug))
         url_func = getattr(self, db_params_dict['db_type'] + '_url')
@@ -78,6 +75,12 @@ class DBObject(object):
         if alt_col_name is None:
             alt_col_name = col_name
         return 'ROUND(%s, %d) AS %s%s ' % (col_name, places, alt_col_name, seperator)
+
+    @classmethod
+    def round_col(cls, col, alt_col_name=None, places=1):
+        if alt_col_name is None:
+            alt_col_name = col_name
+        return 'ROUND(%s, %d) AS %s ' % (str(col), places, alt_col_name)
 
     @declared_attr
     def col_count(cls):
@@ -152,9 +155,7 @@ class DBObject(object):
 
     @classmethod
     def delete_view(cls, db, view_name=None):
-        if view_name is None:
-            view_name = cls.get_default_view_name()
-        cls._delete_view(db, view_name)
+        cls._delete_view(db, view_name if view_name is not None else cls.get_default_view_name())
 
     @classmethod
     def _create_view_if_not_exists(cls, session, view_name, query_str):
@@ -166,10 +167,10 @@ class DBObject(object):
             cls._create_view_if_not_exists(session, view_name, query_str)
 
     @classmethod
-    def create_join_view(cls, db, view_name, join_table):
+    def create_join_view(cls, db, view_name, selectable, join_table, order_by):
         with db.managed_session() as session:
-            query = session.query(cls, join_table).join(join_table)
-            cls._create_view_if_not_exists(db, view_name, str(query))
+            query = Query(selectable, session=session).join(join_table).order_by(order_by)
+            cls._create_view_if_not_exists(session, view_name, str(query))
 
     @classmethod
     def intersection(cls, values_dict):

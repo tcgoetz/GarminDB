@@ -13,7 +13,7 @@ class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
     db_version = 11
-    view_version = 2
+    view_version = 3
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -215,9 +215,13 @@ class SportActivities(DBObject):
     def activity_id(cls):
         return Column(Integer, ForeignKey(Activities.activity_id), primary_key=True)
 
+    @declared_attr
+    def activity(cls):
+        return relationship("Activities")
+
     @classmethod
-    def create_activity_view(cls, db):
-        cls.create_join_view(db, cls.__tablename__ + '_view', Activities)
+    def create_activity_view(cls, db, selectable):
+        cls.create_join_view(db, cls.get_default_view_name(), selectable, Activities, Activities.start_time.desc())
 
 
 class RunActivities(ActivitiesDB.Base, SportActivities):
@@ -245,45 +249,50 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.get_default_view_name()
-        query_str = (
-            'SELECT ' +
-                'activities.activity_id AS activity_id, ' +
-                'activities.name AS name, ' +
-                'activities.description AS description, ' +
-                'activities.type AS type, ' +
-                'activities.course_id AS course_id, ' +
-                'activities.start_time AS start_time, ' +
-                'activities.stop_time AS stop_time, ' +
-                'activities.elapsed_time AS elapsed_time, ' +
-                cls.round_col_text('activities.distance', 'distance') +
-                'run_activities.steps AS steps, ' +
-                'run_activities.avg_pace AS avg_pace, ' +
-                'run_activities.avg_moving_pace AS avg_moving_pace, ' +
-                'run_activities.max_pace AS max_pace, ' +
-                'run_activities.avg_steps_per_min AS avg_steps_per_min, ' +
-                'run_activities.max_steps_per_min AS max_steps_per_min, ' +
-                'activities.avg_hr AS avg_hr, ' +
-                'activities.max_hr AS max_hr, ' +
-                'activities.calories AS calories, ' +
-                'activities.avg_temperature AS avg_temperature, ' +
-                cls.round_col_text('activities.avg_speed', 'avg_speed') +
-                cls.round_col_text('activities.max_speed', 'max_speed') +
-                cls.round_col_text('run_activities.avg_step_length', 'avg_step_length') +
-                cls.round_col_text('run_activities.avg_vertical_ratio', 'avg_vertical_ratio') +
-                cls.round_col_text('run_activities.avg_vertical_oscillation', 'avg_vertical_oscillation') +
-                'run_activities.avg_gct_balance AS avg_gct_balance, ' +
-                'run_activities.avg_ground_contact_time AS avg_ground_contact_time, ' +
-                'run_activities.avg_stance_time_percent AS avg_stance_time_percent, ' +
-                'run_activities.vo2_max AS vo2_max, ' +
-                'activities.training_effect AS training_effect, ' +
-                'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
-                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
-                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
-            'FROM run_activities JOIN activities ON activities.activity_id = run_activities.activity_id ' +
-            'ORDER BY activities.start_time DESC'
+        # The query fails to genarate sql when using the func.round clause.
+        cls.create_activity_view(db,
+            [
+                Activities.activity_id.label('activity_id'),
+                Activities.name.label('name'),
+                Activities.description.label('description'),
+                Activities.type.label('type'),
+                Activities.course_id.label('course_id'),
+                Activities.start_time.label('start_time'),
+                Activities.stop_time.label('stop_time'),
+                Activities.elapsed_time.label('elapsed_time'),
+                # func.round(Activities.distance).label('distance'),
+                cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
+                cls.steps.label('steps'),
+                cls.avg_pace .label('avg_pace'),
+                cls.avg_moving_pace.label('avg_moving_pace'),
+                cls.max_pace.label('max_pace'),
+                cls.avg_steps_per_min.label('avg_steps_per_min'),
+                cls.max_steps_per_min.label('max_steps_per_min'),
+                Activities.avg_hr.label('avg_hr'),
+                Activities.max_hr.label('max_hr'),
+                Activities.calories.label('calories'),
+                # func.round(Activities.avg_temperature).label('avg_temperature'),
+                # func.round(Activities.avg_speed).label('avg_speed'),
+                # func.round(Activities.max_speed).label('max_speed'),
+                # func.round(cls.avg_step_length).label('avg_step_length'),
+                # func.round(cls.avg_vertical_ratio).label('avg_vertical_ratio'),
+                # func.round(cls.avg_vertical_oscillation).label('avg_vertical_oscillation'),
+                cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
+                cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
+                cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
+                cls.round_col(cls.__tablename__ + '.avg_step_length', 'avg_step_length'),
+                cls.round_col(cls.__tablename__ + '.avg_vertical_ratio', 'avg_vertical_ratio'),
+                cls.avg_gct_balance.label('avg_gct_balance'),
+                cls.round_col(cls.__tablename__ + '.avg_vertical_oscillation', 'avg_vertical_oscillation'),
+                cls.avg_ground_contact_time.label('avg_ground_contact_time'),
+                cls.avg_stance_time_percent.label('avg_stance_time_percent'),
+                cls.vo2_max.label('vo2_max'),
+                Activities.training_effect.label('training_effect'),
+                Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
+                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
+                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc',
+            ]
         )
-        cls.create_view_if_doesnt_exist(db, view_name, query_str)
 
 
 class WalkActivities(ActivitiesDB.Base, SportActivities):
@@ -296,35 +305,32 @@ class WalkActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.get_default_view_name()
-        query_str = (
-            'SELECT ' +
-                'activities.activity_id AS activity_id, ' +
-                'activities.name AS name, ' +
-                'activities.description AS description, ' +
-                'activities.type AS type, ' +
-                'activities.start_time AS start_time, ' +
-                'activities.stop_time AS stop_time, ' +
-                'activities.elapsed_time AS elapsed_time, ' +
-                cls.round_col_text('activities.distance', 'distance') +
-                'walk_activities.steps AS steps, ' +
-                'walk_activities.avg_pace AS avg_pace, ' +
-                'walk_activities.max_pace AS max_pace, ' +
-                'activities.avg_hr AS avg_hr, ' +
-                'activities.max_hr AS max_hr, ' +
-                'activities.calories AS calories, ' +
-                'activities.avg_temperature AS avg_temperature, ' +
-                cls.round_col_text('activities.avg_speed', 'avg_speed') +
-                cls.round_col_text('activities.max_speed', 'max_speed') +
-                'walk_activities.vo2_max AS vo2_max, ' +
-                'activities.training_effect AS training_effect, ' +
-                'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
-                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
-                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
-            'FROM walk_activities JOIN activities ON activities.activity_id = walk_activities.activity_id ' +
-            'ORDER BY activities.start_time DESC'
+        cls.create_activity_view(db,
+            [
+                Activities.activity_id.label('activity_id'),
+                Activities.name.label('name'),
+                Activities.description.label('description'),
+                Activities.type.label('type'),
+                Activities.start_time.label('start_time'),
+                Activities.stop_time.label('stop_time'),
+                Activities.elapsed_time.label('elapsed_time'),
+                cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
+                cls.steps.label('steps'),
+                cls.avg_pace .label('avg_pace'),
+                cls.max_pace.label('max_pace'),
+                Activities.avg_hr.label('avg_hr'),
+                Activities.max_hr.label('max_hr'),
+                Activities.calories.label('calories'),
+                cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
+                cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
+                cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
+                cls.vo2_max.label('vo2_max'),
+                Activities.training_effect.label('training_effect'),
+                Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
+                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
+                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc'
+            ]
         )
-        cls.create_view_if_doesnt_exist(db, view_name, query_str)
 
 
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
@@ -335,35 +341,32 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.get_default_view_name()
-        query_str = (
-            'SELECT ' +
-                'activities.activity_id AS activity_id, ' +
-                'activities.name AS name, ' +
-                'activities.description AS description, ' +
-                'activities.type AS type, ' +
-                'activities.start_time AS start_time, ' +
-                'activities.stop_time AS stop_time, ' +
-                'activities.elapsed_time AS elapsed_time, ' +
-                cls.round_col_text('activities.distance', 'distance') +
-                'paddle_activities.strokes AS strokes, ' +
-                cls.round_col_text('paddle_activities.avg_stroke_distance', 'avg_stroke_distance') +
-                'activities.avg_cadence AS avg_strokes_per_min, ' +
-                'activities.max_cadence AS max_strokes_per_min, ' +
-                'activities.avg_hr AS avg_hr, ' +
-                'activities.max_hr AS max_hr, ' +
-                'activities.calories AS calories, ' +
-                'activities.avg_temperature AS avg_temperature, ' +
-                cls.round_col_text('activities.avg_speed', 'avg_speed') +
-                cls.round_col_text('activities.max_speed', 'max_speed') +
-                'activities.training_effect AS training_effect, ' +
-                'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
-                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
-                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
-            'FROM paddle_activities JOIN activities ON activities.activity_id = paddle_activities.activity_id ' +
-            'ORDER BY activities.start_time DESC'
+        cls.create_activity_view(db,
+            [
+                Activities.activity_id.label('activity_id'),
+                Activities.name.label('name'),
+                Activities.description.label('description'),
+                Activities.type.label('type'),
+                Activities.start_time.label('start_time'),
+                Activities.stop_time.label('stop_time'),
+                Activities.elapsed_time.label('elapsed_time'),
+                cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
+                cls.strokes.label('strokes'),
+                cls.round_col(cls.__tablename__ + '.avg_stroke_distance', 'avg_stroke_distance'),
+                Activities.avg_cadence.label('avg_cadence'),
+                Activities.max_cadence.label('max_cadence'),
+                Activities.avg_hr.label('avg_hr'),
+                Activities.max_hr.label('max_hr'),
+                Activities.calories.label('calories'),
+                cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
+                cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
+                cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
+                Activities.training_effect.label('training_effect'),
+                Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
+                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
+                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc'
+            ]
         )
-        cls.create_view_if_doesnt_exist(db, view_name, query_str)
 
 
 class CycleActivities(ActivitiesDB.Base, SportActivities):
@@ -373,35 +376,32 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.get_default_view_name()
-        query_str = (
-            'SELECT ' +
-                'activities.activity_id AS activity_id, ' +
-                'activities.name AS name, ' +
-                'activities.description AS description, ' +
-                'activities.type AS type, ' +
-                'activities.start_time AS start_time, ' +
-                'activities.stop_time AS stop_time, ' +
-                'activities.elapsed_time AS elapsed_time, ' +
-                cls.round_col_text('activities.distance', 'distance') +
-                'cycle_activities.strokes AS strokes, ' +
-                'activities.avg_hr AS avg_hr, ' +
-                'activities.max_hr AS max_hr, ' +
-                'activities.calories AS calories, ' +
-                'activities.avg_temperature AS avg_temperature, ' +
-                'activities.avg_cadence AS avg_rpms, ' +
-                'activities.max_cadence AS max_rpms, ' +
-                cls.round_col_text('activities.avg_speed', 'avg_speed') +
-                cls.round_col_text('activities.max_speed', 'max_speed') +
-                'cycle_activities.vo2_max AS vo2_max, ' +
-                'activities.training_effect AS training_effect, ' +
-                'activities.anaerobic_training_effect AS anaerobic_training_effect, ' +
-                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc, ' +
-                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc ' +
-            'FROM cycle_activities JOIN activities ON activities.activity_id = cycle_activities.activity_id ' +
-            'ORDER BY activities.start_time DESC'
+        cls.create_activity_view(db,
+            [
+                Activities.activity_id.label('activity_id'),
+                Activities.name.label('name'),
+                Activities.description.label('description'),
+                Activities.type.label('type'),
+                Activities.start_time.label('start_time'),
+                Activities.stop_time.label('stop_time'),
+                Activities.elapsed_time.label('elapsed_time'),
+                cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
+                cls.strokes.label('strokes'),
+                Activities.avg_hr.label('avg_hr'),
+                Activities.max_hr.label('max_hr'),
+                Activities.calories.label('calories'),
+                cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
+                Activities.avg_cadence.label('avg_rpms'),
+                Activities.max_cadence.label('max_rpms'),
+                cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
+                cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
+                cls.vo2_max.label('vo2_max'),
+                Activities.training_effect.label('training_effect'),
+                Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
+                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
+                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc'
+            ]
         )
-        cls.create_view_if_doesnt_exist(db, view_name, query_str)
 
 
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
@@ -412,27 +412,25 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.get_default_view_name()
-        query_str = (
-            'SELECT ' +
-                'activities.activity_id AS activity_id, ' +
-                'activities.name AS name, ' +
-                'activities.description AS description, ' +
-                'activities.type AS type, ' +
-                'activities.start_time AS start_time, ' +
-                'activities.stop_time AS stop_time, ' +
-                'activities.elapsed_time AS elapsed_time, ' +
-                'elliptical_activities.steps AS steps, ' +
-                cls.round_col_text('elliptical_activities.elliptical_distance', 'distance') +
-                'activities.avg_hr AS avg_hr, ' +
-                'activities.max_hr AS max_hr, ' +
-                'activities.calories AS calories, ' +
-                cls.round_col_text('activities.avg_cadence', 'avg_rpms') +
-                'activities.max_cadence AS max_rpms, ' +
-                cls.round_col_text('activities.avg_speed', 'avg_speed') +
-                'activities.training_effect AS training_effect, ' +
-                'activities.anaerobic_training_effect AS anaerobic_training_effect ' +
-            'FROM elliptical_activities JOIN activities ON activities.activity_id = elliptical_activities.activity_id ' +
-            'ORDER BY activities.start_time DESC'
+        cls.create_activity_view(db,
+            [
+                Activities.activity_id.label('activity_id'),
+                Activities.name.label('name'),
+                Activities.description.label('description'),
+                Activities.type.label('type'),
+                Activities.start_time.label('start_time'),
+                Activities.stop_time.label('stop_time'),
+                Activities.elapsed_time.label('elapsed_time'),
+                cls.steps.label('steps'),
+                cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
+                Activities.avg_hr.label('avg_hr'),
+                Activities.max_hr.label('max_hr'),
+                Activities.calories.label('calories'),
+                cls.round_col(Activities.__tablename__ + '.avg_cadence', 'avg_rpms'),
+                cls.round_col(Activities.__tablename__ + '.max_cadence', 'max_rpms'),
+                cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
+                Activities.training_effect.label('training_effect'),
+                Activities.anaerobic_training_effect.label('anaerobic_training_effect')
+            ]
         )
-        cls.create_view_if_doesnt_exist(db, view_name, query_str)
+
