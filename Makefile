@@ -1,5 +1,7 @@
 
-PYTHON=python
+TOP=$(PWD)
+
+include defines.mk
 
 #
 # Install Python dependancies as root?
@@ -31,19 +33,6 @@ else
 endif
 GC_DAYS ?= 31
 
-
-HEALTH_DATA_DIR=$(HOME)/HealthData
-FIT_FILE_DIR=$(HEALTH_DATA_DIR)/FitFiles
-FITBIT_FILE_DIR=$(HEALTH_DATA_DIR)/FitBitFiles
-MSHEALTH_FILE_DIR=$(HEALTH_DATA_DIR)/MSHealth
-DB_DIR=$(HEALTH_DATA_DIR)/DBs
-BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
-MONITORING_FIT_FILES_DIR=$(FIT_FILE_DIR)/$(YEAR)_Monitoring
-SLEEP_FILES_DIR=$(HEALTH_DATA_DIR)/Sleep
-ACTIVITES_FIT_FILES_DIR=$(FIT_FILE_DIR)/Activities
-WEIGHT_FILES_DIR=$(HEALTH_DATA_DIR)/Weight
-RHR_FILES_DIR=$(HEALTH_DATA_DIR)/RHR
-
 BIN_DIR=$(PWD)/bin
 
 TMPDIR = $(shell mktemp -d)
@@ -63,16 +52,14 @@ BUGREPORT=bugreport.txt
 
 PYTHON_PACKAGES=sqlalchemy requests python-dateutil enum34
 
-
+.PHONY: all setup build_dbs rebuild_dbs clean clean_dbs test
 #
 # Master targets
 #
-
 all: update_dbs
 
 # install all needed code
 setup: update deps
-
 
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs clean_summary_db
 
@@ -379,13 +366,8 @@ mshealth_db: $(MSHEALTH_DB)
 #
 # test
 #
-test: test_all
-
-test_all:
-	export DB_DIR=$(DB_DIR); export TEST_DB_DIR=$(TEST_DB_DIR); export DB_SKIP="False" && $(PYTHON) test.py
-
-test_non_db:
-	export export DB_SKIP="True" && $(PYTHON) test.py
+test:
+	export TOP=$(TOP) && $(MAKE) -C test
 
 
 #

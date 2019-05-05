@@ -1,0 +1,121 @@
+#!/usr/bin/env python
+
+#
+# copyright Tom Goetz
+#
+
+import unittest, os, logging, sys, datetime, re
+
+sys.path.append('../.')
+
+import GarminDB
+
+
+root_logger = logging.getLogger()
+handler = logging.FileHandler('garmindb.log', 'w')
+root_logger.addHandler(handler)
+root_logger.setLevel(logging.INFO)
+
+logger = logging.getLogger(__name__)
+db_dir = os.environ['DB_DIR']
+
+
+class TestGarminDb(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.db_params_dict = {}
+        cls.db_params_dict['db_type'] = 'sqlite'
+        cls.db_params_dict['db_path'] = db_dir
+
+    def check_col_stat(self, value_name, value, bounds):
+        min_value, max_value = bounds
+        self.assertGreaterEqual(value, min_value, '%s value %s less than min %s' % (value_name, value, min_value))
+        self.assertLessEqual(value, max_value, '%s value %s greater than max %s' % (value_name, value, max_value))
+        logger.info("%s: %s", value_name, str(value))
+
+    def check_col_stats(self, db, table, col, col_name, ignore_le_zero, time_col,
+        records_bounds, max_bounds, min_bounds, avg_bounds, latest_bounds):
+        self.check_col_stat(col_name + ' records', table.row_count(db), records_bounds)
+        if time_col:
+            maximum = table.get_time_col_max(db, col)
+        else:
+            maximum = table.get_col_max(db, col)
+        self.check_col_stat(col_name + ' max', maximum, max_bounds)
+        if time_col:
+            minimum = table.get_time_col_min(db, col, None, None)
+        else:
+            minimum = table.get_col_min(db, col, None, None, ignore_le_zero)
+        self.check_col_stat(col_name + ' min', minimum, min_bounds)
+        if time_col:
+            average = table.get_time_col_avg(db, col, None, None)
+        else:
+            average = table.get_col_avg(db, col, None, None, ignore_le_zero)
+        self.check_col_stat(col_name + ' avg', average, avg_bounds)
+        self.check_col_stat(col_name + ' latest', table.get_col_latest(db, col), latest_bounds)
+
+    def test_garmindb_exists(self):
+        garmindb = GarminDB.GarminDB(self.db_params_dict)
+        self.assertIsNotNone(garmindb)
+
+    def test_garmindb_tables_exists(self):
+        garmindb = GarminDB.GarminDB(self.db_params_dict)
+        self.assertGreater(GarminDB.Attributes.row_count(garmindb), 0)
+        self.assertGreater(GarminDB.Device.row_count(garmindb), 0)
+        self.assertGreater(GarminDB.DeviceInfo.row_count(garmindb), 0)
+        self.assertGreater(GarminDB.File.row_count(garmindb), 0)
+        self.assertGreater(GarminDB.Weight.row_count(garmindb), 0)
+        self.assertGreater(GarminDB.Stress.row_count(garmindb), 0)
+        self.assertGreater(GarminDB.Sleep.row_count(garmindb), 0)
+        self.assertGreater(GarminDB.SleepEvents.row_count(garmindb), 0)
+        self.assertGreater(GarminDB.RestingHeartRate.row_count(garmindb), 0)
+
+    def test_garmindb_tables_bounds(self):
+        garmindb = GarminDB.GarminDB(self.db_params_dict)
+        self.check_col_stats(
+            garmindb, GarminDB.Weight, GarminDB.Weight.weight, 'Weight', False, False,
+            (0, 10*365),
+            (25, 300),
+            (25, 300),
+            (25, 300),
+            (25, 300)
+        )
+        stress_min = -2
+        stress_max = 100
+        self.check_col_stats(
+            garmindb, GarminDB.Stress, GarminDB.Stress.stress, 'Stress', True, False,
+            (1, 10000000),
+            (25, 100),
+            (stress_min, 2),
+            (stress_min, stress_max),
+            (stress_min, stress_max)
+        )
+        self.check_col_stats(
+            garmindb, GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'RHR', True, False,
+            (1, 10000000),
+            (30, 100),
+            (30, 100),
+            (30, 100),
+            (30, 100)
+        )
+        self.check_col_stats(
+            garmindb, GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'Sleep', True, True,
+            (1, 10000000),
+            (datetime.time(8), datetime.time(12)),
+            (datetime.time(0), datetime.time(4)),
+            (datetime.time(4), datetime.time(10)),
+            (datetime.time(2), datetime.time(12))
+        )
+        self.check_col_stats(
+            garmindb, GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True, True,
+            (1, 10000000),
+            (datetime.time(2), datetime.time(4)),           # max
+            (datetime.time(0), datetime.time(2)),           # min
+            (datetime.time(1), datetime.time(6)),           # avg
+            (datetime.time(minute=10), datetime.time(6))    # latest
+        )
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
+
