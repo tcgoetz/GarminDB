@@ -428,16 +428,6 @@ def main(argv):
         print "Missing arguments: must specify <db params> with --sqlite or --mysql"
         usage(sys.argv[0])
 
-    download = Download()
-    if not download.login(username, password, profile):
-        sys.exit()
-
-    if activities and activity_count > 0:
-        logger.info("Fetching %d activities" % activity_count)
-        download.get_activity_types(activities, overwite)
-        download.get_activities(activities, activity_count, overwite)
-        download.unzip_files(activities)
-
     if latest and monitoring:
         mondb = GarminDB.MonitoringDB(db_params_dict)
         last_ts = GarminDB.Monitoring.latest_time(mondb)
@@ -487,6 +477,16 @@ def main(argv):
             # start from the day after the last day in the DB
             logger.info("Automatically downloading rhr data from: " + str(last_ts))
             days = (date - last_ts).days
+
+    download = Download()
+    if not download.login(username, password, profile):
+        sys.exit()
+
+    if activities and activity_count > 0:
+        logger.info("Fetching %d activities" % activity_count)
+        download.get_activity_types(activities, overwite)
+        download.get_activities(activities, activity_count, overwite)
+        download.unzip_files(activities)
 
     if monitoring and days > 0:
         logger.info("Date range to update: %s (%d)" % (str(date), days))
