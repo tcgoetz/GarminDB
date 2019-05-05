@@ -6,6 +6,8 @@
 
 import unittest, os, logging, sys, datetime, re
 
+from sqlalchemy.exc import IntegrityError
+
 import GarminDB
 import Fit
 from FileProcessor import *
@@ -19,6 +21,7 @@ root_logger.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 db_dir = os.environ['DB_DIR']
+test_db_dir = os.environ['TEST_DB_DIR']
 db_skip = os.environ['DB_SKIP'] == 'True'
 
 
@@ -121,7 +124,14 @@ class TestGarminDb(unittest.TestCase):
 
 class TestGarminDbObjects(unittest.TestCase):
 
-    def check_file_table(self, filename_with_path, file_type, file_serial_number):
+    @classmethod
+    def setUpClass(cls):
+        cls.db_params_dict = {}
+        cls.db_params_dict['db_type'] = 'sqlite'
+        cls.db_params_dict['db_path'] = test_db_dir
+
+    def check_file_obj(self, filename_with_path, file_type, file_serial_number):
+        garmindb = GarminDB.GarminDB(self.db_params_dict)
         (file_id, file_name) = GarminDB.File.name_and_id_from_path(filename_with_path)
         file_dict = {
             'id'            : file_id,
@@ -130,19 +140,29 @@ class TestGarminDbObjects(unittest.TestCase):
             'serial_number' : file_serial_number,
         }
         logger.info("check_file_table: %s", repr(file_dict))
-        file = GarminDB.File(**file_dict)
+        GarminDB.File.find_or_create(garmindb, file_dict)
+        file = GarminDB.File.find_one(garmindb, file_dict)
         self.assertEqual(file.id, file_dict['id'])
         self.assertEqual(file.name, file_dict['name'])
         self.assertEqual(file.type, file_dict['type'])
         self.assertEqual(file.serial_number, file_dict['serial_number'])
 
     def test_file_good(self):
-        file_id = '123345678'
-        filename = file_id + '.fit'
+        file_id = 123345678
+        filename = '%d.fit' % file_id
         filename_with_path = '/test/directory/' + filename
-        file_type = Fit.FieldEnums.FileType.goals
-        file_serial_number = '987654321'
-        self.check_file_table(filename_with_path, file_type, file_serial_number)
+        file_type = GarminDB.File.FileType.fit_goals
+        file_serial_number = 987654321
+        self.check_file_obj(filename_with_path, file_type, file_serial_number)
+
+    def test_file_bad_type(self):
+        file_id = 123345678
+        filename = '%d.fit' % file_id
+        filename_with_path = '/test/directory/' + filename
+        file_type = 'xxxxx'
+        file_serial_number = 987654321
+        with self.assertRaises(IntegrityError):
+            self.check_file_obj(filename_with_path, file_type, file_serial_number)
 
     def test_file_type(self):
         file_types_list = list(GarminDB.File.FileType)
@@ -277,13 +297,11 @@ class TestFit(unittest.TestCase):
     def check_value(self, message, key, expected_value):
         if key in message:
             value = message[key].value
-            # print '\t' + repr(message[key])
             self.assertEqual(value, expected_value)
 
     def check_value_range(self, message, key, min_value, max_value):
         if key in message:
             value = message[key].value
-            # print '\t' + repr(message[key])
             self.assertGreaterEqual(value, min_value)
             self.assertLess(value, max_value)
 
@@ -299,19 +317,16 @@ class TestFit(unittest.TestCase):
     def check_file_id(self, fit_file, file_type):
         messages = fit_file[Fit.MessageType.file_id]
         for message in messages:
-            # print repr(message._fields)
             self.check_value(message, 'manufacturer', Fit.FieldEnums.Manufacturer.Garmin)
             self.check_value(message, 'type', file_type)
 
     def check_monitoring_file(self, filename):
-        print ''
         fit_file = Fit.File(filename, self.english_units)
         self.check_message_types(fit_file)
         logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.monitoring_b)
         messages = fit_file[Fit.MessageType.monitoring]
         for message in messages:
-            # print repr(message._fields)
             self.check_message_fields(message)
             self.check_value_range(message, 'distance', 0, 100 * 5280)
             self.check_value_range(message, 'cum_ascent', 0, 5280)
@@ -325,7 +340,6 @@ class TestFit(unittest.TestCase):
 
     def check_lap_or_record(self, message):
         self.check_message_fields(message)
-        # print repr(message._fields)
         if 'distance' in message and message['distance'].value > 0.1:
             self.check_value_range(message, 'distance', 0, 100 * 5280)
             self.check_value_range(message, 'avg_vertical_oscillation', 0, 10)
@@ -333,7 +347,6 @@ class TestFit(unittest.TestCase):
             self.check_value_range(message, 'speed', 0, 25)
 
     def check_activity_file(self, filename):
-        print ''
         fit_file = Fit.File(filename, self.english_units)
         logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
         self.check_message_types(fit_file)

@@ -146,7 +146,7 @@ class File(GarminDB.Base, DBObject):
     @classmethod
     def name_and_id_from_path(cls, pathname):
         name = os.path.basename(pathname)
-        id = name.split('.')[0]
+        id = int(name.split('.')[0])
         return (id, name)
 
     @classmethod
