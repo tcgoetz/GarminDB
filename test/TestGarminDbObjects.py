@@ -16,7 +16,7 @@ from FileProcessor import *
 
 
 root_logger = logging.getLogger()
-handler = logging.FileHandler('garmindb_objects.log', 'w')
+handler = logging.FileHandler('garmin_b_objects.log', 'w')
 root_logger.addHandler(handler)
 root_logger.setLevel(logging.INFO)
 

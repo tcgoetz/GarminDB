@@ -176,6 +176,35 @@ class GarminProfile(JsonFileProcessor):
         return len(attributes)
 
 
+class GarminSummaryData(JsonFileProcessor):
+
+    def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
+        super(GarminSummaryData, self).__init__(input_file, input_dir, 'daily_summary_\d{4}-\d{2}-\d{2}\.json', latest, debug)
+        self.garmin_db = GarminDB.GarminDB(db_params_dict)
+        self.conversions = {'calendarDate' : dateutil.parser.parse}
+
+    def process_json(self, json_data):
+        day = json_data['calendarDate'].date()
+        description_str = json_data['wellnessDescription']
+        (description, extra_data) = GarminDB.DailyExtraData.from_string(description_str)
+        summary = {
+            'day'                   : day,
+            'step_goal'             : json_data['dailyStepGoal'],
+            'calories_goal'         : json_data['netCalorieGoal'],
+            'calories_total'        : json_data['totalKilocalories'],
+            'calories_bmr'          : json_data['bmrKilocalories'],
+            'calories_active'       : json_data['activeKilocalories'],
+            'calories_consumed'     : json_data['consumedKilocalories'],
+            'description'           : description,
+        }
+        GarminDB.DailySummary.create_or_update_not_none(self.garmin_db, summary)
+        if extra_data:
+            extra_data['day'] = day
+            logger.info("Extra data: %s", repr(extra_data))
+            GarminDB.DailyExtraData.create_or_update_not_none(self.garmin_db, extra_data)
+        return 1
+
+
 def usage(program):
     print '%s [-s <sqlite db path> | -m <user,password,host>] [-i <fit_inputfile> | -d <fit_input_dir>] ...' % program
     print '    --trace : turn on debug tracing'
@@ -277,6 +306,9 @@ def main(argv):
             gwd.process()
 
     if fit_input_file or fit_input_dir:
+        gsd = GarminSummaryData(db_params_dict, fit_input_file, fit_input_dir, latest, debug)
+        if gsd.file_count() > 0:
+            gsd.process()
         gfd = GarminFitData(fit_input_file, fit_input_dir, latest, english_units, debug)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)

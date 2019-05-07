@@ -219,6 +219,8 @@ class GarminJsonSummaryData(JsonFileProcessor):
 
     def process_json(self, json_data):
         activity_id = json_data['activityId']
+        description_str = self.get_field(json_data, 'description')
+        (description, extra_data) = GarminDB.ActivitiesExtraData.from_string(description_str)
         distance = self.get_field_obj(json_data, 'distance', Fit.Conversions.Distance.from_meters)
         ascent = self.get_field_obj(json_data, 'elevationGain', Fit.Conversions.Distance.from_meters)
         descent = self.get_field_obj(json_data, 'elevationLoss', Fit.Conversions.Distance.from_meters)
@@ -234,7 +236,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
         activity = {
             'activity_id'               : activity_id,
             'name'                      : json_data['activityName'],
-            'description'               : self.get_field(json_data, 'description'),
+            'description'               : description,
             'type'                      : event.name,
             'sport'                     : sport.name,
             'sub_sport'                 : sub_sport.name,
@@ -260,6 +262,9 @@ class GarminJsonSummaryData(JsonFileProcessor):
             'anaerobic_training_effect' : self.get_field(json_data, 'anaerobicTrainingEffect', float),
         }
         GarminDB.Activities._create_or_update_not_none(self.garmin_act_db_session, activity)
+        if extra_data:
+            extra_data['activity_id'] = activity_id
+            GarminDB.ActivitiesExtraData._create_or_update_not_none(self.garmin_act_db_session, extra_data)
         try:
             process_function = 'process_' + sub_sport.name
             function = getattr(self, process_function)

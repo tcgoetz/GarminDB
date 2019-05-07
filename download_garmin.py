@@ -45,7 +45,6 @@ class Download():
     garmin_connect_hr_daily_url = garmin_connect_wellness_url + "/dailyHeartRate"
     garmin_connect_stress_daily_url = garmin_connect_wellness_url + "/dailyStress"
     garmin_connect_sleep_daily_url = garmin_connect_wellness_url + "/dailySleepData"
-
     garmin_connect_rhr_url = garmin_connect_modern_proxy_url + "/userstats-service/wellness/daily"
     garmin_connect_weight_url = garmin_connect_modern_proxy_url + "/weight-service/weight/dateRange"
 
@@ -56,6 +55,9 @@ class Download():
     garmin_connect_activity_search_url = garmin_connect_modern_proxy_url + "/activitylist-service/activities/search/activities"
 
     garmin_connect_course_url = garmin_connect_modern_proxy_url + "/course-service/course"
+
+    garmin_connect_usersummary_url = garmin_connect_modern_proxy_url + "/usersummary-service/usersummary"
+    garmin_connect_daily_summary_url = garmin_connect_usersummary_url + "/daily/"
 
     agents = {
         'Chrome_Linux'  : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337 Safari/537.36',
@@ -171,7 +173,7 @@ class Download():
             return False
         self.user_prefs = self.get_json(response.text, 'VIEWER_USERPREFERENCES')
         if profile_dir:
-            self.save_json_file(profile_dir + "/profile", self.user_prefs)
+            self.save_json_file(profile_dir + "/profile.json", self.user_prefs)
         self.display_name = self.user_prefs['displayName']
         self.english_units = (self.user_prefs['measurementSystem'] == 'statute_us')
         self.social_profile = self.get_json(response.text, 'VIEWER_SOCIAL_PROFILE')
@@ -212,6 +214,25 @@ class Download():
                 files_zip.extractall(outdir)
                 files_zip.close()
 
+    def get_summary_day(self, directory, day, overwite=False):
+        date_str = day.strftime('%Y-%m-%d')
+        params = {
+            'calendarDate' : date_str,
+            '_'         : str(Conversions.dt_to_epoch_ms(Conversions.date_to_dt(day)))
+        }
+        url = self.garmin_connect_daily_summary_url + self.display_name
+        return self.download_json_file('get_summary_day', url, params, directory + '/daily_summary_' + date_str, overwite)
+
+    def get_daily_summaries(self, directory, date, days, overwite):
+        day = date
+        logger.info("get_daily_summaries: %s - %s", day, date)
+        while self.get_summary_day(directory, day, overwite):
+            day = day + datetime.timedelta(1)
+            if day > date + datetime.timedelta(days):
+                break
+            # pause for a second between every page access
+            time.sleep(1)
+
     def get_monitoring_day(self, date):
         logger.info("get_monitoring_day: %s", str(date))
         response = self.get(self.garmin_connect_download_daily_url + '/' + date.strftime("%Y-%m-%d"))
@@ -235,10 +256,10 @@ class Download():
         }
         return self.download_json_file('get_weight_day', self.garmin_connect_weight_url, params, directory + '/weight_' + date_str, overwite)
 
-    def get_weight(self, directory, date, days):
+    def get_weight(self, directory, date, days, overwite):
         day = date - datetime.timedelta(days)
         logger.info("get_weight: %s - %s", day, date)
-        while self.get_weight_day(directory, day):
+        while self.get_weight_day(directory, day, overwite):
             day = day + datetime.timedelta(1)
             if day > date:
                 break
@@ -296,11 +317,11 @@ class Download():
         }
         return self.download_json_file('get_sleep_day', self.garmin_connect_sleep_daily_url + '/' + self.display_name, params, json_filename, overwite)
 
-    def get_sleep(self, directory, date, days):
+    def get_sleep(self, directory, date, days, overwite):
         logger.info("get_sleep: %s : %d" % (str(date), days))
         for day in xrange(0, days):
             day_date = date + datetime.timedelta(day)
-            self.get_sleep_day(directory, day_date)
+            self.get_sleep_day(directory, day_date, overwite)
             # pause for a second between every page access
             time.sleep(1)
 
@@ -314,10 +335,10 @@ class Download():
         }
         return self.download_json_file('get_rhr_day', self.garmin_connect_rhr_url + '/' + self.display_name, params, json_filename, overwite)
 
-    def get_rhr(self, directory, date, days):
+    def get_rhr(self, directory, date, days, overwite):
         day = date - datetime.timedelta(days)
         logger.info("get_rhr: %s - %s", day, date)
-        while self.get_rhr_day(directory, day):
+        while self.get_rhr_day(directory, day, overwite):
             day = day + datetime.timedelta(1)
             if day > date:
                 break
@@ -490,20 +511,21 @@ def main(argv):
 
     if monitoring and days > 0:
         logger.info("Date range to update: %s (%d)" % (str(date), days))
-        download.get_monitoring(date, days)
-        download.unzip_files(monitoring)
+        download.get_daily_summaries(monitoring, date, days, overwite)
+        # download.get_monitoring(date, days)
+        # download.unzip_files(monitoring)
         logger.info("Saved monitoring files for %s (%d) to %s for processing" % (str(date), days, monitoring))
 
     if sleep and days > 0:
         logger.info("Date range to update: %s (%d)" % (str(date), days))
-        download.get_sleep(sleep, date, days)
+        download.get_sleep(sleep, date, days, overwite)
         logger.info("Saved sleep files for %s (%d) to %s for processing" % (str(date), days, sleep))
 
     if weight and days > 0:
-       download.get_weight(weight, date, days)
+       download.get_weight(weight, date, days, overwite)
 
     if rhr and days > 0:
-        download.get_rhr(rhr, date, days)
+        download.get_rhr(rhr, date, days, overwite)
 
 
 if __name__ == "__main__":

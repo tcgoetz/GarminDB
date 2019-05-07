@@ -5,6 +5,8 @@
 #
 
 from HealthDB import *
+from ExtraData import *
+
 
 logger = logging.getLogger(__name__)
 
@@ -433,4 +435,12 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
                 Activities.anaerobic_training_effect.label('anaerobic_training_effect')
             ]
         )
+
+
+class ActivitiesExtraData(ActivitiesDB.Base, ExtraData):
+    __tablename__ = 'activities_extra_data'
+
+    activity_id = Column(Integer, ForeignKey(Activities.activity_id), primary_key=True)
+
+    match_col_names = ['activity_id']
 

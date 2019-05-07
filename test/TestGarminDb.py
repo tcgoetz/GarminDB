@@ -12,7 +12,7 @@ import GarminDB
 
 
 root_logger = logging.getLogger()
-handler = logging.FileHandler('garmindb.log', 'w')
+handler = logging.FileHandler('garmin_db.log', 'w')
 root_logger.addHandler(handler)
 root_logger.setLevel(logging.INFO)
 

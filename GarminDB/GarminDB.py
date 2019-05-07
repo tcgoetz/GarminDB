@@ -5,6 +5,7 @@
 #
 
 from HealthDB import *
+from ExtraData import *
 from Fit import FieldEnums
 
 
@@ -249,4 +250,27 @@ class RestingHeartRate(GarminDB.Base, DBObject):
             'rhr_max' : cls.get_col_max(db, cls.resting_heart_rate, start_ts, end_ts),
         }
         return stats
+
+
+class DailySummary(GarminDB.Base, DBObject):
+    __tablename__ = 'daily_summary'
+
+    day = Column(Date, primary_key=True)
+    step_goal = Column(Integer)
+    calories_goal = Column(Integer)
+    calories_total = Column(Integer)
+    calories_bmr = Column(Integer)
+    calories_active = Column(Integer)
+    calories_consumed = Column(Integer)
+    description = Column(String)
+
+    time_col_name = 'day'
+
+
+class DailyExtraData(GarminDB.Base, ExtraData):
+    __tablename__ = 'daily_extra_data'
+
+    day = Column(Date, primary_key=True)
+
+    time_col_name = 'day'
 
