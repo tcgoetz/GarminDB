@@ -55,14 +55,17 @@ class ExtraData(DBObject):
         if string is not None:
             match = re.match(r'(.*)(\{.+\})', string, re.M|re.S)
             if match:
-                extra_data = json.loads(match.group(2))
-                mood = extra_data.get('mood', None)
-                if mood is not None:
-                    extra_data['mood'] = Mood.from_string(mood)
-                condition = extra_data.get('condition', None)
-                if condition is not None:
-                    extra_data['condition'] = Condition.from_string(condition)
-                return (match.group(1), extra_data)
+                return (match.group(1), json.loads(match.group(2)))
             return (string, None)
         return (None, None)
+
+    @classmethod
+    def convert_eums(cls, extra_data):
+        mood = extra_data.get('mood', None)
+        if mood is not None:
+            extra_data['mood'] = Mood.from_string(mood)
+        condition = extra_data.get('condition', None)
+        if condition is not None:
+            extra_data['condition'] = Condition.from_string(condition)
+        return extra_data
 

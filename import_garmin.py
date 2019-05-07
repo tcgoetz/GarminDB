@@ -178,8 +178,10 @@ class GarminProfile(JsonFileProcessor):
 
 class GarminSummaryData(JsonFileProcessor):
 
-    def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
+    def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
         super(GarminSummaryData, self).__init__(input_file, input_dir, 'daily_summary_\d{4}-\d{2}-\d{2}\.json', latest, debug)
+        self.input_dir = input_dir
+        self.english_units = english_units
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'calendarDate' : dateutil.parser.parse}
 
@@ -187,9 +189,15 @@ class GarminSummaryData(JsonFileProcessor):
         day = json_data['calendarDate'].date()
         description_str = json_data['wellnessDescription']
         (description, extra_data) = GarminDB.DailyExtraData.from_string(description_str)
+        distance = Fit.Conversions.Distance.from_meters(json_data['totalDistanceMeters'])
         summary = {
             'day'                   : day,
             'step_goal'             : json_data['dailyStepGoal'],
+            'steps'                 : json_data['totalSteps'],
+            'intensity_mins_goal'   : json_data['intensityMinutesGoal'],
+            'floors_up'             : json_data['floorsAscended'],
+            'floors_down'           : json_data['floorsDescended'],
+            'distance'              : distance.to_miles() if self.english_units else distance.to_kms(),
             'calories_goal'         : json_data['netCalorieGoal'],
             'calories_total'        : json_data['totalKilocalories'],
             'calories_bmr'          : json_data['bmrKilocalories'],
@@ -201,7 +209,23 @@ class GarminSummaryData(JsonFileProcessor):
         if extra_data:
             extra_data['day'] = day
             logger.info("Extra data: %s", repr(extra_data))
-            GarminDB.DailyExtraData.create_or_update_not_none(self.garmin_db, extra_data)
+            json_filename = self.input_dir + '/extra_data_' + day.strftime("%Y-%m-%d") + '.json'
+            if not os.path.isfile(json_filename):
+                self.save_json_file(json_filename, extra_data)
+        return 1
+
+
+class GarminExtraData(JsonFileProcessor):
+
+    def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
+        super(GarminExtraData, self).__init__(input_file, input_dir, 'extra_data_\d{4}-\d{2}-\d{2}\.json', latest, debug)
+        self.garmin_db = GarminDB.GarminDB(db_params_dict)
+        self.conversions = {'day' : dateutil.parser.parse}
+
+    def process_json(self, json_data):
+        logger.info("Extra data: %s", repr(json_data))
+        json_data['day'] = json_data['day'].date()
+        GarminDB.DailyExtraData.create_or_update_not_none(self.garmin_db, GarminDB.DailyExtraData.convert_eums(json_data))
         return 1
 
 
@@ -306,9 +330,12 @@ def main(argv):
             gwd.process()
 
     if fit_input_file or fit_input_dir:
-        gsd = GarminSummaryData(db_params_dict, fit_input_file, fit_input_dir, latest, debug)
+        gsd = GarminSummaryData(db_params_dict, fit_input_file, fit_input_dir, latest, english_units, debug)
         if gsd.file_count() > 0:
             gsd.process()
+        ged = GarminExtraData(db_params_dict, fit_input_file, fit_input_dir, latest, debug)
+        if ged.file_count() > 0:
+            ged.process()
         gfd = GarminFitData(fit_input_file, fit_input_dir, latest, english_units, debug)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)

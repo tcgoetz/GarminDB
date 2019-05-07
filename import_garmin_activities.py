@@ -264,7 +264,9 @@ class GarminJsonSummaryData(JsonFileProcessor):
         GarminDB.Activities._create_or_update_not_none(self.garmin_act_db_session, activity)
         if extra_data:
             extra_data['activity_id'] = activity_id
-            GarminDB.ActivitiesExtraData._create_or_update_not_none(self.garmin_act_db_session, extra_data)
+            json_filename = self.input_dir + '/extra_data_' + activity_id + '.json'
+            if not os.path.isfile(json_filename):
+                self.save_json_file(json_filename, extra_data)
         try:
             process_function = 'process_' + sub_sport.name
             function = getattr(self, process_function)
@@ -326,6 +328,18 @@ class GarminJsonDetailsData(JsonFileProcessor):
     def process(self):
         with self.garmin_act_db.managed_session() as self.garmin_act_db_session:
             self.process_files()
+
+
+class GarminExtraData(JsonFileProcessor):
+
+    def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
+        super(GarminExtraData, self).__init__(input_file, input_dir, 'extra_data_\\d*\.json', latest, debug)
+        self.garmin_db = GarminDB.GarminDB(db_params_dict)
+
+    def process_json(self, json_data):
+        logger.info("Extra data: %s", repr(json_data))
+        GarminDB.ActivitiesExtraData.create_or_update_not_none(self.garmin_db, GarminDB.DailyExtraData.convert_eums(json_data))
+        return 1
 
 
 def usage(program):
@@ -390,6 +404,10 @@ def main(argv):
     gdjd = GarminJsonDetailsData(db_params_dict, input_file, input_dir, latest, english_units, debug)
     if gdjd.file_count() > 0:
         gdjd.process()
+
+    ged = GarminExtraData(db_params_dict, input_file, input_dir, latest, debug)
+    if ged.file_count() > 0:
+        ged.process()
 
     gtd = GarminTcxData(input_file, input_dir, latest, english_units, debug)
     if gtd.file_count() > 0:

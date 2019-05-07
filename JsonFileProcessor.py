@@ -52,6 +52,14 @@ class JsonFileProcessor(object):
         except KeyError as e:
             logger.debug("JSON %s not found in %s: %s", fieldname, repr(json), str(e))
 
+    def convert_to_json(self, object):
+        return object.__str__()
+
+    def save_json_file(self, json_full_filname, json_data):
+        with open(json_full_filname, 'w') as file:
+            logger.info("save_json_file: %s", json_full_filname)
+            file.write(json.dumps(json_data, default=self.convert_to_json))
+
     def process_json(self, json_data):
         pass
 

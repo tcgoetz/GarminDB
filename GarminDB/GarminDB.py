@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
-    db_version = 7
+    db_version = 8
     view_version = 3
 
     class DbVersion(Base, DbVersionObject):
@@ -257,6 +257,11 @@ class DailySummary(GarminDB.Base, DBObject):
 
     day = Column(Date, primary_key=True)
     step_goal = Column(Integer)
+    steps = Column(Integer)
+    intensity_mins_goal = Column(Integer)
+    floors_up = Column(Float)
+    floors_down = Column(Float)
+    distance = Column(Float)
     calories_goal = Column(Integer)
     calories_total = Column(Integer)
     calories_bmr = Column(Integer)
