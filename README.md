@@ -1,5 +1,7 @@
 [![Screen shot of browsing the DB](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/ScreenShot_browsing_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
+[![Screen shot of DB listing](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/ScreenShot_db_listing.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+
 # GarminDB
 
 [Python scripts](https://www.python.org/) for parsing health data into and manipulating data in a [SQLite](http://sqlite.org/) DB. SQLite is a light weight DB that requires no server.
