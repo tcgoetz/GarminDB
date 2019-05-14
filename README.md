@@ -15,7 +15,7 @@ What they can do:
 * Summarizing data into a common DB with tables containing daily summaries, weekly summaries, and monthly summaries.
 * Retain data as JSON files or FIT files so that the DB can be regenerated without connecting to Garmin.
 
-Once you have your data in the DB, I recomend using a SQLite browser like [SQLite Studio](http://sqlitestudio.pl) or [DB Browser for SQLite](https://sqlitebrowser.org/) for browsing and working with the data. The scripts create some defaults [views](http://www.tutorialspoint.com/sqlite/sqlite_views.htm) that make browsing the data easier.
+Once you have your data in the DB, I recomend using a SQLite browser like [SQLite Studio](http://sqlitestudio.pl) or [DB Browser for SQLite](https://sqlitebrowser.org/) for browsing and working with the data. The scripts create some default [views](http://www.tutorialspoint.com/sqlite/sqlite_views.htm) in the DBs that make browsing the data easier.
 
 # Using It
 
