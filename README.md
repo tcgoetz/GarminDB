@@ -6,14 +6,14 @@
 
 What they can do:
 * Automatically download and import Garmin daily monitoring files (all day heart rate, activity, climb/decend, stress, and intensity minutes) from the user's Garmin Connect "Daily Summary" page.
-* Extract sleep, weight, and resting heart rate data from Garmin Connect and import it into the DB.
+* Extract sleep, weight, and resting heart rate data from Garmin Connect, store ity as JSON files, and import it into the DB.
 * Download and import activity files from Garmin Connect. A summary table for all activities and more detailed data for some activity types. Lap and record entries for activities.
 * Import Fitbit daily summary CSV files (files with one summary entry per day).
 * Import MS Health daily summary CSV files and MS Health Vault weight export CSV files.
 * Summarizing data into a common DB with tables containing daily summaries, weekly summaries, and monthly summaries.
 * Retain data as JSON files or FIT files so that the DB can be regenerated without connecting to Garmin.
 
-Once you have your data in the DB, I recomend using a SQLite browser like [SQLite Studio](http://sqlitestudio.pl) (or [DB Browser for SQLite](https://sqlitebrowser.org/)) for browsing and working with the data.
+Once you have your data in the DB, I recomend using a SQLite browser like [SQLite Studio](http://sqlitestudio.pl) or [DB Browser for SQLite](https://sqlitebrowser.org/) for browsing and working with the data.
 
 # Using It
 
@@ -29,7 +29,7 @@ More [usage](https://github.com/tcgoetz/GarminDB/wiki/Usage)
 
 # Notes
 
-* If you get a DB version exception, the DB schema was updated and you need to rebuild your DBs by running `make GC_USER={username} GC_PASSWORD={password} rebuild_dbs`.
+* If you get a DB version exception, the DB schema was updated and you need to rebuild your DBs by running `make GC_USER={username} GC_PASSWORD={password} rebuild_dbs`. Your DBs will be regenerated from the donwloaded data files. All of your data will not be redownloaded.
 * The scripts were developed on OSX. Information or patches that on using these scripts on other platforms are welcome.
 * Running the scripts on Linux should require little or no changes.
 * I'm not sure what it would take to run these scripts on Windows. Installing the [Ubuntu subsystem](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) on Windows 10 is one possibility. Using a Linux container is another possibility.
