@@ -11,7 +11,7 @@ include $(PROJECT_BASE)/defines.mk
 #
 all: db dbobjects fit
 
-db: garmindb activitiesdb monitoringdb garminsummarydb
+db: garmindb activitiesdb monitoringdb garminsummarydb summarydb
 
 dbobjects: garmindb_objects
 
@@ -36,6 +36,9 @@ monitoringdb:
 
 garminsummarydb:
 	export DB_DIR=$(DB_DIR) && $(PYTHON) TestGarminSummaryDB.py
+
+summarydb:
+	export DB_DIR=$(DB_DIR) && $(PYTHON) TestSummaryDB.py
 
 fit:
 	export DB_DIR=$(DB_DIR) && $(PYTHON) TestFit.py

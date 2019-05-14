@@ -10,11 +10,11 @@ from TestSummaryDBBase import TestSummaryDBBase
 
 sys.path.append('../.')
 
-import GarminDB
+import HealthDB
 
 
 root_logger = logging.getLogger()
-handler = logging.FileHandler('garmin_summary_db.log', 'w')
+handler = logging.FileHandler('summary_db.log', 'w')
 root_logger.addHandler(handler)
 root_logger.setLevel(logging.INFO)
 
@@ -22,20 +22,20 @@ logger = logging.getLogger(__name__)
 db_dir = os.environ['DB_DIR']
 
 
-class TestGarminSummaryDB(TestSummaryDBBase, unittest.TestCase):
+class TestSummaryDB(TestSummaryDBBase, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.db_params_dict = {}
         cls.db_params_dict['db_type'] = 'sqlite'
         cls.db_params_dict['db_path'] = db_dir
-        db = GarminDB.GarminSummaryDB(cls.db_params_dict)
-        super(TestGarminSummaryDB, cls).setUpClass(db,
+        db = HealthDB.SummaryDB(cls.db_params_dict)
+        super(TestSummaryDB, cls).setUpClass(db,
             {
-                'summary_table' : GarminDB.Summary,
-                'months_table' : GarminDB.MonthsSummary,
-                'weeks_table' : GarminDB.WeeksSummary,
-                'days_table' : GarminDB.DaysSummary
+                'summary_table' : HealthDB.Summary,
+                'months_table' : HealthDB.MonthsSummary,
+                'weeks_table' : HealthDB.WeeksSummary,
+                'days_table' : HealthDB.DaysSummary
             }
         )
 

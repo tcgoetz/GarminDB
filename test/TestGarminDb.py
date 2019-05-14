@@ -6,6 +6,8 @@
 
 import unittest, os, logging, sys, datetime, re
 
+from TestDBBase import TestDBBase
+
 sys.path.append('../.')
 
 import GarminDB
@@ -20,13 +22,27 @@ logger = logging.getLogger(__name__)
 db_dir = os.environ['DB_DIR']
 
 
-class TestGarminDb(unittest.TestCase):
+class TestGarminDb(TestDBBase, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.db_params_dict = {}
         cls.db_params_dict['db_type'] = 'sqlite'
         cls.db_params_dict['db_path'] = db_dir
+        cls.garmindb = GarminDB.GarminDB(cls.db_params_dict)
+        super(TestGarminDb, cls).setUpClass(cls.garmindb,
+            {
+                'attributes_table' : GarminDB.Attributes,
+                'device_table' : GarminDB.Device,
+                'device_info_table' : GarminDB.DeviceInfo,
+                'file_table' : GarminDB.File,
+                'weight_table' : GarminDB.Weight,
+                'stress_table' : GarminDB.Stress,
+                'sleep_table' : GarminDB.Sleep,
+                'sleep_events_table' : GarminDB.SleepEvents,
+                'resting_heart_rate_table' : GarminDB.RestingHeartRate
+            }
+        )
 
     def check_col_stat(self, value_name, value, bounds):
         min_value, max_value = bounds
@@ -54,26 +70,9 @@ class TestGarminDb(unittest.TestCase):
         self.check_col_stat(col_name + ' avg', average, avg_bounds)
         self.check_col_stat(col_name + ' latest', table.get_col_latest(db, col), latest_bounds)
 
-    def test_garmindb_exists(self):
-        garmindb = GarminDB.GarminDB(self.db_params_dict)
-        self.assertIsNotNone(garmindb)
-
-    def test_garmindb_tables_exists(self):
-        garmindb = GarminDB.GarminDB(self.db_params_dict)
-        self.assertGreater(GarminDB.Attributes.row_count(garmindb), 0)
-        self.assertGreater(GarminDB.Device.row_count(garmindb), 0)
-        self.assertGreater(GarminDB.DeviceInfo.row_count(garmindb), 0)
-        self.assertGreater(GarminDB.File.row_count(garmindb), 0)
-        self.assertGreater(GarminDB.Weight.row_count(garmindb), 0)
-        self.assertGreater(GarminDB.Stress.row_count(garmindb), 0)
-        self.assertGreater(GarminDB.Sleep.row_count(garmindb), 0)
-        self.assertGreater(GarminDB.SleepEvents.row_count(garmindb), 0)
-        self.assertGreater(GarminDB.RestingHeartRate.row_count(garmindb), 0)
-
     def test_garmindb_tables_bounds(self):
-        garmindb = GarminDB.GarminDB(self.db_params_dict)
         self.check_col_stats(
-            garmindb, GarminDB.Weight, GarminDB.Weight.weight, 'Weight', False, False,
+            self.garmindb, GarminDB.Weight, GarminDB.Weight.weight, 'Weight', False, False,
             (0, 10*365),
             (25, 300),
             (25, 300),
@@ -83,7 +82,7 @@ class TestGarminDb(unittest.TestCase):
         stress_min = -2
         stress_max = 100
         self.check_col_stats(
-            garmindb, GarminDB.Stress, GarminDB.Stress.stress, 'Stress', True, False,
+            self.garmindb, GarminDB.Stress, GarminDB.Stress.stress, 'Stress', True, False,
             (1, 10000000),
             (25, 100),
             (stress_min, 2),
@@ -91,7 +90,7 @@ class TestGarminDb(unittest.TestCase):
             (stress_min, stress_max)
         )
         self.check_col_stats(
-            garmindb, GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'RHR', True, False,
+            self.garmindb, GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'RHR', True, False,
             (1, 10000000),
             (30, 100),
             (30, 100),
@@ -99,7 +98,7 @@ class TestGarminDb(unittest.TestCase):
             (30, 100)
         )
         self.check_col_stats(
-            garmindb, GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'Sleep', True, True,
+            self.garmindb, GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'Sleep', True, True,
             (1, 10000000),
             (datetime.time(8), datetime.time(12)),
             (datetime.time(0), datetime.time(4)),
@@ -107,7 +106,7 @@ class TestGarminDb(unittest.TestCase):
             (datetime.time(2), datetime.time(12))
         )
         self.check_col_stats(
-            garmindb, GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True, True,
+            self.garmindb, GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True, True,
             (1, 10000000),
             (datetime.time(2), datetime.time(4)),           # max
             (datetime.time(0), datetime.time(2)),           # min

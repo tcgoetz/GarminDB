@@ -28,16 +28,17 @@ ifeq ($(OS), Darwin)
 	GC_PASSWORD ?= $(shell security find-internet-password -s sso.garmin.com -w)
 	GC_DATE ?= $(shell date -v-1m +'%m/%d/%Y')
 else
-	# store the username and password in ~/.garmindb.conf ?
 	GC_DATE ?= $(shell date -d '-1 month' +'%m/%d/%Y')
 endif
-GC_USER = $(shell cat $(PROJECT_BASE)/.gc_user.conf)
+GC_USER ?= $(shell cat $(PROJECT_BASE)/.gc_user.conf)
+GC_PASSWORD ?= $(shell cat $(PROJECT_BASE)/.gc_password.conf)
 GC_DAYS ?= 31
 
+#
+# All third party Python packages needed to use the project. They will be installed with pip.
+#
 PYTHON_PACKAGES=sqlalchemy requests python-dateutil enum34
 
-test_target:
-	echo $(GC_USER)
 
 #
 # Master targets
@@ -96,7 +97,7 @@ remove_deps: clean_deps_tcxparser
 clean_deps:
 	$(DEPS_SUDO) $(MAKE) remove_deps
 
-clean:
+clean: test_clean clean_deps_tcxparser
 	rm -rf *.pyc
 	rm -rf Fit/*.pyc
 	rm -rf HealthDB/*.pyc
@@ -354,6 +355,9 @@ mshealth_db: $(MSHEALTH_DB)
 #
 test:
 	export PROJECT_BASE=$(PROJECT_BASE) && $(MAKE) -C test
+
+test_clean:
+	export PROJECT_BASE=$(PROJECT_BASE) && $(MAKE) -C clean
 
 
 #
