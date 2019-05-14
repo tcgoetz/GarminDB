@@ -1,15 +1,27 @@
+#
+# This Makefile automates running tests for the project.
+#
+PROJECT_BASE ?= $(PWD)/../.
 
-TOP ?= $(PWD)/../.
-
-include $(TOP)/defines.mk
+include $(PROJECT_BASE)/defines.mk
 
 
+#
+# Over all targets
+#
 all: db dbobjects fit
 
 db: garmindb activitiesdb monitoringdb garminsummarydb
 
 dbobjects: garmindb_objects
 
+clean:
+	rm -f *.pyc
+	rm -f *.log
+
+#
+# Targets for testing smaller slices of functionality.
+#
 garmindb:
 	export DB_DIR=$(DB_DIR) && $(PYTHON) TestGarminDb.py
 
@@ -27,7 +39,3 @@ garminsummarydb:
 
 fit:
 	export DB_DIR=$(DB_DIR) && $(PYTHON) TestFit.py
-
-clean:
-	rm -f *.pyc
-	rm -f *.log

@@ -110,5 +110,7 @@ bugreport.txt
 
 *.fit
 *.html
+.*.conf
+
 
 

@@ -1,12 +1,14 @@
-
-TOP=$(PWD)
+#
+# This Makefile handles downloading data from Garmin Connect and generating SQLite DB files from that data. The Makefile targets handle the dependaancies
+# between downloading and geenrating varies types of data. It wraps the core Python scripts and runs them with appropriate parameters.
+#
+PROJECT_BASE=$(PWD)
 
 include defines.mk
 
 #
 # Install Python dependancies as root?
 #
-INSTALL_DEPS_TO_SYSTEM ?= y
 ifeq ($(INSTALL_DEPS_TO_SYSTEM), y)
 	DEPS_SUDO = sudo
 else
@@ -18,12 +20,10 @@ ARCH := $(shell uname -p)
 EPOCH=$(shell date +'%s')
 YEAR=$(shell date +'%Y')
 
-#
-# Automatically get the username and pasword
-#
 ifeq ($(OS), Darwin)
-	# Find the username and password from the OSX keychain. Works if you have logged into Garmin Connect from Safari or you manually set it.
-	# If your using iCloud Keychaion, you have to copy the entry from the iCloud keychain to the login keychain using KeychainAccess.app.
+	# Find the Garmin Connect username and password from the OSX keychain. Works if you have logged into Garmin Connect from Safari and
+	# choosen to save your password or you manually set it.  If your using iCloud Keychain, you have to copy the entry from the iCloud
+	# keychain to the login keychain using KeychainAccess.app.
 	GC_USER ?= $(shell security find-internet-password -s sso.garmin.com | egrep acct | egrep -o "[A-Za-z]*@[A-Za-z.]*" )
 	GC_PASSWORD ?= $(shell security find-internet-password -s sso.garmin.com -w)
 	GC_DATE ?= $(shell date -v-1m +'%m/%d/%Y')
@@ -31,28 +31,14 @@ else
 	# store the username and password in ~/.garmindb.conf ?
 	GC_DATE ?= $(shell date -d '-1 month' +'%m/%d/%Y')
 endif
+GC_USER = $(shell cat $(PROJECT_BASE)/.gc_user.conf)
 GC_DAYS ?= 31
-
-BIN_DIR=$(PWD)/bin
-
-TMPDIR = $(shell mktemp -d)
-
-TEST_FILE_DIR=$(HOME)/Downloads
-TEST_DB_DIR=$(TMPDIR)
-
-DEFAULT_SLEEP_START=22:00
-DEFAULT_SLEEP_STOP=06:00
-
-TEST_GC_ID ?= 10724054307
-
-# define UNITS_OPT="" for metric
-UNITS_OPT ?= "-e"
-
-BUGREPORT=bugreport.txt
 
 PYTHON_PACKAGES=sqlalchemy requests python-dateutil enum34
 
-.PHONY: all setup build_dbs rebuild_dbs clean clean_dbs test
+test_target:
+	echo $(GC_USER)
+
 #
 # Master targets
 #
@@ -77,10 +63,10 @@ create_dbs: download_garmin build_dbs
 # update the exisitng dbs by downloading data files for dates after the last in the dbs and update the dbs
 update_dbs: update_garmin
 
-#
-#
-#
 
+#
+# Project maintainance targets
+#
 update: submodules_update
 	git pull --rebase
 
@@ -120,7 +106,7 @@ clean:
 
 
 #
-# Fitness System independant
+# Fitness System independant targets
 #
 SUMMARY_DB=$(DB_DIR)/summary.db
 $(SUMMARY_DB): $(DB_DIR)
@@ -141,7 +127,7 @@ backup: $(BACKUP_DIR)
 
 
 #
-# Garmin
+# Garmin targets
 #
 garmin_profile:
 	$(PYTHON) import_garmin.py -t1 --profile_dir "$(FIT_FILE_DIR)" --sqlite $(DB_DIR)
@@ -322,7 +308,7 @@ clean_garmin_dbs: clean_garmin_db clean_garmin_summary_db clean_monitoring_db cl
 
 
 #
-# FitBit
+# FitBit targets
 #
 FITBIT_DB=$(DB_DIR)/fitbit.db
 $(FITBIT_DB): $(DB_DIR) import_fitbit_file
@@ -343,7 +329,7 @@ fitbit_db: $(FITBIT_DB)
 
 
 #
-# MS Health
+# MS Health targets
 #
 MSHEALTH_DB=$(DB_DIR)/mshealth.db
 $(MSHEALTH_DB): $(DB_DIR) import_mshealth
@@ -364,14 +350,14 @@ mshealth_db: $(MSHEALTH_DB)
 
 
 #
-# test
+# test targets
 #
 test:
-	export TOP=$(TOP) && $(MAKE) -C test
+	export PROJECT_BASE=$(PROJECT_BASE) && $(MAKE) -C test
 
 
 #
-# bugreport
+# bugreport target
 #
 bugreport:
 	uname -a > $(BUGREPORT)
@@ -382,3 +368,4 @@ bugreport:
 		pip show $$package >> $(BUGREPORT); \
 	done
 
+.PHONY: all setup build_dbs rebuild_dbs clean clean_dbs test
