@@ -31,7 +31,7 @@ More [usage](https://github.com/tcgoetz/GarminDB/wiki/Usage)
 
 # Notes
 
-* If you get a DB version exception, the DB schema was updated and you need to rebuild your DBs by running `make GC_USER={username} GC_PASSWORD={password} rebuild_dbs`. Your DBs will be regenerated from the donwloaded data files. All of your data will not be redownloaded.
+* You may get a DB version exception after updating the code, this means that the DB schema was updated and you need to rebuild your DBs by running `make GC_USER={username} GC_PASSWORD={password} rebuild_dbs`. Your DBs will be regenerated from the previously donwloaded data files. All of your data will not be redownloaded from Garmin.
 * The scripts were developed on MacOS. Information or patches on using these scripts on other platforms are welcome.
 * Running the scripts on Linux should require little or no changes.
 * There are two ways to use this project on Windows. Installing the [Ubuntu subsystem](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) on Windows 10 is one way. Using a Linux container or VM is also possibie.
