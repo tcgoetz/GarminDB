@@ -19,7 +19,7 @@ Once you have your data in the DB, I recomend using a SQLite browser like [SQLit
 
 # Using It
 
-The scripts are automated with [Make](https://www.gnu.org/software/make/manual/make.html). Run the Make commands in a terminal window. You may need to reconfigure the file and directory paths in the makefile variables.
+The scripts are automated with [Make](https://www.gnu.org/software/make/manual/make.html). Run the Make commands in a terminal window. You may need to reconfigure the file and directory paths in the variables in the file `defines.mk`.
 
 * Git clone GarminDB repo. Get the command from the green button on the project home page.
 * Run `make setup` get the scripts ready to process data.
