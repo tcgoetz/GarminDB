@@ -8,7 +8,7 @@
 
 What they can do:
 * Automatically download and import Garmin daily monitoring files (all day heart rate, activity, climb/decend, stress, and intensity minutes) from the user's Garmin Connect "Daily Summary" page.
-* Extract sleep, weight, and resting heart rate data from Garmin Connect, store ity as JSON files, and import it into the DB.
+* Extract sleep, weight, and resting heart rate data from Garmin Connect, store it as JSON files, and import it into the DB.
 * Download and import activity files from Garmin Connect. A summary table for all activities and more detailed data for some activity types. Lap and record entries for activities.
 * Import Fitbit daily summary CSV files (files with one summary entry per day).
 * Import MS Health daily summary CSV files and MS Health Vault weight export CSV files.
@@ -23,7 +23,7 @@ The scripts are automated with [Make](https://www.gnu.org/software/make/manual/m
 
 * Git clone GarminDB repo. Get the command from the green button on the project home page.
 * Run `make setup` get the scripts ready to process data.
-* Run `make GC_DATE=<date to start downloading data from> GC_DAYS={number of days of data to download} GC_USER={username} GC_PASSWORD={password} create_dbs` for your first run. Example: `make GC_DATE=01/01/2018 GC_DAYS=365 GC_USER=joe GC_PASSWORD=mysecretpassword create_dbs`.
+* Run `make GC_DATE={date to start downloading data from} GC_DAYS={number of days of data to download} GC_USER={username} GC_PASSWORD={password} create_dbs` for your first run. Example: `make GC_DATE=01/01/2018 GC_DAYS=365 GC_USER=joe GC_PASSWORD=mysecretpassword create_dbs`.
 * Keep all of your local data up to date by running only one command: `make GC_USER={username} GC_PASSWORD={password}`. Example: `make GC_USER=bob GC_PASSWORD=password1234`.
 * Run `make backup` to backup your DBs.
 
