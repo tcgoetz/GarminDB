@@ -13,7 +13,10 @@ from JsonFileProcessor import *
 import GarminDB
 import GarminConnectEnums
 
+import GarminDBConfigManager
 
+
+logging.basicConfig(level=logging.INFO)
 root_logger = logging.getLogger()
 logger = logging.getLogger(__file__)
 
@@ -343,7 +346,7 @@ class GarminExtraData(JsonFileProcessor):
 
 
 def usage(program):
-    print '%s [-s <sqlite db path> | -m <user,password,host>] [-i <inputfile> | -d <input_dir>] ...' % program
+    print '%s  [-input_file <inputfile>] ...' % program
     print '    --trace : turn on debug tracing'
     print '    --english : units - use feet, lbs, etc'
     print '    '
@@ -351,69 +354,58 @@ def usage(program):
 
 def main(argv):
     debug = 0
-    input_dir = None
+    test_db = False
     input_file = None
     latest = False
-    db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"d:eilm::s:t:", ["trace=", "latest", "input_dir=", "input_file=", "mysql=", "sqlite="])
+        opts, args = getopt.getopt(argv,"d:hi:lt", ["debug=", "latest", "input_file=", "test_db"])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
     for opt, arg in opts:
         if opt == '-h':
             usage(sys.argv[0])
-        elif opt in ("-t", "--trace"):
+        elif opt in ("-d", "--debug"):
             debug = int(arg)
-        elif opt in ("-d", "--input_dir"):
-            input_dir = arg
+        elif opt in ("-t", "--test_db"):
+            test_db = True
         elif opt in ("-i", "--input_file"):
             logging.debug("Input File: %s" % arg)
             input_file = arg
         elif opt in ("-l", "--latest"):
             latest = True
-        elif opt in ("-s", "--sqlite"):
-            logging.debug("Sqlite DB path: %s" % arg)
-            db_params_dict['db_type'] = 'sqlite'
-            db_params_dict['db_path'] = arg
-        elif opt in ("-m", "--mysql"):
-            logging.debug("Mysql DB string: %s" % arg)
-            db_args = arg.split(',')
-            db_params_dict['db_type'] = 'mysql'
-            db_params_dict['db_username'] = db_args[0]
-            db_params_dict['db_password'] = db_args[1]
-            db_params_dict['db_host'] = db_args[2]
+
 
     if debug > 0:
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)
 
+    db_params_dict = GarminDBConfigManager.get_db_params(test_db=test_db)
+
     garmindb = GarminDB.GarminDB(db_params_dict)
     english_units = GarminDB.Attributes.measurements_type_metric(garmindb) == False
 
-    if not (input_file or input_dir) or len(db_params_dict) == 0:
-        print "Missing arguments:"
-        usage(sys.argv[0])
+    activities_dir = GarminDBConfigManager.get_activities_dir()
 
-    gjsd = GarminJsonSummaryData(db_params_dict, input_file, input_dir, latest, english_units, debug)
+    gjsd = GarminJsonSummaryData(db_params_dict, input_file, activities_dir, latest, english_units, debug)
     if gjsd.file_count() > 0:
         gjsd.process()
 
-    gdjd = GarminJsonDetailsData(db_params_dict, input_file, input_dir, latest, english_units, debug)
+    gdjd = GarminJsonDetailsData(db_params_dict, input_file, activities_dir, latest, english_units, debug)
     if gdjd.file_count() > 0:
         gdjd.process()
 
-    ged = GarminExtraData(db_params_dict, input_file, input_dir, latest, debug)
+    ged = GarminExtraData(db_params_dict, input_file, activities_dir, latest, debug)
     if ged.file_count() > 0:
         ged.process()
 
-    gtd = GarminTcxData(input_file, input_dir, latest, english_units, debug)
+    gtd = GarminTcxData(input_file, activities_dir, latest, english_units, debug)
     if gtd.file_count() > 0:
         gtd.process_files(db_params_dict)
 
-    gfd = GarminFitData(input_file, input_dir, latest, english_units, debug)
+    gfd = GarminFitData(input_file, activities_dir, latest, english_units, debug)
     if gfd.file_count() > 0:
         gfd.process_files(db_params_dict)
 

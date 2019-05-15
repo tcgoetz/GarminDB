@@ -10,6 +10,8 @@ import HealthDB
 import FitBitDB
 import Fit.Conversions
 
+import GarminDBConfigManager
+
 
 logger = logging.getLogger(__file__)
 
@@ -72,16 +74,15 @@ class Analyze():
 
 
 def usage(program):
-    print '%s --sqlite <sqlite db path>' % program
+    print '%s ' % program
     sys.exit()
 
 def main(argv):
     debug = False
     dates = False
-    db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"dD:i:s:y", ["dates", "debug", "sqlite=", "mysql="])
+        opts, args = getopt.getopt(argv,"dD:i:y", ["dates", "debug"])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -94,27 +95,14 @@ def main(argv):
         elif opt in ("-D", "--dates"):
             logging.debug("Dates")
             dates = True
-        elif opt in ("-s", "--sqlite"):
-            logging.debug("Sqlite DB path: %s" % arg)
-            db_params_dict['db_type'] = 'sqlite'
-            db_params_dict['db_path'] = arg
-        elif opt in ("--mysql"):
-            logging.debug("Mysql DB string: %s" % arg)
-            db_args = arg.split(',')
-            db_params_dict['db_type'] = 'mysql'
-            db_params_dict['db_username'] = db_args[0]
-            db_params_dict['db_password'] = db_args[1]
-            db_params_dict['db_host'] = db_args[2]
+
 
     if debug:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
 
-    if len(db_params_dict) == 0:
-        print "Missing arguments:"
-        usage(sys.argv[0])
-
+    db_params_dict = GarminDBConfigManager.get_db_params()
     analyze = Analyze(db_params_dict)
     if dates:
         analyze.get_years()

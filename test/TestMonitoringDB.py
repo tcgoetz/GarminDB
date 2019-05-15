@@ -14,6 +14,8 @@ import GarminDB
 import Fit
 from FileProcessor import *
 
+import GarminDBConfigManager
+
 
 root_logger = logging.getLogger()
 handler = logging.FileHandler('monitoring_db.log', 'w')
@@ -21,16 +23,13 @@ root_logger.addHandler(handler)
 root_logger.setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
-db_dir = os.environ['DB_DIR']
 
 
 class TestMonitoringDB(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.db_params_dict = {}
-        cls.db_params_dict['db_type'] = 'sqlite'
-        cls.db_params_dict['db_path'] = db_dir
+        cls.db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
 
     def test_garmin_mon_db_exists(self):
         garmin_mon_db = GarminDB.MonitoringDB(self.db_params_dict)

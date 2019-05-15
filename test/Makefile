@@ -23,22 +23,22 @@ clean:
 # Targets for testing smaller slices of functionality.
 #
 garmindb:
-	export DB_DIR=$(DB_DIR) && $(PYTHON) TestGarminDb.py
+	$(PYTHON) TestGarminDb.py
 
 garmindb_objects:
-	export DB_DIR=$(TEST_DB_DIR) && $(PYTHON) TestGarminDbObjects.py
+	$(PYTHON) TestGarminDbObjects.py
 
 activitiesdb:
-	export DB_DIR=$(DB_DIR) && $(PYTHON) TestActivitiesDb.py
+	$(PYTHON) TestActivitiesDb.py
 
 monitoringdb:
-	export DB_DIR=$(DB_DIR) && $(PYTHON) TestMonitoringDB.py
+	$(PYTHON) TestMonitoringDB.py
 
 garminsummarydb:
-	export DB_DIR=$(DB_DIR) && $(PYTHON) TestGarminSummaryDB.py
+	$(PYTHON) TestGarminSummaryDB.py
 
 summarydb:
-	export DB_DIR=$(DB_DIR) && $(PYTHON) TestSummaryDB.py
+	$(PYTHON) TestSummaryDB.py
 
 fit:
-	export DB_DIR=$(DB_DIR) && $(PYTHON) TestFit.py
+	$(PYTHON) TestFit.py

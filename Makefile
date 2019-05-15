@@ -15,24 +15,6 @@ else
 	DEPS_SUDO =
 endif
 
-OS := $(shell uname -s)
-ARCH := $(shell uname -p)
-EPOCH=$(shell date +'%s')
-YEAR=$(shell date +'%Y')
-
-ifeq ($(OS), Darwin)
-	# Find the Garmin Connect username and password from the OSX keychain. Works if you have logged into Garmin Connect from Safari and
-	# choosen to save your password or you manually set it.  If your using iCloud Keychain, you have to copy the entry from the iCloud
-	# keychain to the login keychain using KeychainAccess.app.
-	GC_USER ?= $(shell security find-internet-password -s sso.garmin.com | egrep acct | egrep -o "[A-Za-z]*@[A-Za-z.]*" )
-	GC_PASSWORD ?= $(shell security find-internet-password -s sso.garmin.com -w)
-	GC_DATE ?= $(shell date -v-1m +'%m/%d/%Y')
-else
-	GC_DATE ?= $(shell date -d '-1 month' +'%m/%d/%Y')
-endif
-GC_USER ?= $(shell cat $(PROJECT_BASE)/.gc_user.conf)
-GC_PASSWORD ?= $(shell cat $(PROJECT_BASE)/.gc_password.conf)
-GC_DAYS ?= 31
 
 #
 # All third party Python packages needed to use the project. They will be installed with pip.
@@ -58,7 +40,7 @@ rebuild_dbs: clean_dbs build_dbs
 rebuild_activity_db: clean_activities_db build_activities_db
 rebuild_summary_db: clean_garmin_summary_db clean_summary_db build_garmin_summary_db
 
-# download data files for the period specified by GC_DATE and GC_DAYS and build the dbs
+# download data files for the period specified in GarminConnectConfig.py and build the dbs
 create_dbs: download_garmin build_dbs
 
 # update the exisitng dbs by downloading data files for dates after the last in the dbs and update the dbs
@@ -97,7 +79,7 @@ remove_deps: clean_deps_tcxparser
 clean_deps:
 	$(DEPS_SUDO) $(MAKE) remove_deps
 
-clean: test_clean clean_deps_tcxparser
+clean: test_clean
 	rm -rf *.pyc
 	rm -rf Fit/*.pyc
 	rm -rf HealthDB/*.pyc
@@ -110,19 +92,17 @@ clean: test_clean clean_deps_tcxparser
 # Fitness System independant targets
 #
 SUMMARY_DB=$(DB_DIR)/summary.db
-$(SUMMARY_DB): $(DB_DIR)
+$(SUMMARY_DB): summary
 
 summary: mshealth_summary fitbit_summary garmin_summary
 
 clean_summary_db:
 	rm -f $(SUMMARY_DB)
 
-$(DB_DIR):
-	mkdir -p $(DB_DIR)
-
 $(BACKUP_DIR):
 	mkdir -p $(BACKUP_DIR)
 
+EPOCH=$(shell date +'%s')
 backup: $(BACKUP_DIR)
 	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
 
@@ -130,103 +110,55 @@ backup: $(BACKUP_DIR)
 #
 # Garmin targets
 #
-garmin_profile:
-	$(PYTHON) import_garmin.py -t1 --profile_dir "$(FIT_FILE_DIR)" --sqlite $(DB_DIR)
-
-## test monitoring
-test_import_monitoring: $(DB_DIR)
-	python import_garmin.py -t1 --fit_input_file "$(MONITORING_FIT_FILES_DIR)/$(TEST_GC_ID).fit" --sqlite $(DB_DIR)
-
-test_monitoring_file: $(TEST_DB_DIR)
-	@if [ -z "$(TEST_DB_DIR)" ]; then echo "TEST_DB_DIR is not defined"; fi
-	@if [ -f "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" ]; then \
-		$(PYTHON) import_garmin.py -t1 --fit_input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR); \
-	else \
-		echo "Expecting " $(TEST_GC_ID).fit " to be found in " $(TEST_FILE_DIR) " but it contains:"; \
-		ls -l "$(TEST_FILE_DIR)"; \
-	fi
 
 ##  monitoring
 GARMIN_MON_DB=$(DB_DIR)/garmin_monitoring.db
-$(GARMIN_MON_DB): $(DB_DIR) garmin_profile import_monitoring
+$(GARMIN_MON_DB): import_monitoring
 
 build_monitoring_db: $(GARMIN_MON_DB)
 
 clean_monitoring_db:
 	rm -f $(GARMIN_MON_DB)
 
-$(MONITORING_FIT_FILES_DIR):
-	mkdir -p $(MONITORING_FIT_FILES_DIR)
+download_monitoring:
+	$(PYTHON) download_garmin.py --monitoring
 
-download_monitoring: $(MONITORING_FIT_FILES_DIR)
-	$(PYTHON) download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -m "$(MONITORING_FIT_FILES_DIR)"
+import_monitoring:
+	$(PYTHON) import_garmin.py --monitoring
 
-import_monitoring: $(DB_DIR)
-	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
-		$(PYTHON) import_garmin.py --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
-	done
-
-download_new_monitoring: $(MONITORING_FIT_FILES_DIR) garmin_profile
-	$(PYTHON) download_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -m "$(MONITORING_FIT_FILES_DIR)"
+download_new_monitoring:
+	$(PYTHON) download_garmin.py --latest --monitoring
 
 import_new_monitoring: download_new_monitoring
-	for dir in $(shell ls -d $(FIT_FILE_DIR)/*Monitoring*/); do \
-		$(PYTHON) import_garmin.py -l --fit_input_dir "$$dir" --sqlite $(DB_DIR); \
-	done
+	$(PYTHON) import_garmin.py --latest --monitoring
 
 ## activities
 GARMIN_ACT_DB=$(DB_DIR)/garmin_activities.db
-$(GARMIN_ACT_DB): $(DB_DIR) import_activities
+$(GARMIN_ACT_DB): import_activities
 
 build_activities_db: $(GARMIN_ACT_DB)
 
 clean_activities_db:
 	rm -f $(GARMIN_ACT_DB)
 
-$(ACTIVITES_FIT_FILES_DIR):
-	mkdir -p $(ACTIVITES_FIT_FILES_DIR)
+import_activities:
+	$(PYTHON) import_garmin_activities.py
 
-test_import_fit_activities: $(TEST_DB_DIR)
-	@if [ -z "$(TEST_DB_DIR)" ]; then echo "TEST_DB_DIR is not defined"; fi
-	@if [ -f "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" ]; then \
-		$(PYTHON) import_garmin_activities.py -t1 --input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" --sqlite $(TEST_DB_DIR); \
-	else \
-		echo "Expecting " $(TEST_GC_ID).fit " to be found in " $(TEST_FILE_DIR) " but it contains:"; \
-		ls -l "$(TEST_FILE_DIR)"; \
-	fi
+import_new_activities: download_new_activities
+	$(PYTHON) import_garmin_activities.py --latest
 
-test_import_details_json_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	$(PYTHON) import_garmin_activities.py -t1 --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_details_$(TEST_GC_ID).json" --sqlite $(DB_DIR)
+download_new_activities:
+	$(PYTHON) download_garmin.py --activities -c 10
 
-test_import_tcx_activities: $(TEST_DB_DIR) $(TEST_FILE_DIR)
-	$(PYTHON) import_garmin_activities.py -t1 --input_file "$(TEST_FILE_DIR)/$(TEST_GC_ID).tcx" --sqlite $(TEST_DB_DIR)
+download_all_activities:
+	$(PYTHON) download_garmin.py --activities
 
-test_import_json_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	@if [ -z "$(TEST_DB_DIR)" ]; then echo "TEST_DB_DIR is not defined"; fi
-	@if [ -f "$(TEST_FILE_DIR)/$(TEST_GC_ID).fit" ]; then \
-		$(PYTHON) import_garmin_activities.py -t1 --input_file "$(ACTIVITES_FIT_FILES_DIR)/activity_$(TEST_GC_ID).json" --sqlite $(DB_DIR); \
-	else \
-		echo "Expecting " $(TEST_GC_ID).fit " to be found in " $(TEST_FILE_DIR) " but it contains:"; \
-		ls -l "$(TEST_FILE_DIR)"; \
-	fi
-import_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR)
-	$(PYTHON) import_garmin_activities.py --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
-
-import_new_activities: $(DB_DIR) $(ACTIVITES_FIT_FILES_DIR) download_new_activities
-	$(PYTHON) import_garmin_activities.py -l --input_dir "$(ACTIVITES_FIT_FILES_DIR)" --sqlite $(DB_DIR)
-
-download_new_activities: $(ACTIVITES_FIT_FILES_DIR)
-	$(PYTHON) download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -a "$(ACTIVITES_FIT_FILES_DIR)" -c 10
-
-download_all_activities: $(ACTIVITES_FIT_FILES_DIR)
-	$(PYTHON) download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -a "$(ACTIVITES_FIT_FILES_DIR)"
-
-force_download_all_activities: $(ACTIVITES_FIT_FILES_DIR)
-	$(PYTHON) download_garmin.py --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -a "$(ACTIVITES_FIT_FILES_DIR)" -o
+force_download_all_activities:
+	$(PYTHON) download_garmin.py --activities --overwite
 
 ## generic garmin
 GARMIN_DB=$(DB_DIR)/garmin.db
-$(GARMIN_DB): $(DB_DIR) garmin_profile garmin_config import_sleep import_weight import_rhr
+$(GARMIN_DB): import_sleep import_weight import_rhr
 
 build_garmin_db: $(GARMIN_DB)
 
@@ -234,56 +166,47 @@ clean_garmin_db:
 	rm -f $(GARMIN_DB)
 
 ## sleep
-$(SLEEP_FILES_DIR):
-	mkdir -p $(SLEEP_FILES_DIR)
+download_sleep:
+	$(PYTHON) download_garmin.py --sleep
 
-download_sleep: $(SLEEP_FILES_DIR)
-	$(PYTHON) download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -S "$(SLEEP_FILES_DIR)"
+import_sleep:
+	$(PYTHON) import_garmin.py --sleep
 
-import_sleep: $(SLEEP_FILES_DIR)
-	$(PYTHON) import_garmin.py --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
-
-download_new_sleep: $(SLEEP_FILES_DIR)
-	$(PYTHON) download_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -S "$(SLEEP_FILES_DIR)"
+download_new_sleep:
+	$(PYTHON) download_garmin.py --latest --sleep
 
 import_new_sleep: download_new_sleep
-	$(PYTHON) import_garmin.py -l --sleep_input_dir "$(SLEEP_FILES_DIR)" --sqlite $(DB_DIR)
+	$(PYTHON) import_garmin.py --latest --sleep
 
 ## weight
-$(WEIGHT_FILES_DIR):
-	mkdir -p $(WEIGHT_FILES_DIR)
-
-import_weight: download_weight
-	$(PYTHON) import_garmin.py --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
+import_weight: # download_weight
+	$(PYTHON) import_garmin.py --weight
 
 import_new_weight: download_new_weight
-	$(PYTHON) import_garmin.py -l --weight_input_dir "$(WEIGHT_FILES_DIR)" --sqlite $(DB_DIR)
+	$(PYTHON) import_garmin.py --latest --weight
 
-download_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
-	$(PYTHON) download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
+download_weight:
+	$(PYTHON) download_garmin.py --weight
 
-download_new_weight: $(DB_DIR) $(WEIGHT_FILES_DIR)
-	$(PYTHON) download_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -w "$(WEIGHT_FILES_DIR)"
+download_new_weight:
+	$(PYTHON) download_garmin.py --latest --weight
 
 ## rhr
-$(RHR_FILES_DIR):
-	mkdir -p $(RHR_FILES_DIR)
-
 import_rhr: download_rhr
-	$(PYTHON) import_garmin.py --rhr_input_dir "$(RHR_FILES_DIR)" --sqlite $(DB_DIR)
+	$(PYTHON) import_garmin.py --rhr
 
 import_new_rhr: download_new_rhr
-	$(PYTHON) import_garmin.py -l --rhr_input_dir "$(RHR_FILES_DIR)" --sqlite $(DB_DIR)
+	$(PYTHON) import_garmin.py --latest --rhr
 
-download_rhr: $(DB_DIR) $(RHR_FILES_DIR)
-	$(PYTHON) download_garmin.py -d $(GC_DATE) -n $(GC_DAYS) --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -r "$(RHR_FILES_DIR)"
+download_rhr:
+	$(PYTHON) download_garmin.py --rhr
 
-download_new_rhr: $(DB_DIR) $(RHR_FILES_DIR)
-	$(PYTHON) download_garmin.py -l --sqlite $(DB_DIR) -u $(GC_USER) -p $(GC_PASSWORD) -P "$(FIT_FILE_DIR)" -r "$(RHR_FILES_DIR)"
+download_new_rhr:
+	$(PYTHON) download_garmin.py --latest --rhr
 
 ## digested garmin data
 GARMIN_SUM_DB=$(DB_DIR)/garmin_summary.db
-$(GARMIN_SUM_DB): $(DB_DIR) garmin_summary
+$(GARMIN_SUM_DB): garmin_summary
 
 build_garmin_summary_db: $(GARMIN_SUM_DB)
 
@@ -291,10 +214,7 @@ clean_garmin_summary_db:
 	rm -f $(GARMIN_SUM_DB)
 
 garmin_summary:
-	$(PYTHON) analyze_garmin.py --analyze --dates --sqlite $(DB_DIR)
-
-garmin_config:
-	$(PYTHON) analyze_garmin.py -S$(DEFAULT_SLEEP_START),$(DEFAULT_SLEEP_STOP) --sqlite /Users/tgoetz/HealthData/DBs
+	$(PYTHON) analyze_garmin.py --analyze --dates
 
 #
 # These operations work across all garmin dbs
@@ -312,19 +232,16 @@ clean_garmin_dbs: clean_garmin_db clean_garmin_summary_db clean_monitoring_db cl
 # FitBit targets
 #
 FITBIT_DB=$(DB_DIR)/fitbit.db
-$(FITBIT_DB): $(DB_DIR) import_fitbit_file
+$(FITBIT_DB): import_fitbit_file
 
 clean_fitbit_db:
 	rm -f $(FITBIT_DB)
 
-$(FITBIT_FILE_DIR):
-	mkdir -p $(FITBIT_FILE_DIR)
-
-import_fitbit_file: $(DB_DIR) $(FITBIT_FILE_DIR)
-	$(PYTHON) import_fitbit_csv.py $(UNITS_OPT) --input_dir "$(FITBIT_FILE_DIR)" --sqlite $(DB_DIR)
+import_fitbit_file:
+	$(PYTHON) import_fitbit_csv.py
 
 fitbit_summary: $(FITBIT_DB)
-	$(PYTHON) analyze_fitbit.py --sqlite $(DB_DIR) --dates
+	$(PYTHON) analyze_fitbit.py --dates
 
 fitbit_db: $(FITBIT_DB)
 
@@ -333,19 +250,16 @@ fitbit_db: $(FITBIT_DB)
 # MS Health targets
 #
 MSHEALTH_DB=$(DB_DIR)/mshealth.db
-$(MSHEALTH_DB): $(DB_DIR) import_mshealth
+$(MSHEALTH_DB): import_mshealth
 
 clean_mshealth_db:
 	rm -f $(MSHEALTH_DB)
 
-$(MSHEALTH_FILE_DIR):
-	mkdir -p $(MSHEALTH_FILE_DIR)
+import_mshealth:
+	$(PYTHON) import_mshealth_csv.py
 
-import_mshealth: $(DB_DIR) $(MSHEALTH_FILE_DIR)
-	$(PYTHON) import_mshealth_csv.py $(UNITS_OPT) --input_dir "$(MSHEALTH_FILE_DIR)" --sqlite $(DB_DIR)
-
-mshealth_summary: $(MSHEALTH_DB)
-	$(PYTHON) analyze_mshealth.py --sqlite $(DB_DIR) --dates
+mshealth_summary:
+	$(PYTHON) analyze_mshealth.py --dates
 
 mshealth_db: $(MSHEALTH_DB)
 
@@ -357,7 +271,7 @@ test:
 	export PROJECT_BASE=$(PROJECT_BASE) && $(MAKE) -C test
 
 test_clean:
-	export PROJECT_BASE=$(PROJECT_BASE) && $(MAKE) -C clean
+	export PROJECT_BASE=$(PROJECT_BASE) && $(MAKE) -C test clean
 
 
 #

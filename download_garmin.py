@@ -4,17 +4,25 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, logging, datetime, time, tempfile, zipfile, json
+import os, sys, getopt, re, logging, datetime, time, tempfile, zipfile, json, subprocess, platform
 import dateutil.parser
 import requests
 
+try:
+    import GarminConnectConfig
+except ImportError:
+    print "Missing config: copy GarminConnectConfig.py.orig to GarminConnectConfig.py and edit GarminConnectConfig.py to " + \
+     "add your Garmin Connect username and password."
+    sys.exit(-1)
+
+import GarminDBConfigManager
 import GarminDB
 from Fit import Conversions
 
 
 logging.basicConfig(level=logging.INFO)
 root_logger = logging.getLogger()
-logger = logging.getLogger()
+logger = logging.getLogger(__file__)
 
 
 class Download():
@@ -214,6 +222,17 @@ class Download():
                 files_zip.extractall(outdir)
                 files_zip.close()
 
+    def get_stat(self, stat_function, directory, date, days, overwite):
+        end_date = date + datetime.timedelta(days=days)
+        logger.info("%s : %s -> %s", date, end_date, directory)
+        day = date
+        while stat_function(directory, day, overwite):
+            day = day + datetime.timedelta(1)
+            if day > end_date:
+                break
+            # pause for a second between every page access
+            time.sleep(1)
+
     def get_summary_day(self, directory, day, overwite=False):
         date_str = day.strftime('%Y-%m-%d')
         params = {
@@ -224,14 +243,7 @@ class Download():
         return self.download_json_file('get_summary_day', url, params, directory + '/daily_summary_' + date_str, overwite)
 
     def get_daily_summaries(self, directory, date, days, overwite):
-        day = date
-        logger.info("get_daily_summaries: %s - %s", day, date)
-        while self.get_summary_day(directory, day, overwite):
-            day = day + datetime.timedelta(1)
-            if day > date + datetime.timedelta(days):
-                break
-            # pause for a second between every page access
-            time.sleep(1)
+        self.get_stat(self.get_summary_day, directory, date, days, overwite)
 
     def get_monitoring_day(self, date):
         logger.info("get_monitoring_day: %s", str(date))
@@ -257,14 +269,7 @@ class Download():
         return self.download_json_file('get_weight_day', self.garmin_connect_weight_url, params, directory + '/weight_' + date_str, overwite)
 
     def get_weight(self, directory, date, days, overwite):
-        day = date - datetime.timedelta(days)
-        logger.info("get_weight: %s - %s", day, date)
-        while self.get_weight_day(directory, day, overwite):
-            day = day + datetime.timedelta(1)
-            if day > date:
-                break
-            # pause for a second between every page access
-            time.sleep(1)
+        self.get_stat(self.get_weight_day, directory, date, days, overwite)
 
     def get_activity_summaries(self, start, count):
         logger.info("get_activity_summaries")
@@ -318,12 +323,7 @@ class Download():
         return self.download_json_file('get_sleep_day', self.garmin_connect_sleep_daily_url + '/' + self.display_name, params, json_filename, overwite)
 
     def get_sleep(self, directory, date, days, overwite):
-        logger.info("get_sleep: %s : %d" % (str(date), days))
-        for day in xrange(0, days):
-            day_date = date + datetime.timedelta(day)
-            self.get_sleep_day(directory, day_date, overwite)
-            # pause for a second between every page access
-            time.sleep(1)
+        self.get_stat(self.get_sleep_day, directory, date, days, overwite)
 
     def get_rhr_day(self, directory, day, overwite=False):
         date_str = day.strftime('%Y-%m-%d')
@@ -336,19 +336,45 @@ class Download():
         return self.download_json_file('get_rhr_day', self.garmin_connect_rhr_url + '/' + self.display_name, params, json_filename, overwite)
 
     def get_rhr(self, directory, date, days, overwite):
-        day = date - datetime.timedelta(days)
-        logger.info("get_rhr: %s - %s", day, date)
-        while self.get_rhr_day(directory, day, overwite):
-            day = day + datetime.timedelta(1)
-            if day > date:
-                break
-            # pause for a second between every page access
-            time.sleep(1)
+        self.get_stat(self.get_rhr_day, directory, date, days, overwite)
 
+
+def config_start_date(type):
+    date = dateutil.parser.parse(GarminConnectConfig.data[type + '_start_date']).date()
+    days = GarminConnectConfig.data['download_days']
+    return (date, days)
+
+def get_date_and_days(latest, db, table, stat_name):
+    if latest:
+        last_ts = table.latest_time(db)
+        if last_ts is None:
+            date, days = config_start_date(stat_name)
+            logger.info("Automatic date not found, using: %s : %s for %s", str(date), str(days), stat_name)
+        else:
+            # start from the day after the last day in the DB
+            logger.info("Automatically downloading %s data from: %s", stat_name, str(last_ts))
+            if stat_name == 'monitoring':
+                date = last_ts.date()
+                days = (datetime.datetime.now() - last_ts).days
+            else:
+                date = last_ts
+                days = (datetime.date.today() - last_ts).days
+    else:
+        date, days = config_start_date(stat_name)
+    if date is None or days is None:
+        print "Missing config: need %s_start_date and download_days. Edit GarminConnectConfig.py." % stat_name
+        sys.exit()
+    return (date, days)
+
+def get_secure_password():
+    system = platform.system()
+    if system == 'Darwin':
+        password = subprocess.check_output(["security", "find-internet-password", "-s", "sso.garmin.com", "-w"])
+        if password:
+            return password.rstrip()
 
 def usage(program):
-    print '%s -d [<date> -n <days> | -l <path to dbs>] -u <username> -p <password> [-m <outdir> | -w ]' % program
-    print '  -d <date ex: 01/21/2018> -n <days> fetch n days of monitoring data starting at date'
+    print '%s [-l] [-m | -w | -s | -r]' % program
     print '  -l check the garmin DB and find out what the most recent date is and fetch monitoring data from that date on'
     print '  -m <outdir> fetches the daily monitoring FIT files for each day specified, unzips them, and puts them in outdit'
     print '  -w <outdit> fetches the daily weight data for each day specified and puts them in the DB'
@@ -358,13 +384,10 @@ def main(argv):
     date = None
     days = None
     latest = False
-    db_params_dict = {}
     username = None
     password = None
-    profile = None
     activities = None
     activity_count = 1000
-    activity_types = False
     monitoring = None
     overwite = False
     weight = None
@@ -373,9 +396,8 @@ def main(argv):
     debug = 0
 
     try:
-        opts, args = getopt.getopt(argv,"a:c:d:n:lm:oP:p:r:S:s:t:u:w:",
-            ["activities=", "activity_count=", "date=", "days=", "username=", "password=", "profile=", "latest", "monitoring=", "mysql=",
-             "overwrite", "rhr=", "sqlite=", "sleep=", "trace=", "weight="])
+        opts, args = getopt.getopt(argv,"ac:lmorst:w",
+            ["activities", "activity_count=", "latest", "monitoring", "overwrite", "rhr", "sleep", "trace=", "weight"])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -384,148 +406,91 @@ def main(argv):
             usage(sys.argv[0])
         elif opt in ("-a", "--activities"):
             logger.debug("Activities: " + arg)
-            activities = arg
+            activities = True
         elif opt in ("-c", "--activity_count"):
             logger.debug("Activity count: " + arg)
             activity_count = int(arg)
         elif opt in ("-t", "--trace"):
             debug = int(arg)
-        elif opt in ("-d", "--date"):
-            logger.debug("Date: " + arg)
-            date = dateutil.parser.parse(arg).date()
-        elif opt in ("-n", "--days"):
-            logger.debug("Days: " + arg)
-            days = int(arg)
         elif opt in ("-l", "--latest"):
             logger.debug("Latest" )
             latest = True
-        elif opt in ("-u", "--username"):
-            logger.debug("Username: " + arg)
-            username = arg
-        elif opt in ("-p", "--password"):
-            logger.debug("Password: " + arg)
-            password = arg
-        elif opt in ("-P", "--profile"):
-            logger.info("Profile: " + arg)
-            profile = arg
         elif opt in ("-m", "--monitoring"):
             logger.debug("Monitoring: " + arg)
-            monitoring = arg
+            monitoring = True
         elif opt in ("-o", "--overwite"):
             overwite = True
-        elif opt in ("-S", "--sleep"):
+        elif opt in ("-s", "--sleep"):
             logger.debug("Sleep: " + arg)
-            sleep = arg
+            sleep = True
         elif opt in ("-w", "--weight"):
             logger.debug("Weight")
-            weight = arg
+            weight = True
         elif opt in ("-r", "--rhr"):
             logger.debug("Resting heart rate")
-            rhr = arg
-        elif opt in ("-s", "--sqlite"):
-            logging.debug("Sqlite DB path: %s" % arg)
-            db_params_dict['db_type'] = 'sqlite'
-            db_params_dict['db_path'] = arg
-        elif opt in ("--mysql"):
-            logging.debug("Mysql DB string: %s" % arg)
-            db_args = arg.split(',')
-            db_params_dict['db_type'] = 'mysql'
-            db_params_dict['db_username'] = db_args[0]
-            db_params_dict['db_password'] = db_args[1]
-            db_params_dict['db_host'] = db_args[2]
+            rhr = True
 
     if debug > 0:
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)
 
-    if ((not date or not days) and not latest) and (monitoring or sleep):
-        print "Missing arguments: specify date and days or latest when downloading monitoring or sleep data"
-        usage(sys.argv[0])
+    db_params_dict = GarminDBConfigManager.get_db_params()
+
+    username = GarminConnectConfig.credentials['user']
+    password = GarminConnectConfig.credentials['password']
+    if not password:
+        password = get_secure_password()
     if not username or not password:
-        print "Missing arguments: need username and password"
-        usage(sys.argv[0])
-    if len(db_params_dict) == 0 and monitoring and latest:
-        print "Missing arguments: must specify <db params> with --sqlite or --mysql"
-        usage(sys.argv[0])
+        print "Missing config: need username and password. Edit GarminConnectConfig.py."
+        sys.exit()
 
-    if latest and monitoring:
-        mondb = GarminDB.MonitoringDB(db_params_dict)
-        last_ts = GarminDB.Monitoring.latest_time(mondb)
-        if last_ts is None:
-            days = 31
-            date = datetime.datetime.now().date() - datetime.timedelta(days)
-            logger.info("Automatic date not found, using: " + str(date))
-        else:
-            # start from the day after the last day in the DB
-            logger.info("Automatically downloading monitoring data from: " + str(last_ts))
-            date = last_ts.date() + datetime.timedelta(1)
-            days = (datetime.datetime.now().date() - date).days
-
-    if latest and sleep:
-        garmindb = GarminDB.GarminDB(db_params_dict)
-        last_ts = GarminDB.Sleep.latest_time(garmindb)
-        if last_ts is None:
-            days = 31
-            date = datetime.datetime.now().date() - datetime.timedelta(days)
-            logger.info("Automatic date not found, using: " + str(date))
-        else:
-            # start from the day after the last day in the DB
-            logger.info("Automatically downloading sleep data from: " + str(last_ts))
-            date = last_ts + datetime.timedelta(1)
-            days = (datetime.datetime.now().date() - date).days
-
-    if latest and weight:
-        garmindb = GarminDB.GarminDB(db_params_dict)
-        last_ts = GarminDB.Weight.latest_time(garmindb)
-        date = datetime.datetime.now()
-        if last_ts is None:
-            days = 31
-            logger.info("Automatic date not found, using: " + str(date))
-        else:
-            # start from the day after the last day in the DB
-            logger.info("Automatically downloading weight data from: " + str(last_ts))
-            days = (date - last_ts).days
-
-    if latest and rhr:
-        garmindb = GarminDB.GarminDB(db_params_dict)
-        last_ts = GarminDB.RestingHeartRate.latest_time(garmindb)
-        date = datetime.datetime.now().date()
-        if last_ts is None:
-            days = 31
-            logger.info("Automatic date not found, using: " + str(date))
-        else:
-            # start from the day after the last day in the DB
-            logger.info("Automatically downloading rhr data from: " + str(last_ts))
-            days = (date - last_ts).days
-
+    profile_dir = GarminDBConfigManager.get_or_create_fit_files_dir()
     download = Download()
-    if not download.login(username, password, profile):
+    if not download.login(username, password, profile_dir):
+        logger.error("Failed to login!")
         sys.exit()
 
     if activities and activity_count > 0:
-        logger.info("Fetching %d activities" % activity_count)
-        download.get_activity_types(activities, overwite)
-        download.get_activities(activities, activity_count, overwite)
-        download.unzip_files(activities)
+        activities_dir = GarminDBConfigManager.get_or_create_activities_dir()
+        logger.info("Fetching %d activities to %s", activity_count, activities_dir)
+        download.get_activity_types(activities_dir, overwite)
+        download.get_activities(activities_dir, activity_count, overwite)
+        download.unzip_files(activities_dir)
 
-    if monitoring and days > 0:
-        logger.info("Date range to update: %s (%d)" % (str(date), days))
-        download.get_daily_summaries(monitoring, date, days, overwite)
-        # download.get_monitoring(date, days)
-        # download.unzip_files(monitoring)
-        logger.info("Saved monitoring files for %s (%d) to %s for processing" % (str(date), days, monitoring))
+    if monitoring:
+        date, days = get_date_and_days(latest, GarminDB.MonitoringDB(db_params_dict), GarminDB.Monitoring, 'monitoring')
+        if days > 0:
+            monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_dir(date.year)
+            logger.info("Date range to update: %s (%d) to %s", str(date), days, monitoring_dir)
+            download.get_daily_summaries(monitoring_dir, date, days, overwite)
+            download.get_monitoring(date, days)
+            download.unzip_files(monitoring_dir)
+            logger.info("Saved monitoring files for %s (%d) to %s for processing", str(date), days, monitoring_dir)
 
-    if sleep and days > 0:
-        logger.info("Date range to update: %s (%d)" % (str(date), days))
-        download.get_sleep(sleep, date, days, overwite)
-        logger.info("Saved sleep files for %s (%d) to %s for processing" % (str(date), days, sleep))
+    if sleep:
+        date, days = get_date_and_days(latest, GarminDB.GarminDB(db_params_dict), GarminDB.Sleep, 'sleep')
+        if days > 0:
+            sleep_dir = GarminDBConfigManager.get_or_create_sleep_dir()
+            logger.info("Date range to update: %s (%d) to %s", str(date), days, sleep_dir)
+            download.get_sleep(sleep_dir, date, days, overwite)
+            logger.info("Saved sleep files for %s (%d) to %s for processing", str(date), days, sleep_dir)
 
-    if weight and days > 0:
-       download.get_weight(weight, date, days, overwite)
+    if weight:
+        date, days = get_date_and_days(latest, GarminDB.GarminDB(db_params_dict), GarminDB.Weight, 'weight')
+        if days > 0:
+            weight_dir = GarminDBConfigManager.get_or_create_weight_dir()
+            logger.info("Date range to update: %s (%d) to %s", str(date), days, weight_dir)
+            download.get_weight(weight_dir, date, days, overwite)
+            logger.info("Saved weight files for %s (%d) to %s for processing", str(date), days, weight_dir)
 
-    if rhr and days > 0:
-        download.get_rhr(rhr, date, days, overwite)
+    if rhr:
+        date, days = get_date_and_days(latest, GarminDB.GarminDB(db_params_dict), GarminDB.RestingHeartRate, 'rhr')
+        if days > 0:
+            rhr_dir = GarminDBConfigManager.get_or_create_rhr_dir()
+            logger.info("Date range to update: %s (%d) to %s", str(date), days, rhr_dir)
+            download.get_rhr(rhr_dir, date, days, overwite)
+            logger.info("Saved rhr files for %s (%d) to %s for processing", str(date), days, rhr_dir)
 
 
 if __name__ == "__main__":

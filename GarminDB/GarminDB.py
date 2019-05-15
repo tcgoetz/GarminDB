@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
-    db_version = 8
+    db_version = 9
     view_version = 3
 
     class DbVersion(Base, DbVersionObject):
@@ -158,10 +158,10 @@ class File(GarminDB.Base, DBObject):
 class Weight(GarminDB.Base, DBObject):
     __tablename__ = 'weight'
 
-    timestamp = Column(DateTime, primary_key=True, unique=True)
+    day = Column(Date, primary_key=True)
     weight = Column(Float, nullable=False)
 
-    time_col_name = 'timestamp'
+    time_col_name = 'day'
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):

@@ -10,6 +10,8 @@ from HealthDB import CsvImporter
 import MSHealthDB
 import FileProcessor
 
+import GarminDBConfigManager
+
 
 logger = logging.getLogger(__file__)
 
@@ -56,8 +58,8 @@ class MSHealthData():
         'Guided_Workout_Total_Seconds': ('guided_workout_secs', CsvImporter.map_integer),
     }
 
-    def __init__(self, input_file, input_dir, db_params_dict, english_units, debug):
-        self.english_units = english_units
+    def __init__(self, input_file, input_dir, db_params_dict, metric, debug):
+        self.metric = metric
         self.mshealth_db = MSHealthDB.MSHealthDB(db_params_dict, debug)
         if input_file:
             self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'Daily_Summary_.*.csv')
@@ -74,13 +76,13 @@ class MSHealthData():
         for file_name in self.file_names:
             logger.info("Processing file: " + file_name)
             csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
-            csvimporter.process_file(self.english_units)
+            csvimporter.process_file(not self.metric)
 
 
 class MSVaultData():
 
-    def __init__(self, input_file, input_dir, db_params_dict, english_units, debug):
-        self.english_units = english_units
+    def __init__(self, input_file, input_dir, db_params_dict, metric, debug):
+        self.metric = metric
         self.mshealth_db = MSHealthDB.MSHealthDB(db_params_dict, debug)
         self.cols_map = {
             'Date': ('timestamp', CsvImporter.map_mdy_date),
@@ -101,10 +103,10 @@ class MSVaultData():
         for file_name in self.file_names:
             logger.info("Processing file: " + file_name)
             csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
-            csvimporter.process_file(self.english_units)
+            csvimporter.process_file(not self.metric)
 
     @classmethod
-    def map_weight(cls, english_units, value):
+    def map_weight(cls, metric, value):
         m = re.search(r"(\d{2,3}\.\d{2}) .*", value)
         if m:
             logger.debug("Matched weight: " + m.group(1))
@@ -115,19 +117,15 @@ class MSVaultData():
 
 
 def usage(program):
-    print '%s -o <dbpath> -i <inputfile> [-m | -v]' % program
+    print '%s -i <inputfile>' % program
     sys.exit()
 
 def main(argv):
     debug = False
-    english_units = False
     input_file = None
-    input_dir = None
-    db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"d:ehi:s:",
-            ["help", "input_dir=", "trace", "english", "input_file=", "mysql=", "sqlite="])
+        opts, args = getopt.getopt(argv,"hi:t", ["help", "trace", "input_file="])
     except getopt.GetoptError:
         print "Bad argument"
         usage(sys.argv[0])
@@ -138,40 +136,26 @@ def main(argv):
         elif opt in ("-t", "--trace"):
             logger.info("Trace:")
             debug = True
-        elif opt in ("-e", "--english"):
-            logger.info("English:")
-            english_units = True
         elif opt in ("-i", "--input_file"):
             logger.info("Input File: %s" % arg)
             input_file = arg
-        elif opt in ("-d", "--input_dir"):
-            input_dir = arg
-        elif opt in ("-s", "--sqlite"):
-            logging.debug("Sqlite DB path: %s" % arg)
-            db_params_dict['db_type'] = 'sqlite'
-            db_params_dict['db_path'] = arg
-        elif opt in ("--mysql"):
-            logging.debug("Mysql DB string: %s" % arg)
-            db_args = arg.split(',')
-            db_params_dict['db_type'] = 'mysql'
-            db_params_dict['db_username'] = db_args[0]
-            db_params_dict['db_password'] = db_args[1]
-            db_params_dict['db_host'] = db_args[2]
+
 
     if debug:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
 
-    if (not input_file and not input_dir) or len(db_params_dict) == 0:
-        print "Missing arguments:"
-        usage(sys.argv[0])
+    db_params_dict = GarminDBConfigManager.get_db_params()
 
-    msd = MSHealthData(input_file, input_dir, db_params_dict, english_units, debug)
+    mshealth_dir = GarminDBConfigManager.get_or_create_mshealth_dir()
+    metric = GarminDBConfigManager.get_metric()
+
+    msd = MSHealthData(input_file, mshealth_dir, db_params_dict, metric, debug)
     if msd.file_count() > 0:
         msd.process_files()
 
-    mshv = MSVaultData(input_file, input_dir, db_params_dict, english_units, debug)
+    mshv = MSVaultData(input_file, mshealth_dir, db_params_dict, metric, debug)
     if mshv.file_count() > 0:
         mshv.process_files()
 

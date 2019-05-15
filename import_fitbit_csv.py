@@ -10,6 +10,8 @@ from HealthDB import CsvImporter
 import FitBitDB
 import FileProcessor
 
+import GarminDBConfigManager
+
 
 logger = logging.getLogger(__file__)
 
@@ -44,8 +46,8 @@ class FitBitData():
         'sleep-awakeningsCount': ('awakenings_count', CsvImporter.map_integer),
     }
 
-    def __init__(self, input_file, input_dir, db_params_dict, english_units, debug):
-        self.english_units = english_units
+    def __init__(self, input_file, input_dir, db_params_dict, metric, debug):
+        self.metric = metric
         self.fitbitdb = FitBitDB.FitBitDB(db_params_dict, debug)
         if input_file:
             self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*.csv')
@@ -62,23 +64,20 @@ class FitBitData():
         for file_name in self.file_names:
             logger.info("Processing file: " + file_name)
             self.csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
-            self.csvimporter.process_file(self.english_units)
+            self.csvimporter.process_file(not self.metric)
 
 
 
 def usage(program):
-    print '%s -o <dbpath> -i <inputfile> ...' % program
+    print '%s -i <inputfile> ...' % program
     sys.exit()
 
 def main(argv):
     debug = False
-    english_units = False
     input_file = None
-    input_dir = None
-    db_params_dict = {}
 
     try:
-        opts, args = getopt.getopt(argv,"dD:ei:m:s:", ["debug", "english", "input_dir=", "input_file=", "mysql=", "sqlite="])
+        opts, args = getopt.getopt(argv,"dhi:", ["debug", "input_file="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -87,36 +86,20 @@ def main(argv):
             usage(sys.argv[0])
         elif opt in ("-d", "--debug"):
             debug = True
-        elif opt in ("-e", "--english"):
-            english_units = True
-        elif opt in ("-i", "--input_file"):
+       elif opt in ("-i", "--input_file"):
             logging.debug("Input File: %s" % arg)
             input_file = arg
-        elif opt in ("-D", "--input_dir"):
-            logging.debug("Input dir: %s" % arg)
-            input_dir = arg
-        elif opt in ("-s", "--sqlite"):
-            logging.debug("Sqlite DB path: %s" % arg)
-            db_params_dict['db_type'] = 'sqlite'
-            db_params_dict['db_path'] = arg
-        elif opt in ("-m", "--mysql"):
-            logging.debug("Mysql DB string: %s" % arg)
-            db_args = arg.split(',')
-            db_params_dict['db_type'] = 'mysql'
-            db_params_dict['db_username'] = db_args[0]
-            db_params_dict['db_password'] = db_args[1]
-            db_params_dict['db_host'] = db_args[2]
 
     if debug:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
 
-    if (not input_file and not input_dir) or len(db_params_dict) == 0:
-        print "Missing arguments:"
-        usage(sys.argv[0])
+    db_params_dict = GarminDBConfigManager.get_db_params()
 
-    fd = FitBitData(input_file, input_dir, db_params_dict, english_units, debug)
+    fitbit_dir = GarminDBConfigManager.get_or_create_fitbit_dir()
+    metric = GarminDBConfigManager.get_metric()
+    fd = FitBitData(input_file, fitbit_dir, db_params_dict, metric, debug)
     if fd.file_count() > 0:
         fd.process_files()
 
