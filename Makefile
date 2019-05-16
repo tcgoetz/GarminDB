@@ -123,7 +123,7 @@ clean_monitoring_db:
 download_monitoring:
 	$(PYTHON) download_garmin.py --monitoring
 
-import_monitoring:
+import_monitoring: download_monitoring
 	$(PYTHON) import_garmin.py --monitoring
 
 download_new_monitoring:
@@ -148,7 +148,7 @@ import_new_activities: download_new_activities
 	$(PYTHON) import_garmin_activities.py --latest
 
 download_new_activities:
-	$(PYTHON) download_garmin.py --activities -c 10
+	$(PYTHON) download_garmin.py --activities --latest
 
 download_all_activities:
 	$(PYTHON) download_garmin.py --activities
@@ -169,7 +169,7 @@ clean_garmin_db:
 download_sleep:
 	$(PYTHON) download_garmin.py --sleep
 
-import_sleep:
+import_sleep: download_sleep
 	$(PYTHON) import_garmin.py --sleep
 
 download_new_sleep:

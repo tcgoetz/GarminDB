@@ -7,6 +7,7 @@
 import os, sys, getopt, re, logging, datetime, time, tempfile, zipfile, json, subprocess, platform
 import dateutil.parser
 import requests
+import progressbar
 
 try:
     import GarminConnectConfig
@@ -23,6 +24,7 @@ from Fit import Conversions
 logging.basicConfig(filename='download.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
+root_logger = logging.getLogger()
 
 
 class Download():
@@ -186,7 +188,7 @@ class Download():
         self.english_units = (self.user_prefs['measurementSystem'] == 'statute_us')
         self.social_profile = self.get_json(response.text, 'VIEWER_SOCIAL_PROFILE')
         self.full_name = self.social_profile['fullName']
-        logger.info("login: %s (%s) english units: %s", self.full_name, self.display_name, str(self.english_units))
+        root_logger.info("login: %s (%s) english units: %s", self.full_name, self.display_name, str(self.english_units))
         return True
 
     def save_binary_file(self, filename, response):
@@ -199,7 +201,7 @@ class Download():
 
     def save_json_file(self, json_full_filname, json_data):
         with open(json_full_filname, 'w') as file:
-            logger.info("save_json_file: %s", json_full_filname)
+            root_logger.info("save_json_file: %s", json_full_filname)
             file.write(json.dumps(json_data, default=self.convert_to_json))
 
     def download_json_file(self, job_name, url, params, json_filename, overwite):
@@ -223,12 +225,10 @@ class Download():
                 files_zip.close()
 
     def get_stat(self, stat_function, directory, date, days, overwite):
-        end_date = date + datetime.timedelta(days=days)
-        logger.info("%s : %s -> %s", date, end_date, directory)
-        day = date
-        while stat_function(directory, day, overwite):
-            day = day + datetime.timedelta(1)
-            if day > end_date:
+        root_logger.info("%s (%s) -> %s", date, days, directory)
+        for day in progressbar.progressbar(range(days)):
+            current_date = date + datetime.timedelta(days=day)
+            if not stat_function(directory, current_date, overwite):
                 break
             # pause for a second between every page access
             time.sleep(1)
@@ -246,13 +246,13 @@ class Download():
         self.get_stat(self.get_summary_day, directory, date, days, overwite)
 
     def get_monitoring_day(self, date):
-        logger.info("get_monitoring_day: %s", str(date))
+        root_logger.info("get_monitoring_day: %s", str(date))
         response = self.get(self.garmin_connect_download_daily_url + '/' + date.strftime("%Y-%m-%d"))
         if response and response.status_code == 200:
             self.save_binary_file(self.temp_dir + '/' + str(date) + '.zip', response)
 
     def get_monitoring(self, date, days):
-        logger.info("get_monitoring: %s : %d", str(date), days)
+        root_logger.info("get_monitoring: %s : %d", str(date), days)
         for day in xrange(0, days):
             day_date = date + datetime.timedelta(day)
             self.get_monitoring_day(day_date)
@@ -272,7 +272,7 @@ class Download():
         self.get_stat(self.get_weight_day, directory, date, days, overwite)
 
     def get_activity_summaries(self, start, count):
-        logger.info("get_activity_summaries")
+        root_logger.info("get_activity_summaries")
         params = {
             'start' : str(start),
             "limit" : str(count)
@@ -282,12 +282,12 @@ class Download():
             return response.json()
 
     def save_activity_details(self, directory, activity_id_str, overwite):
-        logger.debug("save_activity_details")
+        root_logger.debug("save_activity_details")
         json_filename = directory + '/activity_details_' + activity_id_str
         return self.download_json_file('save_activity_details', self.get_activity_details_url(activity_id_str), None, json_filename, overwite)
 
     def save_activity_file(self, activity_id_str):
-        logger.debug("save_activity_file: " + activity_id_str)
+        root_logger.debug("save_activity_file: " + activity_id_str)
         response = self.get(self.garmin_connect_download_activity_url + activity_id_str)
         if response.status_code == 200:
             self.save_binary_file(self.temp_dir + '/activity_' + activity_id_str + '.zip', response)
@@ -295,7 +295,7 @@ class Download():
             logger.error("save_activity_file: %s failed (%d): %s", response.url, response.status_code, response.text)
 
     def get_activities(self, directory, count, overwite=False):
-        logger.info("get_activities: '%s' (%d)", directory, count)
+        root_logger.info("get_activities: '%s' (%d)", directory, count)
         activities = self.get_activity_summaries(0, count)
         for activity in activities:
             activity_id_str = str(activity['activityId'])
@@ -312,7 +312,7 @@ class Download():
                 time.sleep(1)
 
     def get_activity_types(self, directory, overwite):
-        logger.info("get_activity_types: '%s'", directory)
+        root_logger.info("get_activity_types: '%s'", directory)
         return self.download_json_file('get_activity_types', self.garmin_connect_activity_types_url, None, directory + '/activity_types', overwite)
 
     def get_sleep_day(self, directory, date, overwite=False):
@@ -387,7 +387,7 @@ def main(argv):
     username = None
     password = None
     activities = None
-    activity_count = 1000
+    activity_count = GarminConnectConfig.data['download_all_activities']
     monitoring = None
     overwite = False
     weight = None
@@ -430,7 +430,6 @@ def main(argv):
             logger.debug("Resting heart rate")
             rhr = True
 
-    root_logger = logging.getLogger()
     if debug > 0:
         root_logger.setLevel(logging.DEBUG)
     else:
@@ -452,9 +451,11 @@ def main(argv):
         logger.error("Failed to login!")
         sys.exit()
 
-    if activities and activity_count > 0:
+    if activities:
+        if latest:
+            activity_count = GarminConnectConfig.data['download_latest_activities']
         activities_dir = GarminDBConfigManager.get_or_create_activities_dir()
-        logger.info("Fetching %d activities to %s", activity_count, activities_dir)
+        root_logger.info("Fetching %d activities to %s", activity_count, activities_dir)
         download.get_activity_types(activities_dir, overwite)
         download.get_activities(activities_dir, activity_count, overwite)
         download.unzip_files(activities_dir)
@@ -463,35 +464,35 @@ def main(argv):
         date, days = get_date_and_days(latest, GarminDB.MonitoringDB(db_params_dict), GarminDB.Monitoring, 'monitoring')
         if days > 0:
             monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_dir(date.year)
-            logger.info("Date range to update: %s (%d) to %s", str(date), days, monitoring_dir)
+            root_logger.info("Date range to update: %s (%d) to %s", str(date), days, monitoring_dir)
             download.get_daily_summaries(monitoring_dir, date, days, overwite)
             download.get_monitoring(date, days)
             download.unzip_files(monitoring_dir)
-            logger.info("Saved monitoring files for %s (%d) to %s for processing", str(date), days, monitoring_dir)
+            root_logger.info("Saved monitoring files for %s (%d) to %s for processing", str(date), days, monitoring_dir)
 
     if sleep:
         date, days = get_date_and_days(latest, GarminDB.GarminDB(db_params_dict), GarminDB.Sleep, 'sleep')
         if days > 0:
             sleep_dir = GarminDBConfigManager.get_or_create_sleep_dir()
-            logger.info("Date range to update: %s (%d) to %s", str(date), days, sleep_dir)
+            root_logger.info("Date range to update: %s (%d) to %s", str(date), days, sleep_dir)
             download.get_sleep(sleep_dir, date, days, overwite)
-            logger.info("Saved sleep files for %s (%d) to %s for processing", str(date), days, sleep_dir)
+            root_logger.info("Saved sleep files for %s (%d) to %s for processing", str(date), days, sleep_dir)
 
     if weight:
         date, days = get_date_and_days(latest, GarminDB.GarminDB(db_params_dict), GarminDB.Weight, 'weight')
         if days > 0:
             weight_dir = GarminDBConfigManager.get_or_create_weight_dir()
-            logger.info("Date range to update: %s (%d) to %s", str(date), days, weight_dir)
+            root_logger.info("Date range to update: %s (%d) to %s", str(date), days, weight_dir)
             download.get_weight(weight_dir, date, days, overwite)
-            logger.info("Saved weight files for %s (%d) to %s for processing", str(date), days, weight_dir)
+            root_logger.info("Saved weight files for %s (%d) to %s for processing", str(date), days, weight_dir)
 
     if rhr:
         date, days = get_date_and_days(latest, GarminDB.GarminDB(db_params_dict), GarminDB.RestingHeartRate, 'rhr')
         if days > 0:
             rhr_dir = GarminDBConfigManager.get_or_create_rhr_dir()
-            logger.info("Date range to update: %s (%d) to %s", str(date), days, rhr_dir)
+            root_logger.info("Date range to update: %s (%d) to %s", str(date), days, rhr_dir)
             download.get_rhr(rhr_dir, date, days, overwite)
-            logger.info("Saved rhr files for %s (%d) to %s for processing", str(date), days, rhr_dir)
+            root_logger.info("Saved rhr files for %s (%d) to %s for processing", str(date), days, rhr_dir)
 
 
 if __name__ == "__main__":

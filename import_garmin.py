@@ -20,6 +20,7 @@ import GarminDBConfigManager
 logging.basicConfig(filename='import_garmin.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
+root_logger = logging.getLogger()
 
 
 class GarminWeightData(JsonFileProcessor):
@@ -106,10 +107,10 @@ class GarminSleepData(JsonFileProcessor):
                 return 0
             day = date.date()
             if json_data.get('remSleepData', None):
-                logger.info("Importing %s with REM data", day)
+                root_logger.info("Importing %s with REM data", day)
                 sleep_activity_levels = RemSleepActivityLevels
             else:
-                logger.info("Importing %s without REM data", day)
+                root_logger.info("Importing %s without REM data", day)
                 sleep_activity_levels = SleepActivityLevels
             day_data = {
                 'day' : day,
@@ -296,7 +297,6 @@ def main(argv):
             logging.debug("Weight input file: %s" % arg)
             weight_input_file = arg
 
-    root_logger = logging.getLogger()
     if debug > 0:
         root_logger.setLevel(logging.DEBUG)
     else:
