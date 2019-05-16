@@ -19,7 +19,7 @@ endif
 #
 # All third party Python packages needed to use the project. They will be installed with pip.
 #
-PYTHON_PACKAGES=sqlalchemy requests python-dateutil enum34
+PYTHON_PACKAGES=sqlalchemy requests python-dateutil enum34 progressbar2
 
 
 #

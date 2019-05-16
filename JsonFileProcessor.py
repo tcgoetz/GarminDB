@@ -6,6 +6,7 @@
 
 import json, logging, traceback
 import dateutil.parser
+import progressbar
 
 import FileProcessor
 
@@ -68,7 +69,7 @@ class JsonFileProcessor(object):
 
     def process_files(self):
         logger.info("Processing %d json files", self.file_count())
-        for file_name in self.file_names:
+        for file_name in progressbar.progressbar(self.file_names):
             try:
                 json_data = self.parse_file(file_name)
                 updates = self.process_json(json_data)

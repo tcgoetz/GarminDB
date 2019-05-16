@@ -5,6 +5,7 @@
 #
 
 import os, sys, getopt, re, string, logging, datetime, calendar
+import progressbar
 
 import HealthDB
 import GarminDB
@@ -175,7 +176,7 @@ class Analyze():
         if GarminDB.IntensityHR.row_count_for_day(self.garmin_sum_db, day_date) == 0 or overwrite:
             monitoring_rows = GarminDB.Monitoring.get_for_day(self.garmin_mon_db, GarminDB.Monitoring, day_date)
             previous_ts = None
-            for monitoring in monitoring_rows:
+            for monitoring in progressbar.progressbar(monitoring_rows):
                 if monitoring.intensity is not None:
                     # Heart rate value is for one minute, reported at the end of the minute. Only take HR values where the
                     # measurement period falls within the activity period.

@@ -6,6 +6,7 @@
 
 import os, sys, getopt, string, logging, datetime, traceback, enum
 import dateutil.parser
+import progressbar
 
 import Fit
 from JsonFileProcessor import *
@@ -56,8 +57,7 @@ class GarminFitData():
 
     def process_files(self, db_params_dict):
         fp = FitFileProcessor(db_params_dict, self.debug)
-        logger.info("Parsing %d fit files", self.file_count())
-        for file_name in self.file_names:
+        for file_name in progressbar.progressbar(self.file_names):
             try:
                 fp.write_file(Fit.File(file_name, self.english_units))
             except Fit.FitFileError as e:

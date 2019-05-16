@@ -5,6 +5,7 @@
 #
 
 import os, sys, getopt, re, string, logging, datetime, traceback, json, tcxparser, dateutil.parser, traceback
+import progressbar
 
 import Fit
 import FileProcessor
@@ -41,7 +42,7 @@ class GarminFitData():
 
     def process_files(self, db_params_dict):
         fp = FitFileProcessor(db_params_dict, self.debug)
-        for file_name in self.file_names:
+        for file_name in progressbar.progressbar(self.file_names):
             try:
                 fp.write_file(Fit.File(file_name, self.english_units))
             except Exception as e:
