@@ -16,9 +16,9 @@ import GarminConnectEnums
 import GarminDBConfigManager
 
 
-logging.basicConfig(level=logging.INFO)
-root_logger = logging.getLogger()
+logging.basicConfig(filename='import_garmin_activities.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
+logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 def pace_to_time(pace):
@@ -31,7 +31,6 @@ class GarminFitData():
     def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
-        logger.info("Debug: %s English units: %s", str(debug), str(english_units))
         if input_file:
             self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.fit')
         if input_dir:
@@ -55,7 +54,6 @@ class GarminTcxData():
     def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
-        logger.info("Debug: %s English units: %s", str(debug), str(english_units))
         if input_file:
             self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.tcx')
         if input_dir:
@@ -376,7 +374,7 @@ def main(argv):
         elif opt in ("-l", "--latest"):
             latest = True
 
-
+    root_logger = logging.getLogger()
     if debug > 0:
         root_logger.setLevel(logging.DEBUG)
     else:

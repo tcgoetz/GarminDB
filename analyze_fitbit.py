@@ -13,8 +13,9 @@ import Fit.Conversions
 import GarminDBConfigManager
 
 
+logging.basicConfig(filename='analyze_fitbit.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
-
+logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 class Analyze():
@@ -96,11 +97,11 @@ def main(argv):
             logging.debug("Dates")
             dates = True
 
-
+    root_logger = logging.getLogger()
     if debug:
-        logger.setLevel(logging.DEBUG)
+        root_logger.setLevel(logging.DEBUG)
     else:
-        logger.setLevel(logging.INFO)
+        root_logger.setLevel(logging.INFO)
 
     db_params_dict = GarminDBConfigManager.get_db_params()
     analyze = Analyze(db_params_dict)

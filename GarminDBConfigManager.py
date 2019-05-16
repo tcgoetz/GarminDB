@@ -101,10 +101,8 @@ def get_db_params(test_db=False):
     }
     if db_type == 'sqlite':
         db_path = get_db_dir(test_db)
-        logger.info("Sqlite DB path: %s" % db_path)
         db_params_dict['db_path'] = db_path
     elif opt in ("--mysql"):
-        logger.info("Mysql DB string: %s" % db_path)
         db_args = arg.split(',')
         db_params_dict['db_type'] = 'mysql'
         db_params_dict['db_username'] = get_db_user()

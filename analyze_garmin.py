@@ -14,9 +14,9 @@ from Fit import FieldEnums
 import GarminDBConfigManager
 
 
-logging.basicConfig(level=logging.INFO)
-root_logger = logging.getLogger()
+logging.basicConfig(filename='analyze_garmin.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
+logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 class Analyze():
@@ -335,6 +335,7 @@ def main(argv):
             logging.debug("Dates")
             dates = True
 
+    root_logger = logging.getLogger()
     if debug > 0:
         root_logger.setLevel(logging.DEBUG)
     else:

@@ -13,7 +13,9 @@ import FileProcessor
 import GarminDBConfigManager
 
 
+logging.basicConfig(filename='import_fitbit.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
+logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 class FitBitData():
@@ -86,14 +88,15 @@ def main(argv):
             usage(sys.argv[0])
         elif opt in ("-d", "--debug"):
             debug = True
-       elif opt in ("-i", "--input_file"):
+        elif opt in ("-i", "--input_file"):
             logging.debug("Input File: %s" % arg)
             input_file = arg
 
+    root_logger = logging.getLogger()
     if debug:
-        logger.setLevel(logging.DEBUG)
+        root_logger.setLevel(logging.DEBUG)
     else:
-        logger.setLevel(logging.INFO)
+        root_logger.setLevel(logging.INFO)
 
     db_params_dict = GarminDBConfigManager.get_db_params()
 

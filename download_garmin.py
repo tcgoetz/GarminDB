@@ -20,9 +20,9 @@ import GarminDB
 from Fit import Conversions
 
 
-logging.basicConfig(level=logging.INFO)
-root_logger = logging.getLogger()
+logging.basicConfig(filename='download.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
+logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 class Download():
@@ -430,6 +430,7 @@ def main(argv):
             logger.debug("Resting heart rate")
             rhr = True
 
+    root_logger = logging.getLogger()
     if debug > 0:
         root_logger.setLevel(logging.DEBUG)
     else:

@@ -16,8 +16,9 @@ import GarminDB
 import GarminDBConfigManager
 
 
-root_logger = logging.getLogger()
+logging.basicConfig(filename='import_garmin.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
+logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 class GarminWeightData(JsonFileProcessor):
@@ -45,7 +46,6 @@ class GarminFitData():
     def __init__(self, input_file, input_dir, latest, english_units, debug):
         self.english_units = english_units
         self.debug = debug
-        logger.info("Debug: %s English units: %s", str(debug), str(english_units))
         if input_file:
             self.file_names = FileProcessor.match_file(input_file, '.*\.fit')
         if input_dir:
@@ -56,7 +56,7 @@ class GarminFitData():
 
     def process_files(self, db_params_dict):
         fp = FitFileProcessor(db_params_dict, self.debug)
-        logger.info("Parsing %d files", self.file_count())
+        logger.info("Parsing %d fit files", self.file_count())
         for file_name in self.file_names:
             try:
                 fp.write_file(Fit.File(file_name, self.english_units))
@@ -296,6 +296,7 @@ def main(argv):
             logging.debug("Weight input file: %s" % arg)
             weight_input_file = arg
 
+    root_logger = logging.getLogger()
     if debug > 0:
         root_logger.setLevel(logging.DEBUG)
     else:
