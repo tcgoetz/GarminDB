@@ -225,8 +225,7 @@ class Download():
                 files_zip.close()
 
     def get_stat(self, stat_function, directory, date, days, overwite):
-        root_logger.info("%s (%s) -> %s", date, days, directory)
-        for day in progressbar.progressbar(range(days)):
+        for day in progressbar.progressbar(xrange(0, days)):
             current_date = date + datetime.timedelta(days=day)
             if not stat_function(directory, current_date, overwite):
                 break
@@ -243,6 +242,7 @@ class Download():
         return self.download_json_file('get_summary_day', url, params, directory + '/daily_summary_' + date_str, overwite)
 
     def get_daily_summaries(self, directory, date, days, overwite):
+        logger.info("Geting daily summaries: %s : %d", str(date), days)
         self.get_stat(self.get_summary_day, directory, date, days, overwite)
 
     def get_monitoring_day(self, date):
@@ -252,8 +252,8 @@ class Download():
             self.save_binary_file(self.temp_dir + '/' + str(date) + '.zip', response)
 
     def get_monitoring(self, date, days):
-        root_logger.info("get_monitoring: %s : %d", str(date), days)
-        for day in xrange(0, days):
+        logger.info("Geting monitoring: %s : %d", str(date), days)
+        for day in progressbar.progressbar(xrange(0, days)):
             day_date = date + datetime.timedelta(day)
             self.get_monitoring_day(day_date)
             # pause for a second between every page access
@@ -269,6 +269,7 @@ class Download():
         return self.download_json_file('get_weight_day', self.garmin_connect_weight_url, params, directory + '/weight_' + date_str, overwite)
 
     def get_weight(self, directory, date, days, overwite):
+        logger.info("Geting weight: %s : %d", str(date), days)
         self.get_stat(self.get_weight_day, directory, date, days, overwite)
 
     def get_activity_summaries(self, start, count):
@@ -295,15 +296,15 @@ class Download():
             logger.error("save_activity_file: %s failed (%d): %s", response.url, response.status_code, response.text)
 
     def get_activities(self, directory, count, overwite=False):
-        root_logger.info("get_activities: '%s' (%d)", directory, count)
+        logger.info("Geting activities: '%s' (%d)", directory, count)
         activities = self.get_activity_summaries(0, count)
-        for activity in activities:
+        for activity in progressbar.progressbar(activities):
             activity_id_str = str(activity['activityId'])
             activity_name_str = Conversions.printable(activity['activityName'])
-            logger.info("get_activities: %s (%s)" % (activity_name_str, activity_id_str))
+            root_logger.info("get_activities: %s (%s)" % (activity_name_str, activity_id_str))
             json_filename = directory + '/activity_' + activity_id_str + '.json'
             if not os.path.isfile(json_filename) or overwite:
-                logger.debug("get_activities: %s <- %s" % (json_filename, repr(activity)))
+                root_logger.debug("get_activities: %s <- %s" % (json_filename, repr(activity)))
                 self.save_activity_details(directory, activity_id_str, overwite)
                 self.save_json_file(json_filename, activity)
                 if not os.path.isfile(directory + '/' + activity_id_str + '.fit') or overwite:
@@ -323,6 +324,7 @@ class Download():
         return self.download_json_file('get_sleep_day', self.garmin_connect_sleep_daily_url + '/' + self.display_name, params, json_filename, overwite)
 
     def get_sleep(self, directory, date, days, overwite):
+        logger.info("Geting sleep: %s : %d", str(date), days)
         self.get_stat(self.get_sleep_day, directory, date, days, overwite)
 
     def get_rhr_day(self, directory, day, overwite=False):
@@ -336,6 +338,7 @@ class Download():
         return self.download_json_file('get_rhr_day', self.garmin_connect_rhr_url + '/' + self.display_name, params, json_filename, overwite)
 
     def get_rhr(self, directory, date, days, overwite):
+        logger.info("Geting rhr: %s : %d", str(date), days)
         self.get_stat(self.get_rhr_day, directory, date, days, overwite)
 
 

@@ -20,6 +20,7 @@ import GarminDBConfigManager
 logging.basicConfig(filename='import_garmin_activities.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
+root_logger = logging.getLogger()
 
 
 def pace_to_time(pace):
@@ -64,7 +65,7 @@ class GarminTcxData():
         return len(self.file_names)
 
     def process_file(self, file_name):
-        logger.info("Processing file: " + file_name)
+        root_logger.info("Processing file: " + file_name)
         tcx = tcxparser.TCXParser(file_name)
         end_time = dateutil.parser.parse(tcx.completed_at, ignoretz=True)
         start_time = dateutil.parser.parse(tcx.started_at, ignoretz=True)
@@ -123,7 +124,7 @@ class GarminTcxData():
         garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug)
         with garmin_db.managed_session() as self.garmin_db_session:
             with garmin_act_db.managed_session() as self.garmin_act_db_session:
-                for file_name in self.file_names:
+                for file_name in progressbar.progressbar(self.file_names):
                     self.process_file(file_name)
                     self.garmin_db_session.commit()
                     self.garmin_act_db_session.commit()
@@ -141,7 +142,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
         self.garmin_act_db_session.commit()
 
     def process_running(self, activity_id, activity_summary):
-        logger.debug("process_running for %s", activity_id)
+        root_logger.debug("process_running for %s", activity_id)
         avg_vertical_oscillation = self.get_field_obj(activity_summary, 'avgVerticalOscillation', Fit.Conversions.Distance.from_meters)
         avg_step_length = self.get_field_obj(activity_summary, 'avgStrideLength', Fit.Conversions.Distance.from_meters)
         run = {
@@ -274,7 +275,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
             function = getattr(self, process_function)
             function(activity_id, json_data)
         except AttributeError:
-            logger.info("No sport handler %s from %s", process_function, activity_id)
+            root_logger.info("No sport handler %s from %s", process_function, activity_id)
         return 1
 
     def process(self):
@@ -301,7 +302,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
             'activity_id'               : activity_id,
             'avg_moving_pace'           : Fit.Conversions.speed_to_pace(avg_moving_speed),
         }
-        logger.info("process_running for %d: %s", activity_id, repr(run))
+        root_logger.info("process_running for %d: %s", activity_id, repr(run))
         GarminDB.RunActivities._create_or_update_not_none(self.garmin_act_db_session, run)
 
     def process_json(self, json_data):
@@ -324,7 +325,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
             function = getattr(self, process_function)
             function(activity_id, json_data)
         except AttributeError:
-            logger.info("No sport handler %s from %s", process_function, activity_id)
+            root_logger.info("No sport handler %s from %s", process_function, activity_id)
         return 1
 
     def process(self):
@@ -339,7 +340,7 @@ class GarminExtraData(JsonFileProcessor):
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
 
     def process_json(self, json_data):
-        logger.info("Extra data: %s", repr(json_data))
+        root_logger.info("Extra data: %s", repr(json_data))
         GarminDB.ActivitiesExtraData.create_or_update_not_none(self.garmin_db, GarminDB.DailyExtraData.convert_eums(json_data))
         return 1
 
@@ -375,7 +376,6 @@ def main(argv):
         elif opt in ("-l", "--latest"):
             latest = True
 
-    root_logger = logging.getLogger()
     if debug > 0:
         root_logger.setLevel(logging.DEBUG)
     else:

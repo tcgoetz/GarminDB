@@ -18,7 +18,6 @@ root_logger.addHandler(handler)
 root_logger.setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
-db_dir = os.environ['DB_DIR']
 
 
 class TestFit(unittest.TestCase):

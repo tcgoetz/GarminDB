@@ -31,7 +31,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
+        db_params_dict = GarminDBConfigManager.get_db_params()
         cls.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict)
         super(TestActivitiesDb, cls).setUpClass(cls.garmin_act_db,
             {

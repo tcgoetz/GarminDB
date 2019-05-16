@@ -89,10 +89,10 @@ def get_or_create_mshealth_dir():
 
 def get_db_dir(test_db=False):
     if test_db:
-        base = tempfile.mkstemp()
+        base = tempfile.mkdtemp()
     else:
-        base = _create_dir_if_needed(get_base_dir())
-    return base + os.sep + GarminDBConfig.directories['db_dir']
+        base = get_base_dir()
+    return _create_dir_if_needed(base + os.sep + GarminDBConfig.directories['db_dir'])
 
 def get_db_params(test_db=False):
     db_type = get_db_type()

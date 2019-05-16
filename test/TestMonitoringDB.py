@@ -29,7 +29,7 @@ class TestMonitoringDB(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
+        cls.db_params_dict = GarminDBConfigManager.get_db_params()
 
     def test_garmin_mon_db_exists(self):
         garmin_mon_db = GarminDB.MonitoringDB(self.db_params_dict)
