@@ -86,6 +86,7 @@ clean: test_clean
 	rm -rf GarminDB/*.pyc
 	rm -rf FitBitDB/*.pyc
 	rm -f $(BUGREPORT)
+	rm -rf *.log
 
 
 #

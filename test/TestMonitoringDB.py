@@ -8,6 +8,8 @@ import unittest, os, logging, sys, datetime, re
 
 from sqlalchemy.exc import IntegrityError
 
+from TestDBBase import TestDBBase
+
 sys.path.append('../.')
 
 import GarminDB
@@ -25,31 +27,45 @@ root_logger.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class TestMonitoringDB(unittest.TestCase):
+class TestMonitoringDB(TestDBBase, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.db_params_dict = GarminDBConfigManager.get_db_params()
-
-    def test_garmin_mon_db_exists(self):
-        garmin_mon_db = GarminDB.MonitoringDB(self.db_params_dict)
-        self.assertIsNotNone(garmin_mon_db)
+        db_params_dict = GarminDBConfigManager.get_db_params()
+        garmin_mon_db = GarminDB.MonitoringDB(db_params_dict)
+        super(TestMonitoringDB, cls).setUpClass(garmin_mon_db,
+            {
+                'monitoring_info_table'         : GarminDB.MonitoringInfo,
+                'monitoring_hr_table'           : GarminDB.MonitoringHeartRate,
+                'monitoring_intensity_table'    : GarminDB.MonitoringIntensity,
+                'monitoring_climb_table'        : GarminDB.MonitoringClimb,
+                'monitoring_table'              : GarminDB.Monitoring,
+            }
+        )
 
     def test_garmin_mon_db_tables_exists(self):
-        garmin_mon_db = GarminDB.MonitoringDB(self.db_params_dict)
-        self.assertGreater(GarminDB.MonitoringInfo.row_count(garmin_mon_db), 0)
-        self.assertGreater(GarminDB.MonitoringHeartRate.row_count(garmin_mon_db), 0)
-        self.assertGreater(GarminDB.MonitoringIntensity.row_count(garmin_mon_db), 0)
-        self.assertGreater(GarminDB.MonitoringClimb.row_count(garmin_mon_db), 0)
-        self.assertGreater(GarminDB.Monitoring.row_count(garmin_mon_db), 0)
+        self.assertGreater(GarminDB.MonitoringInfo.row_count(self.db), 0)
+        self.assertGreater(GarminDB.MonitoringHeartRate.row_count(self.db), 0)
+        self.assertGreater(GarminDB.MonitoringIntensity.row_count(self.db), 0)
+        self.assertGreater(GarminDB.MonitoringClimb.row_count(self.db), 0)
+        self.assertGreater(GarminDB.Monitoring.row_count(self.db), 0)
 
     def test_garmin_mon_db_steps_bounds(self):
-        garmin_mon_db = GarminDB.MonitoringDB(self.db_params_dict)
-        min = GarminDB.Monitoring.get_col_min(garmin_mon_db, GarminDB.Monitoring.steps)
+        min = GarminDB.Monitoring.get_col_min(self.db, GarminDB.Monitoring.steps)
         self.assertGreater(min, 0)
-        max = GarminDB.Monitoring.get_col_max(garmin_mon_db, GarminDB.Monitoring.steps)
+        max = GarminDB.Monitoring.get_col_max(self.db, GarminDB.Monitoring.steps)
         self.assertGreater(max, 0)
         self.assertLess(max, 100000)
+
+    def test_garmin_mon_db_uptodate(self):
+        uptodate_tables = {
+                'monitoring_hr_table'           : GarminDB.MonitoringHeartRate,
+                'monitoring_table'              : GarminDB.Monitoring,
+            }
+        for table_name, table in uptodate_tables.iteritems():
+            latest = GarminDB.Monitoring.latest_time(self.db)
+            logger.info("Latest data for %s: %s", table_name, str(latest))
+            self.assertLess(datetime.datetime.now() - latest, datetime.timedelta(days=1))
 
 
 if __name__ == '__main__':
