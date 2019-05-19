@@ -27,7 +27,7 @@ def pace_to_time(pace):
         return datetime.datetime.strptime(pace, "%M:%S").time()
 
 
-class GarminFitData():
+class GarminActivitiesFitData():
 
     def __init__(self, input_file, input_dir, latest, english_units, debug):
         logger.debug("Processing activities FIT data")
@@ -336,11 +336,11 @@ class GarminJsonDetailsData(JsonFileProcessor):
             self.process_files()
 
 
-class GarminExtraData(JsonFileProcessor):
+class GarminActivitiesExtraData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
         logger.debug("Processing activities extra data")
-        super(GarminExtraData, self).__init__(input_file, input_dir, 'extra_data_\\d*\.json', latest, debug)
+        super(GarminActivitiesExtraData, self).__init__(input_file, input_dir, 'extra_data_\\d*\.json', latest, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
 
     def process_json(self, json_data):

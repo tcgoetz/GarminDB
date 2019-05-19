@@ -16,14 +16,14 @@ logger = logging.getLogger(__file__)
 
 class JsonFileProcessor(object):
 
-    def __init__(self, input_file, input_dir, file_regex, latest, debug):
+    def __init__(self, input_file, input_dir, file_regex, latest, debug, recursive=False):
         self.debug = debug
         logger.info("Debug: %s" % str(debug))
         if input_file:
             self.file_names = FileProcessor.FileProcessor.match_file(input_file, file_regex)
             logger.info("Found %d json files for %s in %s", self.file_count(), file_regex, input_file)
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, file_regex, latest)
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, file_regex, latest, recursive)
             logger.info("Found %d json files for %s in %s", self.file_count(), file_regex, input_dir)
 
     def file_count(self):

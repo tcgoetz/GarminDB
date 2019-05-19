@@ -15,7 +15,6 @@ from FitFileProcessor import *
 import GarminDB
 
 import GarminDBConfigManager
-from import_garmin_activities import GarminJsonSummaryData, GarminJsonDetailsData, GarminExtraData, GarminTcxData, GarminFitData
 
 
 logger = logging.getLogger(__file__)
@@ -44,7 +43,7 @@ class GarminWeightData(JsonFileProcessor):
             return 1
 
 
-class GarminFitData():
+class GarminMonitoringFitData():
 
     def __init__(self, input_file, input_dir, latest, english_units, debug):
         logger.info("Processing daily FIT data")
@@ -225,11 +224,11 @@ class GarminSummaryData(JsonFileProcessor):
         return 1
 
 
-class GarminExtraData(JsonFileProcessor):
+class GarminMonitoringExtraData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
         logger.info("Processing daily extra data")
-        super(GarminExtraData, self).__init__(input_file, input_dir, 'extra_data_\d{4}-\d{2}-\d{2}\.json', latest, debug)
+        super(GarminMonitoringExtraData, self).__init__(input_file, input_dir, 'extra_data_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'day' : dateutil.parser.parse}
 
