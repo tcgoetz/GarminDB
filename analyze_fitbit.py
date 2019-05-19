@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, string, logging, datetime, calendar
+import os, sys, re, string, logging, datetime, calendar
 
 import HealthDB
 import FitBitDB
@@ -72,44 +72,3 @@ class Analyze():
                 end_day_ts = datetime.date(year, month, calendar.monthrange(year, month)[1])
                 stats = FitBitDB.DaysSummary.get_monthly_stats(self.fitbitdb, start_day_ts, end_day_ts)
                 HealthDB.MonthsSummary.create_or_update_not_none(self.sumdb, stats)
-
-
-def usage(program):
-    print '%s ' % program
-    sys.exit()
-
-def main(argv):
-    debug = False
-    dates = False
-
-    try:
-        opts, args = getopt.getopt(argv,"dD:i:y", ["dates", "debug"])
-    except getopt.GetoptError:
-        usage(sys.argv[0])
-
-    for opt, arg in opts:
-        if opt == '-h':
-            usage(sys.argv[0])
-        elif opt in ("-d", "--debug"):
-            logging.debug("debug True")
-            debug = True
-        elif opt in ("-D", "--dates"):
-            logging.debug("Dates")
-            dates = True
-
-    root_logger = logging.getLogger()
-    if debug:
-        root_logger.setLevel(logging.DEBUG)
-    else:
-        root_logger.setLevel(logging.INFO)
-
-    db_params_dict = GarminDBConfigManager.get_db_params()
-    analyze = Analyze(db_params_dict)
-    if dates:
-        analyze.get_years()
-    analyze.summary()
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
-
-

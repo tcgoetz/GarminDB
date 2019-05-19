@@ -4,16 +4,14 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, string, logging, datetime, time, traceback
+import os, sys, re, string, logging, datetime, time, traceback
+import progressbar
 
 from HealthDB import CsvImporter
 import FitBitDB
 import FileProcessor
 
-import GarminDBConfigManager
 
-
-logging.basicConfig(filename='import_fitbit.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
@@ -63,51 +61,9 @@ class FitBitData():
         FitBitDB.DaysSummary.find_or_create(self.fitbitdb, FitBitDB.DaysSummary.intersection(db_entry))
 
     def process_files(self):
-        for file_name in self.file_names:
+        for file_name in progressbar.progressbar(self.file_names):
             logger.info("Processing file: " + file_name)
             self.csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
             self.csvimporter.process_file(not self.metric)
-
-
-
-def usage(program):
-    print '%s -i <inputfile> ...' % program
-    sys.exit()
-
-def main(argv):
-    debug = False
-    input_file = None
-
-    try:
-        opts, args = getopt.getopt(argv,"dhi:", ["debug", "input_file="])
-    except getopt.GetoptError:
-        usage(sys.argv[0])
-
-    for opt, arg in opts:
-        if opt == '-h':
-            usage(sys.argv[0])
-        elif opt in ("-d", "--debug"):
-            debug = True
-        elif opt in ("-i", "--input_file"):
-            logging.debug("Input File: %s" % arg)
-            input_file = arg
-
-    root_logger = logging.getLogger()
-    if debug:
-        root_logger.setLevel(logging.DEBUG)
-    else:
-        root_logger.setLevel(logging.INFO)
-
-    db_params_dict = GarminDBConfigManager.get_db_params()
-
-    fitbit_dir = GarminDBConfigManager.get_or_create_fitbit_dir()
-    metric = GarminDBConfigManager.get_metric()
-    fd = FitBitData(input_file, fitbit_dir, db_params_dict, metric, debug)
-    if fd.file_count() > 0:
-        fd.process_files()
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
 
 

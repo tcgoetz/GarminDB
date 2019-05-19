@@ -123,21 +123,10 @@ clean_garmin_dbs: clean_garmin_db clean_garmin_summary_db clean_monitoring_db cl
 
 
 #
-# FitBit targets
+# FitBit target
 #
-FITBIT_DB=$(DB_DIR)/fitbit.db
-$(FITBIT_DB): import_fitbit
-
-clean_fitbit_db:
-	rm -f $(FITBIT_DB)
-
-import_fitbit:
-	$(PYTHON) import_fitbit_csv.py
-
-fitbit_summary: $(FITBIT_DB)
-	$(PYTHON) analyze_fitbit.py --dates
-
-fitbit_db: $(FITBIT_DB)
+fitbit:
+	$(PYTHON) fitbit.py
 
 
 #
