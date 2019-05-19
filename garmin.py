@@ -4,13 +4,14 @@
 # copyright Tom Goetz
 #
 
-import logging, sys, getopt, datetime
+import logging, sys, getopt, datetime, dateutil.parser
 
 from download_garmin import Download
 from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminExtraData, GarminFitData, GarminSleepData, GarminRhrData
 from import_garmin_activities import GarminJsonSummaryData, GarminJsonDetailsData, GarminExtraData, GarminTcxData, GarminFitData
 from analyze_garmin import Analyze
 
+import HealthDB
 import GarminDB
 import GarminDBConfigManager
 
@@ -22,11 +23,16 @@ except ImportError:
     sys.exit(-1)
 
 
-logging.basicConfig(filename='garmin.log', filemode='w', level=logging.DEBUG)
+logging.basicConfig(filename='garmin.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
+
+def config_start_date(type):
+    date = dateutil.parser.parse(GarminConnectConfig.data[type + '_start_date']).date()
+    days = GarminConnectConfig.data['download_days']
+    return (date, days)
 
 def get_date_and_days(latest, db, table, stat_name):
     if latest:
@@ -61,6 +67,8 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
     if activities:
         if latest:
             activity_count = GarminConnectConfig.data['download_latest_activities']
+        else:
+            activity_count = GarminConnectConfig.data['download_all_activities']
         activities_dir = GarminDBConfigManager.get_or_create_activities_dir()
         root_logger.info("Fetching %d activities to %s", activity_count, activities_dir)
         download.get_activity_types(activities_dir, overwite)
@@ -171,6 +179,15 @@ def analyze_data(debug):
     analyze.summary()
 
 
+def delete_db(debug):
+    db_params_dict = GarminDBConfigManager.get_db_params()
+    GarminDB.GarminDB(db_params_dict, debug - 1).delete_db()
+    GarminDB.MonitoringDB(db_params_dict, debug - 1).delete_db()
+    GarminDB.ActivitiesDB(db_params_dict, debug - 1).delete_db()
+    GarminDB.GarminSummaryDB(db_params_dict, debug - 1).delete_db()
+    HealthDB.SummaryDB(db_params_dict, debug - 1).delete_db()
+
+
 def usage(program):
     print '%s [--monitoring | --rhr | --sleep | --weight] ...' % program
     print '    --monitoring : import monitoring data'
@@ -185,6 +202,7 @@ def main(argv):
     _download_data = False
     _import_data = False
     _analyze_data = False
+    _delete_db = False
     activities = False
     debug = 0
     test = False
@@ -198,7 +216,7 @@ def main(argv):
 
     try:
         opts, args = getopt.getopt(argv,"aAdimlrstT:w",
-            ["all", "activities", "analyze", "download", "import", "trace=", "test", "monitoring", "latest", "rhr", "sleep", "weight"])
+            ["all", "activities", "analyze", "delete_db", "download", "import", "trace=", "test", "monitoring", "latest", "rhr", "sleep", "weight"])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -215,6 +233,9 @@ def main(argv):
         elif opt in ("-a", "--activities"):
             logging.debug("activities")
             activities = True
+        elif opt in ("--delete_db"):
+            logging.debug("Delete DB")
+            _delete_db = True
         elif opt in ("-d", "--download"):
             logging.debug("Download")
             _download_data = True
@@ -249,6 +270,10 @@ def main(argv):
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)
+
+    if _delete_db:
+        delete_db(debug)
+        sys.exit()
 
     if _download_data:
         download_data(overwite, latest, weight, monitoring, sleep, rhr, activities)

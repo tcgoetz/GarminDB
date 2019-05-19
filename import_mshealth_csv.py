@@ -4,16 +4,14 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, string, logging, datetime, time, traceback
+import os, sys, re, string, logging, datetime, time, traceback
+import progressbar
 
 from HealthDB import CsvImporter
 import MSHealthDB
 import FileProcessor
 
-import GarminDBConfigManager
 
-
-logging.basicConfig(filename='import_mshealth.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
@@ -75,7 +73,7 @@ class MSHealthData():
         MSHealthDB.DaysSummary.find_or_create(self.mshealth_db, db_entry)
 
     def process_files(self):
-        for file_name in self.file_names:
+        for file_name in progressbar.progressbar(self.file_names):
             logger.info("Processing file: " + file_name)
             csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
             csvimporter.process_file(not self.metric)
@@ -102,7 +100,7 @@ class MSVaultData():
         MSHealthDB.MSVaultWeight.find_or_create(self.mshealth_db, MSHealthDB.MSVaultWeight.intersection(db_entry))
 
     def process_files(self):
-        for file_name in self.file_names:
+        for file_name in progressbar.progressbar(self.file_names):
             logger.info("Processing file: " + file_name)
             csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
             csvimporter.process_file(not self.metric)
@@ -117,52 +115,5 @@ class MSVaultData():
             logger.debug("Unmatched weight: " + value)
             return None
 
-
-def usage(program):
-    print '%s -i <inputfile>' % program
-    sys.exit()
-
-def main(argv):
-    debug = False
-    input_file = None
-
-    try:
-        opts, args = getopt.getopt(argv,"hi:t", ["help", "trace", "input_file="])
-    except getopt.GetoptError:
-        print "Bad argument"
-        usage(sys.argv[0])
-
-    for opt, arg in opts:
-        if opt == '-h':
-            usage(sys.argv[0])
-        elif opt in ("-t", "--trace"):
-            logger.info("Trace:")
-            debug = True
-        elif opt in ("-i", "--input_file"):
-            logger.info("Input File: %s" % arg)
-            input_file = arg
-
-    root_logger = logging.getLogger()
-    if debug:
-        root_logger.setLevel(logging.DEBUG)
-    else:
-        root_logger.setLevel(logging.INFO)
-
-    db_params_dict = GarminDBConfigManager.get_db_params()
-
-    mshealth_dir = GarminDBConfigManager.get_or_create_mshealth_dir()
-    metric = GarminDBConfigManager.get_metric()
-
-    msd = MSHealthData(input_file, mshealth_dir, db_params_dict, metric, debug)
-    if msd.file_count() > 0:
-        msd.process_files()
-
-    mshv = MSVaultData(input_file, mshealth_dir, db_params_dict, metric, debug)
-    if mshv.file_count() > 0:
-        mshv.process_files()
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
 
 

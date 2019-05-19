@@ -21,7 +21,6 @@ import GarminDB
 from Fit import Conversions
 
 
-logging.basicConfig(filename='download.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
@@ -350,12 +349,6 @@ class Download():
     def get_rhr(self, directory, date, days, overwite):
         logger.info("Geting rhr: %s (%d)", str(date), days)
         self.get_stat(self.get_rhr_day, directory, date, days, overwite)
-
-
-def config_start_date(type):
-    date = dateutil.parser.parse(GarminConnectConfig.data[type + '_start_date']).date()
-    days = GarminConnectConfig.data['download_days']
-    return (date, days)
 
 def get_secure_password():
     system = platform.system()

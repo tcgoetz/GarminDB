@@ -7,20 +7,20 @@
 import sys, getopt, logging
 
 
-import FitBitDB
-from import_fitbit_csv import FitBitData
-from analyze_fitbit import Analyze
+import MSHealthDB
+from import_mshealth_csv import MSHealthData, MSVaultData
+from analyze_mshealth import Analyze
 import GarminDBConfigManager
 
 
-logging.basicConfig(filename='fitbit.log', filemode='w', level=logging.DEBUG)
+logging.basicConfig(filename='mshealth.log', filemode='w', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 
 def usage(program):
-    print '%s -i <inputfile> ...' % program
+    print '%s -i <inputfile>' % program
     sys.exit()
 
 def main(argv):
@@ -29,20 +29,22 @@ def main(argv):
     _delete_db = False
 
     try:
-        opts, args = getopt.getopt(argv,"dhi:", ["debug", "delete_db", "input_file="])
+        opts, args = getopt.getopt(argv,"hi:t", ["help", "delete_db", "trace", "input_file="])
     except getopt.GetoptError:
+        print "Bad argument"
         usage(sys.argv[0])
 
     for opt, arg in opts:
         if opt == '-h':
             usage(sys.argv[0])
-        elif opt in ("-d", "--debug"):
-            debug = True
         elif opt in ("--delete_db"):
             logging.debug("Delete DB")
             _delete_db = True
+        elif opt in ("-t", "--trace"):
+            logger.info("Trace:")
+            debug = True
         elif opt in ("-i", "--input_file"):
-            logging.debug("Input File: %s" % arg)
+            logger.info("Input File: %s" % arg)
             input_file = arg
 
     root_logger = logging.getLogger()
@@ -54,14 +56,19 @@ def main(argv):
     db_params_dict = GarminDBConfigManager.get_db_params()
 
     if _delete_db:
-        FitBitDB.FitBitDB(db_params_dict, debug - 1).delete_db()
+        MSHealthDB.MSHealthDB(db_params_dict, debug - 1).delete_db()
         sys.exit()
 
-    fitbit_dir = GarminDBConfigManager.get_or_create_fitbit_dir()
+    mshealth_dir = GarminDBConfigManager.get_or_create_mshealth_dir()
     metric = GarminDBConfigManager.get_metric()
-    fd = FitBitData(input_file, fitbit_dir, db_params_dict, metric, debug)
-    if fd.file_count() > 0:
-        fd.process_files()
+
+    msd = MSHealthData(input_file, mshealth_dir, db_params_dict, metric, debug)
+    if msd.file_count() > 0:
+        msd.process_files()
+
+    mshv = MSVaultData(input_file, mshealth_dir, db_params_dict, metric, debug)
+    if mshv.file_count() > 0:
+        mshv.process_files()
 
     analyze = Analyze(db_params_dict)
     analyze.get_years()
@@ -70,3 +77,6 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+from analyze_mshealth import Analyze
+
+

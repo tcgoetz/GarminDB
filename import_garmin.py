@@ -26,7 +26,7 @@ root_logger = logging.getLogger()
 class GarminWeightData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
-        root_logger.info("Processing weight data")
+        logger.info("Processing weight data")
         super(GarminWeightData, self).__init__(input_file, input_dir, 'weight_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.english_units = english_units
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
@@ -47,7 +47,7 @@ class GarminWeightData(JsonFileProcessor):
 class GarminFitData():
 
     def __init__(self, input_file, input_dir, latest, english_units, debug):
-        root_logger.info("Processing daily FIT data")
+        logger.info("Processing daily FIT data")
         self.english_units = english_units
         self.debug = debug
         if input_file:
@@ -85,6 +85,7 @@ class RemSleepActivityLevels(enum.Enum):
 class GarminSleepData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
+        logger.info("Processing sleep data")
         super(GarminSleepData, self).__init__(input_file, input_dir, 'sleep_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {
@@ -145,6 +146,7 @@ class GarminSleepData(JsonFileProcessor):
 class GarminRhrData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
+        logger.info("Processing rhr data")
         super(GarminRhrData, self).__init__(input_file, input_dir, 'rhr_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'statisticsStartDate' : dateutil.parser.parse}
@@ -165,7 +167,7 @@ class GarminRhrData(JsonFileProcessor):
 class GarminProfile(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_dir, debug):
-        root_logger.info("Processing profile data")
+        logger.info("Processing profile data")
         super(GarminProfile, self).__init__(None, input_dir, 'profile\.json', False, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'calendarDate' : dateutil.parser.parse}
@@ -186,7 +188,7 @@ class GarminProfile(JsonFileProcessor):
 class GarminSummaryData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
-        root_logger.info("Processing daily summary data")
+        logger.info("Processing daily summary data")
         super(GarminSummaryData, self).__init__(input_file, input_dir, 'daily_summary_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.input_dir = input_dir
         self.english_units = english_units
@@ -226,13 +228,13 @@ class GarminSummaryData(JsonFileProcessor):
 class GarminExtraData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
-        root_logger.info("Processing daily extra data")
+        logger.info("Processing daily extra data")
         super(GarminExtraData, self).__init__(input_file, input_dir, 'extra_data_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'day' : dateutil.parser.parse}
 
     def process_json(self, json_data):
-        logger.info("Extra data: %s", repr(json_data))
+        root_logger.info("Extra data: %s", repr(json_data))
         json_data['day'] = json_data['day'].date()
         GarminDB.DailyExtraData.create_or_update_not_none(self.garmin_db, GarminDB.DailyExtraData.convert_eums(json_data))
         return 1

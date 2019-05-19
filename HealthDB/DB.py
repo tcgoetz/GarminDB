@@ -27,17 +27,22 @@ class DB(object):
 
     def __init__(self, db_params_dict, debug=False):
         logger.debug("DB %s debug %s ", repr(db_params_dict), str(debug))
-        url_func = getattr(self, db_params_dict['db_type'] + '_url')
         if debug > 0:
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.INFO)
-        self.engine = create_engine(url_func(db_params_dict), echo=(debug > 1))
+        self.db_params_dict = db_params_dict
+        url_func = getattr(self, self.db_params_dict['db_type'] + '_url')
+        self.engine = create_engine(url_func(self.db_params_dict), echo=(debug > 1))
         self.session_maker = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     @classmethod
     def sqlite_url(cls, db_params_dict):
         return "sqlite:///" + db_params_dict['db_path'] +  '/' + cls.db_name + '.db'
+
+    @classmethod
+    def sqlite_delete(cls, db_params_dict):
+        os.remove(db_params_dict['db_path'] +  '/' + cls.db_name + '.db')
 
     @classmethod
     def mysql_url(cls, db_params_dict):
@@ -57,6 +62,10 @@ class DB(object):
             raise
         finally:
             session.close()
+
+    def delete_db(self):
+        delete_func = getattr(self, self.db_params_dict['db_type'] + '_delete')
+        delete_func(self.db_params_dict)
 
 
 #

@@ -30,10 +30,10 @@ all: update_dbs
 # install all needed code
 setup: update deps
 
-clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs clean_summary_db
+clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs
 
 # build dbs from already downloaded data files
-build_dbs: build_garmin_dbs mshealth_db fitbit_db mshealth_summary fitbit_summary
+build_dbs: garmin mshealth fitbit
 
 # delete the exisitng dbs and build new dbs from already downloaded data files
 rebuild_dbs: clean_dbs build_dbs
@@ -92,14 +92,6 @@ clean: test_clean
 #
 # Fitness System independant targets
 #
-SUMMARY_DB=$(DB_DIR)/summary.db
-$(SUMMARY_DB): summary
-
-summary: mshealth_summary fitbit_summary garmin_summary
-
-clean_summary_db:
-	rm -f $(SUMMARY_DB)
-
 $(BACKUP_DIR):
 	mkdir -p $(BACKUP_DIR)
 
@@ -117,9 +109,9 @@ garmin:
 update_garmin:
 	$(PYTHON) garmin.py --all --download --import --analyze --latest
 
-build_garmin_dbs: garmin
+clean_garmin_dbs:
+	$(PYTHON) garmin.py --delete_db
 
-clean_garmin_dbs: clean_garmin_db clean_garmin_summary_db clean_monitoring_db clean_activities_db
 
 
 #
@@ -128,23 +120,18 @@ clean_garmin_dbs: clean_garmin_db clean_garmin_summary_db clean_monitoring_db cl
 fitbit:
 	$(PYTHON) fitbit.py
 
+clean_fitbit_db:
+	$(PYTHON) fitbit.py --delete_db
+
 
 #
-# MS Health targets
+# MS Health target
 #
-MSHEALTH_DB=$(DB_DIR)/mshealth.db
-$(MSHEALTH_DB): import_mshealth
+mshealth: $(MSHEALTH_DB)
+	$(PYTHON) mshealth.py
 
 clean_mshealth_db:
-	rm -f $(MSHEALTH_DB)
-
-import_mshealth:
-	$(PYTHON) import_mshealth_csv.py
-
-mshealth_summary:
-	$(PYTHON) analyze_mshealth.py --dates
-
-mshealth_db: $(MSHEALTH_DB)
+	$(PYTHON) mshealth.py --delete_db
 
 
 #
