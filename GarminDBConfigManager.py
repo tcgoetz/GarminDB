@@ -110,6 +110,9 @@ def get_db_params(test_db=False):
         db_params_dict['db_host'] = get_db_host()
     return db_params_dict
 
-
 def get_metric():
     return GarminDBConfig.config['metric']
+
+def is_stat_enabled(stat_name):
+    return GarminDBConfig.enabled_stats[stat_name]
+

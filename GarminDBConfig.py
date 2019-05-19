@@ -18,3 +18,10 @@ directories = {
 config = {
     'metric'                : False
 }
+enabled_stats = {
+    'monitoring'            : True,
+    'sleep'                 : True,
+    'rhr'                   : True,
+    'weight'                : True,
+    'activities'            : True
+}

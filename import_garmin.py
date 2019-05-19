@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, string, logging, datetime, traceback, enum
+import os, sys, string, logging, datetime, traceback, enum
 import dateutil.parser
 import progressbar
 
@@ -15,9 +15,9 @@ from FitFileProcessor import *
 import GarminDB
 
 import GarminDBConfigManager
+from import_garmin_activities import GarminJsonSummaryData, GarminJsonDetailsData, GarminExtraData, GarminTcxData, GarminFitData
 
 
-logging.basicConfig(filename='import_garmin.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
@@ -26,6 +26,7 @@ root_logger = logging.getLogger()
 class GarminWeightData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
+        root_logger.info("Processing weight data")
         super(GarminWeightData, self).__init__(input_file, input_dir, 'weight_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.english_units = english_units
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
@@ -46,6 +47,7 @@ class GarminWeightData(JsonFileProcessor):
 class GarminFitData():
 
     def __init__(self, input_file, input_dir, latest, english_units, debug):
+        root_logger.info("Processing daily FIT data")
         self.english_units = english_units
         self.debug = debug
         if input_file:
@@ -163,6 +165,7 @@ class GarminRhrData(JsonFileProcessor):
 class GarminProfile(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_dir, debug):
+        root_logger.info("Processing profile data")
         super(GarminProfile, self).__init__(None, input_dir, 'profile\.json', False, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'calendarDate' : dateutil.parser.parse}
@@ -183,6 +186,7 @@ class GarminProfile(JsonFileProcessor):
 class GarminSummaryData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
+        root_logger.info("Processing daily summary data")
         super(GarminSummaryData, self).__init__(input_file, input_dir, 'daily_summary_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.input_dir = input_dir
         self.english_units = english_units
@@ -222,6 +226,7 @@ class GarminSummaryData(JsonFileProcessor):
 class GarminExtraData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
+        root_logger.info("Processing daily extra data")
         super(GarminExtraData, self).__init__(input_file, input_dir, 'extra_data_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'day' : dateutil.parser.parse}
@@ -231,118 +236,3 @@ class GarminExtraData(JsonFileProcessor):
         json_data['day'] = json_data['day'].date()
         GarminDB.DailyExtraData.create_or_update_not_none(self.garmin_db, GarminDB.DailyExtraData.convert_eums(json_data))
         return 1
-
-
-def usage(program):
-    print '%s [--monitoring | --rhr | --sleep | --weight] ...' % program
-    print '    --monitoring : import monitoring data'
-    print '    --rhr        : import resting heart rate data'
-    print '    --sleep      : import sleep data'
-    print '    --weight     : import weight data'
-    print '    --trace      : turn on debug tracing'
-    print '    '
-    sys.exit()
-
-def main(argv):
-    debug = 0
-    test = False
-    profile_dir = None
-    monitoring = False
-    monitoring_input_file = None
-    weight = False
-    weight_input_file = None
-    rhr = False
-    rhr_input_file = None
-    sleep = False
-    sleep_input_file = None
-    latest = False
-
-    try:
-        opts, args = getopt.getopt(argv,"mM:lrR:sS:twW:",
-            ["debug=", "test", "monitoring", "monitoring_input_file=", "latest", "rhr", "rhr_input_file=", "sleep", "sleep_input_file=", "weight", "weight_input_file="])
-    except getopt.GetoptError:
-        usage(sys.argv[0])
-
-    for opt, arg in opts:
-        if opt == '-h':
-            usage(sys.argv[0])
-        elif opt in ("-d", "--debug"):
-            debug = int(arg)
-        elif opt in ("-t", "--test_db"):
-            test = True
-        elif opt in ("-m", "--monitoring"):
-            logging.debug("Monitoring")
-            monitoring = True
-        elif opt in ("-M", "--monitoring_input_file"):
-            logging.debug("Monitoring input File: %s" % arg)
-            monitoring_input_file = arg
-        elif opt in ("-l", "--latest"):
-            latest = True
-        elif opt in ("-r", "--rhr"):
-            logging.debug("RHR")
-            rhr = True
-        elif opt in ("-R", "--rhr_input_file"):
-            logging.debug("RHR input file: %s" % arg)
-            rhr_input_file = arg
-        elif opt in ("-s", "--sleep"):
-            logging.debug("Sleep")
-            sleep = True
-        elif opt in ("--sleep_input_file"):
-            logging.debug("Sleep input file: %s" % arg)
-            sleep_input_file = arg
-        elif opt in ("-w", "--weight"):
-            logging.debug("Weight")
-            weight = True
-        elif opt in ("-W", "--weight_input_file"):
-            logging.debug("Weight input file: %s" % arg)
-            weight_input_file = arg
-
-    if debug > 0:
-        root_logger.setLevel(logging.DEBUG)
-    else:
-        root_logger.setLevel(logging.INFO)
-
-    db_params_dict = GarminDBConfigManager.get_db_params(test_db=test)
-
-    gp = GarminProfile(db_params_dict, GarminDBConfigManager.get_fit_files_dir(), debug)
-    if gp.file_count() > 0:
-        gp.process()
-
-    garmindb = GarminDB.GarminDB(db_params_dict)
-    english_units = GarminDB.Attributes.measurements_type_metric(garmindb) == False
-
-    if weight or weight_input_file:
-        weight_dir = GarminDBConfigManager.get_weight_dir()
-        gwd = GarminWeightData(db_params_dict, weight_input_file, weight_dir, latest, english_units, debug)
-        if gwd.file_count() > 0:
-            gwd.process()
-
-    if monitoring or monitoring_input_file:
-        monitoring_dir = GarminDBConfigManager.get_monitoring_base_dir()
-        gsd = GarminSummaryData(db_params_dict, monitoring_input_file, monitoring_dir, latest, english_units, debug)
-        if gsd.file_count() > 0:
-            gsd.process()
-        ged = GarminExtraData(db_params_dict, monitoring_input_file, monitoring_dir, latest, debug)
-        if ged.file_count() > 0:
-            ged.process()
-        gfd = GarminFitData(monitoring_input_file, monitoring_dir, latest, english_units, debug)
-        if gfd.file_count() > 0:
-            gfd.process_files(db_params_dict)
-
-    if sleep or sleep_input_file:
-        sleep_dir = GarminDBConfigManager.get_sleep_dir()
-        gsd = GarminSleepData(db_params_dict, sleep_input_file, sleep_dir, latest, debug)
-        if gsd.file_count() > 0:
-            gsd.process()
-
-    if rhr or rhr_input_file:
-        rhr_dir = GarminDBConfigManager.get_rhr_dir()
-        grhrd = GarminRhrData(db_params_dict, rhr_input_file, rhr_dir, latest, debug)
-        if grhrd.file_count() > 0:
-            grhrd.process()
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
-
-

@@ -111,120 +111,13 @@ backup: $(BACKUP_DIR)
 #
 # Garmin targets
 #
+garmin:
+	$(PYTHON) garmin.py --all --download --import --analyze
 
-##  monitoring
-GARMIN_MON_DB=$(DB_DIR)/garmin_monitoring.db
-$(GARMIN_MON_DB): import_monitoring
+update_garmin:
+	$(PYTHON) garmin.py --all --download --import --analyze --latest
 
-build_monitoring_db: $(GARMIN_MON_DB)
-
-clean_monitoring_db:
-	rm -f $(GARMIN_MON_DB)
-
-download_monitoring:
-	$(PYTHON) download_garmin.py --monitoring
-
-import_monitoring: download_monitoring
-	$(PYTHON) import_garmin.py --monitoring
-
-download_new_monitoring:
-	$(PYTHON) download_garmin.py --latest --monitoring
-
-import_new_monitoring: download_new_monitoring
-	$(PYTHON) import_garmin.py --latest --monitoring
-
-## activities
-GARMIN_ACT_DB=$(DB_DIR)/garmin_activities.db
-$(GARMIN_ACT_DB): import_activities
-
-build_activities_db: $(GARMIN_ACT_DB)
-
-clean_activities_db:
-	rm -f $(GARMIN_ACT_DB)
-
-import_activities:
-	$(PYTHON) import_garmin_activities.py
-
-import_new_activities: download_new_activities
-	$(PYTHON) import_garmin_activities.py --latest
-
-download_new_activities:
-	$(PYTHON) download_garmin.py --activities --latest
-
-download_all_activities:
-	$(PYTHON) download_garmin.py --activities
-
-force_download_all_activities:
-	$(PYTHON) download_garmin.py --activities --overwite
-
-## generic garmin
-GARMIN_DB=$(DB_DIR)/garmin.db
-$(GARMIN_DB): import_sleep import_weight import_rhr
-
-build_garmin_db: $(GARMIN_DB)
-
-clean_garmin_db:
-	rm -f $(GARMIN_DB)
-
-## sleep
-download_sleep:
-	$(PYTHON) download_garmin.py --sleep
-
-import_sleep: download_sleep
-	$(PYTHON) import_garmin.py --sleep
-
-download_new_sleep:
-	$(PYTHON) download_garmin.py --latest --sleep
-
-import_new_sleep: download_new_sleep
-	$(PYTHON) import_garmin.py --latest --sleep
-
-## weight
-import_weight: # download_weight
-	$(PYTHON) import_garmin.py --weight
-
-import_new_weight: download_new_weight
-	$(PYTHON) import_garmin.py --latest --weight
-
-download_weight:
-	$(PYTHON) download_garmin.py --weight
-
-download_new_weight:
-	$(PYTHON) download_garmin.py --latest --weight
-
-## rhr
-import_rhr: download_rhr
-	$(PYTHON) import_garmin.py --rhr
-
-import_new_rhr: download_new_rhr
-	$(PYTHON) import_garmin.py --latest --rhr
-
-download_rhr:
-	$(PYTHON) download_garmin.py --rhr
-
-download_new_rhr:
-	$(PYTHON) download_garmin.py --latest --rhr
-
-## digested garmin data
-GARMIN_SUM_DB=$(DB_DIR)/garmin_summary.db
-$(GARMIN_SUM_DB): garmin_summary
-
-build_garmin_summary_db: $(GARMIN_SUM_DB)
-
-clean_garmin_summary_db:
-	rm -f $(GARMIN_SUM_DB)
-
-garmin_summary:
-	$(PYTHON) analyze_garmin.py --analyze --dates
-
-#
-# These operations work across all garmin dbs
-#
-update_garmin: import_new_monitoring import_new_activities import_new_weight import_new_sleep import_new_rhr garmin_summary
-
-download_garmin: download_monitoring download_all_activities download_sleep download_weight download_rhr
-
-build_garmin_dbs: build_garmin_db build_monitoring_db build_activities_db build_garmin_summary_db
+build_garmin_dbs: garmin
 
 clean_garmin_dbs: clean_garmin_db clean_garmin_summary_db clean_monitoring_db clean_activities_db
 

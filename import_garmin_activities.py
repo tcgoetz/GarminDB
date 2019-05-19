@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, string, logging, datetime, traceback, json, tcxparser, dateutil.parser, traceback
+import os, sys, re, string, logging, datetime, traceback, json, tcxparser, dateutil.parser, traceback
 import progressbar
 
 import Fit
@@ -17,7 +17,6 @@ import GarminConnectEnums
 import GarminDBConfigManager
 
 
-logging.basicConfig(filename='import_garmin_activities.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
@@ -31,6 +30,7 @@ def pace_to_time(pace):
 class GarminFitData():
 
     def __init__(self, input_file, input_dir, latest, english_units, debug):
+        logger.debug("Processing activities FIT data")
         self.english_units = english_units
         self.debug = debug
         if input_file:
@@ -54,6 +54,7 @@ class GarminFitData():
 class GarminTcxData():
 
     def __init__(self, input_file, input_dir, latest, english_units, debug):
+        logger.debug("Processing activities tcx data")
         self.english_units = english_units
         self.debug = debug
         if input_file:
@@ -133,6 +134,7 @@ class GarminTcxData():
 class GarminJsonSummaryData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
+        logger.debug("Processing activities summary data")
         super(GarminJsonSummaryData, self).__init__(input_file, input_dir, 'activity_\\d*\.json', latest, debug)
         self.english_units = english_units
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
@@ -286,6 +288,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
 class GarminJsonDetailsData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
+        logger.debug("Processing activities detail data")
         super(GarminJsonDetailsData, self).__init__(input_file, input_dir, 'activity_details_\\d*\.json', latest, debug)
         self.english_units = english_units
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
@@ -336,6 +339,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
 class GarminExtraData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
+        logger.debug("Processing activities extra data")
         super(GarminExtraData, self).__init__(input_file, input_dir, 'extra_data_\\d*\.json', latest, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
 
@@ -344,72 +348,5 @@ class GarminExtraData(JsonFileProcessor):
         GarminDB.ActivitiesExtraData.create_or_update_not_none(self.garmin_db, GarminDB.DailyExtraData.convert_eums(json_data))
         return 1
 
-
-def usage(program):
-    print '%s  [-input_file <inputfile>] ...' % program
-    print '    --trace : turn on debug tracing'
-    print '    --english : units - use feet, lbs, etc'
-    print '    '
-    sys.exit()
-
-def main(argv):
-    debug = 0
-    test_db = False
-    input_file = None
-    latest = False
-
-    try:
-        opts, args = getopt.getopt(argv,"d:hi:lt", ["debug=", "latest", "input_file=", "test_db"])
-    except getopt.GetoptError:
-        usage(sys.argv[0])
-
-    for opt, arg in opts:
-        if opt == '-h':
-            usage(sys.argv[0])
-        elif opt in ("-d", "--debug"):
-            debug = int(arg)
-        elif opt in ("-t", "--test_db"):
-            test_db = True
-        elif opt in ("-i", "--input_file"):
-            logging.debug("Input File: %s" % arg)
-            input_file = arg
-        elif opt in ("-l", "--latest"):
-            latest = True
-
-    if debug > 0:
-        root_logger.setLevel(logging.DEBUG)
-    else:
-        root_logger.setLevel(logging.INFO)
-
-    db_params_dict = GarminDBConfigManager.get_db_params(test_db=test_db)
-
-    garmindb = GarminDB.GarminDB(db_params_dict)
-    english_units = GarminDB.Attributes.measurements_type_metric(garmindb) == False
-
-    activities_dir = GarminDBConfigManager.get_activities_dir()
-
-    gjsd = GarminJsonSummaryData(db_params_dict, input_file, activities_dir, latest, english_units, debug)
-    if gjsd.file_count() > 0:
-        gjsd.process()
-
-    gdjd = GarminJsonDetailsData(db_params_dict, input_file, activities_dir, latest, english_units, debug)
-    if gdjd.file_count() > 0:
-        gdjd.process()
-
-    ged = GarminExtraData(db_params_dict, input_file, activities_dir, latest, debug)
-    if ged.file_count() > 0:
-        ged.process()
-
-    gtd = GarminTcxData(input_file, activities_dir, latest, english_units, debug)
-    if gtd.file_count() > 0:
-        gtd.process_files(db_params_dict)
-
-    gfd = GarminFitData(input_file, activities_dir, latest, english_units, debug)
-    if gfd.file_count() > 0:
-        gfd.process_files(db_params_dict)
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
 
 

@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, string, logging, datetime, calendar
+import os, sys, re, string, logging, datetime, calendar
 import progressbar
 
 import HealthDB
@@ -15,7 +15,6 @@ from Fit import FieldEnums
 import GarminDBConfigManager
 
 
-logging.basicConfig(filename='analyze_garmin.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
@@ -303,53 +302,3 @@ class Analyze():
         years = GarminDB.Monitoring.get_years(self.garmin_mon_db)
         for year in years:
             self.calculate_year(year)
-
-
-def usage(program):
-    print '%s ...' % program
-    sys.exit()
-
-def main(argv):
-    summary = False
-    debug = 0
-    dates = False
-
-    try:
-        opts, args = getopt.getopt(argv,"adi:t:", ["analyze", "debug=", "dates"])
-    except getopt.GetoptError:
-        usage(sys.argv[0])
-
-    for opt, arg in opts:
-        if opt == '-h':
-            usage(sys.argv[0])
-        elif opt in ("-a", "--analyze"):
-            logging.debug("analyze: True")
-            summary = True
-        elif opt in ("-t", "--debug"):
-            debug = int(arg)
-            if debug > 0:
-                logger.setLevel(logging.DEBUG)
-            if debug > 1:
-                root_logger.setLevel(logging.DEBUG)
-            logging.debug("debug: %d" % debug)
-        elif opt in ("-d", "--dates"):
-            logging.debug("Dates")
-            dates = True
-
-    root_logger = logging.getLogger()
-    if debug > 0:
-        root_logger.setLevel(logging.DEBUG)
-    else:
-        root_logger.setLevel(logging.INFO)
-
-    db_params_dict = GarminDBConfigManager.get_db_params()
-    analyze = Analyze(db_params_dict, debug - 1)
-    if dates:
-        analyze.get_stats()
-    if summary:
-        analyze.summary()
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
-
-
