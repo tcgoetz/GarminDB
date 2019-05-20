@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import json, logging, platform, subprocess
+import sys, json, logging, platform, subprocess
 
 
 class GarminConnectConfigManager(object):
