@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import logging, sys, getopt, datetime, dateutil.parser
+import logging, sys, getopt, datetime
 
 from download_garmin import Download
 from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringExtraData, GarminMonitoringFitData, GarminSleepData, GarminRhrData
@@ -22,17 +22,13 @@ logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
-
-def config_start_date(type):
-    date = dateutil.parser.parse(GarminConnectConfig.data[type + '_start_date']).date()
-    days = GarminConnectConfig.data['download_days']
-    return (date, days)
+gc_gonfig = GarminConnectConfigManager()
 
 def get_date_and_days(latest, db, table, stat_name):
     if latest:
         last_ts = table.latest_time(db)
         if last_ts is None:
-            date, days = config_start_date(stat_name)
+            date, days = gc_gonfig.stat_start_date(stat_name)
             logger.info("Automatic date not found, using: %s : %s for %s", str(date), str(days), stat_name)
         else:
             # start from the day after the last day in the DB
@@ -44,14 +40,13 @@ def get_date_and_days(latest, db, table, stat_name):
                 date = last_ts
                 days = (datetime.date.today() - last_ts).days
     else:
-        date, days = config_start_date(stat_name)
+        date, days = gc_gonfig.stat_start_date(stat_name)
     if date is None or days is None:
         print "Missing config: need %s_start_date and download_days. Edit GarminConnectConfig.py." % stat_name
         sys.exit()
     return (date, days)
 
 def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
-    gc_gonfig = GarminConnectConfigManager()
     db_params_dict = GarminDBConfigManager.get_db_params()
 
     download = Download()
@@ -176,11 +171,11 @@ def analyze_data(debug):
 
 def delete_db(debug):
     db_params_dict = GarminDBConfigManager.get_db_params()
-    GarminDB.GarminDB(db_params_dict, debug - 1).delete_db()
-    GarminDB.MonitoringDB(db_params_dict, debug - 1).delete_db()
-    GarminDB.ActivitiesDB(db_params_dict, debug - 1).delete_db()
-    GarminDB.GarminSummaryDB(db_params_dict, debug - 1).delete_db()
-    HealthDB.SummaryDB(db_params_dict, debug - 1).delete_db()
+    GarminDB.GarminDB.delete_db(db_params_dict)
+    GarminDB.MonitoringDB.delete_db(db_params_dict)
+    GarminDB.ActivitiesDB.delete_db(db_params_dict)
+    GarminDB.GarminSummaryDB.delete_db(db_params_dict)
+    HealthDB.SummaryDB.delete_db(db_params_dict)
 
 
 def usage(program):

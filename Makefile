@@ -79,16 +79,17 @@ clean_deps:
 	$(DEPS_SUDO) $(MAKE) remove_deps
 
 clean: test_clean
-	rm -rf *.pyc
-	rm -rf Fit/*.pyc
-	rm -rf HealthDB/*.pyc
-	rm -rf GarminDB/*.pyc
-	rm -rf FitBitDB/*.pyc
+	rm -f *.pyc
+	rm -f Fit/*.pyc
+	rm -f HealthDB/*.pyc
+	rm -f GarminDB/*.pyc
+	rm -f FitBitDB/*.pyc
 	rm -f $(BUGREPORT)
-	rm -rf *.log
+	rm -f *.log
 	rm -rf dist
 	rm -rf build
-	rm -rf *.zip
+	rm -f *.spec
+	rm -f *.zip
 
 
 #

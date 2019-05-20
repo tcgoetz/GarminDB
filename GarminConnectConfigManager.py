@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import sys, json, logging, platform, subprocess
+import sys, json, logging, platform, subprocess, dateutil.parser
 
 
 class GarminConnectConfigManager(object):
@@ -45,3 +45,8 @@ class GarminConnectConfigManager(object):
 
     def all_activity_count(self):
         return self.config['data']['download_all_activities']
+
+    def stat_start_date(self, stat_type):
+        date = dateutil.parser.parse(self.config['data'][stat_type + '_start_date']).date()
+        days = self.config['data']['download_days']
+        return (date, days)

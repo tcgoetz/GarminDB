@@ -56,7 +56,7 @@ def main(argv):
     db_params_dict = GarminDBConfigManager.get_db_params()
 
     if _delete_db:
-        MSHealthDB.MSHealthDB(db_params_dict, debug - 1).delete_db()
+        MSHealthDB.MSHealthDB.delete_db(db_params_dict)
         sys.exit()
 
     mshealth_dir = GarminDBConfigManager.get_or_create_mshealth_dir()

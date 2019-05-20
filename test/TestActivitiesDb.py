@@ -15,7 +15,7 @@ sys.path.append('../.')
 import GarminDB
 import Fit
 from FileProcessor import *
-
+from import_garmin_activities import GarminActivitiesFitData
 import GarminDBConfigManager
 
 
@@ -55,6 +55,14 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         self.assertGreater(GarminDB.PaddleActivities.row_count(self.garmin_act_db), 0)
         self.assertGreater(GarminDB.CycleActivities.row_count(self.garmin_act_db), 0)
         self.assertGreater(GarminDB.EllipticalActivities.row_count(self.garmin_act_db), 0)
+
+    def test_fit_file_import(self):
+        print '*****'
+        db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
+        gfd = GarminActivitiesFitData(None, 'test_files/fit/activity', latest=False, english_units=True, debug=2)
+        if gfd.file_count() > 0:
+            gfd.process_files(db_params_dict)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -42,7 +42,11 @@ class DB(object):
 
     @classmethod
     def sqlite_delete(cls, db_params_dict):
-        os.remove(db_params_dict['db_path'] +  '/' + cls.db_name + '.db')
+        filename = db_params_dict['db_path'] +  '/' + cls.db_name + '.db'
+        try:
+            os.remove(filename)
+        except:
+            logger.warning('%s not removed', filename)
 
     @classmethod
     def mysql_url(cls, db_params_dict):
@@ -63,9 +67,10 @@ class DB(object):
         finally:
             session.close()
 
-    def delete_db(self):
-        delete_func = getattr(self, self.db_params_dict['db_type'] + '_delete')
-        delete_func(self.db_params_dict)
+    @classmethod
+    def delete_db(cls, db_params_dict):
+        delete_func = getattr(cls, db_params_dict['db_type'] + '_delete')
+        delete_func(db_params_dict)
 
 
 #

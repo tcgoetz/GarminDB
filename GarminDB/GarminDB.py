@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
-    db_version = 9
+    db_version = 10
     view_version = 3
 
     class DbVersion(Base, DbVersionObject):
