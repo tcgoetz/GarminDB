@@ -19,7 +19,7 @@ endif
 #
 # All third party Python packages needed to use the project. They will be installed with pip.
 #
-PYTHON_PACKAGES=sqlalchemy requests python-dateutil enum34 progressbar2
+PYTHON_PACKAGES=sqlalchemy requests python-dateutil enum34 progressbar2 PyInstaller
 
 
 #
@@ -41,7 +41,7 @@ rebuild_activity_db: clean_activities_db build_activities_db
 rebuild_summary_db: clean_garmin_summary_db clean_summary_db build_garmin_summary_db
 
 # download data files for the period specified in GarminConnectConfig.py and build the dbs
-create_dbs: download_garmin build_dbs
+create_dbs: build_dbs
 
 # update the exisitng dbs by downloading data files for dates after the last in the dbs and update the dbs
 update_dbs: update_garmin
@@ -87,6 +87,8 @@ clean: test_clean
 	rm -rf FitBitDB/*.pyc
 	rm -f $(BUGREPORT)
 	rm -rf *.log
+	rm -rf dist
+	rm -rf build
 
 
 #
@@ -111,6 +113,9 @@ update_garmin:
 
 clean_garmin_dbs:
 	$(PYTHON) garmin.py --delete_db
+
+package_garmin:
+	pyinstaller --clean --noconfirm garmin.py
 
 
 
