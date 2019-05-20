@@ -21,7 +21,7 @@ Once you have your data in the DB, I recomend using a SQLite browser like [SQLit
 
 ## Binary Release
 
-I have just started offering a bianry release for MacOS. Binary release for other platforms may be added.
+I have just started offering a bianry release for MacOS. Binary release for other platforms may be added. You can download releases from the [release page](https://github.com/tcgoetz/GarminDB/releases). For the MacOS release, unzip it into a directory and then run create_dbs.sh or update_dbs.sh from a Terminal.
 
 ## From Source
 
