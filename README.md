@@ -19,11 +19,17 @@ Once you have your data in the DB, I recomend using a SQLite browser like [SQLit
 
 # Using It
 
+## Binary Release
+
+I have just started offering a bianry release for MacOS. Binary release for other platforms may be added.
+
+## From Source
+
 The scripts are automated with [Make](https://www.gnu.org/software/make/manual/make.html). Run the Make commands in a terminal window.
 
 * Git clone GarminDB repo. Get the command from the green button on the project home page.
 * Run `make setup` get the scripts ready to process data.
-* Copy `GarminConnectConfig.py.orig` to `GarminConnectConfig.py`, edit it, and add your Garmin Connect username and password.
+* Copy `GarminConnectConfig.json.example` to `GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password.
 * Run `make create_dbs` for your first run.
 * Keep all of your local data up to date by running only one command: `make`.
 * Run `make backup` to backup your DBs.
