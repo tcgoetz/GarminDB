@@ -33,18 +33,17 @@ setup: update deps
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs
 
 # build dbs from already downloaded data files
-build_dbs: garmin mshealth fitbit
+create_dbs: garmin mshealth fitbit
 
 # delete the exisitng dbs and build new dbs from already downloaded data files
-rebuild_dbs: clean_dbs build_dbs
+rebuild_dbs: clean_dbs create_dbs
 rebuild_activity_db: clean_activities_db build_activities_db
 rebuild_summary_db: clean_garmin_summary_db clean_summary_db build_garmin_summary_db
 
-# download data files for the period specified in GarminConnectConfig.py and build the dbs
-create_dbs: build_dbs
-
 # update the exisitng dbs by downloading data files for dates after the last in the dbs and update the dbs
 update_dbs: update_garmin
+
+release: zip_packages
 
 
 #
@@ -89,6 +88,7 @@ clean: test_clean
 	rm -rf *.log
 	rm -rf dist
 	rm -rf build
+	rm -rf *.zip
 
 
 #
@@ -100,6 +100,10 @@ $(BACKUP_DIR):
 EPOCH=$(shell date +'%s')
 backup: $(BACKUP_DIR)
 	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
+
+PLATFORM=$(shell uname)
+zip_packages: package_garmin package_fitbit package_mshealth
+	zip -j -r GarminDb_$(PLATFORM)_$(EPOCH).zip GarminConnectConfig.json.example dist/garmin dist/fitbit dist/mshealth create_dbs.sh update_dbs.sh
 
 
 #
@@ -115,7 +119,7 @@ clean_garmin_dbs:
 	$(PYTHON) garmin.py --delete_db
 
 package_garmin:
-	pyinstaller --clean --noconfirm garmin.py
+	pyinstaller --clean --noconfirm --onefile garmin.py
 
 
 
@@ -128,6 +132,9 @@ fitbit:
 clean_fitbit_db:
 	$(PYTHON) fitbit.py --delete_db
 
+package_fitbit:
+	pyinstaller --clean --noconfirm --onefile fitbit.py
+
 
 #
 # MS Health target
@@ -137,6 +144,9 @@ mshealth: $(MSHEALTH_DB)
 
 clean_mshealth_db:
 	$(PYTHON) mshealth.py --delete_db
+
+package_mshealth:
+	pyinstaller --clean --noconfirm --onefile mshealth.py
 
 
 #
@@ -161,4 +171,4 @@ bugreport:
 		pip show $$package >> $(BUGREPORT); \
 	done
 
-.PHONY: all setup build_dbs rebuild_dbs clean clean_dbs test
+.PHONY: all setup create_dbs rebuild_dbs clean clean_dbs test

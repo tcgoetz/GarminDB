@@ -4,18 +4,12 @@
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, logging, datetime, time, tempfile, zipfile, json, subprocess, platform
+import os, sys, getopt, re, logging, datetime, time, tempfile, zipfile, json
 import dateutil.parser
 import requests
 import progressbar
 
-try:
-    import GarminConnectConfig
-except ImportError:
-    print "Missing config: copy GarminConnectConfig.py.orig to GarminConnectConfig.py and edit GarminConnectConfig.py to " + \
-     "add your Garmin Connect username and password."
-    sys.exit(-1)
-
+from GarminConnectConfigManager import GarminConnectConfigManager
 import GarminDBConfigManager
 import GarminDB
 from Fit import Conversions
@@ -83,6 +77,7 @@ class Download():
         self.temp_dir = tempfile.mkdtemp()
         logger.debug("__init__: temp_dir= " + self.temp_dir)
         self.session = requests.session()
+        self.gc_gonfig = GarminConnectConfigManager()
 
     def get_activity_details_url(self, activity_id):
         return self.garmin_connect_modern_proxy_url + '/activity-service/activity/%s' % str(activity_id)
@@ -109,12 +104,10 @@ class Download():
 
     def login(self):
         profile_dir = GarminDBConfigManager.get_or_create_fit_files_dir()
-        username = GarminConnectConfig.credentials['user']
-        password = GarminConnectConfig.credentials['password']
-        if not password:
-            password = get_secure_password()
+        username = self.gc_gonfig.get_user()
+        password = self.gc_gonfig.get_password()
         if not username or not password:
-            print "Missing config: need username and password. Edit GarminConnectConfig.py."
+            print "Missing config: need username and password. Edit GarminConnectConfig.json."
             return
 
         logger.debug("login: %s %s", username, password)
@@ -349,10 +342,3 @@ class Download():
     def get_rhr(self, directory, date, days, overwite):
         logger.info("Geting rhr: %s (%d)", str(date), days)
         self.get_stat(self.get_rhr_day, directory, date, days, overwite)
-
-def get_secure_password():
-    system = platform.system()
-    if system == 'Darwin':
-        password = subprocess.check_output(["security", "find-internet-password", "-s", "sso.garmin.com", "-w"])
-        if password:
-            return password.rstrip()

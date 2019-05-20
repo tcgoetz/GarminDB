@@ -111,7 +111,7 @@ bugreport.txt
 *.fit
 *.html
 .*.conf
-GarminConnectConfig.py
+GarminConnectConfig.json
 
 
 

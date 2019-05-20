@@ -14,13 +14,7 @@ from analyze_garmin import Analyze
 import HealthDB
 import GarminDB
 import GarminDBConfigManager
-
-try:
-    import GarminConnectConfig
-except ImportError:
-    print "Missing config: copy GarminConnectConfig.py.orig to GarminConnectConfig.py and edit GarminConnectConfig.py to " + \
-     "add your Garmin Connect username and password."
-    sys.exit(-1)
+from GarminConnectConfigManager import GarminConnectConfigManager
 
 
 logging.basicConfig(filename='garmin.log', filemode='w', level=logging.INFO)
@@ -57,6 +51,7 @@ def get_date_and_days(latest, db, table, stat_name):
     return (date, days)
 
 def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
+    gc_gonfig = GarminConnectConfigManager()
     db_params_dict = GarminDBConfigManager.get_db_params()
 
     download = Download()
@@ -66,9 +61,9 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
 
     if activities:
         if latest:
-            activity_count = GarminConnectConfig.data['download_latest_activities']
+            activity_count = gc_gonfig.latest_activity_count()
         else:
-            activity_count = GarminConnectConfig.data['download_all_activities']
+            activity_count = gc_gonfig.all_activity_count()
         activities_dir = GarminDBConfigManager.get_or_create_activities_dir()
         root_logger.info("Fetching %d activities to %s", activity_count, activities_dir)
         download.get_activity_types(activities_dir, overwite)
@@ -189,11 +184,17 @@ def delete_db(debug):
 
 
 def usage(program):
-    print '%s [--monitoring | --rhr | --sleep | --weight] ...' % program
+    print '%s [--all | --activities | --monitoring | --rhr | --sleep | --weight] [--download | --import | --analyze] [--latest]' % program
+    print '    --all        : import data for all enabled stats'
+    print '    --activities : import activities data'
     print '    --monitoring : import monitoring data'
     print '    --rhr        : import resting heart rate data'
     print '    --sleep      : import sleep data'
     print '    --weight     : import weight data'
+    print '    --download   : download data for the chosen stats'
+    print '    --import     : import data for the chosen stats'
+    print '    --analyze    : analyze data in the db and create derived tables'
+    print '    --latest     : only download and/or import new data'
     print '    --trace      : turn on debug tracing'
     print '    '
     sys.exit()
