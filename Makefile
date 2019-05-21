@@ -172,4 +172,4 @@ bugreport:
 		pip show $$package >> $(BUGREPORT); \
 	done
 
-.PHONY: all setup create_dbs rebuild_dbs clean clean_dbs test
+.PHONY: all setup create_dbs rebuild_dbs update_dbs clean clean_dbs test

@@ -57,7 +57,6 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         self.assertGreater(GarminDB.EllipticalActivities.row_count(self.garmin_act_db), 0)
 
     def test_fit_file_import(self):
-        print '*****'
         db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
         gfd = GarminActivitiesFitData(None, 'test_files/fit/activity', latest=False, english_units=True, debug=2)
         if gfd.file_count() > 0:

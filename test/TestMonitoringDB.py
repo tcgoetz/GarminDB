@@ -65,7 +65,7 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
         for table_name, table in uptodate_tables.iteritems():
             latest = GarminDB.Monitoring.latest_time(self.db)
             logger.info("Latest data for %s: %s", table_name, str(latest))
-            self.assertLess(datetime.datetime.now() - latest, datetime.timedelta(days=1))
+            self.assertLess(datetime.datetime.now() - latest, datetime.timedelta(days=2))
 
 
 if __name__ == '__main__':
