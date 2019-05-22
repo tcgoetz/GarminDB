@@ -299,7 +299,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
 
     def process_running(self, activity_id, json_data):
         summary_dto = json_data['summaryDTO']
-        avg_moving_speed_mps = summary_dto.get('averageMovingSpeed', None)
+        avg_moving_speed_mps = summary_dto.get('averageMovingSpeed')
         avg_moving_speed = Fit.Conversions.mps_to_mph(avg_moving_speed_mps)
         run = {
             'activity_id'               : activity_id,

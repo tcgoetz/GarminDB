@@ -101,14 +101,14 @@ class GarminSleepData(JsonFileProcessor):
         }
 
     def process_json(self, json_data):
-            daily_sleep = json_data.get('dailySleepDTO', None)
+            daily_sleep = json_data.get('dailySleepDTO')
             if daily_sleep is None:
                 return 0
-            date = daily_sleep.get('calendarDate', None)
+            date = daily_sleep.get('calendarDate')
             if date is None:
                 return 0
             day = date.date()
-            if json_data.get('remSleepData', None):
+            if json_data.get('remSleepData'):
                 root_logger.info("Importing %s with REM data", day)
                 sleep_activity_levels = RemSleepActivityLevels
             else:
@@ -116,16 +116,16 @@ class GarminSleepData(JsonFileProcessor):
                 sleep_activity_levels = SleepActivityLevels
             day_data = {
                 'day' : day,
-                'start' : daily_sleep.get('sleepStartTimestampGMT', None),
-                'end' : daily_sleep.get('sleepEndTimestampGMT', None),
-                'total_sleep' : daily_sleep.get('sleepTimeSeconds', None),
-                'deep_sleep' : daily_sleep.get('deepSleepSeconds', None),
-                'light_sleep' : daily_sleep.get('lightSleepSeconds', None),
-                'rem_sleep' : daily_sleep.get('remSleepSeconds', None),
-                'awake' : daily_sleep.get('awakeSleepSeconds', None)
+                'start' : daily_sleep.get('sleepStartTimestampGMT'),
+                'end' : daily_sleep.get('sleepEndTimestampGMT'),
+                'total_sleep' : daily_sleep.get('sleepTimeSeconds'),
+                'deep_sleep' : daily_sleep.get('deepSleepSeconds'),
+                'light_sleep' : daily_sleep.get('lightSleepSeconds'),
+                'rem_sleep' : daily_sleep.get('remSleepSeconds'),
+                'awake' : daily_sleep.get('awakeSleepSeconds')
             }
             GarminDB.Sleep.create_or_update_not_none(self.garmin_db, day_data)
-            sleep_levels = json_data.get('sleepLevels', None)
+            sleep_levels = json_data.get('sleepLevels')
             if sleep_levels is None:
                 return 0
             for sleep_level in sleep_levels:

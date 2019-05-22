@@ -61,10 +61,10 @@ class ExtraData(DBObject):
 
     @classmethod
     def convert_eums(cls, extra_data):
-        mood = extra_data.get('mood', None)
+        mood = extra_data.get('mood')
         if mood is not None:
             extra_data['mood'] = Mood.from_string(mood)
-        condition = extra_data.get('condition', None)
+        condition = extra_data.get('condition')
         if condition is not None:
             extra_data['condition'] = Condition.from_string(condition)
         return extra_data

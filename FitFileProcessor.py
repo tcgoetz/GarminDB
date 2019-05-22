@@ -76,11 +76,11 @@ class FitFileProcessor():
     def write_file_id_entry(self, fit_file, message):
         parsed_message = message.to_dict()
         root_logger.info("file_id message: %s", repr(parsed_message))
-        self.serial_number = parsed_message.get('serial_number', None)
-        _manufacturer = GarminDB.Device.Manufacturer.convert(parsed_message.get('manufacturer', None))
+        self.serial_number = parsed_message.get('serial_number')
+        _manufacturer = GarminDB.Device.Manufacturer.convert(parsed_message.get('manufacturer'))
         if _manufacturer is not None:
             self.manufacturer = _manufacturer
-        self.product = parsed_message.get('product', None)
+        self.product = parsed_message.get('product')
         if self.serial_number:
             device = {
                 'serial_number' : self.serial_number,
@@ -132,8 +132,8 @@ class FitFileProcessor():
         run = {
             'activity_id'                       : activity_id,
             'steps'                             : self.get_field_value(message_dict, 'total_steps'),
-            'avg_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('avg_speed', None)),
-            'max_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('max_speed', None)),
+            'avg_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('avg_speed')),
+            'max_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('max_speed')),
             'avg_steps_per_min'                 : message_dict.get('avg_cadence', 0) * 2,
             'max_steps_per_min'                 : message_dict.get('max_cadence', 0) * 2,
             'avg_step_length'                   : self.get_field_value(message_dict, 'avg_step_length'),
@@ -150,8 +150,8 @@ class FitFileProcessor():
         walk = {
             'activity_id'                       : activity_id,
             'steps'                             : self.get_field_value(message_dict, 'total_steps'),
-            'avg_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('avg_speed', None)),
-            'max_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('max_speed', None)),
+            'avg_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('avg_speed')),
+            'max_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('max_speed')),
         }
         GarminDB.WalkActivities._create_or_update_not_none(self.garmin_act_db_session, walk)
 
@@ -184,8 +184,8 @@ class FitFileProcessor():
         root_logger.debug("elliptical entry: %s", repr(message_dict))
         workout = {
             'activity_id'                       : activity_id,
-            'steps'                             : message_dict.get('dev_Steps', message_dict.get('total_steps', None)),
-            'elliptical_distance'               : message_dict.get('dev_User_distance', message_dict.get('dev_distance', message_dict.get('distance', None))),
+            'steps'                             : message_dict.get('dev_Steps', message_dict.get('total_steps')),
+            'elliptical_distance'               : message_dict.get('dev_User_distance', message_dict.get('dev_distance', message_dict.get('distance'))),
         }
         GarminDB.EllipticalActivities._create_or_update_not_none(self.garmin_act_db_session, workout)
 
@@ -218,7 +218,7 @@ class FitFileProcessor():
             'start_long'                        : self.get_field_value(message_dict, 'start_position_long'),
             'stop_lat'                          : self.get_field_value(message_dict, 'end_position_lat'),
             'stop_long'                         : self.get_field_value(message_dict, 'end_position_long'),
-            'distance'                          : message_dict.get('dev_User_distance', message_dict.get('total_distance', None)),
+            'distance'                          : message_dict.get('dev_User_distance', message_dict.get('total_distance')),
             'cycles'                            : self.get_field_value(message_dict, 'total_cycles'),
             'laps'                              : self.get_field_value(message_dict, 'num_laps'),
             'avg_hr'                            : self.get_field_value(message_dict, 'avg_heart_rate'),
@@ -266,7 +266,7 @@ class FitFileProcessor():
             'start_long'                        : self.get_field_value(message_dict, 'start_position_long'),
             'stop_lat'                          : self.get_field_value(message_dict, 'end_position_lat'),
             'stop_long'                         : self.get_field_value(message_dict, 'end_position_long'),
-            'distance'                          : message_dict.get('dev_User_distance', message_dict.get('total_distance', None)),
+            'distance'                          : message_dict.get('dev_User_distance', message_dict.get('total_distance')),
             'cycles'                            : self.get_field_value(message_dict, 'total_cycles'),
             'avg_hr'                            : self.get_field_value(message_dict, 'avg_heart_rate'),
             'max_hr'                            : self.get_field_value(message_dict, 'max_heart_rate'),
@@ -287,7 +287,7 @@ class FitFileProcessor():
         root_logger.debug("battery message: %s", repr(battery_message.to_dict()))
 
     def write_attribute(self, timestamp, parsed_message, attribute_name):
-        attribute = parsed_message.get(attribute_name, None)
+        attribute = parsed_message.get(attribute_name)
         if attribute is not None:
             GarminDB.Attributes._set_newer(self.garmin_db_session, attribute_name, attribute, timestamp)
 
@@ -370,11 +370,11 @@ class FitFileProcessor():
     def write_device_info_entry(self, fit_file, device_info_message):
         try:
             parsed_message = device_info_message.to_dict()
-            device_type = parsed_message.get('device_type', None)
-            serial_number = parsed_message.get('serial_number', None)
-            manufacturer = GarminDB.Device.Manufacturer.convert(parsed_message.get('manufacturer', None))
-            product = parsed_message.get('product', None)
-            source_type = parsed_message.get('source_type', None)
+            device_type = parsed_message.get('device_type')
+            serial_number = parsed_message.get('serial_number')
+            manufacturer = GarminDB.Device.Manufacturer.convert(parsed_message.get('manufacturer'))
+            product = parsed_message.get('product')
+            source_type = parsed_message.get('source_type')
             # local devices are part of the main device. Base missing fields off of the main device.
             if source_type is Fit.FieldEnums.SourceType.local:
                 if serial_number is None and self.serial_number is not None and device_type is not None:
@@ -392,7 +392,7 @@ class FitFileProcessor():
                 'timestamp'         : parsed_message['timestamp'],
                 'manufacturer'      : manufacturer,
                 'product'           : Fit.FieldEnums.name_for_enum(product),
-                'hardware_version'  : parsed_message.get('hardware_version', None),
+                'hardware_version'  : parsed_message.get('hardware_version'),
             }
             try:
                 GarminDB.Device._create_or_update_not_none(self.garmin_db_session, device)
@@ -403,8 +403,8 @@ class FitFileProcessor():
                 'serial_number'         : serial_number,
                 'device_type'           : Fit.FieldEnums.name_for_enum(device_type),
                 'timestamp'             : parsed_message['timestamp'],
-                'cum_operating_time'    : parsed_message.get('cum_operating_time', None),
-                'battery_voltage'       : parsed_message.get('battery_voltage', None),
+                'cum_operating_time'    : parsed_message.get('cum_operating_time'),
+                'battery_voltage'       : parsed_message.get('battery_voltage'),
                 'software_version'      : parsed_message['software_version'],
             }
             try:

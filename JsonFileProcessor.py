@@ -32,7 +32,7 @@ class JsonFileProcessor(object):
     def parse_file(self, filename):
         def parser(entry):
             for (conversion_key, conversion_func) in self.conversions.iteritems():
-                entry_value = entry.get(conversion_key, None)
+                entry_value = entry.get(conversion_key)
                 if entry_value is not None:
                     entry[conversion_key] = conversion_func(entry_value)
             return entry
