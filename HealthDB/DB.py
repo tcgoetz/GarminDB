@@ -337,10 +337,10 @@ class DBObject(object):
             return cls._query(session, selectable, cls.time_col, start_ts, end_ts).all()
 
     @classmethod
-    def get_for_day(cls, db, table, day_date):
+    def get_for_day(cls, db, selectable, day_date):
         start_ts = datetime.datetime.combine(day_date, datetime.time.min)
         end_ts = start_ts + datetime.timedelta(1)
-        return cls.get_for_period(db, table, start_ts, end_ts)
+        return cls.get_for_period(db, selectable, start_ts, end_ts)
 
     @classmethod
     def get_col_values(cls, db, get_col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):

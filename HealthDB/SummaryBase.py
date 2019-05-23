@@ -8,7 +8,7 @@ from HealthDB import *
 
 
 class SummaryBase(DBObject):
-    view_version = 2
+    view_version = 3
 
     hr_avg = Column(Float)
     hr_min = Column(Float)
@@ -25,8 +25,11 @@ class SummaryBase(DBObject):
     intensity_time = Column(Time, nullable=False, default=datetime.time.min)
     moderate_activity_time = Column(Time, nullable=False, default=datetime.time.min)
     vigorous_activity_time = Column(Time, nullable=False, default=datetime.time.min)
+    intensity_time_goal = Column(Time, nullable=False, default=datetime.time.min)
     steps = Column(Integer)
+    steps_goal = Column(Integer)
     floors = Column(Float)
+    floors_goal = Column(Float)
     sleep_avg = Column(Time, nullable=False, default=datetime.time.min)
     sleep_min = Column(Time, nullable=False, default=datetime.time.min)
     sleep_max = Column(Time, nullable=False, default=datetime.time.min)
@@ -37,6 +40,7 @@ class SummaryBase(DBObject):
     calories_avg = Column(Integer)
     calories_bmr_avg = Column(Integer)
     calories_active_avg = Column(Integer)
+    calories_goal = Column(Integer)
     activities = Column(Integer)
     activities_calories = Column(Integer)
     activities_distance = Column(Integer)
@@ -53,14 +57,16 @@ class SummaryBase(DBObject):
                 cls.round_col_text('weight_avg') +
                 cls.round_col_text('weight_min') +
                 cls.round_col_text('weight_max') +
-                'intensity_time, moderate_activity_time, vigorous_activity_time, ' +
-                'steps, ' +
+                'intensity_time, intensity_time_goal, moderate_activity_time, vigorous_activity_time, ' +
+                'steps, steps_goal, ' +
                 cls.round_col_text('floors', places=0) +
+                cls.round_col_text('floors_goal', places=0) +
                 'sleep_avg, rem_sleep_avg, ' +
                 cls.round_col_text('stress_avg') +
                 cls.round_col_text('calories_avg', places=0) +
                 cls.round_col_text('calories_bmr_avg', places=0) +
                 cls.round_col_text('calories_active_avg', places=0) +
+                cls.round_col_text('calories_goal', places=0) +
                 'activities, activities_calories, ' +
                 cls.round_col_text('activities_distance', seperator='') +
             'FROM %s ORDER BY first_day DESC' % cls.__tablename__
@@ -79,14 +85,16 @@ class SummaryBase(DBObject):
                 cls.round_col_text('weight_avg') +
                 cls.round_col_text('weight_min') +
                 cls.round_col_text('weight_max') +
-                'intensity_time, moderate_activity_time, vigorous_activity_time, ' +
-                'steps, ' +
+                'intensity_time, intensity_time_goal, moderate_activity_time, vigorous_activity_time, ' +
+                'steps, steps_goal, ' +
                 cls.round_col_text('floors', places=0) +
+                cls.round_col_text('floors_goal', places=0) +
                 'sleep_avg, rem_sleep_avg, ' +
                 cls.round_col_text('stress_avg') +
                 cls.round_col_text('calories_avg', places=0) +
                 cls.round_col_text('calories_bmr_avg', places=0) +
                 cls.round_col_text('calories_active_avg', places=0) +
+                cls.round_col_text('calories_goal', places=0) +
                 'activities, activities_calories, ' +
                 cls.round_col_text('activities_distance', seperator='') +
             'FROM %s ORDER BY first_day DESC' % cls.__tablename__
@@ -104,9 +112,10 @@ class SummaryBase(DBObject):
                 cls.round_col_text('rhr_avg', 'rhr') +
                 cls.round_col_text('inactive_hr_avg', 'inactive_hr') +
                 cls.round_col_text('weight_avg', 'weight') +
-                'intensity_time, moderate_activity_time, vigorous_activity_time, ' +
-                'steps, ' +
+                'intensity_time, intensity_time_goal, moderate_activity_time, vigorous_activity_time, ' +
+                'steps, steps_goal, ' +
                 cls.round_col_text('floors', places=0) +
+                cls.round_col_text('floors_goal', places=0) +
                 'sleep_avg as sleep, ' +
                 'rem_sleep_avg as rem_sleep, ' +
                 cls.round_col_text('stress_avg', 'stress', places=0) +
@@ -114,6 +123,7 @@ class SummaryBase(DBObject):
                 cls.round_col_text('calories_avg', 'calories', places=0) +
                 cls.round_col_text('calories_bmr_avg', 'calories_bmr', places=0) +
                 cls.round_col_text('calories_active_avg', 'calories_active', places=0) +
+                cls.round_col_text('calories_goal', places=0) +
                 'activities, activities_calories, ' +
                 cls.round_col_text('activities_distance', seperator='') +
             'FROM %s ORDER BY day DESC' % cls.__tablename__

@@ -125,7 +125,7 @@ class FitFileProcessor():
         root_logger.debug("source message: %s", repr(source_message.to_dict()))
 
     def get_field_value(self, message_dict, field_name):
-        return message_dict.get('dev_' + field_name, message_dict.get(field_name, None))
+        return message_dict.get('dev_' + field_name, message_dict.get(field_name))
 
     def write_running_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("run entry: %s", repr(message_dict))

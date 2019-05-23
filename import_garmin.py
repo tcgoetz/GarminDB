@@ -188,11 +188,14 @@ class GarminSummaryData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
         logger.info("Processing daily summary data")
-        super(GarminSummaryData, self).__init__(input_file, input_dir, 'daily_summary_\d{4}-\d{2}-\d{2}\.json', latest, debug)
+        super(GarminSummaryData, self).__init__(input_file, input_dir, 'daily_summary_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
         self.input_dir = input_dir
         self.english_units = english_units
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
-        self.conversions = {'calendarDate' : dateutil.parser.parse}
+        self.conversions = {
+            'calendarDate'          : dateutil.parser.parse,
+            'intensityMinutesGoal'  : Fit.Conversions.min_to_dt_time,
+        }
 
     def process_json(self, json_data):
         day = json_data['calendarDate'].date()
@@ -203,6 +206,7 @@ class GarminSummaryData(JsonFileProcessor):
             'day'                   : day,
             'step_goal'             : json_data['dailyStepGoal'],
             'steps'                 : json_data['totalSteps'],
+            'floors_goal'           : json_data['userFloorsAscendedGoal'],
             'intensity_mins_goal'   : json_data['intensityMinutesGoal'],
             'floors_up'             : json_data['floorsAscended'],
             'floors_down'           : json_data['floorsDescended'],

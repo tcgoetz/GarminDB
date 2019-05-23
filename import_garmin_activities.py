@@ -22,11 +22,6 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 
-def pace_to_time(pace):
-    if pace is not None and pace != '--:--':
-        return datetime.datetime.strptime(pace, "%M:%S").time()
-
-
 class GarminActivitiesFitData():
 
     def __init__(self, input_file, input_dir, latest, english_units, debug):
