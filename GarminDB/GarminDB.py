@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
-    db_version = 11
+    db_version = 12
     view_version = 3
 
     class DbVersion(Base, DbVersionObject):
@@ -256,9 +256,12 @@ class DailySummary(GarminDB.Base, DBObject):
     __tablename__ = 'daily_summary'
 
     day = Column(Date, primary_key=True)
+    stress_avg = Column(Integer)
     step_goal = Column(Integer)
     steps = Column(Integer)
-    intensity_mins_goal = Column(Time, nullable=False, default=datetime.time.min)
+    moderate_activity_time = Column(Time, nullable=False, default=datetime.time.min)
+    vigorous_activity_time = Column(Time, nullable=False, default=datetime.time.min)
+    intensity_time_goal = Column(Time, nullable=False, default=datetime.time.min)
     floors_up = Column(Float)
     floors_down = Column(Float)
     floors_goal = Column(Float)
@@ -272,37 +275,52 @@ class DailySummary(GarminDB.Base, DBObject):
 
     time_col_name = 'day'
 
-    @classmethod
-    def get_daily_stats(cls, db, day_start_ts):
-        day_end_ts = day_start_ts + datetime.timedelta(1)
-        return  {
-            'day'                   : day_start_ts,
-            'steps_goal'            : cls.get_col_avg(db, cls.step_goal, day_start_ts, day_end_ts),
-            'floors_goal'           : cls.get_col_avg(db, cls.floors_goal, day_start_ts, day_end_ts),
-            'calories_goal'         : cls.get_col_avg(db, cls.calories_goal, day_start_ts, day_end_ts),
-            'intensity_time_goal'   : cls.get_time_col_avg(db, cls.intensity_mins_goal, day_start_ts, day_end_ts)
-        }
+    @hybrid_property
+    def intensity_time(self):
+        return Conversions.add_time(self.moderate_activity_time, self.vigorous_activity_time, 2)
+
+    @intensity_time.expression
+    def intensity_time(cls):
+        return cls.time_from_secs(2 * cls.secs_from_time(cls.vigorous_activity_time) + cls.secs_from_time(cls.moderate_activity_time))
 
     @classmethod
-    def get_weekly_stats(cls, db, first_day_ts):
-        last_day_ts = first_day_ts + datetime.timedelta(7)
+    def get_stats(cls, db, start_ts, end_ts):
         return  {
-            'first_day'             : first_day_ts,
-            'steps_goal'            : cls.get_col_sum(db, cls.step_goal, first_day_ts, last_day_ts),
-            'floors_goal'           : cls.get_col_sum(db, cls.floors_goal, first_day_ts, last_day_ts),
-            'calories_goal'         : cls.get_col_sum(db, cls.calories_goal, first_day_ts, last_day_ts),
-            'intensity_time_goal'   : cls.get_time_col_avg(db, cls.intensity_mins_goal, first_day_ts, last_day_ts)
+            'stress_avg'                : cls.get_col_avg(db, cls.stress_avg, start_ts, end_ts),
+            'steps'                     : cls.get_col_avg(db, cls.steps, start_ts, end_ts),
+            'steps_goal'                : cls.get_col_avg(db, cls.step_goal, start_ts, end_ts),
+            'floors'                    : cls.get_col_avg(db, cls.floors_up, start_ts, end_ts),
+            'floors_goal'               : cls.get_col_avg(db, cls.floors_goal, start_ts, end_ts),
+            'calories_goal'             : cls.get_col_avg(db, cls.calories_goal, start_ts, end_ts),
+            'intensity_time'            : cls.get_time_col_sum(db, cls.intensity_time, start_ts, end_ts),
+            'moderate_activity_time'    : cls.get_time_col_sum(db, cls.moderate_activity_time, start_ts, end_ts),
+            'vigorous_activity_time'    : cls.get_time_col_sum(db, cls.vigorous_activity_time, start_ts, end_ts),
+            'intensity_time_goal'       : cls.get_time_col_avg(db, cls.intensity_time_goal, start_ts, end_ts),
+            'calories_avg'              : cls.get_col_avg(db, cls.calories_total, start_ts, end_ts),
+            'calories_bmr_avg'          : cls.get_col_avg(db, cls.calories_bmr, start_ts, end_ts),
+            'calories_active_avg'       : cls.get_col_avg(db, cls.calories_active, start_ts, end_ts),
         }
 
     @classmethod
     def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
-        return  {
-            'first_day'             : day_ts,
-            'steps_goal'            : cls.get_col_sum(db, cls.step_goal, first_day_ts, last_day_ts),
-            'floors_goal'           : cls.get_col_sum(db, cls.floors_goal, first_day_ts, end_ts),
-            'calories_goal'         : cls.get_col_sum(db, cls.calories_goal, first_day_ts, last_day_ts),
-            'intensity_time_goal'   : cls.get_time_col_avg(db, cls.intensity_mins_goal, first_day_ts, last_day_ts) * 4
-        }
+        stats = cls.get_stats(db, first_day_ts, last_day_ts)
+        # intensity time is a weekly goal, so sum up the weekly average values
+        first_week_end = first_day_ts + datetime.timedelta(7)
+        second_week_end = first_day_ts + datetime.timedelta(14)
+        third_week_end = first_day_ts + datetime.timedelta(21)
+        fourth_week_end = first_day_ts + datetime.timedelta(28)
+        stats['intensity_time_goal'] = Conversions.add_time(
+            Conversions.add_time(
+                cls.get_time_col_avg(db, cls.intensity_time_goal, first_day_ts, first_week_end),
+                cls.get_time_col_avg(db, cls.intensity_time_goal, first_week_end, second_week_end)
+            ),
+            Conversions.add_time(
+                cls.get_time_col_avg(db, cls.intensity_time_goal, second_week_end, third_week_end),
+                cls.get_time_col_avg(db, cls.intensity_time_goal, third_week_end, fourth_week_end)
+            )
+        )
+        stats['first_day'] = first_day_ts
+        return stats
 
 
 class DailyExtraData(GarminDB.Base, ExtraData):

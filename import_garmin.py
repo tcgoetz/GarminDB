@@ -193,8 +193,10 @@ class GarminSummaryData(JsonFileProcessor):
         self.english_units = english_units
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {
-            'calendarDate'          : dateutil.parser.parse,
-            'intensityMinutesGoal'  : Fit.Conversions.min_to_dt_time,
+            'calendarDate'              : dateutil.parser.parse,
+            'moderateIntensityMinutes'  : Fit.Conversions.min_to_dt_time,
+            'vigorousIntensityMinutes'  : Fit.Conversions.min_to_dt_time,
+            'intensityMinutesGoal'      : Fit.Conversions.min_to_dt_time,
         }
 
     def process_json(self, json_data):
@@ -203,20 +205,23 @@ class GarminSummaryData(JsonFileProcessor):
         (description, extra_data) = GarminDB.DailyExtraData.from_string(description_str)
         distance = Fit.Conversions.Distance.from_meters(json_data['totalDistanceMeters'])
         summary = {
-            'day'                   : day,
-            'step_goal'             : json_data['dailyStepGoal'],
-            'steps'                 : json_data['totalSteps'],
-            'floors_goal'           : json_data['userFloorsAscendedGoal'],
-            'intensity_mins_goal'   : json_data['intensityMinutesGoal'],
-            'floors_up'             : json_data['floorsAscended'],
-            'floors_down'           : json_data['floorsDescended'],
-            'distance'              : distance.to_miles() if self.english_units else distance.to_kms(),
-            'calories_goal'         : json_data['netCalorieGoal'],
-            'calories_total'        : json_data['totalKilocalories'],
-            'calories_bmr'          : json_data['bmrKilocalories'],
-            'calories_active'       : json_data['activeKilocalories'],
-            'calories_consumed'     : json_data['consumedKilocalories'],
-            'description'           : description,
+            'day'                       : day,
+            'stress_avg'                : json_data['averageStressLevel'],
+            'step_goal'                 : json_data['dailyStepGoal'],
+            'steps'                     : json_data['totalSteps'],
+            'floors_goal'               : json_data['userFloorsAscendedGoal'],
+            'moderate_activity_time'    : json_data['moderateIntensityMinutes'],
+            'vigorous_activity_time'    : json_data['vigorousIntensityMinutes'],
+            'intensity_time_goal'       : json_data['intensityMinutesGoal'],
+            'floors_up'                 : json_data['floorsAscended'],
+            'floors_down'               : json_data['floorsDescended'],
+            'distance'                  : distance.to_miles() if self.english_units else distance.to_kms(),
+            'calories_goal'             : json_data['netCalorieGoal'],
+            'calories_total'            : json_data['totalKilocalories'],
+            'calories_bmr'              : json_data['bmrKilocalories'],
+            'calories_active'           : json_data['activeKilocalories'],
+            'calories_consumed'         : json_data['consumedKilocalories'],
+            'description'               : description,
         }
         GarminDB.DailySummary.create_or_update_not_none(self.garmin_db, summary)
         if extra_data:

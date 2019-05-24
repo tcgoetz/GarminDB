@@ -8,7 +8,7 @@ from HealthDB import *
 
 
 class SummaryBase(DBObject):
-    view_version = 3
+    view_version = 4
 
     hr_avg = Column(Float)
     hr_min = Column(Float)
@@ -58,9 +58,9 @@ class SummaryBase(DBObject):
                 cls.round_col_text('weight_min') +
                 cls.round_col_text('weight_max') +
                 'intensity_time, intensity_time_goal, moderate_activity_time, vigorous_activity_time, ' +
-                'steps, steps_goal, ' +
+                'steps, (steps * 100) / steps_goal as steps_goal_percent, ' +
                 cls.round_col_text('floors', places=0) +
-                cls.round_col_text('floors_goal', places=0) +
+                '(floors * 100) / floors_goal as floors_goal_percent, ' +
                 'sleep_avg, rem_sleep_avg, ' +
                 cls.round_col_text('stress_avg') +
                 cls.round_col_text('calories_avg', places=0) +
@@ -86,9 +86,9 @@ class SummaryBase(DBObject):
                 cls.round_col_text('weight_min') +
                 cls.round_col_text('weight_max') +
                 'intensity_time, intensity_time_goal, moderate_activity_time, vigorous_activity_time, ' +
-                'steps, steps_goal, ' +
+                'steps, (steps * 100) / steps_goal as steps_goal_percent, ' +
                 cls.round_col_text('floors', places=0) +
-                cls.round_col_text('floors_goal', places=0) +
+                '(floors * 100) / floors_goal as floors_goal_percent, ' +
                 'sleep_avg, rem_sleep_avg, ' +
                 cls.round_col_text('stress_avg') +
                 cls.round_col_text('calories_avg', places=0) +
@@ -113,9 +113,9 @@ class SummaryBase(DBObject):
                 cls.round_col_text('inactive_hr_avg', 'inactive_hr') +
                 cls.round_col_text('weight_avg', 'weight') +
                 'intensity_time, intensity_time_goal, moderate_activity_time, vigorous_activity_time, ' +
-                'steps, steps_goal, ' +
+                'steps, (steps * 100) / steps_goal as steps_goal_percent, ' +
                 cls.round_col_text('floors', places=0) +
-                cls.round_col_text('floors_goal', places=0) +
+                '(floors * 100) / floors_goal as floors_goal_percent, ' +
                 'sleep_avg as sleep, ' +
                 'rem_sleep_avg as rem_sleep, ' +
                 cls.round_col_text('stress_avg', 'stress', places=0) +

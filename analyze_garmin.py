@@ -175,7 +175,7 @@ class Analyze():
         if GarminDB.IntensityHR.row_count_for_day(self.garmin_sum_db, day_date) == 0 or overwrite:
             monitoring_rows = GarminDB.Monitoring.get_for_day(self.garmin_mon_db, GarminDB.Monitoring, day_date)
             previous_ts = None
-            for monitoring in progressbar.progressbar(monitoring_rows):
+            for monitoring in monitoring_rows:
                 if monitoring.intensity is not None:
                     # Heart rate value is for one minute, reported at the end of the minute. Only take HR values where the
                     # measurement period falls within the activity period.
@@ -192,14 +192,14 @@ class Analyze():
                                 GarminDB.IntensityHR.create_or_update_not_none(self.garmin_sum_db, entry)
                     previous_ts = monitoring.timestamp
 
-    def combine_stats(self, stats, stat1_name, stat2_name):
-        stat1 = stats.get(stat1_name, 0)
-        stat2 = stats.get(stat2_name, 0)
-        if stat1 is  None:
-            return stat2
-        if stat2 is  None:
-            return stat1
-        return stat1 + stat2
+    # def combine_stats(self, stats, stat1_name, stat2_name):
+    #     stat1 = stats.get(stat1_name, 0)
+    #     stat2 = stats.get(stat2_name, 0)
+    #     if stat1 is  None:
+    #         return stat2
+    #     if stat2 is  None:
+    #         return stat1
+    #     return stat1 + stat2
 
     def calculate_day_stats(self, day_date):
         self.populate_hr_intensity(day_date)
@@ -207,18 +207,15 @@ class Analyze():
         stats.update(GarminDB.RestingHeartRate.get_daily_stats(self.garmin_db, day_date))
         stats.update(GarminDB.IntensityHR.get_daily_stats(self.garmin_sum_db, day_date))
         stats.update(GarminDB.Weight.get_daily_stats(self.garmin_db, day_date))
-        stats.update(GarminDB.Stress.get_daily_stats(self.garmin_db, day_date))
+        # stats.update(GarminDB.Stress.get_daily_stats(self.garmin_db, day_date))
         stats.update(GarminDB.DailySummary.get_daily_stats(self.garmin_db, day_date))
-        stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.garmin_mon_db, day_date, self.english_units))
-        stats.update(GarminDB.MonitoringIntensity.get_daily_stats(self.garmin_mon_db, day_date))
-        stats.update(GarminDB.Monitoring.get_daily_stats(self.garmin_mon_db, day_date))
+        # stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.garmin_mon_db, day_date, self.english_units))
+        # stats.update(GarminDB.MonitoringIntensity.get_daily_stats(self.garmin_mon_db, day_date))
+        # stats.update(GarminDB.Monitoring.get_daily_stats(self.garmin_mon_db, day_date))
         stats.update(GarminDB.Sleep.get_daily_stats(self.garmin_db, day_date))
-        stats.update(GarminDB.Stress.get_daily_stats(self.garmin_db, day_date))
-        stats.update(GarminDB.MonitoringInfo.get_daily_stats(self.garmin_mon_db, day_date))
+        # stats.update(GarminDB.MonitoringInfo.get_daily_stats(self.garmin_mon_db, day_date))
         stats.update(GarminDB.Activities.get_daily_stats(self.garmin_act_db, day_date))
-        stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
-        # calculate hr for inactive periods
-        GarminDB.Monitoring.get_daily_stats(self.garmin_mon_db, day_date)
+        # stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
         # save it to the db
         GarminDB.DaysSummary.create_or_update_not_none(self.garmin_sum_db, stats)
         HealthDB.DaysSummary.create_or_update_not_none(self.sum_db, stats)
@@ -228,16 +225,15 @@ class Analyze():
         stats.update(GarminDB.RestingHeartRate.get_weekly_stats(self.garmin_db, day_date))
         stats.update(GarminDB.IntensityHR.get_weekly_stats(self.garmin_sum_db, day_date))
         stats.update(GarminDB.Weight.get_weekly_stats(self.garmin_db, day_date))
-        stats.update(GarminDB.Stress.get_weekly_stats(self.garmin_db, day_date))
+        # stats.update(GarminDB.Stress.get_weekly_stats(self.garmin_db, day_date))
         stats.update(GarminDB.DailySummary.get_weekly_stats(self.garmin_db, day_date))
-        stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.garmin_mon_db, day_date, self.english_units))
-        stats.update(GarminDB.MonitoringIntensity.get_weekly_stats(self.garmin_mon_db, day_date))
-        stats.update(GarminDB.Monitoring.get_weekly_stats(self.garmin_mon_db, day_date))
+        # stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.garmin_mon_db, day_date, self.english_units))
+        # stats.update(GarminDB.MonitoringIntensity.get_weekly_stats(self.garmin_mon_db, day_date))
+        # stats.update(GarminDB.Monitoring.get_weekly_stats(self.garmin_mon_db, day_date))
         stats.update(GarminDB.Sleep.get_weekly_stats(self.garmin_db, day_date))
-        stats.update(GarminDB.Stress.get_weekly_stats(self.garmin_db, day_date))
-        stats.update(GarminDB.MonitoringInfo.get_weekly_stats(self.garmin_mon_db, day_date))
+        # stats.update(GarminDB.MonitoringInfo.get_weekly_stats(self.garmin_mon_db, day_date))
         stats.update(GarminDB.Activities.get_weekly_stats(self.garmin_act_db, day_date))
-        stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
+        # stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
         GarminDB.WeeksSummary.create_or_update_not_none(self.garmin_sum_db, stats)
         HealthDB.WeeksSummary.create_or_update_not_none(self.sum_db, stats)
 
@@ -246,53 +242,30 @@ class Analyze():
         stats.update(GarminDB.RestingHeartRate.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
         stats.update(GarminDB.IntensityHR.get_monthly_stats(self.garmin_sum_db, start_day_date, end_day_date))
         stats.update(GarminDB.Weight.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
-        stats.update(GarminDB.Stress.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
+        # stats.update(GarminDB.Stress.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
         stats.update(GarminDB.DailySummary.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
-        stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date, self.english_units))
-        stats.update(GarminDB.MonitoringIntensity.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
-        stats.update(GarminDB.Monitoring.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
+        # stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date, self.english_units))
+        # stats.update(GarminDB.MonitoringIntensity.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
+        # stats.update(GarminDB.Monitoring.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
         stats.update(GarminDB.Sleep.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
-        stats.update(GarminDB.Stress.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
-        stats.update(GarminDB.MonitoringInfo.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
+        # stats.update(GarminDB.MonitoringInfo.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
         stats.update(GarminDB.Activities.get_monthly_stats(self.garmin_act_db, start_day_date, end_day_date))
-        stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
+        # stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
         GarminDB.MonthsSummary.create_or_update_not_none(self.garmin_sum_db, stats)
         HealthDB.MonthsSummary.create_or_update_not_none(self.sum_db, stats)
 
-    def summary(self):
-        logger.info("___Summary Table Generation___")
-        sleep_period_start = GarminDB.Attributes.get_time(self.garmin_db, 'sleep_time')
-        sleep_period_stop = GarminDB.Attributes.get_time(self.garmin_db, 'wake_time')
-
-        years = GarminDB.Monitoring.get_years(self.garmin_mon_db)
-        for year in years:
-            days = GarminDB.Monitoring.get_days(self.garmin_mon_db, year)
-            for day in days:
-                day_date = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
-                self.calculate_day_stats(day_date)
-
-            for week_starting_day in xrange(1, 365, 7):
-                day_date = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
-                self.calculate_week_stats(day_date)
-
-            months = GarminDB.Monitoring.get_months(self.garmin_mon_db, year)
-            for month in months:
-                start_day_date = datetime.date(year, month, 1)
-                end_day_date = datetime.date(year, month, calendar.monthrange(year, month)[1])
-                self.calculate_month_stats(start_day_date, end_day_date)
-
     def calculate_year(self, year):
         days = GarminDB.Monitoring.get_days(self.garmin_mon_db, year)
-        for day in days:
+        for day in progressbar.progressbar(days):
             day_date = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
             self.calculate_day_stats(day_date)
 
-        for week_starting_day in xrange(1, 365, 7):
+        for week_starting_day in progressbar.progressbar(xrange(1, 365, 7)):
             day_date = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
             self.calculate_week_stats(day_date)
 
         months = GarminDB.Monitoring.get_months(self.garmin_mon_db, year)
-        for month in months:
+        for month in progressbar.progressbar(months):
             start_day_date = datetime.date(year, month, 1)
             end_day_date = datetime.date(year, month, calendar.monthrange(year, month)[1])
             self.calculate_month_stats(start_day_date, end_day_date)
@@ -304,4 +277,5 @@ class Analyze():
 
         years = GarminDB.Monitoring.get_years(self.garmin_mon_db)
         for year in years:
+            logger.info("Generating %s", str(year))
             self.calculate_year(year)
