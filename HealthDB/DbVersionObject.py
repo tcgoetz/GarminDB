@@ -20,5 +20,17 @@ class DbVersionObject(KeyValueObject):
             raise RuntimeError("DB: %s version mismatch. Please rebuild the %s DB. (%s vs %s)" %
                     (db.db_name, db.db_name, self.version, version_number))
 
+    def table_version_check(self, db, table_object):
+        self.version = self.version_check_key(db, table_object.__tablename__ + '_version', table_object.table_version)
+        if self.version != table_object.table_version:
+            raise RuntimeError("DB: %s table %s version mismatch. Please rebuild the %s DB. (%s vs %s)" %
+                    (db.db_name, table_object.__tablename__, db.db_name, self.version, table_object.table_version))
+
+    def view_version_check(self, db, table_object):
+        if hasattr(table_object, 'view_version'):
+            self.version = self.version_check_key(db, table_object.__tablename__ + '_view_version', table_object.view_version)
+            return self.version == table_object.view_version
+        return True
+
     def update_version(self, db, version_key, version_number):
         self.set(db, version_key, version_number)

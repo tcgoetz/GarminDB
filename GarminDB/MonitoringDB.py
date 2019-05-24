@@ -23,12 +23,19 @@ class MonitoringDB(DB):
         logger.info("MonitoringDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(MonitoringDB, self).__init__(db_params_dict, debug)
         MonitoringDB.Base.metadata.create_all(self.engine)
-        self.version = MonitoringDB.DbVersion()
-        self.version.version_check(self, self.db_version)
+        version = MonitoringDB.DbVersion()
+        version.version_check(self, self.db_version)
+        #
+        self.tables = [MonitoringInfo, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb, Monitoring]
+        for table in self.tables:
+            version.table_version_check(self, table)
+            if not version.view_version_check(self, table):
+                table.delete_view(self)
 
 
 class MonitoringInfo(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_info'
+    table_version = 1
 
     timestamp = Column(DateTime, primary_key=True)
     file_id = Column(Integer, nullable=False)
@@ -53,6 +60,7 @@ class MonitoringInfo(MonitoringDB.Base, DBObject):
 
 class MonitoringHeartRate(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_hr'
+    table_version = 1
 
     timestamp = Column(DateTime, primary_key=True)
     heart_rate = Column(Integer, nullable=False)
@@ -79,6 +87,7 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
 
 class MonitoringIntensity(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_intensity'
+    table_version = 1
 
     timestamp = Column(DateTime, primary_key=True)
     moderate_activity_time = Column(Time, nullable=False, default=datetime.time.min)
@@ -109,6 +118,7 @@ class MonitoringIntensity(MonitoringDB.Base, DBObject):
 
 class MonitoringClimb(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_climb'
+    table_version = 1
 
     feet_to_floors = 10
     meters_to_floors = 3
@@ -160,6 +170,7 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
 
 class Monitoring(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring'
+    table_version = 1
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, nullable=False)

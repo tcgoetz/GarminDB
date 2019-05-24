@@ -14,7 +14,6 @@ class GarminSummaryDB(DB):
     Base = declarative_base()
     db_name = 'garmin_summary'
     db_version = 7
-    view_version = SummaryBase.view_version
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -26,12 +25,12 @@ class GarminSummaryDB(DB):
         version = SummaryDB.DbVersion()
         version.version_check(self, self.db_version)
         #
-        db_view_version = version.version_check_key(self, 'view_version', self.view_version)
-        if db_view_version != self.view_version:
-            MonthsSummary.delete_view(self)
-            WeeksSummary.delete_view(self)
-            DaysSummary.delete_view(self)
-            version.update_version(self, 'view_version', self.view_version)
+        self.tables = [Summary, MonthsSummary, WeeksSummary, DaysSummary, IntensityHR]
+        for table in self.tables:
+            version.table_version_check(self, table)
+            if not version.view_version_check(self, table):
+                table.delete_view(self)
+        #
         MonthsSummary.create_months_view(self)
         WeeksSummary.create_weeks_view(self)
         DaysSummary.create_days_view(self)
@@ -39,10 +38,13 @@ class GarminSummaryDB(DB):
 
 class Summary(GarminSummaryDB.Base, KeyValueObject):
     __tablename__ = 'summary'
+    table_version = 1
 
 
 class MonthsSummary(GarminSummaryDB.Base, SummaryBase):
     __tablename__ = 'months_summary'
+    table_version = 1
+    view_version = SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
 
@@ -51,6 +53,8 @@ class MonthsSummary(GarminSummaryDB.Base, SummaryBase):
 
 class WeeksSummary(GarminSummaryDB.Base, SummaryBase):
     __tablename__ = 'weeks_summary'
+    table_version = 1
+    view_version = SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
 
@@ -59,6 +63,8 @@ class WeeksSummary(GarminSummaryDB.Base, SummaryBase):
 
 class DaysSummary(GarminSummaryDB.Base, SummaryBase):
     __tablename__ = 'days_summary'
+    table_version = 1
+    view_version = SummaryBase.view_version
 
     day = Column(Date, primary_key=True)
 
@@ -70,6 +76,7 @@ class DaysSummary(GarminSummaryDB.Base, SummaryBase):
 #
 class IntensityHR(GarminSummaryDB.Base, DBObject):
     __tablename__ = 'intensity_hr'
+    table_version = 1
 
     timestamp = Column(DateTime, primary_key=True)
     intensity = Column(Integer, nullable=False)

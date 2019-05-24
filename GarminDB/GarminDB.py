@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 class GarminDB(DB):
     Base = declarative_base()
     db_name = 'garmin'
-    db_version = 12
-    view_version = 3
+    db_version = 13
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -27,17 +26,18 @@ class GarminDB(DB):
         GarminDB.Base.metadata.create_all(self.engine)
         version = GarminDB.DbVersion()
         version.version_check(self, self.db_version)
-        db_view_version = version.version_check_key(self, 'view_version', self.view_version)
-        if db_view_version != self.view_version:
-            DeviceInfo.delete_view(self)
-            File.delete_view(self)
-            version.update_version(self, 'view_version', self.view_version)
+        self.tables = [Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate, DailySummary, DailyExtraData]
+        for table in self.tables:
+            version.table_version_check(self, table)
+            if not version.view_version_check(self, table):
+                table.delete_view(self)
         DeviceInfo.create_view(self)
         File.create_view(self)
 
 
 class Attributes(GarminDB.Base, KeyValueObject):
     __tablename__ = 'attributes'
+    table_version = 1
 
     @classmethod
     def measurements_type_metric(cls, db):
@@ -46,6 +46,7 @@ class Attributes(GarminDB.Base, KeyValueObject):
 
 class Device(GarminDB.Base, DBObject):
     __tablename__ = 'devices'
+    table_version = 1
     unknown_device_serial_number = 9999999999
 
     Manufacturer = derived_enum('Manufacturer', FieldEnums.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
@@ -74,6 +75,8 @@ class Device(GarminDB.Base, DBObject):
 
 class DeviceInfo(GarminDB.Base, DBObject):
     __tablename__ = 'device_info'
+    table_version = 1
+    view_version = 3
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, nullable=False)
@@ -108,6 +111,8 @@ class DeviceInfo(GarminDB.Base, DBObject):
 
 class File(GarminDB.Base, DBObject):
     __tablename__ = 'files'
+    table_version = 1
+    view_version = 3
 
     fit_file_types_prefix = 'fit_'
     FileType = derived_enum('FileType', FieldEnums.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
@@ -157,6 +162,7 @@ class File(GarminDB.Base, DBObject):
 
 class Weight(GarminDB.Base, DBObject):
     __tablename__ = 'weight'
+    table_version = 1
 
     day = Column(Date, primary_key=True)
     weight = Column(Float, nullable=False)
@@ -175,6 +181,7 @@ class Weight(GarminDB.Base, DBObject):
 
 class Stress(GarminDB.Base, DBObject):
     __tablename__ = 'stress'
+    table_version = 1
 
     timestamp = Column(DateTime, primary_key=True, unique=True)
     stress = Column(Integer, nullable=False)
@@ -191,6 +198,7 @@ class Stress(GarminDB.Base, DBObject):
 
 class Sleep(GarminDB.Base, DBObject):
     __tablename__ = 'sleep'
+    table_version = 1
 
     day = Column(Date, primary_key=True)
     start = Column(DateTime)
@@ -217,6 +225,7 @@ class Sleep(GarminDB.Base, DBObject):
 
 class SleepEvents(GarminDB.Base, DBObject):
     __tablename__ = 'sleep_events'
+    table_version = 1
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, unique=True)
@@ -236,6 +245,7 @@ class SleepEvents(GarminDB.Base, DBObject):
 
 class RestingHeartRate(GarminDB.Base, DBObject):
     __tablename__ = 'resting_hr'
+    table_version = 1
 
     day = Column(Date, primary_key=True)
     resting_heart_rate = Column(Float)
@@ -254,8 +264,12 @@ class RestingHeartRate(GarminDB.Base, DBObject):
 
 class DailySummary(GarminDB.Base, DBObject):
     __tablename__ = 'daily_summary'
+    table_version = 1
 
     day = Column(Date, primary_key=True)
+    hr_min = Column(Integer)
+    hr_max = Column(Integer)
+    rhr = Column(Integer)
     stress_avg = Column(Integer)
     step_goal = Column(Integer)
     steps = Column(Integer)
@@ -286,6 +300,9 @@ class DailySummary(GarminDB.Base, DBObject):
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
         return  {
+            'rhr_avg'                   : cls.get_col_avg(db, cls.rhr, start_ts, end_ts),
+            'rhr_min'                   : cls.get_col_min(db, cls.rhr, start_ts, end_ts),
+            'rhr_max'                   : cls.get_col_max(db, cls.rhr, start_ts, end_ts),
             'stress_avg'                : cls.get_col_avg(db, cls.stress_avg, start_ts, end_ts),
             'steps'                     : cls.get_col_avg(db, cls.steps, start_ts, end_ts),
             'steps_goal'                : cls.get_col_avg(db, cls.step_goal, start_ts, end_ts),
@@ -325,6 +342,7 @@ class DailySummary(GarminDB.Base, DBObject):
 
 class DailyExtraData(GarminDB.Base, ExtraData):
     __tablename__ = 'daily_extra_data'
+    table_version = 1
 
     day = Column(Date, primary_key=True)
 

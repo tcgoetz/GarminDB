@@ -17,6 +17,8 @@ import GarminDBConfigManager
 
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
+stat_logger = logging.getLogger('stats')
+stat_logger.addHandler(logging.FileHandler('stats.txt', 'w'))
 
 
 class Analyze():
@@ -38,12 +40,12 @@ class Analyze():
 
     def report_file_type(self, file_type):
         records = GarminDB.File.row_count(self.garmin_db, GarminDB.File.type, file_type)
-        logger.info("%s files: %d", file_type, records)
+        stat_logger.info("%s files: %d", file_type, records)
         self.save_summary_stat(file_type + '_files', records)
 
     def get_files_stats(self):
         records = GarminDB.File.row_count(self.garmin_db)
-        logger.info("File records: %d" % records)
+        stat_logger.info("File records: %d" % records)
         self.save_summary_stat('files', records)
         self.report_file_type('tcx')
         self.report_file_type('fit_activity')
@@ -54,34 +56,34 @@ class Analyze():
         total_distance = GarminDB.Activities.get_col_sum_for_value(self.garmin_act_db, GarminDB.Activities.distance, sport_col, sport.lower())
         if total_distance is None:
             total_distance = 0
-        logger.info("%s activities: %d - total distance %d miles", sport, records, total_distance)
+        stat_logger.info("%s activities: %d - total distance %d miles", sport, records, total_distance)
         self.save_summary_stat(sport + '_Activities', records)
         self.save_summary_stat(sport + '_Miles', total_distance)
 
     def get_activities_stats(self):
-        logger.info("___Activities Statistics___")
+        stat_logger.info("___Activities Statistics___")
         activities = GarminDB.Activities.row_count(self.garmin_act_db)
-        logger.info("Activity summary records: %d", activities)
+        stat_logger.info("Activity summary records: %d", activities)
         self.save_summary_stat('Activities', activities)
         laps = GarminDB.ActivityLaps.row_count(self.garmin_act_db)
-        logger.info("Activities lap records: %d", laps)
+        stat_logger.info("Activities lap records: %d", laps)
         self.save_summary_stat('Activity_laps', laps)
         records = GarminDB.ActivityRecords.row_count(self.garmin_act_db)
-        logger.info("Activity records: %d", records)
+        stat_logger.info("Activity records: %d", records)
         self.save_summary_stat('Activity_records', records)
         years = GarminDB.Activities.get_years(self.garmin_act_db)
-        logger.info("Activities years: %d: %s", len(years), str(years))
+        stat_logger.info("Activities years: %d: %s", len(years), str(years))
         self.save_summary_stat('Activity_Years', len(years))
         fitness_activities = GarminDB.Activities.row_count(self.garmin_act_db, GarminDB.Activities.type, 'fitness')
-        logger.info("Fitness activities: %d", fitness_activities)
+        stat_logger.info("Fitness activities: %d", fitness_activities)
         self.save_summary_stat('Fitness_activities', fitness_activities)
         recreation_activities = GarminDB.Activities.row_count(self.garmin_act_db, GarminDB.Activities.type, 'recreation')
-        logger.info("Recreation activities: %d", recreation_activities)
+        stat_logger.info("Recreation activities: %d", recreation_activities)
         self.save_summary_stat('Recreation_activities', recreation_activities)
         sports = GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sport)
-        logger.info("Sports: %s", str(sports))
+        stat_logger.info("Sports: %s", str(sports))
         sub_sports = GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sub_sport)
-        logger.info("SubSports: %s", str(sub_sports))
+        stat_logger.info("SubSports: %s", str(sub_sports))
         self.report_sport(GarminDB.Activities.sport, 'Running')
         self.report_sport(GarminDB.Activities.sport, 'Walking')
         self.report_sport(GarminDB.Activities.sport, 'Cycling')
@@ -94,31 +96,31 @@ class Analyze():
 
     def get_col_stats(self, table, col, name, ignore_le_zero=False, time_col=False):
         records = table.row_count(self.garmin_db)
-        logger.info("%s records: %d", name, records)
+        stat_logger.info("%s records: %d", name, records)
         self.save_summary_stat('%s_Records' % name, records)
         if time_col:
             maximum = table.get_time_col_max(self.garmin_db, col)
         else:
             maximum = table.get_col_max(self.garmin_db, col)
-        logger.info("Max %s: %s", name, str(maximum))
+        stat_logger.info("Max %s: %s", name, str(maximum))
         self.save_summary_stat('Max_%s' % name, maximum)
         if time_col:
             minimum = table.get_time_col_min(self.garmin_db, col)
         else:
             minimum = table.get_col_min(self.garmin_db, col, None, None, ignore_le_zero)
-        logger.info("Min %s: %s", name, str(minimum))
+        stat_logger.info("Min %s: %s", name, str(minimum))
         self.save_summary_stat('Min_%s' % name, minimum)
         if time_col:
             average = table.get_time_col_avg(self.garmin_db, col)
         else:
             average = table.get_col_avg(self.garmin_db, col, None, None, ignore_le_zero)
-        logger.info("Avg %s: %s", name, str(average))
+        stat_logger.info("Avg %s: %s", name, str(average))
         self.save_summary_stat('Avg_%s' % name, average)
         latest = table.get_col_latest(self.garmin_db, col)
-        logger.info("Latest %s: %s", name, str(latest))
+        stat_logger.info("Latest %s: %s", name, str(latest))
 
     def get_monitoring_stats(self):
-        logger.info("___Monitoring Statistics___")
+        stat_logger.info("___Monitoring Statistics___")
         self.get_col_stats(GarminDB.Weight, GarminDB.Weight.weight, 'Weight')
         self.get_col_stats(GarminDB.Stress, GarminDB.Stress.stress, 'Stress', True)
         self.get_col_stats(GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'RHR', True)
@@ -126,23 +128,23 @@ class Analyze():
         self.get_col_stats(GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True, True)
 
     def get_monitoring_years(self):
-        logger.info("___Monitoring Records Coverage___")
-        logger.info("This shows periods that data has been downloaded for.")
-        logger.info("Not seeing data for days you know Garmin has data? Change the starting day and the number of days your passing to the downloader.")
+        stat_logger.info("___Monitoring Records Coverage___")
+        stat_logger.info("This shows periods that data has been downloaded for.")
+        stat_logger.info("Not seeing data for days you know Garmin has data? Change the starting day and the number of days your passing to the downloader.")
         years = GarminDB.Monitoring.get_years(self.garmin_mon_db)
         self.save_summary_stat('Monitoring_Years', len(years))
-        logger.info("Monitoring records: %d", GarminDB.Monitoring.row_count(self.garmin_mon_db))
-        logger.info("Monitoring Years (%d): %s", len(years), str(years))
+        stat_logger.info("Monitoring records: %d", GarminDB.Monitoring.row_count(self.garmin_mon_db))
+        stat_logger.info("Monitoring Years (%d): %s", len(years), str(years))
         total_days = 0
         for year in years:
             self.get_monitoring_months(year)
             total_days += self.get_monitoring_days(year)
-        logger.info("Total monitoring days: %d", total_days)
+        stat_logger.info("Total monitoring days: %d", total_days)
 
     def get_monitoring_months(self, year):
         months = GarminDB.Monitoring.get_month_names(self.garmin_mon_db, year)
         self.save_summary_stat(str(year) + '_months', len(months))
-        logger.info("%s Months (%s): %s", year, len(months) , str(months))
+        stat_logger.info("%s Months (%s): %s", year, len(months) , str(months))
 
     def get_monitoring_days(self, year):
         days = GarminDB.Monitoring.get_days(self.garmin_mon_db, year)
@@ -155,14 +157,14 @@ class Analyze():
             span = 0
         self.save_summary_stat(str(year) + '_days', days_count)
         self.save_summary_stat(str(year) + '_days_span', span)
-        logger.info("%d Days (%d count vs %d span): %s", year, days_count, span, str(days))
+        stat_logger.info("%d Days (%d count vs %d span): %s", year, days_count, span, str(days))
         for index in xrange(days_count - 1):
             day = int(days[index])
             next_day = int(days[index + 1])
             if next_day != day + 1:
                 day_str = str(Conversions.day_of_the_year_to_datetime(year, day))
                 next_day_str = str(Conversions.day_of_the_year_to_datetime(year, next_day))
-                logger.info("Days gap between %d (%s) and %d (%s)", day, day_str, next_day, next_day_str)
+                stat_logger.info("Days gap between %d (%s) and %d (%s)", day, day_str, next_day, next_day_str)
         return days_count
 
     def get_stats(self):
@@ -192,65 +194,40 @@ class Analyze():
                                 GarminDB.IntensityHR.create_or_update_not_none(self.garmin_sum_db, entry)
                     previous_ts = monitoring.timestamp
 
-    # def combine_stats(self, stats, stat1_name, stat2_name):
-    #     stat1 = stats.get(stat1_name, 0)
-    #     stat2 = stats.get(stat2_name, 0)
-    #     if stat1 is  None:
-    #         return stat2
-    #     if stat2 is  None:
-    #         return stat1
-    #     return stat1 + stat2
-
     def calculate_day_stats(self, day_date):
         self.populate_hr_intensity(day_date)
         stats = GarminDB.MonitoringHeartRate.get_daily_stats(self.garmin_mon_db, day_date)
-        stats.update(GarminDB.RestingHeartRate.get_daily_stats(self.garmin_db, day_date))
+        # stats.update(GarminDB.RestingHeartRate.get_daily_stats(self.garmin_db, day_date))
         stats.update(GarminDB.IntensityHR.get_daily_stats(self.garmin_sum_db, day_date))
         stats.update(GarminDB.Weight.get_daily_stats(self.garmin_db, day_date))
-        # stats.update(GarminDB.Stress.get_daily_stats(self.garmin_db, day_date))
         stats.update(GarminDB.DailySummary.get_daily_stats(self.garmin_db, day_date))
-        # stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.garmin_mon_db, day_date, self.english_units))
-        # stats.update(GarminDB.MonitoringIntensity.get_daily_stats(self.garmin_mon_db, day_date))
-        # stats.update(GarminDB.Monitoring.get_daily_stats(self.garmin_mon_db, day_date))
         stats.update(GarminDB.Sleep.get_daily_stats(self.garmin_db, day_date))
-        # stats.update(GarminDB.MonitoringInfo.get_daily_stats(self.garmin_mon_db, day_date))
         stats.update(GarminDB.Activities.get_daily_stats(self.garmin_act_db, day_date))
-        # stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
         # save it to the db
         GarminDB.DaysSummary.create_or_update_not_none(self.garmin_sum_db, stats)
         HealthDB.DaysSummary.create_or_update_not_none(self.sum_db, stats)
 
     def calculate_week_stats(self, day_date):
         stats = GarminDB.MonitoringHeartRate.get_weekly_stats(self.garmin_mon_db, day_date)
-        stats.update(GarminDB.RestingHeartRate.get_weekly_stats(self.garmin_db, day_date))
+        # stats.update(GarminDB.RestingHeartRate.get_weekly_stats(self.garmin_db, day_date))
         stats.update(GarminDB.IntensityHR.get_weekly_stats(self.garmin_sum_db, day_date))
         stats.update(GarminDB.Weight.get_weekly_stats(self.garmin_db, day_date))
-        # stats.update(GarminDB.Stress.get_weekly_stats(self.garmin_db, day_date))
         stats.update(GarminDB.DailySummary.get_weekly_stats(self.garmin_db, day_date))
-        # stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.garmin_mon_db, day_date, self.english_units))
-        # stats.update(GarminDB.MonitoringIntensity.get_weekly_stats(self.garmin_mon_db, day_date))
-        # stats.update(GarminDB.Monitoring.get_weekly_stats(self.garmin_mon_db, day_date))
         stats.update(GarminDB.Sleep.get_weekly_stats(self.garmin_db, day_date))
-        # stats.update(GarminDB.MonitoringInfo.get_weekly_stats(self.garmin_mon_db, day_date))
         stats.update(GarminDB.Activities.get_weekly_stats(self.garmin_act_db, day_date))
-        # stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
+        # save it to the db
         GarminDB.WeeksSummary.create_or_update_not_none(self.garmin_sum_db, stats)
         HealthDB.WeeksSummary.create_or_update_not_none(self.sum_db, stats)
 
     def calculate_month_stats(self, start_day_date, end_day_date):
         stats = GarminDB.MonitoringHeartRate.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date)
-        stats.update(GarminDB.RestingHeartRate.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
+        # stats.update(GarminDB.RestingHeartRate.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
         stats.update(GarminDB.IntensityHR.get_monthly_stats(self.garmin_sum_db, start_day_date, end_day_date))
         stats.update(GarminDB.Weight.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
-        # stats.update(GarminDB.Stress.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
         stats.update(GarminDB.DailySummary.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
-        # stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date, self.english_units))
-        # stats.update(GarminDB.MonitoringIntensity.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
-        # stats.update(GarminDB.Monitoring.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
         stats.update(GarminDB.Sleep.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
-        # stats.update(GarminDB.MonitoringInfo.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
         stats.update(GarminDB.Activities.get_monthly_stats(self.garmin_act_db, start_day_date, end_day_date))
-        # stats['calories_avg'] = self.combine_stats(stats, 'calories_bmr_avg', 'calories_active_avg')
+        # save it to the db
         GarminDB.MonthsSummary.create_or_update_not_none(self.garmin_sum_db, stats)
         HealthDB.MonthsSummary.create_or_update_not_none(self.sum_db, stats)
 

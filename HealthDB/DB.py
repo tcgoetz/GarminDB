@@ -187,6 +187,12 @@ class DBObject(object):
             cls._create_view_if_not_exists(session, view_name, str(query))
 
     @classmethod
+    def _create_view(cls, db, view_name, selectable, order_by):
+        with db.managed_session() as session:
+            query = Query(selectable, session=session).order_by(order_by)
+            cls._create_view_if_not_exists(session, view_name, str(query))
+
+    @classmethod
     def intersection(cls, values_dict):
         return filter_dict_by_list(values_dict, cls.get_col_names())
 

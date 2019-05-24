@@ -14,7 +14,6 @@ class SummaryDB(DB):
     Base = declarative_base()
     db_name = 'summary'
     db_version = 6
-    view_version = SummaryBase.view_version
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -26,12 +25,12 @@ class SummaryDB(DB):
         version = SummaryDB.DbVersion()
         version.version_check(self, self.db_version)
         #
-        db_view_version = version.version_check_key(self, 'view_version', self.view_version)
-        if db_view_version != self.view_version:
-            MonthsSummary.delete_view(self)
-            WeeksSummary.delete_view(self)
-            DaysSummary.delete_view(self)
-            version.update_version(self, 'view_version', self.view_version)
+        self.tables = [Summary, MonthsSummary, WeeksSummary, DaysSummary]
+        for table in self.tables:
+            version.table_version_check(self, table)
+            if not version.view_version_check(self, table):
+                table.delete_view(self)
+        #
         MonthsSummary.create_months_view(self)
         WeeksSummary.create_weeks_view(self)
         DaysSummary.create_days_view(self)
@@ -39,10 +38,13 @@ class SummaryDB(DB):
 
 class Summary(SummaryDB.Base, KeyValueObject):
     __tablename__ = 'summary'
+    table_version = 1
 
 
 class MonthsSummary(SummaryDB.Base, SummaryBase):
     __tablename__ = 'months_summary'
+    table_version = 1
+    view_version = SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
     time_col_name = 'first_day'
@@ -50,6 +52,8 @@ class MonthsSummary(SummaryDB.Base, SummaryBase):
 
 class WeeksSummary(SummaryDB.Base, SummaryBase):
     __tablename__ = 'weeks_summary'
+    table_version = 1
+    view_version = SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
     time_col_name = 'first_day'
@@ -57,6 +61,8 @@ class WeeksSummary(SummaryDB.Base, SummaryBase):
 
 class DaysSummary(SummaryDB.Base, SummaryBase):
     __tablename__ = 'days_summary'
+    table_version = 1
+    view_version = SummaryBase.view_version
 
     day = Column(Date, primary_key=True)
     time_col_name = 'day'

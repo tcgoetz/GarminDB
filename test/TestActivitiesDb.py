@@ -20,8 +20,7 @@ import GarminDBConfigManager
 
 
 root_logger = logging.getLogger()
-handler = logging.FileHandler('activities_db.log', 'w')
-root_logger.addHandler(handler)
+root_logger.addHandler(logging.FileHandler('activities_db.log', 'w'))
 root_logger.setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)

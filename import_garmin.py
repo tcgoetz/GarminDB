@@ -206,6 +206,9 @@ class GarminSummaryData(JsonFileProcessor):
         distance = Fit.Conversions.Distance.from_meters(json_data['totalDistanceMeters'])
         summary = {
             'day'                       : day,
+            'hr_min'                    : json_data['minHeartRate'],
+            'hr_max'                    : json_data['maxHeartRate'],
+            'rhr'                       : json_data['restingHeartRate'],
             'stress_avg'                : json_data['averageStressLevel'],
             'step_goal'                 : json_data['dailyStepGoal'],
             'steps'                     : json_data['totalSteps'],

@@ -15,7 +15,6 @@ class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
     db_version = 11
-    view_version = 3
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -27,13 +26,12 @@ class ActivitiesDB(DB):
         version = ActivitiesDB.DbVersion()
         version.version_check(self, self.db_version)
         #
-        db_view_version = version.version_check_key(self, 'view_version', self.view_version)
-        if db_view_version != self.view_version:
-            RunActivities.delete_view(self)
-            WalkActivities.delete_view(self)
-            PaddleActivities.delete_view(self)
-            EllipticalActivities.delete_view(self)
-            version.update_version(self, 'view_version', self.view_version)
+        self.tables = [Activities, ActivityLaps, ActivityRecords, ActivityRecords, RunActivities, WalkActivities, PaddleActivities, EllipticalActivities, ActivitiesExtraData]
+        for table in self.tables:
+            version.table_version_check(self, table)
+            if not version.view_version_check(self, table):
+                table.delete_view(self)
+        # Create or Recreate views
         RunActivities.create_view(self)
         WalkActivities.create_view(self)
         PaddleActivities.create_view(self)
@@ -69,6 +67,7 @@ class ActivitiesLocationSegment(DBObject):
 
 class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     __tablename__ = 'activities'
+    table_version = 1
 
     activity_id = Column(Integer, primary_key=True)
     name = Column(String)
@@ -128,6 +127,7 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
 
 class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
     __tablename__ = 'activity_laps'
+    table_version = 1
 
     activity_id = Column(Integer, ForeignKey('activities.activity_id'))
     lap = Column(Integer)
@@ -175,6 +175,7 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
 
 class ActivityRecords(ActivitiesDB.Base, DBObject):
     __tablename__ = 'activity_records'
+    table_version = 1
 
     activity_id = Column(Integer, ForeignKey('activities.activity_id'))
     record = Column(Integer)
@@ -228,6 +229,9 @@ class SportActivities(DBObject):
 
 class RunActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'run_activities'
+    table_version = 1
+    view_version = 3
+
     steps = Column(Integer)
     # pace in mins/mile
     avg_pace = Column(Time, nullable=False, default=datetime.time.min)
@@ -299,6 +303,9 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
 
 class WalkActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'walk_activities'
+    table_version = 1
+    view_version = 3
+
     steps = Column(Integer)
     # pace in mins/mile
     avg_pace = Column(Time, nullable=False, default=datetime.time.min)
@@ -337,6 +344,9 @@ class WalkActivities(ActivitiesDB.Base, SportActivities):
 
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'paddle_activities'
+    table_version = 1
+    view_version = 3
+
     strokes = Column(Integer)
     # m or ft
     avg_stroke_distance = Column(Float)
@@ -373,6 +383,9 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
 
 class CycleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'cycle_activities'
+    table_version = 1
+    view_version = 3
+
     strokes = Column(Integer)
     vo2_max = Column(Float)
 
@@ -408,6 +421,9 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
 
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'elliptical_activities'
+    table_version = 1
+    view_version = 3
+
     steps = Column(Integer)
     # kms or miles
     elliptical_distance = Column(Float)
@@ -439,6 +455,7 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
 
 class ActivitiesExtraData(ActivitiesDB.Base, ExtraData):
     __tablename__ = 'activities_extra_data'
+    table_version = 1
 
     activity_id = Column(Integer, ForeignKey(Activities.activity_id), primary_key=True)
 
