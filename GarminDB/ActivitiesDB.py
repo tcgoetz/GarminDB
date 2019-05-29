@@ -67,9 +67,9 @@ class ActivitiesLocationSegment(DBObject):
 
 class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     __tablename__ = 'activities'
-    table_version = 1
+    table_version = 2
 
-    activity_id = Column(Integer, primary_key=True)
+    activity_id = Column(String, primary_key=True)
     name = Column(String)
     description = Column(String)
     type = Column(String)
@@ -127,9 +127,9 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
 
 class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
     __tablename__ = 'activity_laps'
-    table_version = 1
+    table_version = 2
 
-    activity_id = Column(Integer, ForeignKey('activities.activity_id'))
+    activity_id = Column(String, ForeignKey('activities.activity_id'))
     lap = Column(Integer)
     #
     start_time = Column(DateTime)
@@ -175,9 +175,9 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
 
 class ActivityRecords(ActivitiesDB.Base, DBObject):
     __tablename__ = 'activity_records'
-    table_version = 1
+    table_version = 2
 
-    activity_id = Column(Integer, ForeignKey('activities.activity_id'))
+    activity_id = Column(String, ForeignKey('activities.activity_id'))
     record = Column(Integer)
     timestamp = Column(DateTime)
     # degrees
@@ -216,7 +216,7 @@ class SportActivities(DBObject):
 
     @declared_attr
     def activity_id(cls):
-        return Column(Integer, ForeignKey(Activities.activity_id), primary_key=True)
+        return Column(String, ForeignKey(Activities.activity_id), primary_key=True)
 
     @declared_attr
     def activity(cls):
@@ -229,7 +229,7 @@ class SportActivities(DBObject):
 
 class RunActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'run_activities'
-    table_version = 1
+    table_version = 2
     view_version = 3
 
     steps = Column(Integer)
@@ -303,7 +303,7 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
 
 class WalkActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'walk_activities'
-    table_version = 1
+    table_version = 2
     view_version = 3
 
     steps = Column(Integer)
@@ -344,7 +344,7 @@ class WalkActivities(ActivitiesDB.Base, SportActivities):
 
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'paddle_activities'
-    table_version = 1
+    table_version = 2
     view_version = 3
 
     strokes = Column(Integer)
@@ -383,7 +383,7 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
 
 class CycleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'cycle_activities'
-    table_version = 1
+    table_version = 2
     view_version = 3
 
     strokes = Column(Integer)
@@ -421,7 +421,7 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
 
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'elliptical_activities'
-    table_version = 1
+    table_version = 2
     view_version = 3
 
     steps = Column(Integer)
@@ -455,9 +455,9 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
 
 class ActivitiesExtraData(ActivitiesDB.Base, ExtraData):
     __tablename__ = 'activities_extra_data'
-    table_version = 1
+    table_version = 2
 
-    activity_id = Column(Integer, ForeignKey(Activities.activity_id), primary_key=True)
+    activity_id = Column(String, ForeignKey(Activities.activity_id), primary_key=True)
 
     match_col_names = ['activity_id']
 

@@ -11,5 +11,8 @@
         "download_days"                 : 31,
         "download_latest_activities"    : 10,
         "download_all_activities"       : 1000
+    },
+    "copy" : {
+        "mount_dir"                     : "/Volumes/GARMIN"
     }
 }

@@ -20,7 +20,7 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 
-class Download():
+class Download(object):
 
     garmin_connect_base_url = "https://connect.garmin.com"
     garmin_connect_enus_url = garmin_connect_base_url + "/en-US"
@@ -207,6 +207,7 @@ class Download():
 
     def download_json_file(self, job_name, url, params, json_filename, overwite):
         json_full_filname = json_filename + '.json'
+        root_logger.info("Download %s ?", json_filename)
         if not os.path.isfile(json_full_filname) or overwite:
             response = self.get(url, params=params)
             if response.status_code == 200:
@@ -262,6 +263,7 @@ class Download():
             time.sleep(1)
 
     def get_weight_day(self, directory, day, overwite=False):
+        root_logger.info("Checking weight: %s", str(day))
         date_str = day.strftime('%Y-%m-%d')
         params = {
             'startDate' : date_str,
@@ -271,7 +273,7 @@ class Download():
         return self.download_json_file('get_weight_day', self.garmin_connect_weight_url, params, directory + '/weight_' + date_str, overwite)
 
     def get_weight(self, directory, date, days, overwite):
-        logger.info("Geting weight: %s (%d)", str(date), days)
+        root_logger.info("Geting weight: %s (%d)", str(date), days)
         self.get_stat(self.get_weight_day, directory, date, days, overwite)
 
     def get_activity_summaries(self, start, count):

@@ -25,3 +25,8 @@ enabled_stats = {
     'weight'                : True,
     'activities'            : True
 }
+device_directories = {
+    'base'                  : 'GARMIN',
+    'activities'            : 'ACTIVITY',
+    'monitoring'            : 'MONITOR'
+}

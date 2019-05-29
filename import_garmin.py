@@ -26,7 +26,7 @@ class GarminWeightData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
         logger.info("Processing weight data")
-        super(GarminWeightData, self).__init__(input_file, input_dir, 'weight_\d{4}-\d{2}-\d{2}\.json', latest, debug)
+        super(GarminWeightData, self).__init__(input_file, input_dir, r'weight_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.english_units = english_units
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'startDate' : dateutil.parser.parse}
@@ -50,9 +50,9 @@ class GarminMonitoringFitData():
         self.english_units = english_units
         self.debug = debug
         if input_file:
-            self.file_names = FileProcessor.match_file(input_file, '.*\.fit')
+            self.file_names = FileProcessor.match_file(input_file, Fit.File.name_regex)
         if input_dir:
-            self.file_names = FileProcessor.dir_to_files(input_dir, '.*\.fit', latest, True)
+            self.file_names = FileProcessor.dir_to_files(input_dir, Fit.File.name_regex, latest, True)
 
     def file_count(self):
         return len(self.file_names)
@@ -85,7 +85,7 @@ class GarminSleepData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
         logger.info("Processing sleep data")
-        super(GarminSleepData, self).__init__(input_file, input_dir, 'sleep_\d{4}-\d{2}-\d{2}\.json', latest, debug)
+        super(GarminSleepData, self).__init__(input_file, input_dir, r'sleep_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {
             'calendarDate'              : dateutil.parser.parse,
@@ -146,7 +146,7 @@ class GarminRhrData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
         logger.info("Processing rhr data")
-        super(GarminRhrData, self).__init__(input_file, input_dir, 'rhr_\d{4}-\d{2}-\d{2}\.json', latest, debug)
+        super(GarminRhrData, self).__init__(input_file, input_dir, r'rhr_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'statisticsStartDate' : dateutil.parser.parse}
 
@@ -167,7 +167,7 @@ class GarminProfile(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_dir, debug):
         logger.info("Processing profile data")
-        super(GarminProfile, self).__init__(None, input_dir, 'profile\.json', False, debug)
+        super(GarminProfile, self).__init__(None, input_dir, r'profile\.json', False, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'calendarDate' : dateutil.parser.parse}
 
@@ -188,7 +188,7 @@ class GarminSummaryData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
         logger.info("Processing daily summary data")
-        super(GarminSummaryData, self).__init__(input_file, input_dir, 'daily_summary_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
+        super(GarminSummaryData, self).__init__(input_file, input_dir, r'daily_summary_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
         self.input_dir = input_dir
         self.english_units = english_units
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
@@ -240,7 +240,7 @@ class GarminMonitoringExtraData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
         logger.info("Processing daily extra data")
-        super(GarminMonitoringExtraData, self).__init__(input_file, input_dir, 'extra_data_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
+        super(GarminMonitoringExtraData, self).__init__(input_file, input_dir, r'extra_data_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'day' : dateutil.parser.parse}
 

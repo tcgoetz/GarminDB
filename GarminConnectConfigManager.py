@@ -50,3 +50,6 @@ class GarminConnectConfigManager(object):
         date = dateutil.parser.parse(self.config['data'][stat_type + '_start_date']).date()
         days = self.config['data']['download_days']
         return (date, days)
+
+    def device_mount_dir(self):
+        return self.config['copy']['mount_dir']

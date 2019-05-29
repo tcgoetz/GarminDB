@@ -112,6 +112,6 @@ bugreport.txt
 *.html
 .*.conf
 GarminConnectConfig.json
-
+stats.txt
 
 

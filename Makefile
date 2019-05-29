@@ -113,8 +113,14 @@ zip_packages: package_garmin package_fitbit package_mshealth
 garmin:
 	$(PYTHON) garmin.py --all --download --import --analyze
 
+copy_garmin:
+	$(PYTHON) garmin.py --all --copy --import --analyze
+
 update_garmin:
 	$(PYTHON) garmin.py --all --download --import --analyze --latest
+
+copy_garmin_latest:
+	$(PYTHON) garmin.py --all --copy --import --analyze --latest
 
 clean_garmin_dbs:
 	$(PYTHON) garmin.py --delete_db

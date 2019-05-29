@@ -8,9 +8,9 @@ import os, sys, re, string, logging, datetime, traceback, json, tcxparser, dateu
 import progressbar
 
 import Fit
-import FileProcessor
+from FileProcessor import FileProcessor
 from FitFileProcessor import FitFileProcessor
-from JsonFileProcessor import *
+from JsonFileProcessor import JsonFileProcessor
 import GarminDB
 import GarminConnectEnums
 
@@ -29,9 +29,9 @@ class GarminActivitiesFitData():
         self.english_units = english_units
         self.debug = debug
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.fit')
+            self.file_names = FileProcessor.match_file(input_file, Fit.File.name_regex)
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, '.*\.fit', latest)
+            self.file_names = FileProcessor.dir_to_files(input_dir, Fit.File.name_regex, latest)
 
     def file_count(self):
         return len(self.file_names)
@@ -48,14 +48,16 @@ class GarminActivitiesFitData():
 
 class GarminTcxData():
 
+    tcx_filename_regex = r'.*\.tcx'
+
     def __init__(self, input_file, input_dir, latest, english_units, debug):
         logger.debug("Processing activities tcx data")
         self.english_units = english_units
         self.debug = debug
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*\.tcx')
+            self.file_names = FileProcessor.match_file(input_file, self.tcx_filename_regex)
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, '.*\.tcx', latest)
+            self.file_names = FileProcessor.dir_to_files(input_dir, self.tcx_filename_regex, latest)
 
     def file_count(self):
         return len(self.file_names)
@@ -130,7 +132,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
         logger.debug("Processing activities summary data")
-        super(GarminJsonSummaryData, self).__init__(input_file, input_dir, 'activity_\\d*\.json', latest, debug)
+        super(GarminJsonSummaryData, self).__init__(input_file, input_dir, r'activity_\\d*\.json', latest, debug)
         self.english_units = english_units
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
         self.conversions = {}
@@ -284,7 +286,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
         logger.debug("Processing activities detail data")
-        super(GarminJsonDetailsData, self).__init__(input_file, input_dir, 'activity_details_\\d*\.json', latest, debug)
+        super(GarminJsonDetailsData, self).__init__(input_file, input_dir, r'activity_details_\\d*\.json', latest, debug)
         self.english_units = english_units
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
         self.conversions = {}
@@ -335,7 +337,7 @@ class GarminActivitiesExtraData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
         logger.debug("Processing activities extra data")
-        super(GarminActivitiesExtraData, self).__init__(input_file, input_dir, 'extra_data_\\d*\.json', latest, debug)
+        super(GarminActivitiesExtraData, self).__init__(input_file, input_dir, r'extra_data_\\d*\.json', latest, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
 
     def process_json(self, json_data):

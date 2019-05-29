@@ -75,12 +75,12 @@ class Device(GarminDB.Base, DBObject):
 
 class DeviceInfo(GarminDB.Base, DBObject):
     __tablename__ = 'device_info'
-    table_version = 1
+    table_version = 2
     view_version = 3
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, nullable=False)
-    file_id = Column(Integer, ForeignKey('files.id'))
+    file_id = Column(String, ForeignKey('files.id'))
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
     device_type = Column(String)
     software_version = Column(String)
@@ -111,13 +111,13 @@ class DeviceInfo(GarminDB.Base, DBObject):
 
 class File(GarminDB.Base, DBObject):
     __tablename__ = 'files'
-    table_version = 1
+    table_version = 2
     view_version = 3
 
     fit_file_types_prefix = 'fit_'
     FileType = derived_enum('FileType', FieldEnums.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
 
-    id = Column(Integer, primary_key=True)
+    id = Column(String, primary_key=True)
     name = Column(String, unique=True)
     type = Column(Enum(FileType), nullable=False)
     serial_number = Column(Integer, ForeignKey('devices.serial_number'))
@@ -152,7 +152,7 @@ class File(GarminDB.Base, DBObject):
     @classmethod
     def name_and_id_from_path(cls, pathname):
         name = os.path.basename(pathname)
-        id = int(name.split('.')[0])
+        id = name.split('.')[0]
         return (id, name)
 
     @classmethod

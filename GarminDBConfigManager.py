@@ -116,3 +116,8 @@ def get_metric():
 def is_stat_enabled(stat_name):
     return GarminDBConfig.enabled_stats[stat_name]
 
+def device_monitoring_dir(mount_dir):
+    return mount_dir + os.sep + GarminDBConfig.device_directories['base'] + os.sep + GarminDBConfig.device_directories['monitoring']
+
+def device_activities_dir(mount_dir):
+    return mount_dir + os.sep + GarminDBConfig.device_directories['base'] + os.sep + GarminDBConfig.device_directories['activities']

@@ -7,6 +7,7 @@
 import logging, sys, getopt, datetime
 
 from download_garmin import Download
+from copy_garmin import Copy
 from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringExtraData, GarminMonitoringFitData, GarminSleepData, GarminRhrData
 from import_garmin_activities import GarminJsonSummaryData, GarminJsonDetailsData, GarminActivitiesExtraData, GarminTcxData, GarminActivitiesFitData
 from analyze_garmin import Analyze
@@ -45,6 +46,20 @@ def get_date_and_days(latest, db, table, stat_name):
         print "Missing config: need %s_start_date and download_days. Edit GarminConnectConfig.py." % stat_name
         sys.exit()
     return (date, days)
+
+
+def copy_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
+    copy = Copy(gc_gonfig.device_mount_dir())
+
+    if activities:
+        activities_dir = GarminDBConfigManager.get_or_create_activities_dir()
+        root_logger.info("Copying activities to %s", activities_dir)
+        copy.copy_activities(activities_dir, latest)
+
+    if monitoring:
+        monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_dir(datetime.datetime.now().year)
+        root_logger.info("Copying monitoring to %s", monitoring_dir)
+        copy.copy_monitoring(monitoring_dir, latest)
 
 def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
     db_params_dict = GarminDBConfigManager.get_db_params()
@@ -179,14 +194,15 @@ def delete_db(debug):
 
 
 def usage(program):
-    print '%s [--all | --activities | --monitoring | --rhr | --sleep | --weight] [--download | --import | --analyze] [--latest]' % program
+    print '%s [--all | --activities | --monitoring | --rhr | --sleep | --weight] [--download | --copy | --import | --analyze] [--latest]' % program
     print '    --all        : import data for all enabled stats'
     print '    --activities : import activities data'
     print '    --monitoring : import monitoring data'
     print '    --rhr        : import resting heart rate data'
     print '    --sleep      : import sleep data'
     print '    --weight     : import weight data'
-    print '    --download   : download data for the chosen stats'
+    print '    --download   : download data from Garmin Connect for the chosen stats'
+    print '    --copy       : copy data from a mounted device for the chosen stats'
     print '    --import     : import data for the chosen stats'
     print '    --analyze    : analyze data in the db and create derived tables'
     print '    --latest     : only download and/or import new data'
@@ -196,6 +212,7 @@ def usage(program):
 
 def main(argv):
     _download_data = False
+    _copy_data = False
     _import_data = False
     _analyze_data = False
     _delete_db = False
@@ -211,8 +228,8 @@ def main(argv):
     latest = False
 
     try:
-        opts, args = getopt.getopt(argv,"aAdimlrstT:w",
-            ["all", "activities", "analyze", "delete_db", "download", "import", "trace=", "test", "monitoring", "latest", "rhr", "sleep", "weight"])
+        opts, args = getopt.getopt(argv,"acAdimlrstT:w",
+            ["all", "activities", "analyze", "copy", "delete_db", "download", "import", "trace=", "test", "monitoring", "latest", "rhr", "sleep", "weight"])
     except getopt.GetoptError:
         usage(sys.argv[0])
 
@@ -229,6 +246,9 @@ def main(argv):
         elif opt in ("-a", "--activities"):
             logging.debug("activities")
             activities = True
+        elif opt in ("-c", "--copy"):
+            logging.debug("Copy")
+            _copy_data = True
         elif opt in ("--delete_db"):
             logging.debug("Delete DB")
             _delete_db = True
@@ -270,6 +290,9 @@ def main(argv):
     if _delete_db:
         delete_db(debug)
         sys.exit()
+
+    if _copy_data:
+        copy_data(overwite, latest, weight, monitoring, sleep, rhr, activities)
 
     if _download_data:
         download_data(overwite, latest, weight, monitoring, sleep, rhr, activities)
