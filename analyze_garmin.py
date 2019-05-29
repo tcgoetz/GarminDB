@@ -196,11 +196,21 @@ class Analyze():
 
     def calculate_day_stats(self, day_date):
         self.populate_hr_intensity(day_date)
-        stats = GarminDB.MonitoringHeartRate.get_daily_stats(self.garmin_mon_db, day_date)
-        # stats.update(GarminDB.RestingHeartRate.get_daily_stats(self.garmin_db, day_date))
+        stats = GarminDB.DailySummary.get_daily_stats(self.garmin_db, day_date)
+        # prefer getting stats from the daily summary.
+        if stats.get('rhr_avg') is None:
+            stats.update(GarminDB.RestingHeartRate.get_daily_stats(self.garmin_db, day_date))
+        if stats.get('stress_avg') is None:
+            stats.update(GarminDB.Stress.get_daily_stats(self.garmin_db, day_date))
+        if stats.get('intensity_time') is None:
+            stats.update(GarminDB.MonitoringIntensity.get_daily_stats(self.garmin_mon_db, day_date))
+        if stats.get('floors') is None:
+            stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.garmin_mon_db, day_date))
+        if stats.get('steps') is None:
+            stats.update(GarminDB.Monitoring.get_daily_stats(self.garmin_mon_db, day_date))
+        stats.update(GarminDB.MonitoringHeartRate.get_daily_stats(self.garmin_mon_db, day_date))
         stats.update(GarminDB.IntensityHR.get_daily_stats(self.garmin_sum_db, day_date))
         stats.update(GarminDB.Weight.get_daily_stats(self.garmin_db, day_date))
-        stats.update(GarminDB.DailySummary.get_daily_stats(self.garmin_db, day_date))
         stats.update(GarminDB.Sleep.get_daily_stats(self.garmin_db, day_date))
         stats.update(GarminDB.Activities.get_daily_stats(self.garmin_act_db, day_date))
         # save it to the db
@@ -208,11 +218,21 @@ class Analyze():
         HealthDB.DaysSummary.create_or_update_not_none(self.sum_db, stats)
 
     def calculate_week_stats(self, day_date):
-        stats = GarminDB.MonitoringHeartRate.get_weekly_stats(self.garmin_mon_db, day_date)
-        # stats.update(GarminDB.RestingHeartRate.get_weekly_stats(self.garmin_db, day_date))
+        stats = GarminDB.DailySummary.get_weekly_stats(self.garmin_db, day_date)
+        # prefer getting stats from the daily summary.
+        if stats.get('rhr_avg') is None:
+            stats.update(GarminDB.RestingHeartRate.get_weekly_stats(self.garmin_db, day_date))
+        if stats.get('stress_avg') is None:
+            stats.update(GarminDB.Stress.get_weekly_stats(self.garmin_db, day_date))
+        if stats.get('intensity_time') is None:
+            stats.update(GarminDB.MonitoringIntensity.get_weekly_stats(self.garmin_mon_db, day_date))
+        if stats.get('floors') is None:
+            stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.garmin_mon_db, day_date))
+        if stats.get('steps') is None:
+            stats.update(GarminDB.Monitoring.get_weekly_stats(self.garmin_mon_db, day_date))
+        stats.update(GarminDB.MonitoringHeartRate.get_weekly_stats(self.garmin_mon_db, day_date))
         stats.update(GarminDB.IntensityHR.get_weekly_stats(self.garmin_sum_db, day_date))
         stats.update(GarminDB.Weight.get_weekly_stats(self.garmin_db, day_date))
-        stats.update(GarminDB.DailySummary.get_weekly_stats(self.garmin_db, day_date))
         stats.update(GarminDB.Sleep.get_weekly_stats(self.garmin_db, day_date))
         stats.update(GarminDB.Activities.get_weekly_stats(self.garmin_act_db, day_date))
         # save it to the db
@@ -220,11 +240,21 @@ class Analyze():
         HealthDB.WeeksSummary.create_or_update_not_none(self.sum_db, stats)
 
     def calculate_month_stats(self, start_day_date, end_day_date):
-        stats = GarminDB.MonitoringHeartRate.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date)
-        # stats.update(GarminDB.RestingHeartRate.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
+        stats = GarminDB.DailySummary.get_monthly_stats(self.garmin_db, start_day_date, end_day_date)
+        # prefer getting stats from the daily summary.
+        if stats.get('rhr_avg') is None:
+            stats.update(GarminDB.RestingHeartRate.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
+        if stats.get('stress_avg') is None:
+            stats.update(GarminDB.Stress.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
+        if stats.get('intensity_time') is None:
+            stats.update(GarminDB.MonitoringIntensity.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
+        if stats.get('floors') is None:
+            stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
+        if stats.get('steps') is None:
+            stats.update(GarminDB.Monitoring.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
+        stats.update(GarminDB.MonitoringHeartRate.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
         stats.update(GarminDB.IntensityHR.get_monthly_stats(self.garmin_sum_db, start_day_date, end_day_date))
         stats.update(GarminDB.Weight.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
-        stats.update(GarminDB.DailySummary.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
         stats.update(GarminDB.Sleep.get_monthly_stats(self.garmin_db, start_day_date, end_day_date))
         stats.update(GarminDB.Activities.get_monthly_stats(self.garmin_act_db, start_day_date, end_day_date))
         # save it to the db

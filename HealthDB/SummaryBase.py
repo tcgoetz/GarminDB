@@ -8,7 +8,7 @@ from HealthDB import *
 
 
 class SummaryBase(DBObject):
-    view_version = 5
+    view_version = 6
 
     hr_avg = Column(Float)
     hr_min = Column(Float)
@@ -132,7 +132,7 @@ class SummaryBase(DBObject):
                 cls.time_col.label('day'),
                 cls.round_col(cls.__tablename__ + '.hr_avg', 'hr_avg'),
                 cls.round_col(cls.__tablename__ + '.hr_min', 'hr_min'),
-                cls.round_col(cls.__tablename__ + '.hr_avg', 'hr_avg'),
+                cls.round_col(cls.__tablename__ + '.hr_max', 'hr_max'),
                 cls.round_col(cls.__tablename__ + '.rhr_avg', 'rhr_avg'),
                 cls.round_col(cls.__tablename__ + '.inactive_hr_avg', 'inactive_hr_avg'),
                 cls.round_col(cls.__tablename__ + '.weight_avg', 'weight_avg'),
