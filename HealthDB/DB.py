@@ -408,9 +408,20 @@ class DBObject(object):
         return cls.get_time_col_func(db, col, func.sum, start_ts, end_ts)
 
     @classmethod
-    def get_col_latest(cls, db, col):
+    def get_col_latest(cls, db, col, ignore_le_zero=False):
         with db.managed_session() as session:
-            return session.query(col).order_by(desc(cls.time_col)).limit(1).scalar()
+            query = session.query(col)
+            if ignore_le_zero:
+                if col == cls.time_col:
+                    query = query.filter(cls.secs_from_time(col) > 0)
+                else:
+                    query = query.filter(col > 0)
+            return query.order_by(desc(cls.time_col)).limit(1).scalar()
+
+    @classmethod
+    def get_time_col_latest(cls, db, col):
+        with db.managed_session() as session:
+            return session.query(col).filter(cls.secs_from_time(col) > 0).order_by(desc(cls.time_col)).limit(1).scalar()
 
     @classmethod
     def get_col_func_of_max_per_day_for_value(cls, db, col, stat_func, start_ts, end_ts, match_col=None, match_value=None):

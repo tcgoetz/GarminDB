@@ -67,7 +67,8 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         else:
             average = table.get_col_avg(db, col, None, None, ignore_le_zero)
         self.check_col_stat(col_name + ' avg', average, avg_bounds)
-        self.check_col_stat(col_name + ' latest', table.get_col_latest(db, col), latest_bounds)
+        latest = table.get_time_col_latest(db, col) if time_col else table.get_col_latest(db, col, ignore_le_zero)
+        self.check_col_stat(col_name + ' latest', latest, latest_bounds)
 
     def test_garmindb_tables_bounds(self):
         self.check_col_stats(
@@ -109,7 +110,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
             (1, 10000000),
             (datetime.time(2), datetime.time(4)),           # max
             (datetime.time(0), datetime.time(2)),           # min
-            (datetime.time(1), datetime.time(6)),           # avg
+            (datetime.time(minute=30), datetime.time(6)),   # avg
             (datetime.time(minute=10), datetime.time(6))    # latest
         )
 

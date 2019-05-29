@@ -104,7 +104,7 @@ backup: $(BACKUP_DIR)
 
 PLATFORM=$(shell uname)
 zip_packages: package_garmin package_fitbit package_mshealth
-	zip -j -r GarminDb_$(PLATFORM)_$(EPOCH).zip GarminConnectConfig.json.example dist/garmin dist/fitbit dist/mshealth create_dbs.sh update_dbs.sh
+	zip -j -r GarminDb_$(PLATFORM)_$(EPOCH).zip GarminConnectConfig.json.example dist/garmin dist/fitbit dist/mshealth dist_files/create_dbs.sh dist_files/update_dbs.sh
 
 
 #
