@@ -69,7 +69,7 @@ class SummaryBase(DBObject):
     def create_months_view(cls, db):
         cls.create_summary_view(db,
             [
-                cls.time_col,
+                cls.time_col.label('first_day'),
                 cls.round_col(cls.__tablename__ + '.rhr_avg', 'rhr_avg'),
                 cls.round_col(cls.__tablename__ + '.rhr_min', 'rhr_min'),
                 cls.round_col(cls.__tablename__ + '.rhr_max', 'rhr_max'),
@@ -77,20 +77,20 @@ class SummaryBase(DBObject):
                 cls.round_col(cls.__tablename__ + '.weight_avg', 'weight_avg'),
                 cls.round_col(cls.__tablename__ + '.weight_min', 'weight_min'),
                 cls.round_col(cls.__tablename__ + '.weight_max', 'weight_max'),
-                cls.intensity_time, cls.intensity_time_goal, cls.moderate_activity_time, cls.vigorous_activity_time,
-                cls.steps,
+                cls.intensity_time.label('intensity_time'), cls.moderate_activity_time.label('moderate_activity_time'), cls.vigorous_activity_time.label('vigorous_activity_time'),
+                cls.steps.label('steps'),
                 # cls.steps_goal_percent,
                 'round((steps * 100) / steps_goal) AS steps_goal_percent',
                 cls.round_col(cls.__tablename__ + '.floors', 'floors'),
                 # cls.floors_goal_percent,
                 'round((floors * 100) / floors_goal) AS floors_goal_percent',
-                cls.sleep_avg, cls.rem_sleep_avg,
+                cls.sleep_avg.label('sleep_avg'), cls.rem_sleep_avg.label('rem_sleep_avg'),
                 cls.round_col(cls.__tablename__ + '.stress_avg', 'stress_avg'),
                 cls.round_col(cls.__tablename__ + '.calories_avg', 'calories_avg'),
                 cls.round_col(cls.__tablename__ + '.calories_bmr_avg', 'calories_bmr_avg'),
                 cls.round_col(cls.__tablename__ + '.calories_active_avg', 'calories_active_avg'),
                 cls.round_col(cls.__tablename__ + '.calories_goal', 'calories_goal'),
-                cls.activities, cls.activities_calories,
+                cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
                 cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance')
             ]
         )
@@ -99,7 +99,7 @@ class SummaryBase(DBObject):
     def create_weeks_view(cls, db):
         cls.create_summary_view(db,
             [
-                cls.time_col,
+                cls.time_col.label('first_day'),
                 cls.round_col(cls.__tablename__ + '.rhr_avg', 'rhr_avg'),
                 cls.round_col(cls.__tablename__ + '.rhr_min', 'rhr_min'),
                 cls.round_col(cls.__tablename__ + '.rhr_max', 'rhr_max'),
@@ -107,20 +107,20 @@ class SummaryBase(DBObject):
                 cls.round_col(cls.__tablename__ + '.weight_avg', 'weight_avg'),
                 cls.round_col(cls.__tablename__ + '.weight_min', 'weight_min'),
                 cls.round_col(cls.__tablename__ + '.weight_max', 'weight_max'),
-                cls.intensity_time, cls.intensity_time_goal, cls.moderate_activity_time, cls.vigorous_activity_time,
-                cls.steps,
+                cls.intensity_time.label('intensity_time'), cls.moderate_activity_time.label('moderate_activity_time'), cls.vigorous_activity_time.label('vigorous_activity_time'),
+                cls.steps.label('steps'),
                 # cls.steps_goal_percent,
                 'round((steps * 100) / steps_goal) AS steps_goal_percent',
                 cls.round_col(cls.__tablename__ + '.floors', 'floors'),
                 #cls.floors_goal_percent,
                 'round((floors * 100) / floors_goal) AS floors_goal_percent',
-                cls.sleep_avg, cls.rem_sleep_avg,
+                cls.sleep_avg.label('sleep_avg'), cls.rem_sleep_avg.label('rem_sleep_avg'),
                 cls.round_col(cls.__tablename__ + '.stress_avg', 'stress_avg'),
                 cls.round_col(cls.__tablename__ + '.calories_avg', 'calories_avg'),
                 cls.round_col(cls.__tablename__ + '.calories_bmr_avg', 'calories_bmr_avg'),
                 cls.round_col(cls.__tablename__ + '.calories_active_avg', 'calories_active_avg'),
                 cls.round_col(cls.__tablename__ + '.calories_goal', 'calories_goal'),
-                cls.activities, cls.activities_calories,
+                cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
                 cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance')
             ]
         )
@@ -129,27 +129,27 @@ class SummaryBase(DBObject):
     def create_days_view(cls, db):
         cls.create_summary_view(db,
             [
-                cls.time_col,
+                cls.time_col.label('day'),
                 cls.round_col(cls.__tablename__ + '.hr_avg', 'hr_avg'),
                 cls.round_col(cls.__tablename__ + '.hr_min', 'hr_min'),
                 cls.round_col(cls.__tablename__ + '.hr_avg', 'hr_avg'),
                 cls.round_col(cls.__tablename__ + '.rhr_avg', 'rhr_avg'),
                 cls.round_col(cls.__tablename__ + '.inactive_hr_avg', 'inactive_hr_avg'),
                 cls.round_col(cls.__tablename__ + '.weight_avg', 'weight_avg'),
-                cls.intensity_time, cls.moderate_activity_time, cls.vigorous_activity_time,
-                cls.steps,
+                cls.intensity_time.label('intensity_time'), cls.moderate_activity_time.label('moderate_activity_time'), cls.vigorous_activity_time.label('vigorous_activity_time'),
+                cls.steps.label('steps'),
                 #cls.steps_goal_percent,
                 'round((steps * 100) / steps_goal) AS steps_goal_percent',
                 cls.round_col(cls.__tablename__ + '.floors', 'floors'),
                 #cls.floors_goal_percent,
                 'round((floors * 100) / floors_goal) AS floors_goal_percent',
-                cls.sleep_avg, cls.rem_sleep_avg,
+                cls.sleep_avg.label('sleep_avg'), cls.rem_sleep_avg.label('rem_sleep_avg'),
                 cls.round_col(cls.__tablename__ + '.stress_avg', 'stress_avg'),
                 cls.round_col(cls.__tablename__ + '.calories_avg', 'calories_avg'),
                 cls.round_col(cls.__tablename__ + '.calories_bmr_avg', 'calories_bmr_avg'),
                 cls.round_col(cls.__tablename__ + '.calories_active_avg', 'calories_active_avg'),
                 cls.round_col(cls.__tablename__ + '.calories_goal', 'calories_goal'),
-                cls.activities, cls.activities_calories,
+                cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
                 cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance')
             ]
         )
