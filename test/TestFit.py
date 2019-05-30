@@ -29,15 +29,17 @@ class TestFit(unittest.TestCase):
         cls.unknown_messages = []
         cls.unknown_message_fields = {}
 
-    def check_message_types(self, fit_file):
+    def check_message_types(self, fit_file, dump_message=False):
         message_types = fit_file.message_types()
         for message_type in message_types:
             if message_type.name.startswith('unknown'):
                 if message_type.name not in self.unknown_messages:
-                    logger.info("Unknown message type: %s in %s" % (message_type.name, fit_file.type()))
+                    logger.info("Unknown message type: %s in %s", message_type.name, fit_file.type())
                     self.unknown_messages.append(message_type.name)
             messages = fit_file[message_type]
             for message in messages:
+                if dump_message:
+                    logger.info("Message: %s", repr(message))
                 self.check_message_fields(message)
 
     def check_message_fields(self, message):
@@ -124,6 +126,17 @@ class TestFit(unittest.TestCase):
         for file_name in file_names:
             self.check_activity_file(file_name)
 
+    def check_sleep_file(self, filename):
+        fit_file = Fit.File(filename, self.english_units)
+        logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
+        self.check_message_types(fit_file, dump_message=True)
+        self.check_file_id(fit_file, Fit.FieldEnums.FileType.sleep)
+
+    def test_parse_sleep(self):
+        activity_path = self.file_path + '/sleep'
+        file_names = FileProcessor.dir_to_files(activity_path, Fit.File.name_regex, False)
+        for file_name in file_names:
+            self.check_sleep_file(file_name)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
