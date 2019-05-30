@@ -76,7 +76,7 @@ class Device(GarminDB.Base, DBObject):
 class DeviceInfo(GarminDB.Base, DBObject):
     __tablename__ = 'device_info'
     table_version = 2
-    view_version = 3
+    view_version = 4
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, nullable=False)
@@ -92,27 +92,24 @@ class DeviceInfo(GarminDB.Base, DBObject):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.get_default_view_name()
-        query_str = (
-            'SELECT ' +
-                'device_info.timestamp AS timestamp, ' +
-                'device_info.file_id AS file_id, ' +
-                'device_info.serial_number AS serial_number, ' +
-                'device_info.device_type AS device_type, ' +
-                'device_info.software_version AS software_version, ' +
-                'devices.manufacturer AS devices_manufacturer, ' +
-                'devices.product AS devices_product, ' +
-                'devices.hardware_version AS devices_hardware_version ' +
-            'FROM device_info JOIN devices ON devices.serial_number = device_info.serial_number ' +
-            'ORDER BY device_info.timestamp DESC'
-        )
-        cls.create_view_if_doesnt_exist(db, view_name, query_str)
+        cls.create_join_view(db, cls.get_default_view_name(),
+            [
+                cls.timestamp.label('timestamp'),
+                cls.file_id.label('file_id'),
+                cls.serial_number.label('serial_number'),
+                cls.device_type.label('device_type'),
+                cls.software_version.label('software_version'),
+                Device.manufacturer.label('manufacturer'),
+                Device.product.label('product'),
+                Device.hardware_version.label('hardware_version')
+            ],
+            Device, cls.timestamp.desc())
 
 
 class File(GarminDB.Base, DBObject):
     __tablename__ = 'files'
     table_version = 2
-    view_version = 3
+    view_version = 4
 
     fit_file_types_prefix = 'fit_'
     FileType = derived_enum('FileType', FieldEnums.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
@@ -134,20 +131,18 @@ class File(GarminDB.Base, DBObject):
 
     @classmethod
     def create_view(cls, db):
-        view_name = cls.get_default_view_name()
-        query_str = (
-            'SELECT ' +
-                'device_info.timestamp AS timestamp, ' +
-                'files.id AS activity_id, ' +
-                'files.name AS name, ' +
-                'files.type AS type, ' +
-                'devices.serial_number AS device_serial_number, ' +
-                'devices.manufacturer AS device_manufacturer, ' +
-                'devices.product AS device_product ' +
-            'FROM files JOIN devices ON devices.serial_number = files.serial_number JOIN device_info ON device_info.file_id = files.id ' +
-            'ORDER BY device_info.timestamp DESC'
-        )
-        cls.create_view_if_doesnt_exist(db, view_name, query_str)
+        cls.create_multi_join_view(db, cls.get_default_view_name(),
+            [
+                DeviceInfo.timestamp.label('timestamp'),
+                cls.id.label('activity_id'),
+                cls.name.label('name'),
+                cls.type.label('type'),
+                Device.manufacturer.label('manufacturer'),
+                Device.product.label('product'),
+                Device.serial_number.label('serial_number')
+            ],
+            [(Device, File.serial_number==Device.serial_number), (DeviceInfo, File.id==DeviceInfo.file_id)],
+            DeviceInfo.timestamp.desc())
 
     @classmethod
     def name_and_id_from_path(cls, pathname):

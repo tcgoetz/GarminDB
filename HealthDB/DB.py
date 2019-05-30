@@ -187,6 +187,15 @@ class DBObject(object):
             cls._create_view_if_not_exists(session, view_name, str(query))
 
     @classmethod
+    def create_multi_join_view(cls, db, view_name, selectable, joins, order_by):
+        with db.managed_session() as session:
+            query = Query(selectable, session=session)
+            for (join_table, join_clause) in joins:
+                query = query.join(join_table, join_clause)
+            query = query.order_by(order_by)
+            cls._create_view_if_not_exists(session, view_name, str(query))
+
+    @classmethod
     def _create_view(cls, db, view_name, selectable, order_by):
         with db.managed_session() as session:
             query = Query(selectable, session=session).order_by(order_by)
