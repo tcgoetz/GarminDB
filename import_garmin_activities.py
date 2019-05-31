@@ -142,8 +142,8 @@ class GarminJsonSummaryData(JsonFileProcessor):
 
     def process_running(self, activity_id, activity_summary):
         root_logger.debug("process_running for %s", activity_id)
-        avg_vertical_oscillation = self.get_field_obj(activity_summary, 'avgVerticalOscillation', Fit.Conversions.Distance.from_meters)
-        avg_step_length = self.get_field_obj(activity_summary, 'avgStrideLength', Fit.Conversions.Distance.from_meters)
+        avg_vertical_oscillation = self.get_field_obj(activity_summary, 'avgVerticalOscillation', Fit.Distance.from_meters)
+        avg_step_length = self.get_field_obj(activity_summary, 'avgStrideLength', Fit.Distance.from_meters)
         run = {
             'activity_id'               : activity_id,
             'steps'                     : self.get_field(activity_summary, 'steps', float),
@@ -221,13 +221,13 @@ class GarminJsonSummaryData(JsonFileProcessor):
         activity_id = json_data['activityId']
         description_str = self.get_field(json_data, 'description')
         (description, extra_data) = GarminDB.ActivitiesExtraData.from_string(description_str)
-        distance = self.get_field_obj(json_data, 'distance', Fit.Conversions.Distance.from_meters)
-        ascent = self.get_field_obj(json_data, 'elevationGain', Fit.Conversions.Distance.from_meters)
-        descent = self.get_field_obj(json_data, 'elevationLoss', Fit.Conversions.Distance.from_meters)
-        avg_speed = self.get_field_obj(json_data, 'averageSpeed', Fit.Conversions.Speed.from_mps)
-        max_speed = self.get_field_obj(json_data, 'maxSpeed', Fit.Conversions.Speed.from_mps)
-        max_temperature = self.get_field_obj(json_data, 'maxTemperature', Fit.Conversions.Temperature.from_celsius)
-        min_temperature = self.get_field_obj(json_data, 'minTemperature', Fit.Conversions.Temperature.from_celsius)
+        distance = self.get_field_obj(json_data, 'distance', Fit.Distance.from_meters)
+        ascent = self.get_field_obj(json_data, 'elevationGain', Fit.Distance.from_meters)
+        descent = self.get_field_obj(json_data, 'elevationLoss', Fit.Distance.from_meters)
+        avg_speed = self.get_field_obj(json_data, 'averageSpeed', Fit.Speed.from_mps)
+        max_speed = self.get_field_obj(json_data, 'maxSpeed', Fit.Speed.from_mps)
+        max_temperature = self.get_field_obj(json_data, 'maxTemperature', Fit.Temperature.from_celsius)
+        min_temperature = self.get_field_obj(json_data, 'minTemperature', Fit.Temperature.from_celsius)
         event = GarminConnectEnums.Event.from_json(json_data)
         sport = GarminConnectEnums.Sport.from_json(json_data)
         sub_sport = GarminConnectEnums.Sport.subsport_from_json(json_data)
@@ -311,7 +311,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
         sub_sport = GarminConnectEnums.Sport.subsport_from_details_json(json_data)
         if sport is GarminConnectEnums.Sport.top_level or sport is GarminConnectEnums.Sport.other:
             sport = sub_sport
-        avg_temperature = self.get_field_obj(summary_dto, 'averageTemperature', Fit.Conversions.Temperature.from_celsius)
+        avg_temperature = self.get_field_obj(summary_dto, 'averageTemperature', Fit.Temperature.from_celsius)
         activity = {
             'activity_id'               : activity_id,
             'course_id'                 : self.get_field(metadata_dto, 'associatedCourseId', int),

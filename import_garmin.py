@@ -34,7 +34,7 @@ class GarminWeightData(JsonFileProcessor):
     def process_json(self, json_data):
         weight_list = json_data['dateWeightList']
         if len(weight_list) > 0:
-            weight = Fit.Conversions.Weight.from_grams(weight_list[0]['weight'])
+            weight = Fit.Weight.from_grams(weight_list[0]['weight'])
             point = {
                 'day'       : json_data['startDate'].date(),
                 'weight'    : weight.kgs_or_lbs(self.measurement_system)
@@ -201,7 +201,7 @@ class GarminSummaryData(JsonFileProcessor):
         day = json_data['calendarDate'].date()
         description_str = json_data['wellnessDescription']
         (description, extra_data) = GarminDB.DailyExtraData.from_string(description_str)
-        distance = Fit.Conversions.Distance.from_meters(json_data['totalDistanceMeters'])
+        distance = Fit.Distance.from_meters(json_data['totalDistanceMeters'])
         summary = {
             'day'                       : day,
             'hr_min'                    : json_data['minHeartRate'],
