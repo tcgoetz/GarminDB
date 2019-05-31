@@ -26,35 +26,34 @@ class TestFit(unittest.TestCase):
     def setUpClass(cls):
         cls.measurement_system = Fit.FieldEnums.DisplayMeasure.statute
         cls.file_path = 'test_files/fit'
-        cls.unknown_messages = []
-        cls.unknown_message_fields = {}
 
     def check_message_types(self, fit_file, dump_message=False):
+        unknown_messages = []
         message_types = fit_file.message_types()
         for message_type in message_types:
             if message_type.name.startswith('unknown'):
-                if message_type.name not in self.unknown_messages:
+                if message_type.name not in unknown_messages:
                     logger.info("Unknown message type: %s in %s", message_type.name, fit_file.type())
-                    self.unknown_messages.append(message_type.name)
+                    unknown_messages.append(message_type.name)
             messages = fit_file[message_type]
             for message in messages:
                 if dump_message:
                     logger.info("Message: %s", repr(message))
-                self.check_message_fields(message)
+                self.check_message_fields(message_type, message)
 
-    def check_message_fields(self, message):
+    def check_message_fields(self, message_type, message):
+        unknown_message_fields = {}
         self.check_timestamp(message)
         self.check_temperature(message)
         for field_name in message:
-            if field_name.startswith('unknown'):
-                message_type = message.type()
-                field_value = str(message[field_name].value)
-                if message_type not in self.unknown_message_fields:
-                    logger.info("Unknown %s message field: %s value %s" % (message_type, field_name, field_value))
-                    self.unknown_message_fields[message_type] = [field_name]
-                elif field_name not in self.unknown_message_fields[message_type]:
-                    logger.info("Unknown %s message field: %s value: %s" % (message_type, field_name, field_value))
-                    self.unknown_message_fields[message_type].append(field_name)
+            field_value = message[field_name]
+            if not field_value.is_invalid() and field_name.startswith('unknown'):
+                if message_type not in unknown_message_fields:
+                    logger.info("Unknown %s message field: %s value %s" % (message_type, field_name, str(field_value.value)))
+                    unknown_message_fields[message_type] = [field_name]
+                elif field_name not in unknown_message_fields[message_type]:
+                    logger.info("Unknown %s message field: %s value: %s" % (message_type, field_name, str(field_value.value)))
+                    unknown_message_fields[message_type].append(field_name)
 
     def check_value(self, message, key, expected_value):
         if key in message:
@@ -89,7 +88,7 @@ class TestFit(unittest.TestCase):
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.monitoring_b)
         messages = fit_file[Fit.MessageType.monitoring]
         for message in messages:
-            self.check_message_fields(message)
+            self.check_message_fields(message.type(), message)
             self.check_value_range(message, 'distance', 0, 100 * 5280)
             self.check_value_range(message, 'cum_ascent', 0, 5280)
             self.check_value_range(message, 'cum_descent', 0, 5280)
@@ -101,7 +100,7 @@ class TestFit(unittest.TestCase):
             self.check_monitoring_file(file_name)
 
     def check_lap_or_record(self, message):
-        self.check_message_fields(message)
+        self.check_message_fields(message.type(), message)
         if 'distance' in message and message['distance'].value > 0.1:
             self.check_value_range(message, 'distance', 0, 100 * 5280)
             self.check_value_range(message, 'avg_vertical_oscillation', 0, 10)
