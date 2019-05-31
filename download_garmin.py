@@ -186,10 +186,9 @@ class Download(object):
         if profile_dir:
             self.save_json_file(profile_dir + "/profile.json", self.user_prefs)
         self.display_name = self.user_prefs['displayName']
-        self.english_units = (self.user_prefs['measurementSystem'] == 'statute_us')
         self.social_profile = self.get_json(response.text, 'VIEWER_SOCIAL_PROFILE')
         self.full_name = self.social_profile['fullName']
-        root_logger.info("login: %s (%s) english units: %s", self.full_name, self.display_name, str(self.english_units))
+        root_logger.info("login: %s (%s)", self.full_name, self.display_name)
         return True
 
     def save_binary_file(self, filename, response):

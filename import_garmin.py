@@ -24,10 +24,10 @@ root_logger = logging.getLogger()
 
 class GarminWeightData(JsonFileProcessor):
 
-    def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
+    def __init__(self, db_params_dict, input_file, input_dir, latest, measurement_system, debug):
         logger.info("Processing weight data")
         super(GarminWeightData, self).__init__(input_file, input_dir, r'weight_\d{4}-\d{2}-\d{2}\.json', latest, debug)
-        self.english_units = english_units
+        self.measurement_system = measurement_system
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {'startDate' : dateutil.parser.parse}
 
@@ -37,7 +37,7 @@ class GarminWeightData(JsonFileProcessor):
             weight = Fit.Conversions.Weight.from_grams(weight_list[0]['weight'])
             point = {
                 'day'       : json_data['startDate'].date(),
-                'weight'    : weight.kgs_or_lbs(not self.english_units)
+                'weight'    : weight.kgs_or_lbs(self.measurement_system)
             }
             GarminDB.Weight.find_or_create(self.garmin_db, point)
             return 1
@@ -45,12 +45,10 @@ class GarminWeightData(JsonFileProcessor):
 
 class GarminMonitoringFitData():
 
-    def __init__(self, input_file, input_dir, latest, english_units, debug):
+    def __init__(self, input_dir, latest, measurement_system, debug):
         logger.info("Processing daily FIT data")
-        self.english_units = english_units
+        self.measurement_system = measurement_system
         self.debug = debug
-        if input_file:
-            self.file_names = FileProcessor.match_file(input_file, Fit.File.name_regex)
         if input_dir:
             self.file_names = FileProcessor.dir_to_files(input_dir, Fit.File.name_regex, latest, True)
 
@@ -61,7 +59,7 @@ class GarminMonitoringFitData():
         fp = FitFileProcessor(db_params_dict, self.debug)
         for file_name in progressbar.progressbar(self.file_names):
             try:
-                fp.write_file(Fit.File(file_name, self.english_units))
+                fp.write_file(Fit.File(file_name, self.measurement_system))
             except Fit.FitFileError as e:
                 logger.error("Failed to parse %s: %s", file_name, str(e))
 
@@ -186,11 +184,11 @@ class GarminProfile(JsonFileProcessor):
 
 class GarminSummaryData(JsonFileProcessor):
 
-    def __init__(self, db_params_dict, input_file, input_dir, latest, english_units, debug):
+    def __init__(self, db_params_dict, input_file, input_dir, latest, measurement_system, debug):
         logger.info("Processing daily summary data")
         super(GarminSummaryData, self).__init__(input_file, input_dir, r'daily_summary_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
         self.input_dir = input_dir
-        self.english_units = english_units
+        self.measurement_system = measurement_system
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {
             'calendarDate'              : dateutil.parser.parse,
@@ -218,7 +216,7 @@ class GarminSummaryData(JsonFileProcessor):
             'intensity_time_goal'       : json_data['intensityMinutesGoal'],
             'floors_up'                 : json_data['floorsAscended'],
             'floors_down'               : json_data['floorsDescended'],
-            'distance'                  : distance.to_miles() if self.english_units else distance.to_kms(),
+            'distance'                  : distance.kms_or_miles(measurement_system),
             'calories_goal'             : json_data['netCalorieGoal'],
             'calories_total'            : json_data['totalKilocalories'],
             'calories_bmr'              : json_data['bmrKilocalories'],

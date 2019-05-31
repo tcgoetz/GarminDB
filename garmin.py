@@ -123,23 +123,23 @@ def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities)
         gp.process()
 
     garmindb = GarminDB.GarminDB(db_params_dict)
-    english_units = GarminDB.Attributes.measurements_type_metric(garmindb) == False
+    measurement_system = GarminDB.Attributes.measurements_type(garmindb)
 
     if weight:
         weight_dir = GarminDBConfigManager.get_weight_dir()
-        gwd = GarminWeightData(db_params_dict, None, weight_dir, latest, english_units, debug)
+        gwd = GarminWeightData(db_params_dict, None, weight_dir, latest, measurement_system, debug)
         if gwd.file_count() > 0:
             gwd.process()
 
     if monitoring:
         monitoring_dir = GarminDBConfigManager.get_monitoring_base_dir()
-        gsd = GarminSummaryData(db_params_dict, None, monitoring_dir, latest, english_units, debug)
+        gsd = GarminSummaryData(db_params_dict, None, monitoring_dir, latest, measurement_system, debug)
         if gsd.file_count() > 0:
             gsd.process()
         ged = GarminMonitoringExtraData(db_params_dict, None, monitoring_dir, latest, debug)
         if ged.file_count() > 0:
             ged.process()
-        gfd = GarminMonitoringFitData(None, monitoring_dir, latest, english_units, debug)
+        gfd = GarminMonitoringFitData(monitoring_dir, latest, measurement_system, debug)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
 
@@ -157,11 +157,11 @@ def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities)
 
     if activities:
         activities_dir = GarminDBConfigManager.get_activities_dir()
-        gjsd = GarminJsonSummaryData(db_params_dict, None, activities_dir, latest, english_units, debug)
+        gjsd = GarminJsonSummaryData(db_params_dict, None, activities_dir, latest, measurement_system, debug)
         if gjsd.file_count() > 0:
             gjsd.process()
 
-        gdjd = GarminJsonDetailsData(db_params_dict, None, activities_dir, latest, english_units, debug)
+        gdjd = GarminJsonDetailsData(db_params_dict, None, activities_dir, latest, measurement_system, debug)
         if gdjd.file_count() > 0:
             gdjd.process()
 
@@ -169,11 +169,11 @@ def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities)
         if ged.file_count() > 0:
             ged.process()
 
-        gtd = GarminTcxData(None, activities_dir, latest, english_units, debug)
+        gtd = GarminTcxData(None, activities_dir, latest, measurement_system, debug)
         if gtd.file_count() > 0:
             gtd.process_files(db_params_dict)
 
-        gfd = GarminActivitiesFitData(None, activities_dir, latest, english_units, debug)
+        gfd = GarminActivitiesFitData(None, activities_dir, latest, measurement_system, debug)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
 

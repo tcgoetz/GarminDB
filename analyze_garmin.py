@@ -28,7 +28,7 @@ class Analyze():
         self.garmin_sum_db = GarminDB.GarminSummaryDB(db_params_dict, debug)
         self.sum_db = HealthDB.SummaryDB(db_params_dict, debug)
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, debug)
-        self.english_units = (GarminDB.Attributes.measurements_type_metric(self.garmin_db) == False)
+        self.measurement_system = GarminDB.Attributes.measurements_type(self.garmin_db)
 
     def set_sleep_period(self, sleep_period_start, sleep_period_stop):
         GarminDB.Attributes.set_if_unset(self.garmin_db, 'sleep_time', sleep_period_start)
@@ -249,7 +249,7 @@ class Analyze():
         if stats.get('intensity_time') is None:
             stats.update(GarminDB.MonitoringIntensity.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
         if stats.get('floors') is None:
-            stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
+            stats.update(GarminDB.MonitoringClimb.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date, self.measurement_system))
         if stats.get('steps') is None:
             stats.update(GarminDB.Monitoring.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))
         stats.update(GarminDB.MonitoringHeartRate.get_monthly_stats(self.garmin_mon_db, start_day_date, end_day_date))

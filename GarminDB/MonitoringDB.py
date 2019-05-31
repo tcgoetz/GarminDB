@@ -138,10 +138,10 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
     time_col_name = 'timestamp'
 
     @classmethod
-    def get_stats(cls, db, func, start_ts, end_ts, english_units=False):
+    def get_stats(cls, db, func, start_ts, end_ts, measurement_system):
         cum_ascent = func(db, cls.cum_ascent, start_ts, end_ts)
         if cum_ascent:
-            if english_units:
+            if measurement_system is FieldEnums.DisplayMeasure.metric:
                 floors = cum_ascent / cls.feet_to_floors
             else:
                 floors = cum_ascent / cls.meters_to_floors
@@ -150,20 +150,20 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
         return { 'floors' : floors }
 
     @classmethod
-    def get_daily_stats(cls, db, day_ts, english_units=False):
-        stats = cls.get_stats(db, cls.get_col_max, day_ts, day_ts + datetime.timedelta(1), english_units)
+    def get_daily_stats(cls, db, day_ts, measurement_system):
+        stats = cls.get_stats(db, cls.get_col_max, day_ts, day_ts + datetime.timedelta(1), measurement_system)
         stats['day'] = day_ts
         return stats
 
     @classmethod
-    def get_weekly_stats(cls, db, first_day_ts, english_units=False):
-        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7), english_units)
+    def get_weekly_stats(cls, db, first_day_ts, measurement_system):
+        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7), measurement_system)
         stats['first_day'] = first_day_ts
         return stats
 
     @classmethod
-    def get_monthly_stats(cls, db, first_day_ts, last_day_ts, english_units=False):
-        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, last_day_ts, english_units)
+    def get_monthly_stats(cls, db, first_day_ts, last_day_ts, measurement_system):
+        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, last_day_ts, measurement_system)
         stats['first_day'] = first_day_ts
         return stats
 

@@ -40,8 +40,12 @@ class Attributes(GarminDB.Base, KeyValueObject):
     table_version = 1
 
     @classmethod
+    def measurements_type(cls, db):
+        return FieldEnums.DisplayMeasure.from_string(cls.get(db, 'measurement_system'))
+
+    @classmethod
     def measurements_type_metric(cls, db):
-        return (cls.get(db, 'measurement_system') == str(FieldEnums.DisplayMeasure.metric))
+        return (cls.measurements_type(db) == FieldEnums.DisplayMeasure.metric)
 
 
 class Device(GarminDB.Base, DBObject):
@@ -108,7 +112,7 @@ class DeviceInfo(GarminDB.Base, DBObject):
 
 class File(GarminDB.Base, DBObject):
     __tablename__ = 'files'
-    table_version = 2
+    table_version = 3
     view_version = 4
 
     fit_file_types_prefix = 'fit_'

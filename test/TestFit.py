@@ -24,7 +24,7 @@ class TestFit(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.english_units = True
+        cls.measurement_system = Fit.FieldEnums.DisplayMeasure.statute
         cls.file_path = 'test_files/fit'
         cls.unknown_messages = []
         cls.unknown_message_fields = {}
@@ -83,7 +83,7 @@ class TestFit(unittest.TestCase):
             self.check_value(message, 'type', file_type)
 
     def check_monitoring_file(self, filename):
-        fit_file = Fit.File(filename, self.english_units)
+        fit_file = Fit.File(filename, self.measurement_system)
         self.check_message_types(fit_file)
         logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.monitoring_b)
@@ -109,9 +109,9 @@ class TestFit(unittest.TestCase):
             self.check_value_range(message, 'speed', 0, 25)
 
     def check_activity_file(self, filename):
-        fit_file = Fit.File(filename, self.english_units)
+        fit_file = Fit.File(filename, self.measurement_system)
         logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
-        self.check_message_types(fit_file)
+        self.check_message_types(fit_file, dump_message=True)
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.activity)
         for message in fit_file[Fit.MessageType.record]:
             self.check_lap_or_record(message)
@@ -127,7 +127,7 @@ class TestFit(unittest.TestCase):
             self.check_activity_file(file_name)
 
     def check_sleep_file(self, filename):
-        fit_file = Fit.File(filename, self.english_units)
+        fit_file = Fit.File(filename, self.measurement_system)
         logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
         self.check_message_types(fit_file, dump_message=True)
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.sleep)
@@ -137,6 +137,20 @@ class TestFit(unittest.TestCase):
         file_names = FileProcessor.dir_to_files(activity_path, Fit.File.name_regex, False)
         for file_name in file_names:
             self.check_sleep_file(file_name)
+
+    def check_unknown_file(self, filename):
+        logger.info('Parsing ' + filename)
+        fit_file = Fit.File(filename, self.measurement_system)
+        logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
+        self.check_message_types(fit_file, dump_message=True)
+
+    def test_parse_unknown(self):
+        # root_logger.setLevel(logging.DEBUG)
+        activity_path = self.file_path + '/unknown'
+        file_names = FileProcessor.dir_to_files(activity_path, Fit.File.name_regex, False)
+        for file_name in file_names:
+            self.check_unknown_file(file_name)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
