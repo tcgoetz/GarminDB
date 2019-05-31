@@ -205,7 +205,7 @@ class Analyze():
         if stats.get('intensity_time') is None:
             stats.update(GarminDB.MonitoringIntensity.get_daily_stats(self.garmin_mon_db, day_date))
         if stats.get('floors') is None:
-            stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.garmin_mon_db, day_date))
+            stats.update(GarminDB.MonitoringClimb.get_daily_stats(self.garmin_mon_db, day_date, self.measurement_system))
         if stats.get('steps') is None:
             stats.update(GarminDB.Monitoring.get_daily_stats(self.garmin_mon_db, day_date))
         stats.update(GarminDB.MonitoringHeartRate.get_daily_stats(self.garmin_mon_db, day_date))
@@ -227,7 +227,7 @@ class Analyze():
         if stats.get('intensity_time') is None:
             stats.update(GarminDB.MonitoringIntensity.get_weekly_stats(self.garmin_mon_db, day_date))
         if stats.get('floors') is None:
-            stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.garmin_mon_db, day_date))
+            stats.update(GarminDB.MonitoringClimb.get_weekly_stats(self.garmin_mon_db, day_date, self.measurement_system))
         if stats.get('steps') is None:
             stats.update(GarminDB.Monitoring.get_weekly_stats(self.garmin_mon_db, day_date))
         stats.update(GarminDB.MonitoringHeartRate.get_weekly_stats(self.garmin_mon_db, day_date))

@@ -92,9 +92,9 @@ class GarminTcxData():
             'serial_number' : serial_number,
         }
         GarminDB.File._find_or_create(self.garmin_db_session, file)
-        distance = Fit.Conversions.Distance.from_meters(tcx.distance)
-        ascent = Fit.Conversions.Distance.from_meters(tcx.ascent)
-        descent = Fit.Conversions.Distance.from_meters(tcx.descent)
+        distance = Fit.Distance.from_meters(tcx.distance)
+        ascent = Fit.Distance.from_meters(tcx.ascent)
+        descent = Fit.Distance.from_meters(tcx.descent)
         activity = {
             'activity_id'               : file_id,
             'start_time'                : start_time,
