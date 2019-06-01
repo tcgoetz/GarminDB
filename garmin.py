@@ -195,18 +195,20 @@ def delete_db(debug):
 
 def usage(program):
     print '%s [--all | --activities | --monitoring | --rhr | --sleep | --weight] [--download | --copy | --import | --analyze] [--latest]' % program
-    print '    --all        : import data for all enabled stats'
-    print '    --activities : import activities data'
-    print '    --monitoring : import monitoring data'
-    print '    --rhr        : import resting heart rate data'
-    print '    --sleep      : import sleep data'
-    print '    --weight     : import weight data'
-    print '    --download   : download data from Garmin Connect for the chosen stats'
-    print '    --copy       : copy data from a mounted device for the chosen stats'
-    print '    --import     : import data for the chosen stats'
-    print '    --analyze    : analyze data in the db and create derived tables'
-    print '    --latest     : only download and/or import new data'
-    print '    --trace      : turn on debug tracing'
+    print '    --all        : Download and/or import data for all enabled stats.'
+    print '    --activities : Download and/or import activities data.'
+    print '    --monitoring : Download and/or import monitoring data.'
+    print '    --rhr        : Download and/or import resting heart rate data.'
+    print '    --sleep      : Download and/or import sleep data.'
+    print '    --weight     : Download and/or import weight data.'
+    print '    --download   : Download data from Garmin Connect for the chosen stats.'
+    print '    --copy       : Copy data from a USB mounted Garmin device for the chosen stats.'
+    print '    --import     : Import data for the chosen stats.'
+    print '    --analyze    : Analyze data in the db and create summary and derived tables.'
+    print '    --latest     : Only download and/or import the latest data.'
+    print '    --overwite   : Overwite existing files when downloading. The default is to only download missing files.'
+    print '    --delete_db  : Delete Garmin DB db files.'
+    print '    --trace      : Turn on debug tracing. Extra logging will be written to log file.'
     print '    '
     sys.exit()
 
