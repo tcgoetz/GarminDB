@@ -216,7 +216,7 @@ class GarminSummaryData(JsonFileProcessor):
             'intensity_time_goal'       : json_data['intensityMinutesGoal'],
             'floors_up'                 : json_data['floorsAscended'],
             'floors_down'               : json_data['floorsDescended'],
-            'distance'                  : distance.kms_or_miles(measurement_system),
+            'distance'                  : distance.kms_or_miles(self.measurement_system),
             'calories_goal'             : json_data['netCalorieGoal'],
             'calories_total'            : json_data['totalKilocalories'],
             'calories_bmr'              : json_data['bmrKilocalories'],
