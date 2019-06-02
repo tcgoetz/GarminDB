@@ -78,6 +78,7 @@ class Download(object):
         logger.debug("__init__: temp_dir= " + self.temp_dir)
         self.session = requests.session()
         self.gc_gonfig = GarminConnectConfigManager()
+        self.download_days_overlap = self.gc_gonfig.download_days_overlap()
 
     def get_activity_details_url(self, activity_id):
         return self.garmin_connect_modern_proxy_url + '/activity-service/activity/%s' % str(activity_id)
@@ -206,14 +207,17 @@ class Download(object):
 
     def download_json_file(self, job_name, url, params, json_filename, overwite):
         json_full_filname = json_filename + '.json'
-        root_logger.info("Download %s ?", json_filename)
-        if not os.path.isfile(json_full_filname) or overwite:
+        exists = os.path.isfile(json_full_filname)
+        if not exists or overwite:
+            root_logger.info("%s %s", 'Overwriting' if exists else 'Downloading', json_filename)
             response = self.get(url, params=params)
             if response.status_code == 200:
                 self.save_json_file(json_full_filname, response.json())
             else:
                 logger.error("%s: %s failed (%d): %s", job_name, response.url, response.status_code, response.text)
                 return False
+        else:
+            root_logger.info("Ignoring %s (exists)", json_filename)
         return True
 
     def unzip_files(self, outdir):
@@ -227,8 +231,10 @@ class Download(object):
 
     def get_stat(self, stat_function, directory, date, days, overwite):
         for day in progressbar.progressbar(xrange(0, days + 1)):
-            current_date = date + datetime.timedelta(days=day)
-            if not stat_function(directory, current_date, overwite):
+            download_date = date + datetime.timedelta(days=day)
+            # always overight for yesterday and today since the last download may have been a partial result
+            delta = datetime.datetime.now().date() - download_date
+            if not stat_function(directory, download_date, overwite or delta.days <= self.download_days_overlap):
                 break
             # pause for a second between every page access
             time.sleep(1)
@@ -244,7 +250,7 @@ class Download(object):
         return self.download_json_file('get_summary_day', url, params, directory + '/daily_summary_' + date_str, overwite)
 
     def get_daily_summaries(self, directory, date, days, overwite):
-        logger.info("Geting daily summaries: %s (%d)", str(date), days)
+        root_logger.info("Geting daily summaries: %s (%d)", str(date), days)
         self.get_stat(self.get_summary_day, directory, date, days, overwite)
 
     def get_monitoring_day(self, date):
@@ -254,7 +260,7 @@ class Download(object):
             self.save_binary_file(self.temp_dir + '/' + str(date) + '.zip', response)
 
     def get_monitoring(self, date, days):
-        logger.info("Geting monitoring: %s (%d)", str(date), days)
+        root_logger.info("Geting monitoring: %s (%d)", str(date), days)
         for day in progressbar.progressbar(xrange(0, days + 1)):
             day_date = date + datetime.timedelta(day)
             self.get_monitoring_day(day_date)
@@ -262,7 +268,7 @@ class Download(object):
             time.sleep(1)
 
     def get_weight_day(self, directory, day, overwite=False):
-        root_logger.info("Checking weight: %s", str(day))
+        root_logger.info("Checking weight: %s overwite %r", str(day), overwite)
         date_str = day.strftime('%Y-%m-%d')
         params = {
             'startDate' : date_str,
@@ -296,7 +302,7 @@ class Download(object):
         if response.status_code == 200:
             self.save_binary_file(self.temp_dir + '/activity_' + activity_id_str + '.zip', response)
         else:
-            logger.error("save_activity_file: %s failed (%d): %s", response.url, response.status_code, response.text)
+            root_logger.error("save_activity_file: %s failed (%d): %s", response.url, response.status_code, response.text)
 
     def get_activities(self, directory, count, overwite=False):
         logger.info("Geting activities: '%s' (%d)", directory, count)
@@ -307,7 +313,7 @@ class Download(object):
             root_logger.info("get_activities: %s (%s)" % (activity_name_str, activity_id_str))
             json_filename = directory + '/activity_' + activity_id_str + '.json'
             if not os.path.isfile(json_filename) or overwite:
-                root_logger.debug("get_activities: %s <- %s" % (json_filename, repr(activity)))
+                root_logger.info("get_activities: %s <- %s" % (json_filename, repr(activity)))
                 self.save_activity_details(directory, activity_id_str, overwite)
                 self.save_json_file(json_filename, activity)
                 if not os.path.isfile(directory + '/' + activity_id_str + '.fit') or overwite:
@@ -327,7 +333,7 @@ class Download(object):
         return self.download_json_file('get_sleep_day', self.garmin_connect_sleep_daily_url + '/' + self.display_name, params, json_filename, overwite)
 
     def get_sleep(self, directory, date, days, overwite):
-        logger.info("Geting sleep: %s (%d)", str(date), days)
+        root_logger.info("Geting sleep: %s (%d)", str(date), days)
         self.get_stat(self.get_sleep_day, directory, date, days, overwite)
 
     def get_rhr_day(self, directory, day, overwite=False):
@@ -341,5 +347,5 @@ class Download(object):
         return self.download_json_file('get_rhr_day', self.garmin_connect_rhr_url + '/' + self.display_name, params, json_filename, overwite)
 
     def get_rhr(self, directory, date, days, overwite):
-        logger.info("Geting rhr: %s (%d)", str(date), days)
+        root_logger.info("Geting rhr: %s (%d)", str(date), days)
         self.get_stat(self.get_rhr_day, directory, date, days, overwite)

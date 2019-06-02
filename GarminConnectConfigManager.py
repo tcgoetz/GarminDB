@@ -53,3 +53,6 @@ class GarminConnectConfigManager(object):
 
     def device_mount_dir(self):
         return self.config['copy']['mount_dir']
+
+    def download_days_overlap(self):
+        return self.config['data']['download_days_overlap']

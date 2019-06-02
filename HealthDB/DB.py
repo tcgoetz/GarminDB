@@ -382,9 +382,9 @@ class DBObject(object):
             return cls._get_col_func_query(session, col, func.min, start_ts, end_ts, col if ignore_le_zero else None).scalar()
 
     @classmethod
-    def get_col_max(cls, db, col, start_ts=None, end_ts=None):
+    def get_col_max(cls, db, col, start_ts=None, end_ts=None, ignore_le_zero=False):
         with db.managed_session() as session:
-            return cls._get_col_func_query(session, col, func.max, start_ts, end_ts).scalar()
+            return cls._get_col_func_query(session, col, func.max, start_ts, end_ts, ignore_le_zero).scalar()
 
     @classmethod
     def get_col_sum(cls, db, col, start_ts=None, end_ts=None):
@@ -477,6 +477,10 @@ class DBObject(object):
         return cls.get_col_max(db, cls.time_col)
 
     @classmethod
+    def latest_time(cls, db, not_zero_col):
+        return cls.get_col_max_greater_than_value(db, cls.time_col, not_zero_col, 0)
+
+    @classmethod
     def row_count(cls, db, col=None, col_value=None):
         with db.managed_session() as session:
             query = session.query(cls)
@@ -517,16 +521,22 @@ class DBObject(object):
         return cls.get_col_func_for_value(db, col, func.max, match_col, match_value, start_ts, end_ts, ignore_le_zero)
 
     @classmethod
-    def get_col_func_greater_than_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
-        return cls._query(db, stat_func(col), None, start_ts, end_ts, col if ignore_le_zero else None).filter(match_col > match_value).scalar()
+    def get_col_func_greater_than_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None):
+        with db.managed_session() as session:
+            return cls._query(session, stat_func(col), None, start_ts, end_ts).filter(match_col > match_value).scalar()
 
     @classmethod
-    def get_col_avg_greater_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
-        return cls.get_col_func_greater_than_value(db, col, func.avg, match_col, match_value, start_ts, end_ts, ignore_le_zero)
+    def get_col_avg_greater_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None):
+        return cls.get_col_func_greater_than_value(db, col, func.avg, match_col, match_value, start_ts, end_ts)
+
+    @classmethod
+    def get_col_max_greater_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None):
+        return cls.get_col_func_greater_than_value(db, col, func.max, match_col, match_value, start_ts, end_ts)
 
     @classmethod
     def get_col_func_less_than_value(cls, db, col, stat_func, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):
-        return cls._query(db, stat_func(col), None, start_ts, end_ts, col if ignore_le_zero else None).filter(match_col < match_value).scalar()
+        with db.managed_session() as session:
+            return cls._query(session, stat_func(col), None, start_ts, end_ts, col if ignore_le_zero else None).filter(match_col < match_value).scalar()
 
     @classmethod
     def get_col_avg_less_than_value(cls, db, col, match_col, match_value, start_ts=None, end_ts=None, ignore_le_zero=False):

@@ -25,9 +25,9 @@ root_logger = logging.getLogger()
 
 gc_gonfig = GarminConnectConfigManager()
 
-def get_date_and_days(latest, db, table, stat_name):
+def get_date_and_days(db, latest, table, col, stat_name):
     if latest:
-        last_ts = table.latest_time(db)
+        last_ts = table.latest_time(db, col)
         if last_ts is None:
             date, days = gc_gonfig.stat_start_date(stat_name)
             logger.info("Automatic date not found, using: %s : %s for %s", str(date), str(days), stat_name)
@@ -42,6 +42,9 @@ def get_date_and_days(latest, db, table, stat_name):
                 days = (datetime.date.today() - last_ts).days
     else:
         date, days = gc_gonfig.stat_start_date(stat_name)
+        max_days = (datetime.date.today() - date).days
+        if days > max_days:
+            days = max_days
     if date is None or days is None:
         print "Missing config: need %s_start_date and download_days. Edit GarminConnectConfig.py." % stat_name
         sys.exit()
@@ -81,7 +84,7 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
         download.unzip_files(activities_dir)
 
     if monitoring:
-        date, days = get_date_and_days(latest, GarminDB.MonitoringDB(db_params_dict), GarminDB.Monitoring, 'monitoring')
+        date, days = get_date_and_days(GarminDB.MonitoringDB(db_params_dict), latest, GarminDB.Monitoring, GarminDB.Monitoring.activity_type, 'monitoring')
         if days > 0:
             monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_dir(date.year)
             root_logger.info("Date range to update: %s (%d) to %s", str(date), days, monitoring_dir)
@@ -91,7 +94,7 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
             root_logger.info("Saved monitoring files for %s (%d) to %s for processing", str(date), days, monitoring_dir)
 
     if sleep:
-        date, days = get_date_and_days(latest, GarminDB.GarminDB(db_params_dict), GarminDB.Sleep, 'sleep')
+        date, days = get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.Sleep, GarminDB.Sleep.total_sleep,'sleep')
         if days > 0:
             sleep_dir = GarminDBConfigManager.get_or_create_sleep_dir()
             root_logger.info("Date range to update: %s (%d) to %s", str(date), days, sleep_dir)
@@ -99,7 +102,7 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
             root_logger.info("Saved sleep files for %s (%d) to %s for processing", str(date), days, sleep_dir)
 
     if weight:
-        date, days = get_date_and_days(latest, GarminDB.GarminDB(db_params_dict), GarminDB.Weight, 'weight')
+        date, days = get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.Weight, GarminDB.Weight.weight, 'weight')
         if days > 0:
             weight_dir = GarminDBConfigManager.get_or_create_weight_dir()
             root_logger.info("Date range to update: %s (%d) to %s", str(date), days, weight_dir)
@@ -107,7 +110,7 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
             root_logger.info("Saved weight files for %s (%d) to %s for processing", str(date), days, weight_dir)
 
     if rhr:
-        date, days = get_date_and_days(latest, GarminDB.GarminDB(db_params_dict), GarminDB.RestingHeartRate, 'rhr')
+        date, days = get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'rhr')
         if days > 0:
             rhr_dir = GarminDBConfigManager.get_or_create_rhr_dir()
             root_logger.info("Date range to update: %s (%d) to %s", str(date), days, rhr_dir)
@@ -193,7 +196,10 @@ def delete_db(debug):
     HealthDB.SummaryDB.delete_db(db_params_dict)
 
 
-def usage(program):
+def usage(program, error=None):
+    if error is not None:
+        print error
+        print
     print '%s [--all | --activities | --monitoring | --rhr | --sleep | --weight] [--download | --copy | --import | --analyze] [--latest]' % program
     print '    --all        : Download and/or import data for all enabled stats.'
     print '    --activities : Download and/or import activities data.'
@@ -206,7 +212,7 @@ def usage(program):
     print '    --import     : Import data for the chosen stats.'
     print '    --analyze    : Analyze data in the db and create summary and derived tables.'
     print '    --latest     : Only download and/or import the latest data.'
-    print '    --overwite   : Overwite existing files when downloading. The default is to only download missing files.'
+    print '    --overwrite  : Overwite existing files when downloading. The default is to only download missing files.'
     print '    --delete_db  : Delete Garmin DB db files.'
     print '    --trace      : Turn on debug tracing. Extra logging will be written to log file.'
     print '    '
@@ -230,10 +236,10 @@ def main(argv):
     latest = False
 
     try:
-        opts, args = getopt.getopt(argv,"acAdimlrstT:w",
-            ["all", "activities", "analyze", "copy", "delete_db", "download", "import", "trace=", "test", "monitoring", "latest", "rhr", "sleep", "weight"])
-    except getopt.GetoptError:
-        usage(sys.argv[0])
+        opts, args = getopt.getopt(argv,"acAdimolrstT:w",
+            ["all", "activities", "analyze", "copy", "delete_db", "download", "import", "trace=", "test", "monitoring", "overwrite", "latest", "rhr", "sleep", "weight"])
+    except getopt.GetoptError as e:
+        usage(sys.argv[0], str(e))
 
     for opt, arg in opts:
         if opt == '-h':
@@ -270,7 +276,7 @@ def main(argv):
         elif opt in ("-m", "--monitoring"):
             logging.debug("Monitoring")
             monitoring = True
-        elif opt in ("-o", "--overwite"):
+        elif opt in ("-o", "--overwrite"):
             overwite = True
         elif opt in ("-l", "--latest"):
             latest = True
