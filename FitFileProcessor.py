@@ -18,7 +18,7 @@ root_logger = logging.getLogger()
 class FitFileProcessor():
 
     def __init__(self, db_params_dict, debug):
-        root_logger.info("Debug: %s", str(debug))
+        root_logger.info("Debug: %s", debug)
         self.db_params_dict = db_params_dict
         self.debug = debug
 
@@ -33,14 +33,14 @@ class FitFileProcessor():
             if function is not None:
                 function(fit_file, message)
             else:
-                root_logger.debug("No entry handler %s for message type %s (%d) from %s: %s",
-                    handler_name, repr(message_type), len(messages), fit_file.filename, str(messages[0]))
+                root_logger.debug("No entry handler %s for message type %r (%d) from %s: %s",
+                    handler_name, message_type, len(messages), fit_file.filename, messages[0])
 
     def write_message_type(self, fit_file, message_type):
         messages = fit_file[message_type]
         function = getattr(self, 'write_' + message_type.name, self.write_generic)
         function(fit_file, message_type, messages)
-        root_logger.debug("Processed %d %s entries for %s", len(messages), repr(message_type), fit_file.filename)
+        root_logger.debug("Processed %d %r entries for %s", len(messages), message_type, fit_file.filename)
 
     def write_message_types(self, fit_file, message_types):
         root_logger.info("Importing %s (%s) [%s] with message types: %s", fit_file.filename, fit_file.time_created(), fit_file.type(), message_types)
@@ -75,7 +75,7 @@ class FitFileProcessor():
     #
     def write_file_id_entry(self, fit_file, message):
         parsed_message = message.to_dict()
-        root_logger.info("file_id message: %s", repr(parsed_message))
+        root_logger.info("file_id message: %r", parsed_message)
         self.serial_number = parsed_message.get('serial_number')
         _manufacturer = GarminDB.Device.Manufacturer.convert(parsed_message.get('manufacturer'))
         if _manufacturer is not None:
@@ -107,28 +107,28 @@ class FitFileProcessor():
         GarminDB.Stress._find_or_create(self.garmin_db_session, stress)
 
     def write_event_entry(self, fit_file, event_message):
-        root_logger.debug("event message: %s", repr(event_message.to_dict()))
+        root_logger.debug("event message: %s", event_message.to_dict())
 
     def write_software_entry(self, fit_file, software_message):
-        root_logger.debug("software message: %s", repr(software_message.to_dict()))
+        root_logger.debug("software message: %r", software_message.to_dict())
 
     def write_file_creator_entry(self, fit_file, file_creator_message):
-        root_logger.debug("file creator message: %s", repr(file_creator_message.to_dict()))
+        root_logger.debug("file creator message: %r", file_creator_message.to_dict())
 
     def write_sport_entry(self, fit_file, sport_message):
-        root_logger.debug("sport message: %s", repr(sport_message.to_dict()))
+        root_logger.debug("sport message: %r", sport_message.to_dict())
 
     def write_sensor_entry(self, fit_file, sensor_message):
-        root_logger.debug("sensor message: %s", repr(sensor_message.to_dict()))
+        root_logger.debug("sensor message: %r", sensor_message.to_dict())
 
     def write_source_entry(self, fit_file, source_message):
-        root_logger.debug("source message: %s", repr(source_message.to_dict()))
+        root_logger.debug("source message: %r", source_message.to_dict())
 
     def get_field_value(self, message_dict, field_name):
         return message_dict.get('dev_' + field_name, message_dict.get(field_name))
 
     def write_running_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("run entry: %s", repr(message_dict))
+        root_logger.debug("run entry: %r", message_dict)
         run = {
             'activity_id'                       : activity_id,
             'steps'                             : self.get_field_value(message_dict, 'total_steps'),
@@ -146,7 +146,7 @@ class FitFileProcessor():
         GarminDB.RunActivities._create_or_update_not_none(self.garmin_act_db_session, run)
 
     def write_walking_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("walk entry: %s", repr(message_dict))
+        root_logger.debug("walk entry: %r", message_dict)
         walk = {
             'activity_id'                       : activity_id,
             'steps'                             : self.get_field_value(message_dict, 'total_steps'),
@@ -156,7 +156,7 @@ class FitFileProcessor():
         GarminDB.WalkActivities._create_or_update_not_none(self.garmin_act_db_session, walk)
 
     def write_hiking_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("hike entry: %", repr(message_dict))
+        root_logger.debug("hike entry: %r", message_dict)
         return self.write_walking_entry(fit_file, activity_id, sub_sport, message_dict)
 
     def write_cycling_entry(self, fit_file, activity_id, sub_sport, message_dict):
@@ -164,11 +164,11 @@ class FitFileProcessor():
             'activity_id'                        : activity_id,
             'strokes'                            : self.get_field_value(message_dict, 'total_strokes'),
         }
-        root_logger.debug("ride entry: %s writing %s", repr(message_dict), repr(ride))
+        root_logger.debug("ride entry: %r writing %r", message_dict, ride)
         GarminDB.CycleActivities._create_or_update_not_none(self.garmin_act_db_session, ride)
 
     def write_stand_up_paddleboarding_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("sup entry: %s", repr(message_dict))
+        root_logger.debug("sup entry: %r", message_dict)
         paddle = {
             'activity_id'                       : activity_id,
             'strokes'                           : self.get_field_value(message_dict, 'total_strokes'),
@@ -177,11 +177,11 @@ class FitFileProcessor():
         GarminDB.PaddleActivities._create_or_update_not_none(self.garmin_act_db_session, paddle)
 
     def write_rowing_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("row entry: %s", repr(message_dict))
+        root_logger.debug("row entry: %r", message_dict)
         return self.write_stand_up_paddleboarding_entry(fit_file, activity_id, sub_sport, message_dict)
 
     def write_elliptical_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("elliptical entry: %s", repr(message_dict))
+        root_logger.debug("elliptical entry: %r", message_dict)
         workout = {
             'activity_id'                       : activity_id,
             'steps'                             : message_dict.get('dev_Steps', message_dict.get('total_steps')),
@@ -194,16 +194,16 @@ class FitFileProcessor():
             function = getattr(self, 'write_' + sub_sport.name + '_entry')
             function(fit_file, activity_id, sub_sport, message_dict)
         except AttributeError:
-            root_logger.info("No sub sport handler type %s from %s: %s", sub_sport, fit_file.filename, str(message_dict))
+            root_logger.info("No sub sport handler type %s from %s: %s", sub_sport, fit_file.filename, message_dict)
 
     def write_alpine_skiing_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("Skiing entry: %s", repr(message_dict))
+        root_logger.debug("Skiing entry: %r", message_dict)
 
     def write_training_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("Training entry: %s", repr(message_dict))
+        root_logger.debug("Training entry: %r", message_dict)
 
     def write_session_entry(self, fit_file, message):
-        root_logger.debug("session message: %s", repr(message.to_dict()))
+        root_logger.debug("session message: %r", message.to_dict())
         message_dict = message.to_dict()
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
         sport = message_dict['sport']
@@ -247,14 +247,14 @@ class FitFileProcessor():
             function = getattr(self, 'write_' + sport.name + '_entry')
             function(fit_file, activity_id, sub_sport, message_dict)
         except AttributeError:
-            root_logger.info("No sport handler for type %s from %s: %s", sport, fit_file.filename, str(message_dict))
+            root_logger.info("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_dict)
 
     def write_device_settings_entry(self, fit_file, device_settings_message):
-        root_logger.debug("device settings message: " + repr(device_settings_message.to_dict()))
+        root_logger.debug("device settings message: %r", device_settings_message.to_dict())
 
     def write_lap_entry(self, fit_file, lap_message):
         message_dict = lap_message.to_dict()
-        root_logger.debug("lap message: " + repr(message_dict))
+        root_logger.debug("lap message: %r", message_dict)
         lap = {
             'activity_id'                       : GarminDB.File.id_from_path(fit_file.filename),
             'lap'                               : self.lap,
@@ -284,7 +284,7 @@ class FitFileProcessor():
         self.lap += 1
 
     def write_battery_entry(self, fit_file, battery_message):
-        root_logger.debug("battery message: %s", repr(battery_message.to_dict()))
+        root_logger.debug("battery message: %r", battery_message.to_dict())
 
     def write_attribute(self, timestamp, parsed_message, attribute_name):
         attribute = parsed_message.get(attribute_name)
@@ -292,7 +292,7 @@ class FitFileProcessor():
             GarminDB.Attributes._set_newer(self.garmin_db_session, attribute_name, attribute, timestamp)
 
     def write_user_profile_entry(self, fit_file, message):
-        root_logger.debug("user profile message: %s", repr(message.to_dict()))
+        root_logger.debug("user profile message: %r", message.to_dict())
         parsed_message = message.to_dict()
         timestamp = fit_file.time_created()
         for attribute_name in [
@@ -301,14 +301,14 @@ class FitFileProcessor():
             self.write_attribute(timestamp, parsed_message, attribute_name)
 
     def write_activity_entry(self, fit_file, activity_message):
-        root_logger.debug("activity message: %s", repr(activity_message.to_dict()))
+        root_logger.debug("activity message: %r", activity_message.to_dict())
 
     def write_zones_target_entry(self, fit_file, zones_target_message):
-        root_logger.debug("zones target message: %s", repr(zones_target_message.to_dict()))
+        root_logger.debug("zones target message: %r", zones_target_message.to_dict())
 
     def write_record_entry(self, fit_file, record_message):
         message_dict = record_message.to_dict()
-        root_logger.debug("record message: %s", repr(message_dict))
+        root_logger.debug("record message: %r", message_dict)
         record = {
             'activity_id'                       : GarminDB.File.id_from_path(fit_file.filename),
             'record'                            : self.record,
@@ -326,10 +326,10 @@ class FitFileProcessor():
         self.record += 1
 
     def write_dev_data_id_entry(self, fit_file, dev_data_id_message):
-        root_logger.debug("dev_data_id message: %s", repr(dev_data_id_message.to_dict()))
+        root_logger.debug("dev_data_id message: %r", dev_data_id_message.to_dict())
 
     def write_field_description_entry(self, fit_file, field_description_message):
-        root_logger.debug("field_description message: %s", repr(field_description_message.to_dict()))
+        root_logger.debug("field_description message: %r", field_description_message.to_dict())
 
     def write_monitoring_info_entry(self, fit_file, message):
         parsed_message = message.to_dict()
@@ -363,9 +363,9 @@ class FitFileProcessor():
             if len(intersection) > 1:
                 GarminDB.Monitoring._create_or_update(self.garmin_mon_db_session, intersection)
         except ValueError as e:
-            logger.error("write_monitoring_entry: ValueError for %s: %s", repr(entry), traceback.format_exc())
+            logger.error("write_monitoring_entry: ValueError for %r: %s", entry, traceback.format_exc())
         except Exception as e:
-            logger.error("Exception on monitoring entry: %s: %s", repr(entry), traceback.format_exc())
+            logger.error("Exception on monitoring entry: %r: %s", entry, traceback.format_exc())
 
     def write_device_info_entry(self, fit_file, device_info_message):
         try:
@@ -384,7 +384,7 @@ class FitFileProcessor():
                 if product is None and self.product is not None:
                     product = self.product
         except Exception as e:
-            logger.warning("Unrecognized device: %s - %s", repr(parsed_message), str(e))
+            logger.warning("Unrecognized device: %r - %s", parsed_message, e)
 
         if serial_number is not None:
             device = {
@@ -397,7 +397,7 @@ class FitFileProcessor():
             try:
                 GarminDB.Device._create_or_update_not_none(self.garmin_db_session, device)
             except Exception as e:
-                logger.error("Device not written: %s - %s", repr(parsed_message), str(e))
+                logger.error("Device not written: %r - %s", parsed_message, e)
             device_info = {
                 'file_id'               : GarminDB.File._get_id(self.garmin_db_session, fit_file.filename),
                 'serial_number'         : serial_number,
@@ -410,4 +410,4 @@ class FitFileProcessor():
             try:
                 GarminDB.DeviceInfo._create_or_update_not_none(self.garmin_db_session, device_info)
             except Exception as e:
-                logger.warning("device_info not written: %s - %s", repr(parsed_message), str(e))
+                logger.warning("device_info not written: %r - %s", parsed_message, e)

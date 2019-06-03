@@ -18,7 +18,7 @@ class JsonFileProcessor(object):
 
     def __init__(self, input_file, input_dir, file_regex, latest, debug, recursive=False):
         self.debug = debug
-        logger.info("Debug: %s" % str(debug))
+        logger.info("Debug: %s", debug)
         if input_file:
             self.file_names = FileProcessor.FileProcessor.match_file(input_file, file_regex)
             logger.info("Found %d json files for %s in %s", self.file_count(), file_regex, input_file)
@@ -44,14 +44,14 @@ class JsonFileProcessor(object):
             if data is not None:
                 return format_func(data)
         except KeyError as e:
-            logger.debug("JSON %s not found in %s: %s", fieldname, repr(json), str(e))
+            logger.debug("JSON %s not found in %r: %s", fieldname, json, e)
 
     def get_field_obj(self, json, fieldname, format_func):
         try:
             data = json[fieldname]
             return format_func(data)
         except KeyError as e:
-            logger.debug("JSON %s not found in %s: %s", fieldname, repr(json), str(e))
+            logger.debug("JSON %s not found in %r: %s", fieldname, json, e)
 
     def convert_to_json(self, object):
         return object.__str__()

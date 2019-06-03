@@ -42,7 +42,7 @@ class GarminActivitiesFitData():
             try:
                 fp.write_file(Fit.File(file_name, self.measurement_system))
             except Exception as e:
-                logger.error("Failed to parse %s: %s", file_name, str(e))
+                logger.error("Failed to parse %s: %s", file_name, e)
                 raise
 
 
@@ -300,7 +300,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
             'activity_id'               : activity_id,
             'avg_moving_pace'           : Fit.Conversions.speed_to_pace(avg_moving_speed),
         }
-        root_logger.info("process_running for %d: %s", activity_id, repr(run))
+        root_logger.info("process_running for %d: %r", activity_id, run)
         GarminDB.RunActivities._create_or_update_not_none(self.garmin_act_db_session, run)
 
     def process_json(self, json_data):
@@ -339,7 +339,7 @@ class GarminActivitiesExtraData(JsonFileProcessor):
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
 
     def process_json(self, json_data):
-        root_logger.info("Extra data: %s", repr(json_data))
+        root_logger.info("Extra data: %r", json_data)
         GarminDB.ActivitiesExtraData.create_or_update_not_none(self.garmin_db, GarminDB.DailyExtraData.convert_eums(json_data))
         return 1
 

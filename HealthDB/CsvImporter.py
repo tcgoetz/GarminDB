@@ -82,5 +82,5 @@ class CsvImporter():
             read_csv = csv.DictReader(csv_file, delimiter=',')
             for row in read_csv:
                 db_entry = self.convert_cols(english_units, row)
-                logger.debug("%s  -> %s" % (repr(row), repr(db_entry)))
+                logger.debug("%r  -> %r", row, db_entry)
                 self.write_entry_func(db_entry)

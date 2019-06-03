@@ -28,7 +28,7 @@ class Event(enum.Enum):
         try:
             return cls(json_event['typeId'])
         except ValueError:
-            logger.info("Unknown event type: %s", repr(json_event))
+            logger.info("Unknown event type: %r", json_event)
             raise
 
 
@@ -101,7 +101,7 @@ class Sport(enum.Enum):
         try:
             return Sport(json_activity['parentTypeId'])
         except ValueError:
-            logger.info("Unknown sport type: %s", repr(json_activity))
+            logger.info("Unknown sport type: %r", json_activity)
             raise
 
     @classmethod
@@ -110,7 +110,7 @@ class Sport(enum.Enum):
         try:
             return Sport(json_activity['parentTypeId'])
         except ValueError:
-            logger.info("Unknown sport type: %s", repr(json_activity))
+            logger.info("Unknown sport type: %r", json_activity)
             raise
 
     @classmethod
@@ -119,7 +119,7 @@ class Sport(enum.Enum):
         try:
             return Sport(json_activity['typeId'])
         except ValueError:
-            logger.info("Unknown subsport type: %s", repr(json_activity))
+            logger.info("Unknown subsport type: %r", json_activity)
             raise
 
     @classmethod
@@ -128,5 +128,5 @@ class Sport(enum.Enum):
         try:
             return Sport(json_activity['typeId'])
         except ValueError:
-            logger.info("Unknown subsport type: %s", repr(json_activity))
+            logger.info("Unknown subsport type: %r", json_activity)
             raise

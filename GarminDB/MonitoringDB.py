@@ -20,7 +20,6 @@ class MonitoringDB(DB):
         pass
 
     def __init__(self, db_params_dict, debug=False):
-        logger.info("MonitoringDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(MonitoringDB, self).__init__(db_params_dict, debug)
         MonitoringDB.Base.metadata.create_all(self.engine)
         version = MonitoringDB.DbVersion()

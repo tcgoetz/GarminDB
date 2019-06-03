@@ -18,7 +18,7 @@ class Location(object):
 
     @classmethod
     def google_maps_url(cls, lat_str, long_str):
-        return '"http://maps.google.com/?ie=UTF8&q=" || %s || "," || %s || "&z=13"' % (str(lat_str), str(long_str))
+        return '"http://maps.google.com/?ie=UTF8&q=" || %s || "," || %s || "&z=13"' % (lat_str, long_str)
 
     def to_google_maps_url(self):
         return self.google_maps_url(self.lat_deg, self.long_deg)

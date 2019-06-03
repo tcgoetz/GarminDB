@@ -47,7 +47,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         min_value, max_value = bounds
         self.assertGreaterEqual(value, min_value, '%s value %s less than min %s' % (value_name, value, min_value))
         self.assertLessEqual(value, max_value, '%s value %s greater than max %s' % (value_name, value, max_value))
-        logger.info("%s: %s", value_name, str(value))
+        logger.info("%s: %s", value_name, value)
 
     def check_col_stats(self, db, table, col, col_name, ignore_le_zero, time_col,
         records_bounds, max_bounds, min_bounds, avg_bounds, latest_bounds):

@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class DB(object):
 
     def __init__(self, db_params_dict, debug=False):
-        logger.debug("DB %s debug %s ", repr(db_params_dict), str(debug))
+        logger.info("%s: %r debug: %s ", self.__class__.__name__, db_params_dict, debug)
         if debug > 0:
             logger.setLevel(logging.DEBUG)
         else:
@@ -94,7 +94,7 @@ class DBObject(object):
     def round_col(cls, col, alt_col_name=None, places=1):
         if alt_col_name is None:
             alt_col_name = col_name
-        return 'ROUND(%s, %d) AS %s ' % (str(col), places, alt_col_name)
+        return 'ROUND(%s, %d) AS %s ' % (col, places, alt_col_name)
 
     @declared_attr
     def col_count(cls):
@@ -219,7 +219,7 @@ class DBObject(object):
 
     @classmethod
     def _find_one(cls, session, values_dict):
-        logger.debug("%s::_find_one %s", cls.__name__, repr(values_dict))
+        logger.debug("%s::_find_one %r", cls.__name__, values_dict)
         return cls._find_query(session, values_dict).one_or_none()
 
     @classmethod
@@ -229,7 +229,7 @@ class DBObject(object):
 
     @classmethod
     def _find_id(cls, session, values_dict):
-        logger.debug("%s::find_id %s", cls.__name__, repr(values_dict))
+        logger.debug("%s::find_id %r", cls.__name__, values_dict)
         return cls._find_one(session, values_dict).id
 
     @classmethod
@@ -239,7 +239,7 @@ class DBObject(object):
 
     @classmethod
     def _create(cls, session, values_dict, ignore_none=False):
-        logger.debug("%s::_create %s", cls.__name__, repr(values_dict))
+        logger.debug("%s::_create %r", cls.__name__, values_dict)
         if ignore_none:
             values_dict = dict_filter_none_values(values_dict)
         instance = cls(**values_dict)
@@ -247,7 +247,7 @@ class DBObject(object):
 
     @classmethod
     def _find_or_create(cls, session, values_dict):
-        logger.debug("%s::find_or_create %s" % (cls.__name__, repr(values_dict)))
+        logger.debug("%s::find_or_create %r", cls.__name__, values_dict)
         if cls._find_one(session, values_dict) is None:
             cls._create(session, values_dict)
 
@@ -258,7 +258,7 @@ class DBObject(object):
 
     @classmethod
     def _create_or_update(cls, session, values_dict, ignore_none=False):
-        logger.debug("%s::create_or_update %s", cls.__name__, repr(values_dict))
+        logger.debug("%s::create_or_update %r", cls.__name__, values_dict)
         instance = cls._find_one(session, values_dict)
         if instance is None:
             cls._create(session, values_dict, ignore_none)
@@ -272,7 +272,7 @@ class DBObject(object):
 
     @classmethod
     def _create_or_update_not_none(cls, session, values_dict):
-        logger.debug("%s::_create_or_update_not_none %s", cls.__name__, repr(values_dict))
+        logger.debug("%s::_create_or_update_not_none %r", cls.__name__, values_dict)
         cls._create_or_update(session, values_dict, True)
 
     @classmethod
@@ -473,10 +473,6 @@ class DBObject(object):
        return cls.get_col_func_of_max_per_day(db, col, func.max, start_ts, end_ts)
 
     @classmethod
-    def latest_time(cls, db):
-        return cls.get_col_max(db, cls.time_col)
-
-    @classmethod
     def latest_time(cls, db, not_zero_col):
         return cls.get_col_max_greater_than_value(db, cls.time_col, not_zero_col, 0)
 
@@ -571,5 +567,5 @@ class DBObject(object):
     def __repr__(self):
         classname = self.__class__.__name__
         values = {col_name : getattr(self, col_name) for col_name in self.get_col_names()}
-        return ("<%s() %s>" % (classname, repr(values)))
+        return ("<%s() %r>" % (classname, values))
 

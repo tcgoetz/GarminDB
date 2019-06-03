@@ -72,7 +72,7 @@ class Analyze():
         stat_logger.info("Activity records: %d", records)
         self.save_summary_stat('Activity_records', records)
         years = GarminDB.Activities.get_years(self.garmin_act_db)
-        stat_logger.info("Activities years: %d: %s", len(years), str(years))
+        stat_logger.info("Activities years: %d: %s", len(years), years)
         self.save_summary_stat('Activity_Years', len(years))
         fitness_activities = GarminDB.Activities.row_count(self.garmin_act_db, GarminDB.Activities.type, 'fitness')
         stat_logger.info("Fitness activities: %d", fitness_activities)
@@ -81,9 +81,9 @@ class Analyze():
         stat_logger.info("Recreation activities: %d", recreation_activities)
         self.save_summary_stat('Recreation_activities', recreation_activities)
         sports = GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sport)
-        stat_logger.info("Sports: %s", str(sports))
+        stat_logger.info("Sports: %s", sports)
         sub_sports = GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sub_sport)
-        stat_logger.info("SubSports: %s", str(sub_sports))
+        stat_logger.info("SubSports: %s", sub_sports)
         self.report_sport(GarminDB.Activities.sport, 'Running')
         self.report_sport(GarminDB.Activities.sport, 'Walking')
         self.report_sport(GarminDB.Activities.sport, 'Cycling')
@@ -102,22 +102,22 @@ class Analyze():
             maximum = table.get_time_col_max(self.garmin_db, col)
         else:
             maximum = table.get_col_max(self.garmin_db, col)
-        stat_logger.info("Max %s: %s", name, str(maximum))
+        stat_logger.info("Max %s: %s", name, maximum)
         self.save_summary_stat('Max_%s' % name, maximum)
         if time_col:
             minimum = table.get_time_col_min(self.garmin_db, col)
         else:
             minimum = table.get_col_min(self.garmin_db, col, None, None, ignore_le_zero)
-        stat_logger.info("Min %s: %s", name, str(minimum))
+        stat_logger.info("Min %s: %s", name, minimum)
         self.save_summary_stat('Min_%s' % name, minimum)
         if time_col:
             average = table.get_time_col_avg(self.garmin_db, col)
         else:
             average = table.get_col_avg(self.garmin_db, col, None, None, ignore_le_zero)
-        stat_logger.info("Avg %s: %s", name, str(average))
+        stat_logger.info("Avg %s: %s", name, average)
         self.save_summary_stat('Avg_%s' % name, average)
         latest = table.get_col_latest(self.garmin_db, col)
-        stat_logger.info("Latest %s: %s", name, str(latest))
+        stat_logger.info("Latest %s: %s", name, latest)
 
     def get_monitoring_stats(self):
         stat_logger.info("___Monitoring Statistics___")
@@ -134,7 +134,7 @@ class Analyze():
         years = GarminDB.Monitoring.get_years(self.garmin_mon_db)
         self.save_summary_stat('Monitoring_Years', len(years))
         stat_logger.info("Monitoring records: %d", GarminDB.Monitoring.row_count(self.garmin_mon_db))
-        stat_logger.info("Monitoring Years (%d): %s", len(years), str(years))
+        stat_logger.info("Monitoring Years (%d): %s", len(years), years)
         total_days = 0
         for year in years:
             self.get_monitoring_months(year)
@@ -144,7 +144,7 @@ class Analyze():
     def get_monitoring_months(self, year):
         months = GarminDB.Monitoring.get_month_names(self.garmin_mon_db, year)
         self.save_summary_stat(str(year) + '_months', len(months))
-        stat_logger.info("%s Months (%s): %s", year, len(months) , str(months))
+        stat_logger.info("%s Months (%s): %s", year, len(months) , months)
 
     def get_monitoring_days(self, year):
         days = GarminDB.Monitoring.get_days(self.garmin_mon_db, year)
@@ -157,7 +157,7 @@ class Analyze():
             span = 0
         self.save_summary_stat(str(year) + '_days', days_count)
         self.save_summary_stat(str(year) + '_days_span', span)
-        stat_logger.info("%d Days (%d count vs %d span): %s", year, days_count, span, str(days))
+        stat_logger.info("%d Days (%d count vs %d span): %s", year, days_count, span, days)
         for index in xrange(days_count - 1):
             day = int(days[index])
             next_day = int(days[index + 1])
@@ -284,5 +284,5 @@ class Analyze():
 
         years = GarminDB.Monitoring.get_years(self.garmin_mon_db)
         for year in years:
-            logger.info("Generating %s", str(year))
+            logger.info("Generating %s", year)
             self.calculate_year(year)

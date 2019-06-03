@@ -61,7 +61,7 @@ class GarminMonitoringFitData():
             try:
                 fp.write_file(Fit.File(file_name, self.measurement_system))
             except Fit.FitFileError as e:
-                logger.error("Failed to parse %s: %s", file_name, str(e))
+                logger.error("Failed to parse %s: %s", file_name, e)
 
 
 class SleepActivityLevels(enum.Enum):
@@ -227,7 +227,7 @@ class GarminSummaryData(JsonFileProcessor):
         GarminDB.DailySummary.create_or_update_not_none(self.garmin_db, summary)
         if extra_data:
             extra_data['day'] = day
-            logger.info("Extra data: %s", repr(extra_data))
+            logger.info("Extra data: %r", extra_data)
             json_filename = self.input_dir + '/extra_data_' + day.strftime("%Y-%m-%d") + '.json'
             if not os.path.isfile(json_filename):
                 self.save_json_file(json_filename, extra_data)
@@ -243,7 +243,7 @@ class GarminMonitoringExtraData(JsonFileProcessor):
         self.conversions = {'day' : dateutil.parser.parse}
 
     def process_json(self, json_data):
-        root_logger.info("Extra data: %s", repr(json_data))
+        root_logger.info("Extra data: %r", json_data)
         json_data['day'] = json_data['day'].date()
         GarminDB.DailyExtraData.create_or_update_not_none(self.garmin_db, GarminDB.DailyExtraData.convert_eums(json_data))
         return 1

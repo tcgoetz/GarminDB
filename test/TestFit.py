@@ -38,7 +38,7 @@ class TestFit(unittest.TestCase):
             messages = fit_file[message_type]
             for message in messages:
                 if dump_message:
-                    logger.info("Message: %s", repr(message))
+                    logger.info("Message: %r", message)
                 self.check_message_fields(message_type, message)
 
     def check_message_fields(self, message_type, message):
@@ -49,10 +49,10 @@ class TestFit(unittest.TestCase):
             field_value = message[field_name]
             if not field_value.is_invalid() and field_name.startswith('unknown'):
                 if message_type not in unknown_message_fields:
-                    logger.info("Unknown %s message field: %s value %s" % (message_type, field_name, str(field_value.value)))
+                    logger.info("Unknown %s message field: %s value %s", message_type, field_name, field_value.value)
                     unknown_message_fields[message_type] = [field_name]
                 elif field_name not in unknown_message_fields[message_type]:
-                    logger.info("Unknown %s message field: %s value: %s" % (message_type, field_name, str(field_value.value)))
+                    logger.info("Unknown %s message field: %s value: %s", message_type, field_name, field_value.value)
                     unknown_message_fields[message_type].append(field_name)
 
     def check_value(self, message, key, expected_value):
@@ -84,7 +84,7 @@ class TestFit(unittest.TestCase):
     def check_monitoring_file(self, filename):
         fit_file = Fit.File(filename, self.measurement_system)
         self.check_message_types(fit_file)
-        logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
+        logger.info(filename + ' message types: %s', fit_file.message_types())
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.monitoring_b)
         messages = fit_file[Fit.MessageType.monitoring]
         for message in messages:
@@ -109,7 +109,7 @@ class TestFit(unittest.TestCase):
 
     def check_activity_file(self, filename):
         fit_file = Fit.File(filename, self.measurement_system)
-        logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
+        logger.info(filename + ' message types: %s', fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.activity)
         for message in fit_file[Fit.MessageType.record]:
@@ -127,7 +127,7 @@ class TestFit(unittest.TestCase):
 
     def check_sleep_file(self, filename):
         fit_file = Fit.File(filename, self.measurement_system)
-        logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
+        logger.info(filename + ' message types: %s', fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
         self.check_file_id(fit_file, Fit.FieldEnums.FileType.sleep)
 
@@ -140,7 +140,7 @@ class TestFit(unittest.TestCase):
     def check_unknown_file(self, filename):
         logger.info('Parsing ' + filename)
         fit_file = Fit.File(filename, self.measurement_system)
-        logger.info(filename + ' message types: ' + repr(fit_file.message_types()))
+        logger.info(filename + ' message types: %s', fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
 
     def test_parse_unknown(self):

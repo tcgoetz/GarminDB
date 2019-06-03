@@ -16,7 +16,6 @@ class MSHealthDB(DB):
     db_name = 'mshealth'
 
     def __init__(self, db_params_dict, debug=False):
-        logger.info("MSHealthDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(MSHealthDB, self).__init__(db_params_dict, debug)
         MSHealthDB.Base.metadata.create_all(self.engine)
 

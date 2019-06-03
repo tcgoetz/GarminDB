@@ -40,7 +40,7 @@ class TestGarminDbObjects(unittest.TestCase):
             'type'          : file_type,
             'serial_number' : file_serial_number,
         }
-        logger.info("check_file_table: %s", repr(file_dict))
+        logger.info("check_file_table: %r", file_dict)
         GarminDB.File.find_or_create(garmindb, file_dict)
         file = GarminDB.File.find_one(garmindb, file_dict)
         self.assertEqual(file.id, file_dict['id'])

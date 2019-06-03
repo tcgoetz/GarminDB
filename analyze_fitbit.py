@@ -26,14 +26,14 @@ class Analyze():
 
     def get_years(self):
         years = FitBitDB.DaysSummary.get_years(self.fitbitdb)
-        print "Years (%d): %s" % (len(years), str(years))
+        print "Years (%d): %s" % (len(years), years)
         for year in years:
             self.get_months(year)
             self.get_days(year)
 
     def get_months(self, year):
         months = FitBitDB.DaysSummary.get_month_names(self.fitbitdb, year)
-        print "%s Months (%d): %s" % (year, len(months) , str(months))
+        print "%s Months (%d): %s" % (year, len(months) , months)
 
     def get_days(self, year):
         year_int = int(year)
@@ -45,7 +45,7 @@ class Analyze():
             span = last_day - first_day + 1
         else:
             span = 0
-        print "%d Days (%d vs %d): %s" % (year_int, days_count, span, str(days))
+        print "%d Days (%d vs %d): %s" % (year_int, days_count, span, days)
         for index in xrange(days_count - 1):
             day = int(days[index])
             next_day = int(days[index + 1])

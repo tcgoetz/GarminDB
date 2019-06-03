@@ -30,10 +30,10 @@ def get_date_and_days(db, latest, table, col, stat_name):
         last_ts = table.latest_time(db, col)
         if last_ts is None:
             date, days = gc_gonfig.stat_start_date(stat_name)
-            logger.info("Automatic date not found, using: %s : %s for %s", str(date), str(days), stat_name)
+            logger.info("Automatic date not found, using: %s : %s for %s", date, days, stat_name)
         else:
             # start from the day after the last day in the DB
-            logger.info("Automatically downloading %s data from: %s", stat_name, str(last_ts))
+            logger.info("Automatically downloading %s data from: %s", stat_name, last_ts)
             if stat_name == 'monitoring':
                 date = last_ts.date()
                 days = (datetime.datetime.now() - last_ts).days
@@ -84,38 +84,38 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
         download.unzip_files(activities_dir)
 
     if monitoring:
-        date, days = get_date_and_days(GarminDB.MonitoringDB(db_params_dict), latest, GarminDB.Monitoring, GarminDB.Monitoring.activity_type, 'monitoring')
+        date, days = get_date_and_days(GarminDB.MonitoringDB(db_params_dict), latest, GarminDB.MonitoringHeartRate, GarminDB.MonitoringHeartRate.heart_rate, 'monitoring')
         if days > 0:
             monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_dir(date.year)
-            root_logger.info("Date range to update: %s (%d) to %s", str(date), days, monitoring_dir)
+            root_logger.info("Date range to update: %s (%d) to %s", date, days, monitoring_dir)
             download.get_daily_summaries(monitoring_dir, date, days, overwite)
             download.get_monitoring(date, days)
             download.unzip_files(monitoring_dir)
-            root_logger.info("Saved monitoring files for %s (%d) to %s for processing", str(date), days, monitoring_dir)
+            root_logger.info("Saved monitoring files for %s (%d) to %s for processing", date, days, monitoring_dir)
 
     if sleep:
         date, days = get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.Sleep, GarminDB.Sleep.total_sleep,'sleep')
         if days > 0:
             sleep_dir = GarminDBConfigManager.get_or_create_sleep_dir()
-            root_logger.info("Date range to update: %s (%d) to %s", str(date), days, sleep_dir)
+            root_logger.info("Date range to update: %s (%d) to %s", date, days, sleep_dir)
             download.get_sleep(sleep_dir, date, days, overwite)
-            root_logger.info("Saved sleep files for %s (%d) to %s for processing", str(date), days, sleep_dir)
+            root_logger.info("Saved sleep files for %s (%d) to %s for processing", date, days, sleep_dir)
 
     if weight:
         date, days = get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.Weight, GarminDB.Weight.weight, 'weight')
         if days > 0:
             weight_dir = GarminDBConfigManager.get_or_create_weight_dir()
-            root_logger.info("Date range to update: %s (%d) to %s", str(date), days, weight_dir)
+            root_logger.info("Date range to update: %s (%d) to %s", date, days, weight_dir)
             download.get_weight(weight_dir, date, days, overwite)
-            root_logger.info("Saved weight files for %s (%d) to %s for processing", str(date), days, weight_dir)
+            root_logger.info("Saved weight files for %s (%d) to %s for processing", date, days, weight_dir)
 
     if rhr:
         date, days = get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'rhr')
         if days > 0:
             rhr_dir = GarminDBConfigManager.get_or_create_rhr_dir()
-            root_logger.info("Date range to update: %s (%d) to %s", str(date), days, rhr_dir)
+            root_logger.info("Date range to update: %s (%d) to %s", date, days, rhr_dir)
             download.get_rhr(rhr_dir, date, days, overwite)
-            root_logger.info("Saved rhr files for %s (%d) to %s for processing", str(date), days, rhr_dir)
+            root_logger.info("Saved rhr files for %s (%d) to %s for processing", date, days, rhr_dir)
 
 
 def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities):

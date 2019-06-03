@@ -16,7 +16,6 @@ class FitBitDB(DB):
     db_name = 'fitbit'
 
     def __init__(self, db_params_dict, debug=False):
-        logger.info("FitBitDB: %s debug: %s " % (repr(db_params_dict), str(debug)))
         super(FitBitDB, self).__init__(db_params_dict, debug)
         FitBitDB.Base.metadata.create_all(self.engine)
 

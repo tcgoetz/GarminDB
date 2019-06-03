@@ -21,7 +21,6 @@ class GarminDB(DB):
         pass
 
     def __init__(self, db_params_dict, debug=False):
-        logger.info("GarminDB: %s debug: %s ", repr(db_params_dict), str(debug))
         super(GarminDB, self).__init__(db_params_dict, debug)
         GarminDB.Base.metadata.create_all(self.engine)
         version = GarminDB.DbVersion()

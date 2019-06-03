@@ -39,18 +39,18 @@ class KeyValueObject(DBObject):
 
     @classmethod
     def set_if_unset(cls, db, key, value, timestamp=datetime.datetime.now()):
-        logger.debug("%s::set_if_unset {%s : %s}", cls.__name__, str(key), str(value))
+        logger.debug("%s::set_if_unset {%s : %s}", cls.__name__, key, value)
         return cls.find_or_create(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
 
     @classmethod
     def get(cls, db, key):
-        logger.debug("%s::get %s", cls.__name__, str(key))
+        logger.debug("%s::get %s", cls.__name__, key)
         try:
             with db.managed_session() as session:
                 instance = cls._find_one(session, {'key' : key})
                 return instance.value
         except Exception:
-            logger.warning("%s::get failed to get %s: %s", cls.__name__, str(key), traceback.format_exc())
+            logger.warning("%s::get failed to get %s: %s", cls.__name__, key, traceback.format_exc())
             return None
 
     @classmethod
