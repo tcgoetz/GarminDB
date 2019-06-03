@@ -79,10 +79,6 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
         start_ts = wake_ts - datetime.timedelta(0, 0, 0, 0, 10)
         return cls.get_col_min(db, cls.heart_rate, start_ts, wake_ts, True)
 
-    @classmethod
-    def get_heartrate_for_period(cls, db, start_ts, end_ts):
-        return cls.get_for_period(db, cls.heart_rate, start_ts, end_ts)
-
 
 class MonitoringIntensity(MonitoringDB.Base, DBObject):
     __tablename__ = 'monitoring_intensity'
