@@ -115,11 +115,11 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
         return cls.find_one(db, {'activity_id' : activity_id})
 
     @classmethod
-    def get_stats(cls, db, start_ts, end_ts):
+    def get_stats(cls, session, start_ts, end_ts):
         stats = {
-            'activities'            : cls.row_count_for_period(db, start_ts, end_ts),
-            'activities_calories'   : cls.get_col_sum(db, cls.calories, start_ts, end_ts),
-            'activities_distance'   : cls.get_col_sum(db, cls.distance, start_ts, end_ts),
+            'activities'            : cls._row_count_for_period(session, start_ts, end_ts),
+            'activities_calories'   : cls._get_col_sum(session, cls.calories, start_ts, end_ts),
+            'activities_distance'   : cls._get_col_sum(session, cls.distance, start_ts, end_ts),
         }
         return stats
 

@@ -50,9 +50,9 @@ class MonitoringInfo(MonitoringDB.Base, DBObject):
         return cls.get_col_avg_of_max_per_day(db, cls.resting_metabolic_rate, day_ts, day_ts + datetime.timedelta(1))
 
     @classmethod
-    def get_stats(cls, db, start_ts, end_ts):
+    def get_stats(cls, session, start_ts, end_ts):
         stats = {
-            'calories_bmr_avg' : cls.get_col_avg(db, cls.resting_metabolic_rate, start_ts, end_ts),
+            'calories_bmr_avg' : cls._get_col_avg(session, cls.resting_metabolic_rate, start_ts, end_ts),
         }
         return stats
 
@@ -67,11 +67,11 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
     time_col_name = 'timestamp'
 
     @classmethod
-    def get_stats(cls, db, start_ts, end_ts):
+    def get_stats(cls, session, start_ts, end_ts):
         return {
-            'hr_avg' : cls.get_col_avg(db, cls.heart_rate, start_ts, end_ts, True),
-            'hr_min' : cls.get_col_min(db, cls.heart_rate, start_ts, end_ts, True),
-            'hr_max' : cls.get_col_max(db, cls.heart_rate, start_ts, end_ts),
+            'hr_avg' : cls._get_col_avg(session, cls.heart_rate, start_ts, end_ts, True),
+            'hr_min' : cls._get_col_min(session, cls.heart_rate, start_ts, end_ts, True),
+            'hr_max' : cls._get_col_max(session, cls.heart_rate, start_ts, end_ts),
         }
 
     @classmethod
@@ -103,11 +103,11 @@ class MonitoringIntensity(MonitoringDB.Base, DBObject):
         return cls.time_from_secs(2 * cls.secs_from_time(cls.vigorous_activity_time) + cls.secs_from_time(cls.moderate_activity_time))
 
     @classmethod
-    def get_stats(cls, db, start_ts, end_ts):
+    def get_stats(cls, session, start_ts, end_ts):
         return {
-            'intensity_time'            : cls.get_time_col_sum(db, cls.intensity_time, start_ts, end_ts),
-            'moderate_activity_time'    : cls.get_time_col_sum(db, cls.moderate_activity_time, start_ts, end_ts),
-            'vigorous_activity_time'    : cls.get_time_col_sum(db, cls.vigorous_activity_time, start_ts, end_ts),
+            'intensity_time'            : cls._get_time_col_sum(session, cls.intensity_time, start_ts, end_ts),
+            'moderate_activity_time'    : cls._get_time_col_sum(session, cls.moderate_activity_time, start_ts, end_ts),
+            'vigorous_activity_time'    : cls._get_time_col_sum(session, cls.vigorous_activity_time, start_ts, end_ts),
         }
 
 
@@ -133,8 +133,8 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
     time_col_name = 'timestamp'
 
     @classmethod
-    def get_stats(cls, db, func, start_ts, end_ts, measurement_system):
-        cum_ascent = func(db, cls.cum_ascent, start_ts, end_ts)
+    def get_stats(cls, session, func, start_ts, end_ts, measurement_system):
+        cum_ascent = func(session, cls.cum_ascent, start_ts, end_ts)
         if cum_ascent:
             if measurement_system is FieldEnums.DisplayMeasure.metric:
                 floors = cum_ascent / cls.feet_to_floors
@@ -145,20 +145,20 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
         return { 'floors' : floors }
 
     @classmethod
-    def get_daily_stats(cls, db, day_ts, measurement_system):
-        stats = cls.get_stats(db, cls.get_col_max, day_ts, day_ts + datetime.timedelta(1), measurement_system)
+    def get_daily_stats(cls, session, day_ts, measurement_system):
+        stats = cls.get_stats(session, cls._get_col_max, day_ts, day_ts + datetime.timedelta(1), measurement_system)
         stats['day'] = day_ts
         return stats
 
     @classmethod
-    def get_weekly_stats(cls, db, first_day_ts, measurement_system):
-        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7), measurement_system)
+    def get_weekly_stats(cls, session, first_day_ts, measurement_system):
+        stats = cls.get_stats(session, cls._get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7), measurement_system)
         stats['first_day'] = first_day_ts
         return stats
 
     @classmethod
-    def get_monthly_stats(cls, db, first_day_ts, last_day_ts, measurement_system):
-        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, last_day_ts, measurement_system)
+    def get_monthly_stats(cls, session, first_day_ts, last_day_ts, measurement_system):
+        stats = cls.get_stats(session, cls._get_col_sum_of_max_per_day, first_day_ts, last_day_ts, measurement_system)
         stats['first_day'] = first_day_ts
         return stats
 
@@ -186,49 +186,38 @@ class Monitoring(MonitoringDB.Base, DBObject):
     time_col_name = 'timestamp'
 
     @classmethod
-    def get_active_calories(cls, db, activity_type, start_ts, end_ts):
-        active_calories = cls.get_col_avg_of_max_per_day_for_value(db, cls.active_calories, cls.activity_type, activity_type, start_ts, end_ts)
+    def get_active_calories(cls, session, activity_type, start_ts, end_ts):
+        active_calories = cls._get_col_avg_of_max_per_day_for_value(session, cls.active_calories, cls.activity_type, activity_type, start_ts, end_ts)
         if active_calories is not None:
             return active_calories
         return 0
 
     @classmethod
-    def get_stats(cls, db, func, start_ts, end_ts):
+    def get_stats(cls, session, func, start_ts, end_ts):
         return {
-            'steps'                 : func(db, cls.steps, start_ts, end_ts),
+            'steps'                 : func(session, cls.steps, start_ts, end_ts),
             'calories_active_avg'   : (
-                cls.get_active_calories(db, FieldEnums.ActivityType.running, start_ts, end_ts) +
-                cls.get_active_calories(db, FieldEnums.ActivityType.cycling, start_ts, end_ts) +
-                cls.get_active_calories(db, FieldEnums.ActivityType.walking, start_ts, end_ts)
+                cls.get_active_calories(session, FieldEnums.ActivityType.running, start_ts, end_ts) +
+                cls.get_active_calories(session, FieldEnums.ActivityType.cycling, start_ts, end_ts) +
+                cls.get_active_calories(session, FieldEnums.ActivityType.walking, start_ts, end_ts)
             )
         }
 
     @classmethod
-    def get_daily_stats(cls, db, day_ts):
-        stats = cls.get_stats(db, cls.get_col_max, day_ts, day_ts + datetime.timedelta(1))
+    def get_daily_stats(cls, session, day_ts):
+        stats = cls.get_stats(session, cls._get_col_max, day_ts, day_ts + datetime.timedelta(1))
         stats['day'] = day_ts
         return stats
 
     @classmethod
-    def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7))
+    def get_weekly_stats(cls, session, first_day_ts):
+        stats = cls.get_stats(session, cls._get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7))
         stats['first_day'] = first_day_ts
         return stats
 
     @classmethod
-    def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
-        stats = cls.get_stats(db, cls.get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
+    def get_monthly_stats(cls, session, first_day_ts, last_day_ts):
+        stats = cls.get_stats(session, cls._get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
         stats['first_day'] = first_day_ts
         return stats
-
-    @classmethod
-    def get_inactive(cls, db, start_ts, end_ts):
-        with db.managed_session() as session:
-            return session.query(cls.timestamp).filter(cls.intensity == 0).all()
-
-    @classmethod
-    def get_daily_inactive(cls, db, day_date):
-        start_ts = datetime.datetime.combine(day_date, datetime.time.min)
-        end_ts = start_ts + datetime.timedelta(1)
-        return cls.get_inactive(db, start_ts, end_ts)
 

@@ -84,10 +84,10 @@ class IntensityHR(GarminSummaryDB.Base, DBObject):
     time_col_name = 'timestamp'
 
     @classmethod
-    def get_stats(cls, db, start_ts, end_ts):
+    def get_stats(cls, session, start_ts, end_ts):
         stats = {
-            'inactive_hr_avg' : cls.get_col_avg_for_value(db, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
-            'inactive_hr_min' : cls.get_col_min_for_value(db, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
-            'inactive_hr_max' : cls.get_col_max_for_value(db, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
+            'inactive_hr_avg' : cls._get_col_avg_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
+            'inactive_hr_min' : cls._get_col_min_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
+            'inactive_hr_max' : cls._get_col_max_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
         }
         return stats
