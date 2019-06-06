@@ -173,26 +173,24 @@ class Analyze():
         self.get_monitoring_stats()
         self.get_monitoring_years()
 
-    def populate_hr_intensity(self, day_date, overwrite=False):
-        with self.garmin_mon_db.managed_session() as garmin_mon_session:
-            with self.garmin_sum_db.managed_session() as garmin_sum_session:
-                if GarminDB.IntensityHR._row_count_for_day(garmin_sum_session, day_date) == 0 or overwrite:
-                    monitoring_rows = GarminDB.Monitoring._get_for_day(garmin_mon_session, GarminDB.Monitoring, day_date, GarminDB.Monitoring.intensity)
-                    previous_ts = None
-                    for monitoring in monitoring_rows:
-                        # Heart rate value is for one minute, reported at the end of the minute. Only take HR values where the
-                        # measurement period falls within the activity period.
-                        if previous_ts is not None and (monitoring.timestamp - previous_ts).total_seconds() > 60:
-                            hr_rows = GarminDB.MonitoringHeartRate._get_for_period(garmin_mon_session, GarminDB.MonitoringHeartRate,
-                                previous_ts + datetime.timedelta(seconds=60), monitoring.timestamp)
-                            for hr in hr_rows:
-                                entry = {
-                                    'timestamp'     : hr.timestamp,
-                                    'intensity'     : monitoring.intensity,
-                                    'heart_rate'    : hr.heart_rate
-                                }
-                                GarminDB.IntensityHR._create_or_update_not_none(garmin_sum_session, entry)
-                        previous_ts = monitoring.timestamp
+    def populate_hr_intensity(self, day_date, garmin_mon_session, garmin_sum_session, overwrite=False):
+        if GarminDB.IntensityHR._row_count_for_day(garmin_sum_session, day_date) == 0 or overwrite:
+            monitoring_rows = GarminDB.Monitoring._get_for_day(garmin_mon_session, GarminDB.Monitoring, day_date, GarminDB.Monitoring.intensity)
+            previous_ts = None
+            for monitoring in monitoring_rows:
+                # Heart rate value is for one minute, reported at the end of the minute. Only take HR values where the
+                # measurement period falls within the activity period.
+                if previous_ts is not None and (monitoring.timestamp - previous_ts).total_seconds() > 60:
+                    hr_rows = GarminDB.MonitoringHeartRate._get_for_period(garmin_mon_session, GarminDB.MonitoringHeartRate,
+                        previous_ts + datetime.timedelta(seconds=60), monitoring.timestamp)
+                    for hr in hr_rows:
+                        entry = {
+                            'timestamp'     : hr.timestamp,
+                            'intensity'     : monitoring.intensity,
+                            'heart_rate'    : hr.heart_rate
+                        }
+                        GarminDB.IntensityHR._create_or_update_not_none(garmin_sum_session, entry)
+                previous_ts = monitoring.timestamp
 
     def calculate_day_stats(self, day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         stats = GarminDB.DailySummary.get_daily_stats(garmin_session, day_date)
@@ -220,7 +218,7 @@ class Analyze():
         days = GarminDB.Monitoring._get_days(garmin_mon_session, year)
         for day in progressbar.progressbar(days):
             day_date = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
-            self.populate_hr_intensity(day_date)
+            self.populate_hr_intensity(day_date, garmin_mon_session, garmin_sum_session)
             self.calculate_day_stats(day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
 
     def calculate_week_stats(self, day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
