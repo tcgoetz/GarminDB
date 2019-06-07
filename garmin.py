@@ -17,6 +17,8 @@ import GarminDB
 import GarminDBConfigManager
 from GarminConnectConfigManager import GarminConnectConfigManager
 
+version_info = (1, 0, 1)
+version = '.'.join(str(c) for c in version_info)
 
 logging.basicConfig(filename='garmin.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
@@ -196,7 +198,7 @@ def delete_db(debug):
     HealthDB.SummaryDB.delete_db(db_params_dict)
 
 
-def usage(program, error=None):
+def print_usage(program, error=None):
     if error is not None:
         print error
         print
@@ -218,6 +220,9 @@ def usage(program, error=None):
     print '    '
     sys.exit()
 
+def print_version(program):
+    print '%s' % version
+
 def main(argv):
     _download_data = False
     _copy_data = False
@@ -237,13 +242,16 @@ def main(argv):
 
     try:
         opts, args = getopt.getopt(argv,"acAdimolrstT:w",
-            ["all", "activities", "analyze", "copy", "delete_db", "download", "import", "trace=", "test", "monitoring", "overwrite", "latest", "rhr", "sleep", "weight"])
+            ["all", "activities", "analyze", "copy", "delete_db", "download", "import", "trace=", "test", "monitoring", "overwrite",
+             "latest", "rhr", "sleep", "weight", "version"])
     except getopt.GetoptError as e:
         usage(sys.argv[0], str(e))
 
     for opt, arg in opts:
         if opt == '-h':
-            usage(sys.argv[0])
+            print_usage(sys.argv[0])
+        elif opt in ("-v", "--version"):
+            print_version(sys.argv[0])
         elif opt in ("-A", "--all"):
             logger.debug("All: " + arg)
             monitoring = GarminDBConfigManager.is_stat_enabled('monitoring')
