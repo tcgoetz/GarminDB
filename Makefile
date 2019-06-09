@@ -102,6 +102,7 @@ EPOCH=$(shell date +'%s')
 backup: $(BACKUP_DIR)
 	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
 
+PLATFORM=$(shell uname)
 VERSION=$(shell $(PYTHON) garmin.py --version)
 zip_packages: package_garmin package_fitbit package_mshealth
 	zip -j -r GarminDb_$(PLATFORM)_$(VERSION).zip GarminConnectConfig.json.example dist/garmin dist/fitbit dist/mshealth dist_files/create_dbs.sh dist_files/update_dbs.sh
