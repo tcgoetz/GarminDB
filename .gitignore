@@ -54,30 +54,13 @@ coverage.xml
 *.log
 local_settings.py
 
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
 
 # PyBuilder
 target/
 
-# Jupyter Notebook
-.ipynb_checkpoints
 
 # pyenv
 .python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
 
 # dotenv
 .env
@@ -108,10 +91,12 @@ bin/
 
 bugreport.txt
 
+*.zip
 *.fit
 *.html
 .*.conf
 GarminConnectConfig.json
 stats.txt
+ms_stats.txt
 
 
