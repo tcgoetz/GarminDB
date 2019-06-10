@@ -17,7 +17,7 @@ import GarminDB
 import GarminDBConfigManager
 from GarminConnectConfigManager import GarminConnectConfigManager
 
-version_info = (1, 0, 1)
+version_info = (1, 0, 2)
 version = '.'.join(str(c) for c in version_info)
 
 logging.basicConfig(filename='garmin.log', filemode='w', level=logging.INFO)

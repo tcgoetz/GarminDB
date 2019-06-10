@@ -34,6 +34,7 @@ clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs
 
 # build dbs from already downloaded data files
 create_dbs: garmin mshealth fitbit
+create_copy_dbs: copy_garmin mshealth fitbit
 
 # delete the exisitng dbs and build new dbs from already downloaded data files
 rebuild_dbs: clean_dbs create_dbs
@@ -42,6 +43,7 @@ rebuild_summary_db: clean_garmin_summary_db clean_summary_db build_garmin_summar
 
 # update the exisitng dbs by downloading data files for dates after the last in the dbs and update the dbs
 update_dbs: update_garmin
+update_copy_dbs: copy_garmin_latest
 
 release: zip_packages
 
@@ -104,10 +106,10 @@ backup: $(BACKUP_DIR)
 
 PLATFORM=$(shell uname)
 VERSION=$(shell $(PYTHON) garmin.py --version)
-BIN_FILES="dist/garmin dist/fitbit dist/mshealth"
-ZIP_FILES="GarminConnectConfig.json.example dist_files/download_create_dbs.sh dist_files/download_update_dbs.sh dist_files/copy_create_dbs.sh dist_files/copy_update_dbs.sh"
+BIN_FILES=dist/garmin dist/fitbit dist/mshealth
+ZIP_FILES=dist_files/download_create_dbs.sh dist_files/download_update_dbs.sh dist_files/copy_create_dbs.sh dist_files/copy_update_dbs.sh
 zip_packages: package_garmin package_fitbit package_mshealth
-	zip -j -r GarminDb_$(PLATFORM)_$(VERSION).zip $(BIN_FILES) $(ZIP_FILES)
+	zip -j -r GarminDb_$(PLATFORM)_$(VERSION).zip GarminConnectConfig.json.example $(BIN_FILES) $(ZIP_FILES)
 
 
 #
