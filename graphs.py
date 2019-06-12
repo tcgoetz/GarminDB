@@ -7,11 +7,12 @@
 import logging, sys, getopt, datetime
 import matplotlib
 import matplotlib.pyplot as plt
-#import numpy
+import enum
 
 from version import version
 import HealthDB
 import GarminDBConfigManager
+from Fit import Conversions
 
 
 logging.basicConfig(filename='graphs.log', filemode='w', level=logging.INFO)
@@ -19,51 +20,81 @@ logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
+class YAxisLabelPostion(enum.Enum):
+    right   = 0
+    left    = 1
 
-def graph_mulitple_single_axes(time, data_list, state_name, ylabel, save):
+    @classmethod
+    def from_integer(cls, integer):
+        return YAxisLabelPostion(integer % 2)
+
+class Colors(enum.Enum):
+    b   = 0
+    g   = 1
+    r   = 2
+    c   = 3
+    m   = 4
+    y   = 5
+    k   = 6
+    w   = 7
+
+    @classmethod
+    def from_integer(cls, integer):
+        return Colors(integer % 8)
+
+def graph_mulitple_single_axes(time, data_list, stat_name, ylabel, save):
+    title = '%s Over Time' % stat_name
     figure = plt.figure()
     for index, data in enumerate(data_list):
-        axes.plot(time, data)
-    title = '%s Over Time' % state_name
-    axes.set(xlabel='Time', ylabel=ylabel, title=title)
-    axes.grid()
+        color = Colors.from_integer(index).name
+        axes = figure.add_subplot(111, frame_on=(index == 0))
+        axes.plot(time, data, color=color)
+        axes.grid()
+    axes.set_title(title)
+    axes.set_xlabel('Time')
+    axes.set_ylabel(ylabel)
     if save:
-        figure.savefig(state_name + ".png")
+        figure.savefig(stat_name + ".png")
     plt.show()
 
-def graph_mulitple(time, data_list, state_name, ylabel_list, save):
-    title = '%s Over Time' % state_name
+def graph_mulitple(time, data_list, stat_name, ylabel_list, save):
+    title = '%s Over Time' % stat_name
     figure = plt.figure()
     for index, data in enumerate(data_list):
-        axes = figure.add_subplot(111, label=ylabel_list[index])
-        axes.plot(time, data)
-        axes.set_xlabel('Time', color="C1")
-        axes.set_ylabel(ylabel_list[index], color="C1")
+        color = Colors.from_integer(index).name
+        axes = figure.add_subplot(111, label=ylabel_list[index], frame_on=(index == 0))
+        axes.plot(time, data, color=color)
+        axes.set_ylabel(ylabel_list[index], color=color)
+        axes.yaxis.set_label_position(YAxisLabelPostion.from_integer(index).name)
+        if (index % 2) == 0:
+            axes.yaxis.tick_right()
+        else:
+            axes.yaxis.tick_left()
+        axes.tick_params(axis='y', colors=color)
         axes.set_ylim([min(data), max(data)])
         axes.grid()
-    axes.set_title(title, color="C1")
+    axes.set_title(title)
+    axes.set_xlabel('Time')
     if save:
-        figure.savefig(state_name + ".png")
+        figure.savefig(stat_name + ".png")
     plt.show()
 
-def calc_steps_goal_percent(entry):
-    if entry.steps is not None and entry.steps_goal is not None:
-      return (entry.steps_goal * 100.0) / entry.steps
-
-def graph_steps(data, save):
-    time = [entry.day for entry in data]
+def graph_steps(time, data, save):
     steps = [entry.steps for entry in data]
-    steps_goal_percent = [calc_steps_goal_percent(entry) for entry in data]
-    graph_mulitple(time, [steps, steps_goal_percent], 'Steps', 'Steps', save)
+    steps_goal_percent = [entry.steps_goal_percent for entry in data]
+    graph_mulitple(time, [steps, steps_goal_percent], 'Steps', ['Steps', 'Step Goal Percent'], save)
 
-def graph_hr(data, save):
-    time = [entry.day for entry in data]
+def graph_hr(time, data, save):
     rhr = [entry.rhr_avg for entry in data]
     inactive_hr = [entry.inactive_hr_avg for entry in data]
-    graph_mulitple_single_axes(time, [rhr, inactive_hr], 'Heart Rate', 'rhr, inactive hr (bpm)', save)
+    graph_mulitple(time, [rhr, inactive_hr], 'Heart Rate', ['RHR', 'Inactive hr'], save)
 
-def graph_weight(data, save):
-    time = [entry.day for entry in data]
+def graph_itime(time, data, save):
+    itime = [Conversions.time_to_secs(entry.intensity_time) for entry in data]
+    itime_goal_percent = [entry.intensity_time_goal_percent for entry in data]
+    graph_mulitple(time, [itime, itime_goal_percent], 'Intensity Time', ['Intensity Time', 'Intensity Time Goal Percent'], save)
+
+def graph_weight(time, data, save):
     weight = [entry.weight_avg for entry in data]
     graph_mulitple_single_axes(time, [weight], 'Weight', 'weight', save)
 
@@ -73,8 +104,10 @@ def print_usage(program, error=None):
         print
     print '%s [--all | --rhr | --weight] [--latest <x days>]' % program
     print '    --all        : Graph data for all enabled stats.'
-    print '    --rhr        : Graph resting heart rate data.'
-    print '    --weight     : Download and/or import weight data.'
+    print '    --hr        : Graph resting heart rate data.'
+    print '    --itime      : Graph intensity time data.'
+    print '    --weight     : Graph weight data.'
+    print '    --steps      : Graph steps data.'
     print '    --latest     : Graph x most recent days.'
     print '    --period     : days, weeks, or months.'
     print '    --trace      : Turn on debug tracing. Extra logging will be written to log file.'
@@ -89,6 +122,7 @@ def main(argv):
     test = False
     save = False
     hr = False
+    itime = False
     steps = False
     weight = False
     days = 31
@@ -102,7 +136,7 @@ def main(argv):
     }
 
     try:
-        opts, args = getopt.getopt(argv,"adhHl:p:rsSt:wv", ["all", "latest=", "period=", "hr", "save", "steps", "trace=", "weight", "version"])
+        opts, args = getopt.getopt(argv,"adhHl:p:rsSt:wv", ["all", "latest=", "period=", "hr", "itime", "save", "steps", "trace=", "weight", "version"])
     except getopt.GetoptError as e:
         print_usage(sys.argv[0], str(e))
 
@@ -128,6 +162,9 @@ def main(argv):
         elif opt in ("-H", "--hr"):
             logging.debug("HR")
             hr = True
+        elif opt in ("-i", "--itime"):
+            logging.debug("Intenist time")
+            itime = True
         elif opt in ("-w", "--weight"):
             logging.info("Weight")
             weight = True
@@ -141,16 +178,23 @@ def main(argv):
 
     db_params_dict = GarminDBConfigManager.get_db_params()
     sum_db = HealthDB.SummaryDB(db_params_dict, debug)
-    data = table[period].get_for_period(sum_db, HealthDB.DaysSummary, start_ts, end_ts)
+    data = table[period].get_for_period(sum_db, table[period], start_ts, end_ts)
+    if period == 'days':
+        time = [entry.day for entry in data]
+    else:
+        time = [entry.first_day for entry in data]
 
     if hr:
-        graph_hr(data, save)
+        graph_hr(time, data, save)
+
+    if itime:
+        graph_itime(time, data, save)
 
     if steps:
-        graph_steps(data, save)
+        graph_steps(time, data, save)
 
     if weight:
-        graph_weight(data, save)
+        graph_weight(time, data, save)
 
 
 

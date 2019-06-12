@@ -46,8 +46,20 @@ class SummaryBase(DBObject):
     activities_distance = Column(Integer)
 
     @hybrid_property
+    def intensity_time_goal_percent(self):
+        if self.intensity_time is not None and self.intensity_time_goal is not None:
+            return (Conversions.time_to_secs(self.intensity_time) * 100) / Conversions.time_to_secs(self.intensity_time_goal)
+        return 0.0
+
+    @intensity_time_goal_percent.expression
+    def intensity_time_goal_percent(cls):
+        return func.round((cls.secs_from_time(cls.intensity_time) * 100) / cls.secs_from_time(cls.intensity_time_goal))
+
+    @hybrid_property
     def steps_goal_percent(self):
-        return (self.steps * 100) / self.steps_goal
+        if self.steps is not None and self.steps_goal is not None:
+            return (self.steps * 100) / self.steps_goal
+        return 0.0
 
     @steps_goal_percent.expression
     def steps_goal_percent(cls):
@@ -55,7 +67,9 @@ class SummaryBase(DBObject):
 
     @hybrid_property
     def floors_goal_percent(self):
-        return (self.floors * 100) / self.floors_goal
+        if self.floors is not None and self.floors_goal is not None:
+            return (self.floors * 100) / self.floors_goal
+        return 0.0
 
     @floors_goal_percent.expression
     def floors_goal_percent(cls):
