@@ -49,7 +49,7 @@ class Attributes(GarminDB.Base, KeyValueObject):
 
 class Device(GarminDB.Base, DBObject):
     __tablename__ = 'devices'
-    table_version = 2
+    table_version = 3
     unknown_device_serial_number = 9999999999
 
     Manufacturer = derived_enum('Manufacturer', FieldEnums.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})

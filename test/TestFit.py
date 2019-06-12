@@ -104,7 +104,7 @@ class TestFit(unittest.TestCase):
         if 'distance' in message and message['distance'].value > 0.1:
             self.check_value_range(message, 'distance', 0, 100 * 5280)
             self.check_value_range(message, 'avg_vertical_oscillation', 0, 10)
-            self.check_value_range(message, 'step_length', 24, 64)
+            self.check_value_range(message, 'step_length', 0, 64)
             self.check_value_range(message, 'speed', 0, 25)
 
     def check_activity_file(self, filename):
