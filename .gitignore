@@ -98,5 +98,6 @@ bugreport.txt
 GarminConnectConfig.json
 stats.txt
 ms_stats.txt
+*.png
 
 

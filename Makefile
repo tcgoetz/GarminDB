@@ -19,7 +19,7 @@ endif
 #
 # All third party Python packages needed to use the project. They will be installed with pip.
 #
-PYTHON_PACKAGES=sqlalchemy requests python-dateutil enum34 progressbar2 PyInstaller
+PYTHON_PACKAGES=sqlalchemy requests python-dateutil enum34 progressbar2 PyInstaller matplotlib numpy
 
 
 #
@@ -92,6 +92,7 @@ clean: test_clean
 	rm -rf build
 	rm -f *.spec
 	rm -f *.zip
+	rm -f *.png
 
 
 #
@@ -111,6 +112,8 @@ ZIP_FILES=dist_files/download_create_dbs.sh dist_files/download_update_dbs.sh di
 zip_packages: package_garmin package_fitbit package_mshealth
 	zip -j -r GarminDb_$(PLATFORM)_$(VERSION).zip GarminConnectConfig.json.example $(BIN_FILES) $(ZIP_FILES)
 
+graphs:
+	$(PYTHON) graphs.py --all
 
 #
 # Garmin targets

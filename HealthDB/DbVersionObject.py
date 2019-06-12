@@ -17,13 +17,13 @@ class DbVersionObject(KeyValueObject):
     def version_check(self, db, version_number):
         self.version = self.version_check_key(db, 'version', version_number)
         if self.version != version_number:
-            raise RuntimeError("DB: %s version mismatch. Please rebuild the %s DB. (%s vs %s)" %
+            raise RuntimeError("DB: %s version mismatch. The DB schema has been updated. Please rebuild the %s DB. (%s vs %s)" %
                     (db.db_name, db.db_name, self.version, version_number))
 
     def table_version_check(self, db, table_object):
         self.version = self.version_check_key(db, table_object.__tablename__ + '_version', table_object.table_version)
         if self.version != table_object.table_version:
-            raise RuntimeError("DB: %s table %s version mismatch. Please rebuild the %s DB. (%s vs %s)" %
+            raise RuntimeError("DB: %s table %s version mismatch. The DB schema has been updated. Please rebuild the %s DB. (%s vs %s)" %
                     (db.db_name, table_object.__tablename__, db.db_name, self.version, table_object.table_version))
 
     def view_version_check(self, db, table_object):

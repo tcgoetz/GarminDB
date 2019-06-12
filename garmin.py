@@ -6,6 +6,7 @@
 
 import logging, sys, getopt, datetime
 
+from version import version
 from download_garmin import Download
 from copy_garmin import Copy
 from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringExtraData, GarminMonitoringFitData, GarminSleepData, GarminRhrData
@@ -16,9 +17,6 @@ import HealthDB
 import GarminDB
 import GarminDBConfigManager
 from GarminConnectConfigManager import GarminConnectConfigManager
-
-version_info = (1, 0, 2)
-version = '.'.join(str(c) for c in version_info)
 
 logging.basicConfig(filename='garmin.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
@@ -245,7 +243,7 @@ def main(argv):
             ["all", "activities", "analyze", "copy", "delete_db", "download", "import", "trace=", "test", "monitoring", "overwrite",
              "latest", "rhr", "sleep", "weight", "version"])
     except getopt.GetoptError as e:
-        usage(sys.argv[0], str(e))
+        print_usage(sys.argv[0], str(e))
 
     for opt, arg in opts:
         if opt == '-h':
