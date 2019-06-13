@@ -553,7 +553,7 @@ class DBObject(object):
     def row_count(cls, db, col=None, col_value=None):
         with db.managed_session() as session:
             query = session.query(cls)
-            if col is not None and col_value is not None:
+            if col is not None:
                 query = query.filter(col == col_value)
             return query.count()
 

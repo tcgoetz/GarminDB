@@ -42,6 +42,9 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
                 'paddle_activities_table' : GarminDB.PaddleActivities,
                 'cycle_activities_table' : GarminDB.CycleActivities,
                 'elliptical_activities_table' : GarminDB.EllipticalActivities
+            },
+            {
+                GarminDB.Activities : [GarminDB.Activities.name]
             }
         )
 

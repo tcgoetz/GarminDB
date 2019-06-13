@@ -38,8 +38,6 @@ create_copy_dbs: copy_garmin mshealth fitbit
 
 # delete the exisitng dbs and build new dbs from already downloaded data files
 rebuild_dbs: clean_dbs create_dbs
-rebuild_activity_db: clean_activities_db build_activities_db
-rebuild_summary_db: clean_garmin_summary_db clean_summary_db build_garmin_summary_db
 
 # update the exisitng dbs by downloading data files for dates after the last in the dbs and update the dbs
 update_dbs: update_garmin

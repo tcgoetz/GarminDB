@@ -25,7 +25,7 @@ root_logger = logging.getLogger()
 class GarminActivitiesFitData():
 
     def __init__(self, input_file, input_dir, latest, measurement_system, debug):
-        logger.debug("Processing activities FIT data")
+        logger.info("Processing activities FIT data")
         self.measurement_system = measurement_system
         self.debug = debug
         if input_file:
@@ -131,8 +131,8 @@ class GarminTcxData():
 class GarminJsonSummaryData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, measurement_system, debug):
-        logger.debug("Processing activities summary data")
-        super(GarminJsonSummaryData, self).__init__(input_file, input_dir, r'activity_\\d*\.json', latest, debug)
+        logger.info("Processing %s activities summary data from %s", 'latest' if latest else 'all', input_dir)
+        super(GarminJsonSummaryData, self).__init__(input_file, input_dir, r'activity_\d*\.json', latest, debug)
         self.measurement_system = measurement_system
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
         self.conversions = {}
@@ -283,8 +283,8 @@ class GarminJsonSummaryData(JsonFileProcessor):
 class GarminJsonDetailsData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, measurement_system, debug):
-        logger.debug("Processing activities detail data")
-        super(GarminJsonDetailsData, self).__init__(input_file, input_dir, r'activity_details_\\d*\.json', latest, debug)
+        logger.info("Processing activities detail data")
+        super(GarminJsonDetailsData, self).__init__(input_file, input_dir, r'activity_details_\d*\.json', latest, debug)
         self.measurement_system = measurement_system
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
         self.conversions = {}
@@ -334,8 +334,8 @@ class GarminJsonDetailsData(JsonFileProcessor):
 class GarminActivitiesExtraData(JsonFileProcessor):
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, debug):
-        logger.debug("Processing activities extra data")
-        super(GarminActivitiesExtraData, self).__init__(input_file, input_dir, r'extra_data_\\d*\.json', latest, debug)
+        logger.info("Processing activities extra data")
+        super(GarminActivitiesExtraData, self).__init__(input_file, input_dir, r'extra_data_\d*\.json', latest, debug)
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
 
     def process_json(self, json_data):
