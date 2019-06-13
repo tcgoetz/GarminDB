@@ -110,8 +110,11 @@ ZIP_FILES=dist_files/download_create_dbs.sh dist_files/download_update_dbs.sh di
 zip_packages: package_garmin package_fitbit package_mshealth
 	zip -j -r GarminDb_$(PLATFORM)_$(VERSION).zip GarminConnectConfig.json.example $(BIN_FILES) $(ZIP_FILES)
 
+GRAPH_DAYS=730
 graphs:
-	$(PYTHON) graphs.py --all
+	$(PYTHON) graphs.py --hr --period weeks --latest ${GRAPH_DAYS}
+	$(PYTHON) graphs.py --weight --period weeks --latest ${GRAPH_DAYS}
+	$(PYTHON) graphs.py --steps --period weeks --latest ${GRAPH_DAYS}
 
 #
 # Garmin targets
