@@ -91,6 +91,7 @@ clean: test_clean
 	rm -f *.spec
 	rm -f *.zip
 	rm -f *.png
+	rm -f *.txt
 
 
 #
