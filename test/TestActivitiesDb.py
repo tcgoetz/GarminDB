@@ -37,8 +37,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
                 'activities_table' : GarminDB.Activities,
                 'activity_laps_table' : GarminDB.ActivityLaps,
                 'activity_records_table' : GarminDB.ActivityRecords,
-                'run_activities_table' : GarminDB.RunActivities,
-                'walk_activities_table' : GarminDB.WalkActivities,
+                'run_activities_table' : GarminDB.StepsActivities,
                 'paddle_activities_table' : GarminDB.PaddleActivities,
                 'cycle_activities_table' : GarminDB.CycleActivities,
                 'elliptical_activities_table' : GarminDB.EllipticalActivities
@@ -52,8 +51,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         self.assertGreater(GarminDB.Activities.row_count(self.garmin_act_db), 0)
         self.assertGreater(GarminDB.ActivityLaps.row_count(self.garmin_act_db), 0)
         self.assertGreater(GarminDB.ActivityRecords.row_count(self.garmin_act_db), 0)
-        self.assertGreater(GarminDB.RunActivities.row_count(self.garmin_act_db), 0)
-        self.assertGreater(GarminDB.WalkActivities.row_count(self.garmin_act_db), 0)
+        self.assertGreater(GarminDB.StepsActivities.row_count(self.garmin_act_db), 0)
         self.assertGreater(GarminDB.PaddleActivities.row_count(self.garmin_act_db), 0)
         self.assertGreater(GarminDB.CycleActivities.row_count(self.garmin_act_db), 0)
         self.assertGreater(GarminDB.EllipticalActivities.row_count(self.garmin_act_db), 0)

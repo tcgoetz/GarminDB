@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class ActivitiesDB(DB):
     Base = declarative_base()
     db_name = 'garmin_activities'
-    db_version = 11
+    db_version = 12
 
     class DbVersion(Base, DbVersionObject):
         pass
@@ -25,14 +25,13 @@ class ActivitiesDB(DB):
         version = ActivitiesDB.DbVersion()
         version.version_check(self, self.db_version)
         #
-        self.tables = [Activities, ActivityLaps, ActivityRecords, ActivityRecords, RunActivities, WalkActivities, PaddleActivities, EllipticalActivities, ActivitiesExtraData]
+        self.tables = [Activities, ActivityLaps, ActivityRecords, ActivityRecords, StepsActivities, PaddleActivities, EllipticalActivities, ActivitiesExtraData]
         for table in self.tables:
             version.table_version_check(self, table)
             if not version.view_version_check(self, table):
                 table.delete_view(self)
         # Create or Recreate views
-        RunActivities.create_view(self)
-        WalkActivities.create_view(self)
+        StepsActivities.create_view(self)
         PaddleActivities.create_view(self)
         CycleActivities.create_view(self)
         EllipticalActivities.create_view(self)
@@ -226,9 +225,9 @@ class SportActivities(DBObject):
         cls.create_join_view(db, cls.get_default_view_name(), selectable, Activities, Activities.start_time.desc())
 
 
-class RunActivities(ActivitiesDB.Base, SportActivities):
-    __tablename__ = 'run_activities'
-    table_version = 2
+class StepsActivities(ActivitiesDB.Base, SportActivities):
+    __tablename__ = 'steps_activities'
+    table_version = 3
     view_version = 3
 
     steps = Column(Integer)
@@ -260,6 +259,7 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
                 Activities.activity_id.label('activity_id'),
                 Activities.name.label('name'),
                 Activities.description.label('description'),
+                Activities.sub_sport.label('sport'),
                 Activities.type.label('type'),
                 Activities.course_id.label('course_id'),
                 Activities.start_time.label('start_time'),
@@ -296,47 +296,6 @@ class RunActivities(ActivitiesDB.Base, SportActivities):
                 Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
                 Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
                 Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc',
-            ]
-        )
-
-
-class WalkActivities(ActivitiesDB.Base, SportActivities):
-    __tablename__ = 'walk_activities'
-    table_version = 2
-    view_version = 3
-
-    steps = Column(Integer)
-    # pace in mins/mile
-    avg_pace = Column(Time, nullable=False, default=datetime.time.min)
-    max_pace = Column(Time, nullable=False, default=datetime.time.min)
-    vo2_max = Column(Float)
-
-    @classmethod
-    def create_view(cls, db):
-        cls.create_activity_view(db,
-            [
-                Activities.activity_id.label('activity_id'),
-                Activities.name.label('name'),
-                Activities.description.label('description'),
-                Activities.sub_sport.label('sport'),
-                Activities.start_time.label('start_time'),
-                Activities.stop_time.label('stop_time'),
-                Activities.elapsed_time.label('elapsed_time'),
-                cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
-                cls.steps.label('steps'),
-                cls.avg_pace .label('avg_pace'),
-                cls.max_pace.label('max_pace'),
-                Activities.avg_hr.label('avg_hr'),
-                Activities.max_hr.label('max_hr'),
-                Activities.calories.label('calories'),
-                cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
-                cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
-                cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
-                cls.vo2_max.label('vo2_max'),
-                Activities.training_effect.label('training_effect'),
-                Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
-                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
-                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc'
             ]
         )
 

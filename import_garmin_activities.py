@@ -140,8 +140,8 @@ class GarminJsonSummaryData(JsonFileProcessor):
     def commit(self):
         self.garmin_act_db_session.commit()
 
-    def process_running(self, activity_id, activity_summary):
-        root_logger.debug("process_running for %s", activity_id)
+    def process_steps_activity(self, activity_id, activity_summary):
+        root_logger.debug("process_steps_activity for %s", activity_id)
         avg_vertical_oscillation = self.get_field_obj(activity_summary, 'avgVerticalOscillation', Fit.Distance.from_meters)
         avg_step_length = self.get_field_obj(activity_summary, 'avgStrideLength', Fit.Distance.from_meters)
         run = {
@@ -155,21 +155,23 @@ class GarminJsonSummaryData(JsonFileProcessor):
             'avg_ground_contact_time'   : Fit.Conversions.ms_to_dt_time(self.get_field(activity_summary, 'avgGroundContactTime', float)),
             'vo2_max'                   : self.get_field(activity_summary, 'vO2MaxValue', float),
         }
-        GarminDB.RunActivities._create_or_update_not_none(self.garmin_act_db_session, run)
+        GarminDB.StepsActivities._create_or_update_not_none(self.garmin_act_db_session, run)
+
+    def process_running(self, activity_id, activity_summary):
+        root_logger.debug("process_running for %s", activity_id)
+        self.process_steps_activity(activity_id, activity_summary)
 
     def process_treadmill_running(self, activity_id, activity_summary):
-        return self.process_running(activity_id, activity_summary)
+        root_logger.debug("process_treadmill_running for %s", activity_id)
+        self.process_steps_activity(activity_id, activity_summary)
 
     def process_walking(self, activity_id, activity_summary):
-        walk = {
-            'activity_id'               : activity_id,
-            'steps'                     : self.get_field(activity_summary, 'steps', float),
-            'vo2_max'                   : self.get_field(activity_summary, 'vO2MaxValue', float),
-        }
-        GarminDB.WalkActivities._create_or_update_not_none(self.garmin_act_db_session, walk)
+        root_logger.debug("process_walking for %s", activity_id)
+        self.process_steps_activity(activity_id, activity_summary)
 
     def process_hiking(self, activity_id, activity_summary):
-        return self.process_walking(activity_id, activity_summary)
+        root_logger.debug("process_hiking for %s", activity_id)
+        self.process_steps_activity(activity_id, activity_summary)
 
     def process_paddling(self, activity_id, activity_summary):
         activity = {
@@ -292,7 +294,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
     def commit(self):
         self.garmin_act_db_session.commit()
 
-    def process_running(self, activity_id, json_data):
+    def process_steps_activity(self, activity_id, json_data):
         summary_dto = json_data['summaryDTO']
         avg_moving_speed_mps = summary_dto.get('averageMovingSpeed')
         avg_moving_speed = Fit.Conversions.mps_to_mph(avg_moving_speed_mps)
@@ -300,8 +302,20 @@ class GarminJsonDetailsData(JsonFileProcessor):
             'activity_id'               : activity_id,
             'avg_moving_pace'           : Fit.Conversions.speed_to_pace(avg_moving_speed),
         }
+        root_logger.info("process_steps_activity for %d: %r", activity_id, run)
+        GarminDB.StepsActivities._create_or_update_not_none(self.garmin_act_db_session, run)
+
+    def process_running(self, activity_id, json_data):
         root_logger.info("process_running for %d: %r", activity_id, run)
-        GarminDB.RunActivities._create_or_update_not_none(self.garmin_act_db_session, run)
+        self.process_steps_activity(activity_id, json_data)
+
+    def process_walking(self, activity_id, json_data):
+        root_logger.info("process_walking for %d: %r", activity_id, run)
+        self.process_steps_activity(activity_id, json_data)
+
+    def process_hiking(self, activity_id, json_data):
+        root_logger.info("process_hiking for %d: %r", activity_id, run)
+        self.process_steps_activity(activity_id, json_data)
 
     def process_json(self, json_data):
         activity_id = json_data['activityId']

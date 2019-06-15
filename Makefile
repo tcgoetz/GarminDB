@@ -33,11 +33,12 @@ setup: update deps
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs
 
 # build dbs from already downloaded data files
+build_dbs: build_garmin mshealth fitbit
 create_dbs: garmin mshealth fitbit
 create_copy_dbs: copy_garmin mshealth fitbit
 
 # delete the exisitng dbs and build new dbs from already downloaded data files
-rebuild_dbs: clean_dbs create_dbs
+rebuild_dbs: clean_dbs build_dbs
 
 # update the exisitng dbs by downloading data files for dates after the last in the dbs and update the dbs
 update_dbs: update_garmin
@@ -122,6 +123,9 @@ graphs:
 #
 garmin:
 	$(PYTHON) garmin.py --all --download --import --analyze
+
+build_garmin:
+	$(PYTHON) garmin.py --all --import --analyze
 
 copy_garmin:
 	$(PYTHON) garmin.py --all --copy --import --analyze

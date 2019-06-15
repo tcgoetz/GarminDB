@@ -8,6 +8,7 @@ import logging, sys, datetime, traceback
 
 import Fit
 import GarminDB
+import HealthDB
 
 
 logger = logging.getLogger(__file__)
@@ -134,9 +135,9 @@ class FitFileProcessor():
             if value is not None:
                 return value
 
-    def write_running_entry(self, fit_file, activity_id, sub_sport, message_dict):
+    def write_steps_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("run entry: %r", message_dict)
-        run = {
+        steps = {
             'activity_id'                       : activity_id,
             'steps'                             : self.get_field_value(message_dict, 'total_steps'),
             'avg_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('avg_speed')),
@@ -150,21 +151,19 @@ class FitFileProcessor():
             'avg_ground_contact_time'           : self.get_field_value(message_dict, 'avg_stance_time'),
             'avg_stance_time_percent'           : self.get_field_value(message_dict, 'avg_stance_time_percent'),
         }
-        GarminDB.RunActivities._create_or_update_not_none(self.garmin_act_db_session, run)
+        GarminDB.StepsActivities._create_or_update_not_none(self.garmin_act_db_session, steps)
+
+    def write_running_entry(self, fit_file, activity_id, sub_sport, message_dict):
+        root_logger.debug("run entry: %r", message_dict)
+        return self.write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
 
     def write_walking_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("walk entry: %r", message_dict)
-        walk = {
-            'activity_id'                       : activity_id,
-            'steps'                             : self.get_field_value(message_dict, 'total_steps'),
-            'avg_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('avg_speed')),
-            'max_pace'                          : Fit.Conversions.speed_to_pace(message_dict.get('max_speed')),
-        }
-        GarminDB.WalkActivities._create_or_update_not_none(self.garmin_act_db_session, walk)
+        return self.write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
 
     def write_hiking_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("hike entry: %r", message_dict)
-        return self.write_walking_entry(fit_file, activity_id, sub_sport, message_dict)
+        return self.write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
 
     def write_cycling_entry(self, fit_file, activity_id, sub_sport, message_dict):
         ride = {
@@ -350,7 +349,7 @@ class FitFileProcessor():
 
     def write_monitoring_entry(self, fit_file, message_dict):
         # Only include not None values so that we match and update only if a table's columns if it has values.
-        entry = {key : value for key, value in message_dict.iteritems() if value is not None}
+        entry = HealthDB.dict_filter_none_values(message_dict)
         try:
             intersection = GarminDB.MonitoringHeartRate.intersection(entry)
             if len(intersection) > 1 and intersection['heart_rate'] > 0:
