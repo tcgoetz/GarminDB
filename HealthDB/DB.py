@@ -325,7 +325,7 @@ class DBObject(object):
 
     @classmethod
     def get_month_names(cls, db, year):
-          return cls.rows_to_months(cls.get_months(db, year))
+        return cls.rows_to_months(cls.get_months(db, year))
 
     @classmethod
     def _get_days(cls, session, year):

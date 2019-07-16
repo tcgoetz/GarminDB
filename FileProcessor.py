@@ -11,7 +11,7 @@ import datetime
 logger = logging.getLogger(__file__)
 
 
-class FileProcessor():
+class FileProcessor(object):
 
     @classmethod
     def regex_matches_file(cls, file, file_regex):

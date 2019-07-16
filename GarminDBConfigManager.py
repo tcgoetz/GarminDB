@@ -124,9 +124,8 @@ def get_db_params(test_db=False):
         'db_type' : db_type
     }
     if db_type == 'sqlite':
-        db_path = get_db_dir(test_db)
-        db_params_dict['db_path'] = db_path
-    elif db_type == "--mysql":
+        db_params_dict['db_path'] = get_db_dir(test_db)
+    elif db_type == "mysql":
         db_params_dict['db_type'] = 'mysql'
         db_params_dict['db_username'] = get_db_user()
         db_params_dict['db_password'] = get_db_password()

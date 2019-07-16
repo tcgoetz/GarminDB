@@ -20,7 +20,7 @@ stat_logger = logging.getLogger('stats')
 stat_logger.addHandler(logging.FileHandler('ms_stats.txt', 'w'))
 
 
-class Analyze():
+class Analyze(object):
 
     def __init__(self, db_params_dict):
         self.mshealthdb = MSHealthDB.MSHealthDB(db_params_dict)

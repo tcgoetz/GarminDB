@@ -17,72 +17,12 @@ import progressbar
 from GarminConnectConfigManager import GarminConnectConfigManager
 import GarminDBConfigManager
 from Fit import Conversions
+from RestClient import RestClient
 
 
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
-
-
-class RESTClient(object):
-
-    agents = {
-        'Chrome_Linux'  : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337 Safari/537.36',
-        'Firefox_MacOS' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:66.0) Gecko/20100101 Firefox/66.0'
-    }
-    agent = agents['Firefox_MacOS']
-
-    default_headers = {
-        'User-Agent'    : agent,
-        'Accept'        : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-    }
-
-    def __init__(self, session, base_route):
-        self.session = session
-        self.base_route = base_route
-
-    @classmethod
-    def inherit(cls, rest_client, route):
-        return RESTClient(rest_client.session, '%s/%s' % (rest_client.base_route, route))
-
-    def build_url(self, leaf_route):
-        return '%s/%s' % (self.base_route, leaf_route)
-
-    def get(self, leaf_route, aditional_headers={}, params={}):
-        total_headers = self.default_headers.copy()
-        total_headers.update(aditional_headers)
-        response = self.session.get(self.build_url(leaf_route), headers=total_headers, params=params)
-        root_logger.info("get: %s (%d)", response.url, response.status_code)
-        return response
-
-    def post(self, leaf_route, aditional_headers, params, data):
-        total_headers = self.default_headers.copy()
-        total_headers.update(aditional_headers)
-        response = self.session.post(self.build_url(leaf_route), headers=total_headers, params=params, data=data)
-        root_logger.info("post: %s (%d)", response.url, response.status_code)
-        return response
-
-    def convert_to_json(self, object):
-        return object.__str__()
-
-    def save_json_to_file(self, json_full_filename, json_data):
-        with open(json_full_filename, 'w') as file:
-            root_logger.info("save_json_to_file: %s", json_full_filename)
-            file.write(json.dumps(json_data, default=self.convert_to_json))
-
-    def download_json_file(self, url, params, json_filename, overwite):
-        json_full_filname = json_filename + '.json'
-        exists = os.path.isfile(json_full_filname)
-        if not exists or overwite:
-            root_logger.info("%s %s", 'Overwriting' if exists else 'Downloading', json_filename)
-            response = self.get(url, params=params)
-            if response.status_code != 200:
-                logger.error("GET %s failed (%d): %s", response.url, response.status_code, response.text)
-                return False
-            self.save_json_to_file(json_full_filname, response.json())
-        else:
-            root_logger.info("Ignoring %s (exists)", json_filename)
-        return True
 
 
 class Download(object):
@@ -120,10 +60,10 @@ class Download(object):
         self.temp_dir = tempfile.mkdtemp()
         logger.debug("__init__: temp_dir= " + self.temp_dir)
         self.session = requests.session()
-        self.sso_rest_client = RESTClient(self.session, self.garmin_sso_base_url)
-        self.rest_client = RESTClient(self.session, self.garmin_connect_modern_url)
-        self.activity_service_rest_client = RESTClient.inherit(self.rest_client, self.garmin_connect_activity_service)
-        self.download_service_rest_client = RESTClient.inherit(self.rest_client, self.garmin_connect_download_service)
+        self.sso_rest_client = RestClient(self.session, self.garmin_sso_base_url)
+        self.rest_client = RestClient(self.session, self.garmin_connect_modern_url)
+        self.activity_service_rest_client = RestClient.inherit(self.rest_client, self.garmin_connect_activity_service)
+        self.download_service_rest_client = RestClient.inherit(self.rest_client, self.garmin_connect_download_service)
         self.gc_gonfig = GarminConnectConfigManager()
         self.download_days_overlap = self.gc_gonfig.download_days_overlap()
 

@@ -3,8 +3,10 @@
 #
 
 import logging
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, Date, DateTime
 
-from HealthDB import *
+from HealthDB import DB, DbVersionObject, DBObject, KeyValueObject, SummaryBase
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +23,7 @@ class GarminSummaryDB(DB):
     def __init__(self, db_params_dict, debug=False):
         super(GarminSummaryDB, self).__init__(db_params_dict, debug)
         GarminSummaryDB.Base.metadata.create_all(self.engine)
-        version = SummaryDB.DbVersion()
+        version = GarminSummaryDB.DbVersion()
         version.version_check(self, self.db_version)
         #
         self.tables = [Summary, MonthsSummary, WeeksSummary, DaysSummary, IntensityHR]

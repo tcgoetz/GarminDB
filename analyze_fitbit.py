@@ -19,7 +19,7 @@ logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-class Analyze():
+class Analyze(object):
 
     def __init__(self, db_params_dict):
         self.fitbitdb = FitBitDB.FitBitDB(db_params_dict)

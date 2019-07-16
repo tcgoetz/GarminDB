@@ -16,7 +16,7 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 
-class FitFileProcessor():
+class FitFileProcessor(object):
 
     def __init__(self, db_params_dict, debug):
         root_logger.info("Debug: %s", debug)

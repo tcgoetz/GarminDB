@@ -64,9 +64,9 @@ class MSHealthData():
         self.metric = metric
         self.mshealth_db = MSHealthDB.MSHealthDB(db_params_dict, debug)
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'Daily_Summary_.*.csv')
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, r'Daily_Summary_.*\.csv')
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'Daily_Summary_.*.csv')
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, r'Daily_Summary_.*\.csv')
 
     def file_count(self):
         return len(self.file_names)
@@ -91,9 +91,9 @@ class MSVaultData():
             'Weight': ('weight', MSVaultData.map_weight),
         }
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, 'HealthVault_Weight_.*.csv')
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, r'HealthVault_Weight_.*\.csv')
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, 'HealthVault_Weight_.*.csv')
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, r'HealthVault_Weight_.*\.csv')
 
     def file_count(self):
         return len(self.file_names)
@@ -109,7 +109,7 @@ class MSVaultData():
 
     @classmethod
     def map_weight(cls, metric, value):
-        m = re.search(r"(\d{2,3}\.\d{2}) .*", value)
+        m = re.search(r'(\d{2,3}\.\d{2}) .*', value)
         if m:
             logger.debug("Matched weight: " + m.group(1))
             return float(m.group(1))

@@ -1,12 +1,10 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
 import datetime
 import logging
-from sqlalchemy import *
+from sqlalchemy import Column, Integer, Date, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
 
 

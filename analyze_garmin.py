@@ -19,7 +19,7 @@ stat_logger = logging.getLogger('stats')
 stat_logger.addHandler(logging.FileHandler('stats.txt', 'w'))
 
 
-class Analyze():
+class Analyze(object):
     def __init__(self, db_params_dict, debug):
         self.garmin_db = GarminDB.GarminDB(db_params_dict, debug)
         self.garmin_mon_db = GarminDB.MonitoringDB(db_params_dict, debug)

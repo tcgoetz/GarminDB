@@ -51,9 +51,9 @@ class FitBitData():
         self.metric = metric
         self.fitbitdb = FitBitDB.FitBitDB(db_params_dict, debug)
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, '.*.csv')
+            self.file_names = FileProcessor.FileProcessor.match_file(input_file, r'.*\.csv')
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, '.*.csv')
+            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, r'.*\.csv')
 
     def file_count(self):
         return len(self.file_names)

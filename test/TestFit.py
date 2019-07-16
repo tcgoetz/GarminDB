@@ -99,7 +99,7 @@ class TestFit(unittest.TestCase):
 
     def test_parse_monitoring(self):
         monitoring_path = self.file_path + '/monitoring'
-        file_names = FileProcessor.dir_to_files(monitoring_path, '.*\.fit', False)
+        file_names = FileProcessor.dir_to_files(monitoring_path, Fit.File.name_regex, False)
         for file_name in file_names:
             self.check_monitoring_file(file_name)
 
@@ -125,7 +125,7 @@ class TestFit(unittest.TestCase):
 
     def test_parse_activity(self):
         activity_path = self.file_path + '/activity'
-        file_names = FileProcessor.dir_to_files(activity_path, '.*\.fit', False)
+        file_names = FileProcessor.dir_to_files(activity_path, Fit.File.name_regex, False)
         for file_name in file_names:
             self.check_activity_file(file_name)
 

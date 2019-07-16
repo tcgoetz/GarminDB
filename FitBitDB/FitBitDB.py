@@ -1,13 +1,13 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
 import logging
-from datetime import datetime
+import datetime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, Date, Float, Time
 
-from HealthDB import *
+from HealthDB import DB, DBObject, KeyValueObject
 from Fit import Conversions
 
 
