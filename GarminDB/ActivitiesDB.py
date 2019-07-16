@@ -1,11 +1,17 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-from HealthDB import *
-from ExtraData import *
+import logging
+import datetime
+from sqlalchemy import Column, String, Float, Integer, DateTime, Time, ForeignKey, PrimaryKeyConstraint
+from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy.orm import relationship
+# from sqlalchemy.orm.attributes import
+from sqlalchemy.ext.hybrid import hybrid_property
+
+from HealthDB import DB, DbVersionObject, DBObject, Location
+from ExtraData import ExtraData
 
 
 logger = logging.getLogger(__name__)
@@ -418,4 +424,3 @@ class ActivitiesExtraData(ActivitiesDB.Base, ExtraData):
     activity_id = Column(String, ForeignKey(Activities.activity_id), primary_key=True)
 
     match_col_names = ['activity_id']
-

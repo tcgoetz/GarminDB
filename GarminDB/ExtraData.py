@@ -1,12 +1,13 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-import enum, re, json
+import enum
+import re
+import json
+from sqlalchemy import Column, String, Enum
 
-from HealthDB import *
+from HealthDB import DBObject
 
 
 class FuzzyMatchEnum(enum.Enum):
@@ -21,7 +22,7 @@ class FuzzyMatchEnum(enum.Enum):
         try:
             try:
                 return cls(string)
-            except:
+            except Exception:
                 return getattr(cls, string)
         except AttributeError:
             return cls.from_string_ext(string)
@@ -53,7 +54,7 @@ class ExtraData(DBObject):
     @classmethod
     def from_string(cls, string):
         if string is not None:
-            match = re.match(r'(.*)(\{.+\})', string, re.M|re.S)
+            match = re.match(r'(.*)(\{.+\})', string, re.M | re.S)
             if match:
                 return (match.group(1), json.loads(match.group(2)))
             return (string, None)
@@ -68,4 +69,3 @@ class ExtraData(DBObject):
         if condition is not None:
             extra_data['condition'] = Condition.from_string(condition)
         return extra_data
-

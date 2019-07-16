@@ -1,10 +1,12 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-import sys, json, logging, platform, subprocess, dateutil.parser
+import sys
+import json
+import platform
+import subprocess
+import dateutil.parser
 
 
 class GarminConnectConfigManager(object):
@@ -21,7 +23,7 @@ class GarminConnectConfigManager(object):
         except Exception as e:
             print str(e)
             print "Missing config: copy GarminConnectConfig.json.example to GarminConnectConfig.json and edit GarminConnectConfig.json to " + \
-             "add your Garmin Connect username and password."
+                  "add your Garmin Connect username and password."
             sys.exit(-1)
 
     def get_secure_password(self):

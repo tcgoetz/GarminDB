@@ -1,10 +1,8 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-from HealthDB import *
+from HealthDB import KeyValueObject
 
 
 class DbVersionObject(KeyValueObject):
@@ -18,13 +16,13 @@ class DbVersionObject(KeyValueObject):
         self.version = self.version_check_key(db, 'version', version_number)
         if self.version != version_number:
             raise RuntimeError("DB: %s version mismatch. The DB schema has been updated. Please rebuild the %s DB. (%s vs %s)" %
-                    (db.db_name, db.db_name, self.version, version_number))
+                               (db.db_name, db.db_name, self.version, version_number))
 
     def table_version_check(self, db, table_object):
         self.version = self.version_check_key(db, table_object.__tablename__ + '_version', table_object.table_version)
         if self.version != table_object.table_version:
             raise RuntimeError("DB: %s table %s version mismatch. The DB schema has been updated. Please rebuild the %s DB. (%s vs %s)" %
-                    (db.db_name, table_object.__tablename__, db.db_name, self.version, table_object.table_version))
+                               (db.db_name, table_object.__tablename__, db.db_name, self.version, table_object.table_version))
 
     def view_version_check(self, db, table_object):
         if hasattr(table_object, 'view_version'):

@@ -4,7 +4,9 @@
 # copyright Tom Goetz
 #
 
-import sys, getopt, logging
+import sys
+import getopt
+import logging
 
 
 import FitBitDB
@@ -23,13 +25,14 @@ def usage(program):
     print '%s -i <inputfile> ...' % program
     sys.exit()
 
+
 def main(argv):
     debug = False
     input_file = None
     _delete_db = False
 
     try:
-        opts, args = getopt.getopt(argv,"dhi:", ["debug", "delete_db", "input_file="])
+        opts, args = getopt.getopt(argv, "dhi:", ["debug", "delete_db", "input_file="])
     except getopt.GetoptError:
         usage(sys.argv[0])
 

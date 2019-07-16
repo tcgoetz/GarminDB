@@ -4,14 +4,15 @@
 # copyright Tom Goetz
 #
 
-import unittest, logging, os, sys
+import unittest
+import logging
+import sys
 
 from TestSummaryDBBase import TestSummaryDBBase
 
 sys.path.append('../.')
 
 import HealthDB
-
 import GarminDBConfigManager
 
 
@@ -41,4 +42,3 @@ class TestSummaryDB(TestSummaryDBBase, unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
-

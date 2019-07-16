@@ -4,17 +4,20 @@
 # copyright Tom Goetz
 #
 
-import os, sys, string, logging, datetime, traceback, enum
+import os
+import sys
+import string
+import logging
+import datetime
+import enum
 import dateutil.parser
 import progressbar
 
 import Fit
-from JsonFileProcessor import *
-from FileProcessor import *
-from FitFileProcessor import *
+from JsonFileProcessor import JsonFileProcessor
+from FileProcessor import FileProcessor
+from FitFileProcessor import FitFileProcessor
 import GarminDB
-
-import GarminDBConfigManager
 
 
 logger = logging.getLogger(__file__)
@@ -99,45 +102,45 @@ class GarminSleepData(JsonFileProcessor):
         }
 
     def process_json(self, json_data):
-            daily_sleep = json_data.get('dailySleepDTO')
-            if daily_sleep is None:
-                return 0
-            date = daily_sleep.get('calendarDate')
-            if date is None:
-                return 0
-            day = date.date()
-            if json_data.get('remSleepData'):
-                root_logger.info("Importing %s with REM data", day)
-                sleep_activity_levels = RemSleepActivityLevels
-            else:
-                root_logger.info("Importing %s without REM data", day)
-                sleep_activity_levels = SleepActivityLevels
-            day_data = {
-                'day' : day,
-                'start' : daily_sleep.get('sleepStartTimestampGMT'),
-                'end' : daily_sleep.get('sleepEndTimestampGMT'),
-                'total_sleep' : daily_sleep.get('sleepTimeSeconds'),
-                'deep_sleep' : daily_sleep.get('deepSleepSeconds'),
-                'light_sleep' : daily_sleep.get('lightSleepSeconds'),
-                'rem_sleep' : daily_sleep.get('remSleepSeconds'),
-                'awake' : daily_sleep.get('awakeSleepSeconds')
+        daily_sleep = json_data.get('dailySleepDTO')
+        if daily_sleep is None:
+            return 0
+        date = daily_sleep.get('calendarDate')
+        if date is None:
+            return 0
+        day = date.date()
+        if json_data.get('remSleepData'):
+            root_logger.info("Importing %s with REM data", day)
+            sleep_activity_levels = RemSleepActivityLevels
+        else:
+            root_logger.info("Importing %s without REM data", day)
+            sleep_activity_levels = SleepActivityLevels
+        day_data = {
+            'day' : day,
+            'start' : daily_sleep.get('sleepStartTimestampGMT'),
+            'end' : daily_sleep.get('sleepEndTimestampGMT'),
+            'total_sleep' : daily_sleep.get('sleepTimeSeconds'),
+            'deep_sleep' : daily_sleep.get('deepSleepSeconds'),
+            'light_sleep' : daily_sleep.get('lightSleepSeconds'),
+            'rem_sleep' : daily_sleep.get('remSleepSeconds'),
+            'awake' : daily_sleep.get('awakeSleepSeconds')
+        }
+        GarminDB.Sleep.create_or_update_not_none(self.garmin_db, day_data)
+        sleep_levels = json_data.get('sleepLevels')
+        if sleep_levels is None:
+            return 0
+        for sleep_level in sleep_levels:
+            start = sleep_level['startGMT']
+            end = sleep_level['endGMT']
+            event = sleep_activity_levels(sleep_level['activityLevel'])
+            duration = (datetime.datetime.min + (end - start)).time()
+            level_data = {
+                'timestamp' : start,
+                'event' : event.name,
+                'duration' : duration
             }
-            GarminDB.Sleep.create_or_update_not_none(self.garmin_db, day_data)
-            sleep_levels = json_data.get('sleepLevels')
-            if sleep_levels is None:
-                return 0
-            for sleep_level in sleep_levels:
-                start = sleep_level['startGMT']
-                end = sleep_level['endGMT']
-                event = sleep_activity_levels(sleep_level['activityLevel'])
-                duration = (datetime.datetime.min + (end - start)).time()
-                level_data = {
-                    'timestamp' : start,
-                    'event' : event.name,
-                    'duration' : duration
-                }
-                GarminDB.SleepEvents.create_or_update_not_none(self.garmin_db, level_data)
-            return len(sleep_levels)
+            GarminDB.SleepEvents.create_or_update_not_none(self.garmin_db, level_data)
+        return len(sleep_levels)
 
 
 class GarminRhrData(JsonFileProcessor):

@@ -1,23 +1,20 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-import os, logging, datetime, time
+import os
+import logging
+import datetime
 
 from contextlib import contextmanager
 
-from sqlalchemy import *
-from sqlalchemy.ext.declarative import *
-from sqlalchemy.exc import *
-from sqlalchemy.orm import *
-from sqlalchemy.orm.attributes import *
-from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
+from sqlalchemy import create_engine, func, desc, extract, and_
+from sqlalchemy.orm import sessionmaker, synonym, Query
+from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm.attributes import set_attribute
+from sqlalchemy.ext.hybrid import hybrid_method
 
-from Utilities import *
-
-from Fit import Conversions
+from Utilities import filter_dict_by_list, dict_filter_none_values
 
 
 logger = logging.getLogger(__name__)
@@ -38,14 +35,14 @@ class DB(object):
 
     @classmethod
     def sqlite_url(cls, db_params_dict):
-        return "sqlite:///" + db_params_dict['db_path'] +  '/' + cls.db_name + '.db'
+        return "sqlite:///" + db_params_dict['db_path'] + '/' + cls.db_name + '.db'
 
     @classmethod
     def sqlite_delete(cls, db_params_dict):
-        filename = db_params_dict['db_path'] +  '/' + cls.db_name + '.db'
+        filename = db_params_dict['db_path'] + '/' + cls.db_name + '.db'
         try:
             os.remove(filename)
-        except:
+        except Exception:
             logger.warning('%s not removed', filename)
 
     @classmethod
@@ -61,7 +58,7 @@ class DB(object):
         try:
             yield session
             session.commit()
-        except:
+        except Exception:
             session.rollback()
             raise
         finally:
@@ -91,10 +88,10 @@ class DBObject(object):
         return 'ROUND(%s, %d) AS %s%s ' % (col_name, places, alt_col_name, seperator)
 
     @classmethod
-    def round_col(cls, col, alt_col_name=None, places=1):
+    def round_col(cls, col_name, alt_col_name=None, places=1):
         if alt_col_name is None:
             alt_col_name = col_name
-        return 'ROUND(%s, %d) AS %s ' % (col, places, alt_col_name)
+        return 'ROUND(%s, %d) AS %s ' % (col_name, places, alt_col_name)
 
     @declared_attr
     def col_count(cls):
@@ -115,7 +112,7 @@ class DBObject(object):
 
     @hybrid_method
     def during(self, start_ts, end_ts):
-        return cls.time_col >= start_ts and cls.time_col < end_ts
+        return self.time_col >= start_ts and self.time_col < end_ts
 
     @during.expression
     def during(cls, start_ts, end_ts):
@@ -124,7 +121,7 @@ class DBObject(object):
     @hybrid_method
     def after(self, start_ts):
         if start_ts is not None:
-            return cls.time_col >= start_ts
+            return self.time_col >= start_ts
 
     @after.expression
     def after(cls, start_ts):
@@ -132,7 +129,7 @@ class DBObject(object):
 
     @hybrid_method
     def before(self, end_ts):
-        return cls.time_col < end_ts
+        return self.time_col < end_ts
 
     @before.expression
     def before(cls, end_ts):
@@ -233,7 +230,7 @@ class DBObject(object):
         return cls._find_one(session, values_dict).id
 
     @classmethod
-    def find_id(cls, session, values_dict):
+    def find_id(cls, db, values_dict):
         with db.managed_session() as session:
             return cls._find_id(session, values_dict)
 
@@ -358,6 +355,7 @@ class DBObject(object):
     def _get_for_period(cls, session, selectable, start_ts, end_ts, not_none_col=None):
         query = cls._query(session, selectable, cls.time_col, start_ts, end_ts)
         if not_none_col is not None:
+            # filter does not use 'is not None'
             query = query.filter(not_none_col != None)
         return query.all()
 
@@ -390,7 +388,7 @@ class DBObject(object):
     @classmethod
     def get_col_distinct(cls, db, col, start_ts=None, end_ts=None):
         with db.managed_session() as session:
-            return [row[0] for row in cls._get_col_func_query(session, col, distinct, start_ts, end_ts).all()]
+            return [row[0] for row in cls._get_col_func_query(session, col, func.distinct, start_ts, end_ts).all()]
 
     @classmethod
     def _get_col_avg(cls, session, col, start_ts=None, end_ts=None, ignore_le_zero=False):
@@ -432,7 +430,7 @@ class DBObject(object):
     def _get_time_col_func(cls, session, col, stat_func, start_ts=None, end_ts=None):
         result = (
             cls._query(session, cls.time_from_secs(stat_func(cls.secs_from_time(col))),
-                None, start_ts, end_ts, cls.secs_from_time(col)).scalar()
+                       None, start_ts, end_ts, cls.secs_from_time(col)).scalar()
         )
         return datetime.datetime.strptime(result, '%H:%M:%S').time() if result is not None else datetime.time.min
 
@@ -492,12 +490,10 @@ class DBObject(object):
     @classmethod
     def _get_col_func_of_max_per_day_for_value(cls, session, col, stat_func, start_ts, end_ts, match_col=None, match_value=None):
         max_daily_query = (
-            session.query(func.max(col).label('maxes'))
-                .filter(cls.during(start_ts, end_ts))
-                .group_by(func.strftime("%j", cls.time_col))
+            session.query(func.max(col).label('maxes')).filter(cls.during(start_ts, end_ts)).group_by(func.strftime("%j", cls.time_col))
         )
         if match_col is not None and match_value is not None:
-             max_daily_query.filter(match_col == match_value)
+            max_daily_query.filter(match_col == match_value)
         return session.query(stat_func(max_daily_query.subquery().columns.maxes)).scalar()
 
     @classmethod
@@ -507,15 +503,15 @@ class DBObject(object):
 
     @classmethod
     def get_col_sum_of_max_per_day_for_value(cls, db, col, match_col, match_value, start_ts, end_ts):
-       return cls.get_col_func_of_max_per_day_for_value(db, col, func.sum, start_ts, end_ts, match_col, match_value)
+        return cls.get_col_func_of_max_per_day_for_value(db, col, func.sum, start_ts, end_ts, match_col, match_value)
 
     @classmethod
     def _get_col_avg_of_max_per_day_for_value(cls, session, col, match_col, match_value, start_ts, end_ts):
-       return cls._get_col_func_of_max_per_day_for_value(session, col, func.avg, start_ts, end_ts, match_col, match_value)
+        return cls._get_col_func_of_max_per_day_for_value(session, col, func.avg, start_ts, end_ts, match_col, match_value)
 
     @classmethod
     def get_col_avg_of_max_per_day_for_value(cls, db, col, match_col, match_value, start_ts, end_ts):
-       return cls.get_col_func_of_max_per_day_for_value(db, col, func.avg, start_ts, end_ts, match_col, match_value)
+        return cls.get_col_func_of_max_per_day_for_value(db, col, func.avg, start_ts, end_ts, match_col, match_value)
 
     @classmethod
     def _get_col_func_of_max_per_day(cls, session, col, stat_func, start_ts, end_ts):
@@ -527,23 +523,23 @@ class DBObject(object):
 
     @classmethod
     def _get_col_sum_of_max_per_day(cls, session, col, start_ts, end_ts):
-       return cls._get_col_func_of_max_per_day(session, col, func.sum, start_ts, end_ts)
+        return cls._get_col_func_of_max_per_day(session, col, func.sum, start_ts, end_ts)
 
     @classmethod
     def get_col_sum_of_max_per_day(cls, db, col, start_ts, end_ts):
-       return cls.get_col_func_of_max_per_day(db, col, func.sum, start_ts, end_ts)
+        return cls.get_col_func_of_max_per_day(db, col, func.sum, start_ts, end_ts)
 
     @classmethod
     def get_col_avg_of_max_per_day(cls, db, col, start_ts, end_ts):
-       return cls.get_col_func_of_max_per_day(db, col, func.avg, start_ts, end_ts)
+        return cls.get_col_func_of_max_per_day(db, col, func.avg, start_ts, end_ts)
 
     @classmethod
     def get_col_min_of_max_per_day(cls, db, col, start_ts, end_ts):
-       return cls.get_col_func_of_max_per_day(db, col, func.min, start_ts, end_ts)
+        return cls.get_col_func_of_max_per_day(db, col, func.min, start_ts, end_ts)
 
     @classmethod
     def get_col_max_of_max_per_day(cls, db, col, start_ts, end_ts):
-       return cls.get_col_func_of_max_per_day(db, col, func.max, start_ts, end_ts)
+        return cls.get_col_func_of_max_per_day(db, col, func.max, start_ts, end_ts)
 
     @classmethod
     def latest_time(cls, db, not_zero_col):
@@ -671,4 +667,3 @@ class DBObject(object):
         classname = self.__class__.__name__
         values = {col_name : getattr(self, col_name) for col_name in self.get_col_names()}
         return ("<%s() %r>" % (classname, values))
-

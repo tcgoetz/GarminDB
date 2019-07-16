@@ -1,10 +1,14 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-from HealthDB import *
+import logging
+import datetime
+from sqlalchemy import Column, Integer, DateTime, Time, Float, Enum, FLOAT, UniqueConstraint
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
+
+from HealthDB import DB, DbVersionObject, DBObject
 from Fit import Conversions, FieldEnums
 
 
@@ -142,7 +146,7 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
                 floors = cum_ascent / cls.meters_to_floors
         else:
             floors = 0
-        return { 'floors' : floors }
+        return {'floors' : floors}
 
     @classmethod
     def get_daily_stats(cls, session, day_ts, measurement_system):
@@ -220,4 +224,3 @@ class Monitoring(MonitoringDB.Base, DBObject):
         stats = cls.get_stats(session, cls._get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
         stats['first_day'] = first_day_ts
         return stats
-

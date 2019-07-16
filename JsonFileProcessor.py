@@ -1,11 +1,11 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-import json, logging, traceback, sys
-import dateutil.parser
+import json
+import logging
+import traceback
+import sys
 import progressbar
 
 import FileProcessor
@@ -79,7 +79,7 @@ class JsonFileProcessor(object):
                     root_logger.info("DB updated with %d entries from %s", updates, file_name)
                 else:
                     root_logger.info("No data saved for %s", file_name)
-            except Exception as e:
+            except Exception:
                 root_logger.error("Failed to parse %s: %s", file_name, traceback.format_exc())
             self.commit()
         root_logger.info("DB updated with %d entries.", self.file_count())

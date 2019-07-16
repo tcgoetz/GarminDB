@@ -4,6 +4,9 @@
 # copyright Tom Goetz
 #
 
+import logging
+from datetime import datetime
+
 from HealthDB import *
 from Fit import Conversions
 
@@ -72,11 +75,11 @@ class DaysSummary(FitBitDB.Base, DBObject):
 
     @classmethod
     def get_floors_stats(cls, db, func, start_ts, end_ts):
-        return { 'floors' : func(db, cls.floors, start_ts, end_ts) }
+        return {'floors' : func(db, cls.floors, start_ts, end_ts)}
 
     @classmethod
     def get_steps_stats(cls, db, func, start_ts, end_ts):
-        return { 'steps' : func(db, cls.steps, start_ts, end_ts) }
+        return {'steps' : func(db, cls.steps, start_ts, end_ts)}
 
     @classmethod
     def get_weight_stats(cls, db, start_ts, end_ts):
@@ -99,7 +102,7 @@ class DaysSummary(FitBitDB.Base, DBObject):
     def get_calories_stats(cls, db, start_ts, end_ts):
         calories_bmr_avg = cls.get_col_avg(db, cls.calories_bmr, start_ts, end_ts)
         calories_active_avg = cls.get_col_avg(db, cls.activities_calories, start_ts, end_ts)
-        if calories_bmr_avg is not None and  calories_active_avg is not None:
+        if calories_bmr_avg is not None and calories_active_avg is not None:
             calories_avg = calories_bmr_avg + calories_active_avg
         else:
             calories_avg = None
@@ -122,7 +125,7 @@ class DaysSummary(FitBitDB.Base, DBObject):
 
     @classmethod
     def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_activity_mins_stats(db,cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats = cls.get_activity_mins_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7))
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats.update(cls.get_weight_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7)))
@@ -141,4 +144,3 @@ class DaysSummary(FitBitDB.Base, DBObject):
         stats.update(cls.get_calories_stats(db, first_day_ts, last_day_ts))
         stats['first_day'] = first_day_ts
         return stats
-

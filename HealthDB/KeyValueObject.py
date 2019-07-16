@@ -1,12 +1,16 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
 import traceback
+import datetime
+import logging
+from sqlalchemy import Column, String, DateTime
 
-from HealthDB import *
+from DB import DBObject
+
+
+logger = logging.getLogger(__name__)
 
 
 class KeyValueObject(DBObject):
@@ -65,4 +69,3 @@ class KeyValueObject(DBObject):
             return datetime.datetime.strptime(cls.get(db, key), "%H:%M:%S").time()
         except Exception:
             return None
-

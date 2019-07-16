@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import logging, sys
+import logging
 
 from TestDBBase import TestDBBase
 
@@ -33,4 +33,3 @@ class TestSummaryDBBase(TestDBBase):
         self.assertGreater(months_table.get_col_max(self.db, months_table.activities), 0)
         self.assertGreater(months_table.get_col_max(self.db, months_table.activities_calories), 0)
         self.assertGreater(months_table.get_col_max(self.db, months_table.activities_distance), 0)
-

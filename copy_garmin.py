@@ -1,14 +1,15 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-import os, sys, shutil, progressbar, logging
+import os
+import sys
+import shutil
+import progressbar
+import logging
 
 import Fit
 from FileProcessor import FileProcessor
-from GarminConnectConfigManager import GarminConnectConfigManager
 import GarminDBConfigManager
 
 

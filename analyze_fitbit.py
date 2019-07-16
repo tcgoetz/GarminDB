@@ -4,13 +4,14 @@
 # copyright Tom Goetz
 #
 
-import os, sys, re, string, logging, datetime, calendar
+import sys
+import logging
+import datetime
+import calendar
 
 import HealthDB
 import FitBitDB
 import Fit.Conversions
-
-import GarminDBConfigManager
 
 
 logging.basicConfig(filename='analyze_fitbit.log', filemode='w', level=logging.INFO)
@@ -33,7 +34,7 @@ class Analyze():
 
     def get_months(self, year):
         months = FitBitDB.DaysSummary.get_month_names(self.fitbitdb, year)
-        print "%s Months (%d): %s" % (year, len(months) , months)
+        print "%s Months (%d): %s" % (year, len(months), months)
 
     def get_days(self, year):
         year_int = int(year)

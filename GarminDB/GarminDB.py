@@ -1,12 +1,17 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-from HealthDB import *
-from ExtraData import *
-from Fit import FieldEnums
+import os
+import datetime
+import logging
+from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enum, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
+
+from HealthDB import DB, DbVersionObject, DBObject, KeyValueObject, derived_enum
+from ExtraData import ExtraData
+from Fit import FieldEnums, Conversions
 
 
 logger = logging.getLogger(__name__)
@@ -144,7 +149,7 @@ class File(GarminDB.Base, DBObject):
                 Device.product.label('product'),
                 Device.serial_number.label('serial_number')
             ],
-            [(Device, File.serial_number==Device.serial_number), (DeviceInfo, File.id==DeviceInfo.file_id)],
+            [(Device, File.serial_number == Device.serial_number), (DeviceInfo, File.id == DeviceInfo.file_id)],
             DeviceInfo.timestamp.desc())
 
     @classmethod
@@ -297,7 +302,7 @@ class DailySummary(GarminDB.Base, DBObject):
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
-        return  {
+        return {
             'rhr_avg'                   : cls._get_col_avg(session, cls.rhr, start_ts, end_ts),
             'rhr_min'                   : cls._get_col_min(session, cls.rhr, start_ts, end_ts),
             'rhr_max'                   : cls._get_col_max(session, cls.rhr, start_ts, end_ts),
@@ -345,4 +350,3 @@ class DailyExtraData(GarminDB.Base, ExtraData):
     day = Column(Date, primary_key=True)
 
     time_col_name = 'day'
-

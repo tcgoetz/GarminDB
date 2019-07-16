@@ -4,7 +4,10 @@
 # copyright Tom Goetz
 #
 
-import os, sys, re, string, logging, datetime, calendar
+import sys
+import logging
+import datetime
+import calendar
 
 import HealthDB
 import MSHealthDB
@@ -37,7 +40,7 @@ class Analyze():
 
     def get_months(self, year):
         months = MSHealthDB.DaysSummary.get_month_names(self.mshealthdb, year)
-        stat_logger.info("%s Months (%d): %s", year, len(months) , months)
+        stat_logger.info("%s Months (%d): %s", year, len(months), months)
 
     def get_days(self, year):
         year_int = int(year)
@@ -79,5 +82,3 @@ class Analyze():
                 stats = MSHealthDB.DaysSummary.get_monthly_stats(self.mshealthdb, start_day_ts, end_day_ts)
                 stats.update(MSHealthDB.MSVaultWeight.get_monthly_stats(self.mshealthdb, start_day_ts, end_day_ts))
                 HealthDB.MonthsSummary.create_or_update_not_none(self.sumdb, stats)
-
-

@@ -4,7 +4,12 @@
 # copyright Tom Goetz
 #
 
-import os, sys, re, string, logging, datetime, traceback, json, tcxparser, dateutil.parser, traceback
+import os
+import sys
+import re
+import logging
+import tcxparser
+import dateutil.parser
 import progressbar
 
 import Fit
@@ -13,8 +18,6 @@ from FitFileProcessor import FitFileProcessor
 from JsonFileProcessor import JsonFileProcessor
 import GarminDB
 import GarminConnectEnums
-
-import GarminDBConfigManager
 
 
 logger = logging.getLogger(__file__)
@@ -93,8 +96,8 @@ class GarminTcxData():
         }
         GarminDB.File._find_or_create(self.garmin_db_session, file)
         distance = Fit.Distance.from_meters(tcx.distance)
-        ascent = Fit.Distance.from_meters(tcx.ascent)
-        descent = Fit.Distance.from_meters(tcx.descent)
+        # ascent = Fit.Distance.from_meters(tcx.ascent)
+        # descent = Fit.Distance.from_meters(tcx.descent)
         activity = {
             'activity_id'               : file_id,
             'start_time'                : start_time,
@@ -111,10 +114,10 @@ class GarminTcxData():
             'max_hr'                    : tcx.hr_max,
             'max_cadence'               : tcx.cadence_max,
             'avg_cadence'               : tcx.cadence_avg,
-            #'ascent'                    : ascent.meters_or_feet(self.measurement_system),
-            #'descent'                   : descent.meters_or_feet(self.measurement_system)
+            # 'ascent'                    : ascent.meters_or_feet(self.measurement_system),
+            # 'descent'                   : descent.meters_or_feet(self.measurement_system)
         }
-        activity_not_zero = {key : value for (key,value) in activity.iteritems() if value}
+        activity_not_zero = {key : value for (key, value) in activity.iteritems() if value}
         GarminDB.Activities._create_or_update_not_none(self.garmin_act_db_session, activity_not_zero)
 
     def process_files(self, db_params_dict):
@@ -180,7 +183,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
             'max_cadence'               : self.get_field(activity_summary, 'maxStrokeCadence', float),
         }
         GarminDB.Activities._create_or_update_not_none(self.garmin_act_db_session, activity)
-        avg_stroke_distance = Distance.from_meters(self.get_field(activity_summary, 'avgStrokeDistance', float))
+        avg_stroke_distance = Fit.Distance.from_meters(self.get_field(activity_summary, 'avgStrokeDistance', float))
         paddle = {
             'activity_id'               : activity_id,
             'strokes'                   : self.get_field(activity_summary, 'strokes', float),
@@ -306,15 +309,15 @@ class GarminJsonDetailsData(JsonFileProcessor):
         GarminDB.StepsActivities._create_or_update_not_none(self.garmin_act_db_session, run)
 
     def process_running(self, activity_id, json_data):
-        root_logger.info("process_running for %d: %r", activity_id, run)
+        root_logger.info("process_running for %d: %r", activity_id, json_data)
         self.process_steps_activity(activity_id, json_data)
 
     def process_walking(self, activity_id, json_data):
-        root_logger.info("process_walking for %d: %r", activity_id, run)
+        root_logger.info("process_walking for %d: %r", activity_id, json_data)
         self.process_steps_activity(activity_id, json_data)
 
     def process_hiking(self, activity_id, json_data):
-        root_logger.info("process_hiking for %d: %r", activity_id, run)
+        root_logger.info("process_hiking for %d: %r", activity_id, json_data)
         self.process_steps_activity(activity_id, json_data)
 
     def process_json(self, json_data):
@@ -356,6 +359,3 @@ class GarminActivitiesExtraData(JsonFileProcessor):
         root_logger.info("Extra data: %r", json_data)
         GarminDB.ActivitiesExtraData.create_or_update_not_none(self.garmin_db, GarminDB.DailyExtraData.convert_eums(json_data))
         return 1
-
-
-

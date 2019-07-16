@@ -4,8 +4,9 @@
 # copyright Tom Goetz
 #
 
-import sys, getopt, logging
-
+import sys
+import getopt
+import logging
 
 import MSHealthDB
 from import_mshealth_csv import MSHealthData, MSVaultData
@@ -23,13 +24,14 @@ def usage(program):
     print '%s -i <inputfile>' % program
     sys.exit()
 
+
 def main(argv):
     debug = False
     input_file = None
     _delete_db = False
 
     try:
-        opts, args = getopt.getopt(argv,"hi:t", ["help", "delete_db", "trace", "input_file="])
+        opts, args = getopt.getopt(argv, "hi:t", ["help", "delete_db", "trace", "input_file="])
     except getopt.GetoptError:
         print "Bad argument"
         usage(sys.argv[0])
@@ -77,6 +79,3 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
-from analyze_mshealth import Analyze
-
-

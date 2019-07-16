@@ -1,10 +1,6 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
-
-from Fit import Conversions
 
 
 class Location(object):
@@ -22,4 +18,3 @@ class Location(object):
 
     def to_google_maps_url(self):
         return self.google_maps_url(self.lat_deg, self.long_deg)
-

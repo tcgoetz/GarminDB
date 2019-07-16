@@ -1,10 +1,11 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-import logging, sys, os, re, datetime
+import logging
+import os
+import re
+import datetime
 
 
 logger = logging.getLogger(__file__)

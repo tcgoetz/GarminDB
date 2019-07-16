@@ -4,7 +4,8 @@
 # copyright Tom Goetz
 #
 
-import os, sys, re, string, logging, datetime, time, traceback
+import sys
+import logging
 import progressbar
 
 from HealthDB import CsvImporter
@@ -65,5 +66,3 @@ class FitBitData():
             logger.info("Processing file: " + file_name)
             self.csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
             self.csvimporter.process_file(not self.metric)
-
-

@@ -1,10 +1,15 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-from HealthDB import *
+import logging
+from sqlalchemy import Column, Date
+from sqlalchemy.ext.declarative import declarative_base
+
+from DB import DB
+from SummaryBase import SummaryBase
+from DbVersionObject import DbVersionObject
+from KeyValueObject import KeyValueObject
 
 
 logger = logging.getLogger(__name__)
@@ -65,4 +70,3 @@ class DaysSummary(SummaryDB.Base, SummaryBase):
 
     day = Column(Date, primary_key=True)
     time_col_name = 'day'
-

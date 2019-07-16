@@ -4,14 +4,16 @@
 # copyright Tom Goetz
 #
 
-import unittest, os, logging, sys, datetime, re
+import unittest
+import logging
+import sys
+import datetime
 
 from TestDBBase import TestDBBase
 
 sys.path.append('../.')
 
 import GarminDB
-
 import GarminDBConfigManager
 
 
@@ -50,7 +52,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         logger.info("%s: %s", value_name, value)
 
     def check_col_stats(self, db, table, col, col_name, ignore_le_zero, time_col,
-        records_bounds, max_bounds, min_bounds, avg_bounds, latest_bounds):
+                        records_bounds, max_bounds, min_bounds, avg_bounds, latest_bounds):
         self.check_col_stat(col_name + ' records', table.row_count(db), records_bounds)
         if time_col:
             maximum = table.get_time_col_max(db, col)
@@ -117,4 +119,3 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
-

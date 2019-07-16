@@ -1,10 +1,10 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-import logging, datetime, csv
+import logging
+import datetime
+import csv
 
 logger = logging.getLogger(__name__)
 
@@ -24,38 +24,38 @@ class CsvImporter():
     def map_integer(cls, english_units, value):
         try:
             return int(value)
-        except Exception as e:
+        except Exception:
             return None
 
     @classmethod
     def map_float(cls, english_units, value):
         try:
             return float(value)
-        except Exception as e:
+        except Exception:
             return None
 
     @classmethod
     def map_ymd_date(cls, english_units, date_string):
         try:
             return datetime.datetime.strptime(date_string, "%Y-%m-%d").date()
-        except Exception as e:
+        except Exception:
             return None
 
     @classmethod
     def map_mdy_date(cls, english_units, date_string):
         try:
             return datetime.datetime.strptime(date_string, "%m/%d/%y %H:%M")
-        except Exception as e:
+        except Exception:
             try:
                 return datetime.datetime.strptime(date_string, "%m/%d/%y")
-            except Exception as e:
+            except Exception:
                 return None
 
     @classmethod
     def map_time(cls, english_units, time_string):
         try:
             return datetime.datetime.strptime(time_string, "%M:%S").time()
-        except Exception as e:
+        except Exception:
             return None
 
     @classmethod

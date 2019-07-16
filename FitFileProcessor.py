@@ -1,10 +1,10 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-import logging, sys, datetime, traceback
+import logging
+import sys
+import traceback
 
 import Fit
 import GarminDB
@@ -37,7 +37,7 @@ class FitFileProcessor():
                 function(fit_file, message_dict)
             else:
                 root_logger.debug("No entry handler %s for message type %r (%d) from %s: %s",
-                    handler_name, message_type, len(messages), fit_file.filename, messages[0])
+                                  handler_name, message_type, len(messages), fit_file.filename, messages[0])
 
     def write_message_type(self, fit_file, message_type):
         messages = fit_file[message_type]
@@ -71,7 +71,6 @@ class FitFileProcessor():
                     self.garmin_act_db_session.commit()
                 self.garmin_mon_db_session.commit()
             self.garmin_db_session.commit()
-
 
     #
     # Message type handlers
@@ -300,7 +299,7 @@ class FitFileProcessor():
         timestamp = fit_file.time_created()
         for attribute_name in [
                 'gender', 'height', 'weight', 'language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time'
-            ]:
+        ]:
             self.write_attribute(timestamp, message_dict, attribute_name)
 
     def write_activity_entry(self, fit_file, activity_message_dict):
@@ -363,9 +362,9 @@ class FitFileProcessor():
             intersection = GarminDB.Monitoring.intersection(entry)
             if len(intersection) > 1:
                 GarminDB.Monitoring._create_or_update(self.garmin_mon_db_session, intersection)
-        except ValueError as e:
+        except ValueError:
             logger.error("write_monitoring_entry: ValueError for %r: %s", entry, traceback.format_exc())
-        except Exception as e:
+        except Exception:
             logger.error("Exception on monitoring entry: %r: %s", entry, traceback.format_exc())
 
     def write_device_info_entry(self, fit_file, device_info_message_dict):

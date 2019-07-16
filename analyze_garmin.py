@@ -1,18 +1,16 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-import os, sys, re, string, logging, datetime, calendar
+import sys
+import logging
+import datetime
+import calendar
 import progressbar
 
 import HealthDB
 import GarminDB
 from Fit import Conversions
-from Fit import FieldEnums
-
-import GarminDBConfigManager
 
 
 logger = logging.getLogger(__file__)
@@ -144,7 +142,7 @@ class Analyze():
     def get_monitoring_months(self, year):
         months = GarminDB.Monitoring.get_month_names(self.garmin_mon_db, year)
         self.save_summary_stat(str(year) + '_months', len(months))
-        stat_logger.info("%s Months (%s): %s", year, len(months) , months)
+        stat_logger.info("%s Months (%s): %s", year, len(months), months)
 
     def get_monitoring_days(self, year):
         days = GarminDB.Monitoring.get_days(self.garmin_mon_db, year)
@@ -181,8 +179,8 @@ class Analyze():
                 # Heart rate value is for one minute, reported at the end of the minute. Only take HR values where the
                 # measurement period falls within the activity period.
                 if previous_ts is not None and (monitoring.timestamp - previous_ts).total_seconds() > 60:
-                    hr_rows = GarminDB.MonitoringHeartRate._get_for_period(garmin_mon_session, GarminDB.MonitoringHeartRate,
-                        previous_ts + datetime.timedelta(seconds=60), monitoring.timestamp)
+                    hr_rows = GarminDB.MonitoringHeartRate._get_for_period(garmin_mon_session, GarminDB.MonitoringHeartRate, previous_ts + datetime.timedelta(seconds=60),
+                                                                           monitoring.timestamp)
                     for hr in hr_rows:
                         entry = {
                             'timestamp'     : hr.timestamp,
@@ -290,9 +288,6 @@ class Analyze():
 
     def summary(self):
         logger.info("___Summary Table Generation___")
-        sleep_period_start = GarminDB.Attributes.get_time(self.garmin_db, 'sleep_time')
-        sleep_period_stop = GarminDB.Attributes.get_time(self.garmin_db, 'wake_time')
-
         years = GarminDB.Monitoring.get_years(self.garmin_mon_db)
         for year in years:
             logger.info("Generating %s", year)

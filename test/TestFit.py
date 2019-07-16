@@ -4,12 +4,16 @@
 # copyright Tom Goetz
 #
 
-import unittest, os, logging, sys, datetime, re
+import unittest
+import logging
+import sys
+import datetime
+import re
 
 sys.path.append('../.')
 
 import Fit
-from FileProcessor import *
+from FileProcessor import FileProcessor
 
 
 root_logger = logging.getLogger()
@@ -153,4 +157,3 @@ class TestFit(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
-

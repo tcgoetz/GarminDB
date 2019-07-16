@@ -4,7 +4,9 @@
 # copyright Tom Goetz
 #
 
-import unittest, os, logging, sys, datetime, re
+import unittest
+import logging
+import sys
 
 from sqlalchemy.exc import IntegrityError
 
@@ -12,8 +14,7 @@ sys.path.append('../.')
 
 import GarminDB
 import Fit
-from FileProcessor import *
-
+from FileProcessor import FileProcessor
 import GarminDBConfigManager
 
 
@@ -72,4 +73,3 @@ class TestGarminDbObjects(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
-

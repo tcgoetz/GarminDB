@@ -4,8 +4,10 @@
 # copyright Tom Goetz
 #
 
-import logging, sys, getopt, datetime
-import matplotlib
+import logging
+import sys
+import getopt
+import datetime
 import matplotlib.pyplot as plt
 import enum
 
@@ -20,6 +22,7 @@ logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
+
 class YAxisLabelPostion(enum.Enum):
     right   = 0
     left    = 1
@@ -27,6 +30,7 @@ class YAxisLabelPostion(enum.Enum):
     @classmethod
     def from_integer(cls, integer):
         return YAxisLabelPostion(integer % 2)
+
 
 class Colors(enum.Enum):
     b   = 0
@@ -42,6 +46,7 @@ class Colors(enum.Enum):
     def from_integer(cls, integer):
         return Colors(integer % 8)
 
+
 def graph_mulitple_single_axes(time, data_list, stat_name, ylabel, save):
     title = '%s Over Time' % stat_name
     figure = plt.figure()
@@ -56,6 +61,7 @@ def graph_mulitple_single_axes(time, data_list, stat_name, ylabel, save):
     if save:
         figure.savefig(stat_name + ".png")
     plt.show()
+
 
 def graph_mulitple(time, data_list, stat_name, ylabel_list, save):
     title = '%s Over Time' % stat_name
@@ -79,24 +85,29 @@ def graph_mulitple(time, data_list, stat_name, ylabel_list, save):
         figure.savefig(stat_name + ".png")
     plt.show()
 
+
 def graph_steps(time, data, save):
     steps = [entry.steps for entry in data]
     steps_goal_percent = [entry.steps_goal_percent for entry in data]
     graph_mulitple(time, [steps, steps_goal_percent], 'Steps', ['Steps', 'Step Goal Percent'], save)
+
 
 def graph_hr(time, data, save):
     rhr = [entry.rhr_avg for entry in data]
     inactive_hr = [entry.inactive_hr_avg for entry in data]
     graph_mulitple(time, [rhr, inactive_hr], 'Heart Rate', ['RHR', 'Inactive hr'], save)
 
+
 def graph_itime(time, data, save):
     itime = [Conversions.time_to_secs(entry.intensity_time) for entry in data]
     itime_goal_percent = [entry.intensity_time_goal_percent for entry in data]
     graph_mulitple(time, [itime, itime_goal_percent], 'Intensity Time', ['Intensity Time', 'Intensity Time Goal Percent'], save)
 
+
 def graph_weight(time, data, save):
     weight = [entry.weight_avg for entry in data]
     graph_mulitple_single_axes(time, [weight], 'Weight', 'weight', save)
+
 
 def print_usage(program, error=None):
     if error is not None:
@@ -114,12 +125,13 @@ def print_usage(program, error=None):
     print '    '
     sys.exit()
 
+
 def print_version(program):
     print '%s' % version
 
+
 def main(argv):
     debug = 0
-    test = False
     save = False
     hr = False
     itime = False
@@ -136,7 +148,7 @@ def main(argv):
     }
 
     try:
-        opts, args = getopt.getopt(argv,"adhHl:p:rsSt:wv", ["all", "latest=", "period=", "hr", "itime", "save", "steps", "trace=", "weight", "version"])
+        opts, args = getopt.getopt(argv, "adhHl:p:rsSt:wv", ["all", "latest=", "period=", "hr", "itime", "save", "steps", "trace=", "weight", "version"])
     except getopt.GetoptError as e:
         print_usage(sys.argv[0], str(e))
 
@@ -195,7 +207,6 @@ def main(argv):
 
     if weight:
         graph_weight(time, data, save)
-
 
 
 if __name__ == "__main__":

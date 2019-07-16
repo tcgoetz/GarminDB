@@ -1,11 +1,10 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
 
-import enum, logging
+import enum
+import logging
 
 
 logger = logging.getLogger(__file__)

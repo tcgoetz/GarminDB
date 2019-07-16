@@ -1,10 +1,13 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-from HealthDB import *
+import datetime
+from sqlalchemy import Column, Float, Time, Integer, func
+from sqlalchemy.ext.hybrid import hybrid_property
+
+from Fit import Conversions
+from DB import DBObject
 
 
 class SummaryBase(DBObject):
@@ -126,7 +129,7 @@ class SummaryBase(DBObject):
                 # cls.steps_goal_percent,
                 'round((steps * 100) / steps_goal) AS steps_goal_percent',
                 cls.round_col(cls.__tablename__ + '.floors', 'floors'),
-                #cls.floors_goal_percent,
+                # cls.floors_goal_percent,
                 'round((floors * 100) / floors_goal) AS floors_goal_percent',
                 cls.sleep_avg.label('sleep_avg'), cls.rem_sleep_avg.label('rem_sleep_avg'),
                 cls.round_col(cls.__tablename__ + '.stress_avg', 'stress_avg'),
@@ -152,10 +155,10 @@ class SummaryBase(DBObject):
                 cls.round_col(cls.__tablename__ + '.weight_avg', 'weight_avg'),
                 cls.intensity_time.label('intensity_time'), cls.moderate_activity_time.label('moderate_activity_time'), cls.vigorous_activity_time.label('vigorous_activity_time'),
                 cls.steps.label('steps'),
-                #cls.steps_goal_percent,
+                # cls.steps_goal_percent,
                 'round((steps * 100) / steps_goal) AS steps_goal_percent',
                 cls.round_col(cls.__tablename__ + '.floors', 'floors'),
-                #cls.floors_goal_percent,
+                # cls.floors_goal_percent,
                 'round((floors * 100) / floors_goal) AS floors_goal_percent',
                 cls.sleep_avg.label('sleep_avg'), cls.rem_sleep_avg.label('rem_sleep_avg'),
                 cls.round_col(cls.__tablename__ + '.stress_avg', 'stress_avg'),

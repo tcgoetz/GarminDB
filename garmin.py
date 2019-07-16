@@ -4,7 +4,10 @@
 # copyright Tom Goetz
 #
 
-import logging, sys, getopt, datetime
+import logging
+import sys
+import getopt
+import datetime
 
 from version import version
 from download_garmin import Download
@@ -24,6 +27,7 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 gc_gonfig = GarminConnectConfigManager()
+
 
 def get_date_and_days(db, latest, table, col, stat_name):
     if latest:
@@ -64,6 +68,7 @@ def copy_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
         root_logger.info("Copying monitoring to %s", monitoring_dir)
         copy.copy_monitoring(monitoring_dir, latest)
 
+
 def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
     db_params_dict = GarminDBConfigManager.get_db_params()
 
@@ -94,7 +99,7 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
             root_logger.info("Saved monitoring files for %s (%d) to %s for processing", date, days, monitoring_dir)
 
     if sleep:
-        date, days = get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.Sleep, GarminDB.Sleep.total_sleep,'sleep')
+        date, days = get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'sleep')
         if days > 0:
             sleep_dir = GarminDBConfigManager.get_or_create_sleep_dir()
             root_logger.info("Date range to update: %s (%d) to %s", date, days, sleep_dir)
@@ -180,6 +185,7 @@ def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
 
+
 def analyze_data(debug):
     db_params_dict = GarminDBConfigManager.get_db_params()
     analyze = Analyze(db_params_dict, debug - 1)
@@ -218,8 +224,10 @@ def print_usage(program, error=None):
     print '    '
     sys.exit()
 
+
 def print_version(program):
     print '%s' % version
+
 
 def main(argv):
     _download_data = False
@@ -230,7 +238,6 @@ def main(argv):
     activities = False
     debug = 0
     test = False
-    profile_dir = None
     monitoring = False
     overwite = False
     weight = False
@@ -239,9 +246,9 @@ def main(argv):
     latest = False
 
     try:
-        opts, args = getopt.getopt(argv,"acAdimolrstT:w",
-            ["all", "activities", "analyze", "copy", "delete_db", "download", "import", "trace=", "test", "monitoring", "overwrite",
-             "latest", "rhr", "sleep", "weight", "version"])
+        opts, args = getopt.getopt(argv, "acAdimolrstT:w",
+                                   ["all", "activities", "analyze", "copy", "delete_db", "download", "import", "trace=", "test", "monitoring", "overwrite",
+                                    "latest", "rhr", "sleep", "weight", "version"])
     except getopt.GetoptError as e:
         print_usage(sys.argv[0], str(e))
 

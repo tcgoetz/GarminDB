@@ -1,17 +1,21 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
 
-import os, sys, getopt, re, logging, datetime, time, tempfile, zipfile, json
-import dateutil.parser
+import os
+import sys
+import re
+import logging
+import datetime
+import time
+import tempfile
+import zipfile
+import json
 import requests
 import progressbar
 
 from GarminConnectConfigManager import GarminConnectConfigManager
 import GarminDBConfigManager
-import GarminDB
 from Fit import Conversions
 
 
@@ -111,7 +115,6 @@ class Download(object):
 
     garmin_connect_usersummary_url = garmin_connect_modern_proxy + "/usersummary-service/usersummary"
     garmin_connect_daily_summary_url = garmin_connect_usersummary_url + "/daily/"
-
 
     def __init__(self):
         self.temp_dir = tempfile.mkdtemp()
@@ -227,7 +230,7 @@ class Download(object):
     def unzip_files(self, outdir):
         logger.info("unzip_files: " + outdir)
         for filename in os.listdir(self.temp_dir):
-            match = re.search('.*\.zip', filename)
+            match = re.search(r'.*\.zip', filename)
             if match:
                 files_zip = zipfile.ZipFile(self.temp_dir + "/" + filename, 'r')
                 files_zip.extractall(outdir)

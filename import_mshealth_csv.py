@@ -4,7 +4,9 @@
 # copyright Tom Goetz
 #
 
-import os, sys, re, string, logging, datetime, time, traceback
+import sys
+import re
+import logging
 import progressbar
 
 from HealthDB import CsvImporter
@@ -114,6 +116,3 @@ class MSVaultData():
         else:
             logger.debug("Unmatched weight: " + value)
             return None
-
-
-

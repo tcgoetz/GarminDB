@@ -1,8 +1,8 @@
-#!/usr/bin/env python
-
 #
 # copyright Tom Goetz
 #
+
+import logging
 
 from HealthDB import *
 

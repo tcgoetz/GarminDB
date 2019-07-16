@@ -4,7 +4,13 @@
 # copyright Tom Goetz
 #
 
-from HealthDB import *
+import datetime
+import logging
+from sqlalchemy import *
+from sqlalchemy.ext.declarative import declarative_base
+
+
+from HealthDB import DB, DBObject, KeyValueObject
 from Fit import Conversions
 
 
@@ -92,11 +98,11 @@ class DaysSummary(MSHealthDB.Base, DBObject):
 
     @classmethod
     def get_floors_stats(cls, db, func, start_ts, end_ts):
-        return { 'floors' : func(db, cls.floors, start_ts, end_ts) }
+        return {'floors' : func(db, cls.floors, start_ts, end_ts)}
 
     @classmethod
     def get_steps_stats(cls, db, func, start_ts, end_ts):
-        return { 'steps' : func(db, cls.steps, start_ts, end_ts) }
+        return {'steps' : func(db, cls.steps, start_ts, end_ts)}
 
     @classmethod
     def get_sleep_stats(cls, db, start_ts, end_ts):
@@ -133,7 +139,7 @@ class DaysSummary(MSHealthDB.Base, DBObject):
 
     @classmethod
     def get_weekly_stats(cls, db, first_day_ts):
-        stats = cls.get_activity_mins_stats(db,cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats = cls.get_activity_mins_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7))
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats.update(cls.get_hr_stats(db, first_day_ts, first_day_ts + datetime.timedelta(7)))
@@ -170,5 +176,3 @@ class MSVaultWeight(MSHealthDB.Base, DBObject):
             'weight_max' : cls.get_col_max(db, cls.weight, start_ts, end_ts),
         }
         return stats
-
-

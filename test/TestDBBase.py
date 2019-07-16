@@ -4,7 +4,7 @@
 # copyright Tom Goetz
 #
 
-import logging, sys
+import logging
 
 
 logger = logging.getLogger(__name__)
@@ -31,4 +31,3 @@ class TestDBBase(object):
         for table, not_none_cols_list in self.table_not_none_cols_dict.iteritems():
             for not_none_col in not_none_cols_list:
                 self.assertTrue(table.row_count(self.db, not_none_col, None) == 0, 'table %s col %s has None values' % (table, not_none_col))
-
