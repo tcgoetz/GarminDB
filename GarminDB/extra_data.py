@@ -1,13 +1,15 @@
-#
-# copyright Tom Goetz
-#
+"""Objects representing a databse objects for storing extra data attached to another record."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import enum
 import re
 import json
 from sqlalchemy import Column, String, Enum
 
-from HealthDB import DBObject
+import HealthDB
 
 
 class FuzzyMatchEnum(enum.Enum):
@@ -43,7 +45,7 @@ class Condition(FuzzyMatchEnum):
     Sick        = 4
 
 
-class ExtraData(DBObject):
+class ExtraData(HealthDB.DBObject):
 
     mood = Column(Enum(Mood))
     condition = Column(Enum(Condition))

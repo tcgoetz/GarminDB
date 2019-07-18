@@ -1,6 +1,8 @@
-#
-# copyright Tom Goetz
-#
+"""Enums representing Garmin Connect data types."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 
 import enum

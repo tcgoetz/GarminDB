@@ -1,21 +1,22 @@
-#
-# copyright Tom Goetz
-#
+"""Objects representing a database and database objects for storing health data from a Microsoft Health."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import datetime
 import logging
 from sqlalchemy import Column, Integer, Date, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
 
-
-from HealthDB import DB, DBObject, KeyValueObject
-from Fit import Conversions
+import Fit.conversions as conversions
+import HealthDB
 
 
 logger = logging.getLogger(__name__)
 
 
-class MSHealthDB(DB):
+class MSHealthDB(HealthDB.DB):
     Base = declarative_base()
     db_name = 'mshealth'
 
@@ -24,11 +25,11 @@ class MSHealthDB(DB):
         MSHealthDB.Base.metadata.create_all(self.engine)
 
 
-class Attributes(MSHealthDB.Base, KeyValueObject):
+class Attributes(MSHealthDB.Base, HealthDB.KeyValueObject):
     __tablename__ = 'attributes'
 
 
-class DaysSummary(MSHealthDB.Base, DBObject):
+class DaysSummary(MSHealthDB.Base, HealthDB.DBObject):
     __tablename__ = 'days_summary'
 
     day = Column(Date, primary_key=True)
@@ -84,7 +85,7 @@ class DaysSummary(MSHealthDB.Base, DBObject):
     def get_activity_mins_stats(cls, db, func, start_ts, end_ts):
         active_hours = func(db, cls.active_hours, start_ts, end_ts)
         if active_hours is not None:
-            intensity_time = Conversions.min_to_dt_time(active_hours * 60)
+            intensity_time = conversions.min_to_dt_time(active_hours * 60)
             stats = {
                 'intensity_time' : intensity_time,
                 'moderate_activity_time' : intensity_time,
@@ -105,9 +106,9 @@ class DaysSummary(MSHealthDB.Base, DBObject):
     @classmethod
     def get_sleep_stats(cls, db, start_ts, end_ts):
         return {
-            'sleep_avg' : Conversions.secs_to_dt_time(cls.get_col_avg(db, cls.sleep_secs, start_ts, end_ts, True)),
-            'sleep_min' : Conversions.secs_to_dt_time(cls.get_col_min(db, cls.sleep_secs, start_ts, end_ts, True)),
-            'sleep_max' : Conversions.secs_to_dt_time(cls.get_col_max(db, cls.sleep_secs, start_ts, end_ts)),
+            'sleep_avg' : conversions.secs_to_dt_time(cls.get_col_avg(db, cls.sleep_secs, start_ts, end_ts, True)),
+            'sleep_min' : conversions.secs_to_dt_time(cls.get_col_min(db, cls.sleep_secs, start_ts, end_ts, True)),
+            'sleep_max' : conversions.secs_to_dt_time(cls.get_col_max(db, cls.sleep_secs, start_ts, end_ts)),
         }
 
     @classmethod
@@ -158,7 +159,7 @@ class DaysSummary(MSHealthDB.Base, DBObject):
         return stats
 
 
-class MSVaultWeight(MSHealthDB.Base, DBObject):
+class MSVaultWeight(MSHealthDB.Base, HealthDB.DBObject):
     __tablename__ = 'weight'
 
     timestamp = Column(DateTime, primary_key=True, unique=True)

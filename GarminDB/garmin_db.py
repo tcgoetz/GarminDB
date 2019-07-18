@@ -1,6 +1,8 @@
-#
-# copyright Tom Goetz
-#
+"""Objects representing a database and database objects for storing health data from a Garmin device."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import os
 import datetime
@@ -9,20 +11,22 @@ from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enu
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from HealthDB import DB, DbVersionObject, DBObject, KeyValueObject, derived_enum
-from ExtraData import ExtraData
-from Fit import FieldEnums, Conversions
+import HealthDB
+import Fit
+from extra_data import ExtraData
 
 
 logger = logging.getLogger(__name__)
 
 
-class GarminDB(DB):
+class GarminDB(HealthDB.DB):
+    """Object representing a database for storing health data from a Garmin device."""
+
     Base = declarative_base()
     db_name = 'garmin'
     db_version = 13
 
-    class DbVersion(Base, DbVersionObject):
+    class DbVersion(Base, HealthDB.DbVersionObject):
         pass
 
     def __init__(self, db_params_dict, debug=False):
@@ -39,25 +43,25 @@ class GarminDB(DB):
         File.create_view(self)
 
 
-class Attributes(GarminDB.Base, KeyValueObject):
+class Attributes(GarminDB.Base, HealthDB.KeyValueObject):
     __tablename__ = 'attributes'
     table_version = 1
 
     @classmethod
     def measurements_type(cls, db):
-        return FieldEnums.DisplayMeasure.from_string(cls.get(db, 'measurement_system'))
+        return Fit.fieldenums.DisplayMeasure.from_string(cls.get(db, 'measurement_system'))
 
     @classmethod
     def measurements_type_metric(cls, db):
-        return (cls.measurements_type(db) == FieldEnums.DisplayMeasure.metric)
+        return (cls.measurements_type(db) == Fit.fieldenums.DisplayMeasure.metric)
 
 
-class Device(GarminDB.Base, DBObject):
+class Device(GarminDB.Base, HealthDB.DBObject):
     __tablename__ = 'devices'
     table_version = 3
     unknown_device_serial_number = 9999999999
 
-    Manufacturer = derived_enum('Manufacturer', FieldEnums.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
+    Manufacturer = HealthDB.DerivedEnum.derived_enum('Manufacturer', Fit.fieldenums.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
 
     serial_number = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
@@ -70,7 +74,7 @@ class Device(GarminDB.Base, DBObject):
 
     @property
     def product_as_enum(self):
-        return FieldEnums.product_enum(self.manufacturer, self.product)
+        return Fit.fieldenums.product_enum(self.manufacturer, self.product)
 
     @classmethod
     def get(cls, db, serial_number):
@@ -81,7 +85,7 @@ class Device(GarminDB.Base, DBObject):
         return '%s%06d' % (serial_number, device_type.value)
 
 
-class DeviceInfo(GarminDB.Base, DBObject):
+class DeviceInfo(GarminDB.Base, HealthDB.DBObject):
     __tablename__ = 'device_info'
     table_version = 2
     view_version = 4
@@ -114,13 +118,13 @@ class DeviceInfo(GarminDB.Base, DBObject):
             Device, cls.timestamp.desc())
 
 
-class File(GarminDB.Base, DBObject):
+class File(GarminDB.Base, HealthDB.DBObject):
     __tablename__ = 'files'
     table_version = 3
     view_version = 4
 
     fit_file_types_prefix = 'fit_'
-    FileType = derived_enum('FileType', FieldEnums.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
+    FileType = HealthDB.DerivedEnum.derived_enum('FileType', Fit.fieldenums.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
 
     id = Column(String, primary_key=True)
     name = Column(String, unique=True)
@@ -163,7 +167,7 @@ class File(GarminDB.Base, DBObject):
         return os.path.basename(pathname).split('.')[0]
 
 
-class Weight(GarminDB.Base, DBObject):
+class Weight(GarminDB.Base, HealthDB.DBObject):
     __tablename__ = 'weight'
     table_version = 1
 
@@ -182,7 +186,7 @@ class Weight(GarminDB.Base, DBObject):
         return stats
 
 
-class Stress(GarminDB.Base, DBObject):
+class Stress(GarminDB.Base, HealthDB.DBObject):
     __tablename__ = 'stress'
     table_version = 1
 
@@ -199,7 +203,7 @@ class Stress(GarminDB.Base, DBObject):
         return stats
 
 
-class Sleep(GarminDB.Base, DBObject):
+class Sleep(GarminDB.Base, HealthDB.DBObject):
     __tablename__ = 'sleep'
     table_version = 1
 
@@ -226,7 +230,7 @@ class Sleep(GarminDB.Base, DBObject):
         }
 
 
-class SleepEvents(GarminDB.Base, DBObject):
+class SleepEvents(GarminDB.Base, HealthDB.DBObject):
     __tablename__ = 'sleep_events'
     table_version = 1
 
@@ -246,7 +250,7 @@ class SleepEvents(GarminDB.Base, DBObject):
             return values[0][0]
 
 
-class RestingHeartRate(GarminDB.Base, DBObject):
+class RestingHeartRate(GarminDB.Base, HealthDB.DBObject):
     __tablename__ = 'resting_hr'
     table_version = 1
 
@@ -265,7 +269,7 @@ class RestingHeartRate(GarminDB.Base, DBObject):
         return stats
 
 
-class DailySummary(GarminDB.Base, DBObject):
+class DailySummary(GarminDB.Base, HealthDB.DBObject):
     __tablename__ = 'daily_summary'
     table_version = 1
 
@@ -294,7 +298,7 @@ class DailySummary(GarminDB.Base, DBObject):
 
     @hybrid_property
     def intensity_time(self):
-        return Conversions.add_time(self.moderate_activity_time, self.vigorous_activity_time, 2)
+        return Fit.conversions.add_time(self.moderate_activity_time, self.vigorous_activity_time, 2)
 
     @intensity_time.expression
     def intensity_time(cls):
@@ -315,11 +319,19 @@ class DailySummary(GarminDB.Base, DBObject):
             'intensity_time'            : cls._get_time_col_sum(session, cls.intensity_time, start_ts, end_ts),
             'moderate_activity_time'    : cls._get_time_col_sum(session, cls.moderate_activity_time, start_ts, end_ts),
             'vigorous_activity_time'    : cls._get_time_col_sum(session, cls.vigorous_activity_time, start_ts, end_ts),
-            'intensity_time_goal'       : cls._get_time_col_sum(session, cls.intensity_time_goal, start_ts, end_ts),
+            'intensity_time_goal'       : cls._get_time_col_avg(session, cls.intensity_time_goal, start_ts, end_ts),
             'calories_avg'              : cls._get_col_avg(session, cls.calories_total, start_ts, end_ts),
             'calories_bmr_avg'          : cls._get_col_avg(session, cls.calories_bmr, start_ts, end_ts),
             'calories_active_avg'       : cls._get_col_avg(session, cls.calories_active, start_ts, end_ts),
         }
+
+    @classmethod
+    def get_daily_stats(cls, session, day_ts):
+        stats = cls.get_stats(session, day_ts, day_ts + datetime.timedelta(1))
+        # intensity_time_goal is a weekly goal, so the daily value is 1/7 of the weekly goal
+        stats['intensity_time_goal'] = cls.time_from_secs(cls.secs_from_time(stats['intensity_time_goal']) / 7)
+        stats['day'] = day_ts
+        return stats
 
     @classmethod
     def get_monthly_stats(cls, session, first_day_ts, last_day_ts):
@@ -329,12 +341,12 @@ class DailySummary(GarminDB.Base, DBObject):
         second_week_end = first_day_ts + datetime.timedelta(14)
         third_week_end = first_day_ts + datetime.timedelta(21)
         fourth_week_end = first_day_ts + datetime.timedelta(28)
-        stats['intensity_time_goal'] = Conversions.add_time(
-            Conversions.add_time(
+        stats['intensity_time_goal'] = Fit.conversions.add_time(
+            Fit.conversions.add_time(
                 cls._get_time_col_avg(session, cls.intensity_time_goal, first_day_ts, first_week_end),
                 cls._get_time_col_avg(session, cls.intensity_time_goal, first_week_end, second_week_end)
             ),
-            Conversions.add_time(
+            Fit.conversions.add_time(
                 cls._get_time_col_avg(session, cls.intensity_time_goal, second_week_end, third_week_end),
                 cls._get_time_col_avg(session, cls.intensity_time_goal, third_week_end, fourth_week_end)
             )

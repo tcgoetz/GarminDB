@@ -1,8 +1,9 @@
-#!/usr/bin/env python
+"""Objects for analyzing FitBit data from FitBit CSV exported data."""
 
-#
-# copyright Tom Goetz
-#
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
+
 
 import sys
 import logging
@@ -11,7 +12,7 @@ import calendar
 
 import HealthDB
 import FitBitDB
-import Fit.Conversions
+import Fit.conversions as conversions
 
 
 logging.basicConfig(filename='analyze_fitbit.log', filemode='w', level=logging.INFO)
@@ -20,6 +21,7 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 class Analyze(object):
+    """Object for analyzing FitBit data from FitBit CSV exported data."""
 
     def __init__(self, db_params_dict):
         self.fitbitdb = FitBitDB.FitBitDB(db_params_dict)
@@ -51,8 +53,8 @@ class Analyze(object):
             day = int(days[index])
             next_day = int(days[index + 1])
             if next_day != day + 1:
-                day_str = str(Fit.Conversions.day_of_the_year_to_datetime(year_int, day))
-                next_day_str = str(Fit.Conversions.day_of_the_year_to_datetime(year_int, next_day))
+                day_str = str(conversions.day_of_the_year_to_datetime(year_int, day))
+                next_day_str = str(conversions.day_of_the_year_to_datetime(year_int, next_day))
                 print "Days gap between %d (%s) and %d (%s)" % (day, day_str, next_day, next_day_str)
 
     def summary(self):

@@ -1,19 +1,23 @@
-#
-# copyright Tom Goetz
-#
+"""Objects for implementing key-value database objects."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
+
 
 import traceback
 import datetime
 import logging
 from sqlalchemy import Column, String, DateTime
 
-from DB import DBObject
+import db
 
 
 logger = logging.getLogger(__name__)
 
 
-class KeyValueObject(DBObject):
+class KeyValueObject(db.DBObject):
+    """Base class for implementing key-value databse objects."""
 
     timestamp = Column(DateTime)
     key = Column(String, primary_key=True)

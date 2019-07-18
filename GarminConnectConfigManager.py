@@ -1,6 +1,8 @@
-#
-# copyright Tom Goetz
-#
+"""Class that manages Garmin Connect downloads."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import sys
 import json
@@ -10,6 +12,8 @@ import dateutil.parser
 
 
 class GarminConnectConfigManager(object):
+    """Class that manages Garmin Connect downloads."""
+
     config_filename = 'GarminConnectConfig.json'
 
     def __init__(self):

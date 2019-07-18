@@ -11,10 +11,9 @@ import datetime
 import matplotlib.pyplot as plt
 import enum
 
-from version import version
 import HealthDB
 import GarminDBConfigManager
-from Fit import Conversions
+import version.version as version
 
 
 logging.basicConfig(filename='graphs.log', filemode='w', level=logging.INFO)
@@ -63,8 +62,13 @@ def graph_mulitple_single_axes(time, data_list, stat_name, ylabel, save):
     plt.show()
 
 
-def graph_mulitple(time, data_list, stat_name, ylabel_list, save):
-    title = '%s Over Time' % stat_name
+def graph_mulitple(time, data_list, stat_name, period, ylabel_list, save):
+    units = {
+        'days'      : 'Day',
+        'weeks'     : 'Week',
+        'months'    : 'Month'
+    }
+    title = '%s per %s' % (stat_name, units[period])
     figure = plt.figure()
     for index, data in enumerate(data_list):
         color = Colors.from_integer(index).name
@@ -86,25 +90,25 @@ def graph_mulitple(time, data_list, stat_name, ylabel_list, save):
     plt.show()
 
 
-def graph_steps(time, data, save):
+def graph_steps(time, data, period, save):
     steps = [entry.steps for entry in data]
     steps_goal_percent = [entry.steps_goal_percent for entry in data]
-    graph_mulitple(time, [steps, steps_goal_percent], 'Steps', ['Steps', 'Step Goal Percent'], save)
+    graph_mulitple(time, [steps, steps_goal_percent], 'Steps', period, ['Steps', 'Step Goal Percent'], save)
 
 
-def graph_hr(time, data, save):
+def graph_hr(time, data, period, save):
     rhr = [entry.rhr_avg for entry in data]
     inactive_hr = [entry.inactive_hr_avg for entry in data]
-    graph_mulitple(time, [rhr, inactive_hr], 'Heart Rate', ['RHR', 'Inactive hr'], save)
+    graph_mulitple(time, [rhr, inactive_hr], 'Heart Rate', period, ['RHR', 'Inactive hr'], save)
 
 
-def graph_itime(time, data, save):
-    itime = [Conversions.time_to_secs(entry.intensity_time) for entry in data]
+def graph_itime(time, data, period, save):
+    itime = [entry.intensity_time_mins for entry in data]
     itime_goal_percent = [entry.intensity_time_goal_percent for entry in data]
-    graph_mulitple(time, [itime, itime_goal_percent], 'Intensity Time', ['Intensity Time', 'Intensity Time Goal Percent'], save)
+    graph_mulitple(time, [itime, itime_goal_percent], 'Intensity Minutes', period, ['Intensity Minutes', 'Intensity Minutes Goal Percent'], save)
 
 
-def graph_weight(time, data, save):
+def graph_weight(time, data, period, save):
     weight = [entry.weight_avg for entry in data]
     graph_mulitple_single_axes(time, [weight], 'Weight', 'weight', save)
 
@@ -159,7 +163,7 @@ def main(argv):
             print_version(sys.argv[0])
         elif opt in ("-a", "--all"):
             logger.info("All: " + arg)
-            rhr = GarminDBConfigManager.is_stat_enabled('rhr')
+            hr = GarminDBConfigManager.is_stat_enabled('rhr')
         elif opt in ("-l", "--latest"):
             days = int(arg)
             end_ts = datetime.datetime.now()
@@ -197,16 +201,16 @@ def main(argv):
         time = [entry.first_day for entry in data]
 
     if hr:
-        graph_hr(time, data, save)
+        graph_hr(time, data, period, save)
 
     if itime:
-        graph_itime(time, data, save)
+        graph_itime(time, data, period, save)
 
     if steps:
-        graph_steps(time, data, save)
+        graph_steps(time, data, period, save)
 
     if weight:
-        graph_weight(time, data, save)
+        graph_weight(time, data, period, save)
 
 
 if __name__ == "__main__":

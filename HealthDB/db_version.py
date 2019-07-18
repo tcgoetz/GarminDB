@@ -1,11 +1,16 @@
-#
-# copyright Tom Goetz
-#
+"""Objects for implementing databse versioning."""
 
-from HealthDB import KeyValueObject
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 
-class DbVersionObject(KeyValueObject):
+import keyvalue
+
+
+class DbVersionObject(keyvalue.KeyValueObject):
+    """Objects for managing databse versioning."""
+
     __tablename__ = 'version'
 
     def version_check_key(self, db, version_key, version_number):

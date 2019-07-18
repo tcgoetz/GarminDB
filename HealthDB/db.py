@@ -1,6 +1,8 @@
-#
-# copyright Tom Goetz
-#
+"""Objects for implementing DBs and DB objects."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import os
 import logging
@@ -14,13 +16,14 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm.attributes import set_attribute
 from sqlalchemy.ext.hybrid import hybrid_method
 
-from Utilities import filter_dict_by_list, dict_filter_none_values
+from utilities import filter_dict_by_list, dict_filter_none_values
 
 
 logger = logging.getLogger(__name__)
 
 
 class DB(object):
+    """Object representing a database."""
 
     def __init__(self, db_params_dict, debug=False):
         logger.info("%s: %r debug: %s ", self.__class__.__name__, db_params_dict, debug)
@@ -76,6 +79,7 @@ class DB(object):
 
 
 class DBObject(object):
+    """Base class for implementing database objects."""
 
     # defaults, overridden by subclasses
     time_col_name = None

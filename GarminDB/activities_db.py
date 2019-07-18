@@ -1,28 +1,31 @@
-#
-# copyright Tom Goetz
-#
+"""Objects representing a database and databse objects for storing activities data."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import logging
 import datetime
 from sqlalchemy import Column, String, Float, Integer, DateTime, Time, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship
-# from sqlalchemy.orm.attributes import
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from HealthDB import DB, DbVersionObject, DBObject, Location
-from ExtraData import ExtraData
+import HealthDB
+from extra_data import ExtraData
 
 
 logger = logging.getLogger(__name__)
 
 
-class ActivitiesDB(DB):
+class ActivitiesDB(HealthDB.DB):
+    """Object representing a database for storing activities data."""
+
     Base = declarative_base()
     db_name = 'garmin_activities'
     db_version = 12
 
-    class DbVersion(Base, DbVersionObject):
+    class DbVersion(Base, HealthDB.DbVersionObject):
         pass
 
     def __init__(self, db_params_dict, debug=False):
@@ -43,7 +46,9 @@ class ActivitiesDB(DB):
         EllipticalActivities.create_view(self)
 
 
-class ActivitiesLocationSegment(DBObject):
+class ActivitiesLocationSegment(HealthDB.DBObject):
+    """Object representing a databse object for storing location segnment from an activity."""
+
     # degrees
     start_lat = Column(Float)
     start_long = Column(Float)
@@ -52,7 +57,7 @@ class ActivitiesLocationSegment(DBObject):
 
     @hybrid_property
     def start_loc(self):
-        return Location(self.start_lat, self.start_long)
+        return HealthDB.Location(self.start_lat, self.start_long)
 
     @start_loc.setter
     def start_loc(self, start_location):
@@ -61,7 +66,7 @@ class ActivitiesLocationSegment(DBObject):
 
     @hybrid_property
     def stop_loc(self):
-        return Location(self.stop_lat, self.stop_long)
+        return HealthDB.Location(self.stop_lat, self.stop_long)
 
     @stop_loc.setter
     def stop_loc(self, stop_location):
@@ -169,7 +174,7 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
 
     @hybrid_property
     def start_loc(self):
-        return Location(self.start_lat, self.start_long)
+        return HealthDB.Location(self.start_lat, self.start_long)
 
     @start_loc.setter
     def start_loc(self, start_location):
@@ -177,7 +182,7 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
         self.start_long = start_location.long_deg
 
 
-class ActivityRecords(ActivitiesDB.Base, DBObject):
+class ActivityRecords(ActivitiesDB.Base, HealthDB.DBObject):
     __tablename__ = 'activity_records'
     table_version = 2
 
@@ -206,7 +211,7 @@ class ActivityRecords(ActivitiesDB.Base, DBObject):
 
     @hybrid_property
     def position(self):
-        return Location(self.position_lat, self.position_long)
+        return HealthDB.Location(self.position_lat, self.position_long)
 
     @position.setter
     def position(self, location):
@@ -214,7 +219,7 @@ class ActivityRecords(ActivitiesDB.Base, DBObject):
         self.position_long = location.long_deg
 
 
-class SportActivities(DBObject):
+class SportActivities(HealthDB.DBObject):
 
     match_col_names = ['activity_id']
 
@@ -300,8 +305,8 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
                 cls.vo2_max.label('vo2_max'),
                 Activities.training_effect.label('training_effect'),
                 Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
-                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
-                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc',
+                HealthDB.Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
+                HealthDB.Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc',
             ]
         )
 
@@ -339,8 +344,8 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
                 cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
                 Activities.training_effect.label('training_effect'),
                 Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
-                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
-                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc'
+                HealthDB.Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
+                HealthDB.Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc'
             ]
         )
 
@@ -377,8 +382,8 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
                 cls.vo2_max.label('vo2_max'),
                 Activities.training_effect.label('training_effect'),
                 Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
-                Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
-                Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc'
+                HealthDB.Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
+                HealthDB.Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc'
             ]
         )
 

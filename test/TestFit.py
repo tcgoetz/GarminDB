@@ -28,7 +28,7 @@ class TestFit(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.measurement_system = Fit.FieldEnums.DisplayMeasure.statute
+        cls.measurement_system = Fit.fieldenums.DisplayMeasure.statute
         cls.file_path = 'test_files/fit'
 
     def check_message_types(self, fit_file, dump_message=False):
@@ -82,14 +82,14 @@ class TestFit(unittest.TestCase):
     def check_file_id(self, fit_file, file_type):
         messages = fit_file[Fit.MessageType.file_id]
         for message in messages:
-            self.check_value(message, 'manufacturer', Fit.FieldEnums.Manufacturer.Garmin)
+            self.check_value(message, 'manufacturer', Fit.fieldenums.Manufacturer.Garmin)
             self.check_value(message, 'type', file_type)
 
     def check_monitoring_file(self, filename):
-        fit_file = Fit.File(filename, self.measurement_system)
+        fit_file = Fit.file.File(filename, self.measurement_system)
         self.check_message_types(fit_file)
         logger.info(filename + ' message types: %s', fit_file.message_types())
-        self.check_file_id(fit_file, Fit.FieldEnums.FileType.monitoring_b)
+        self.check_file_id(fit_file, Fit.fieldenums.FileType.monitoring_b)
         messages = fit_file[Fit.MessageType.monitoring]
         for message in messages:
             self.check_message_fields(message.type(), message)
@@ -99,7 +99,7 @@ class TestFit(unittest.TestCase):
 
     def test_parse_monitoring(self):
         monitoring_path = self.file_path + '/monitoring'
-        file_names = FileProcessor.dir_to_files(monitoring_path, Fit.File.name_regex, False)
+        file_names = FileProcessor.dir_to_files(monitoring_path, Fit.file.name_regex, False)
         for file_name in file_names:
             self.check_monitoring_file(file_name)
 
@@ -112,10 +112,10 @@ class TestFit(unittest.TestCase):
             self.check_value_range(message, 'speed', 0, 25)
 
     def check_activity_file(self, filename):
-        fit_file = Fit.File(filename, self.measurement_system)
+        fit_file = Fit.file.File(filename, self.measurement_system)
         logger.info(filename + ' message types: %s', fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
-        self.check_file_id(fit_file, Fit.FieldEnums.FileType.activity)
+        self.check_file_id(fit_file, Fit.fieldenums.FileType.activity)
         for message in fit_file[Fit.MessageType.record]:
             self.check_lap_or_record(message)
         for message in fit_file[Fit.MessageType.lap]:
@@ -125,32 +125,32 @@ class TestFit(unittest.TestCase):
 
     def test_parse_activity(self):
         activity_path = self.file_path + '/activity'
-        file_names = FileProcessor.dir_to_files(activity_path, Fit.File.name_regex, False)
+        file_names = FileProcessor.dir_to_files(activity_path, Fit.file.name_regex, False)
         for file_name in file_names:
             self.check_activity_file(file_name)
 
     def check_sleep_file(self, filename):
-        fit_file = Fit.File(filename, self.measurement_system)
+        fit_file = Fit.file.File(filename, self.measurement_system)
         logger.info(filename + ' message types: %s', fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
-        self.check_file_id(fit_file, Fit.FieldEnums.FileType.sleep)
+        self.check_file_id(fit_file, Fit.fieldenums.FileType.sleep)
 
     def test_parse_sleep(self):
         activity_path = self.file_path + '/sleep'
-        file_names = FileProcessor.dir_to_files(activity_path, Fit.File.name_regex, False)
+        file_names = FileProcessor.dir_to_files(activity_path, Fit.file.name_regex, False)
         for file_name in file_names:
             self.check_sleep_file(file_name)
 
     def check_unknown_file(self, filename):
         logger.info('Parsing ' + filename)
-        fit_file = Fit.File(filename, self.measurement_system)
+        fit_file = Fit.file.File(filename, self.measurement_system)
         logger.info(filename + ' message types: %s', fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
 
     def test_parse_unknown(self):
         # root_logger.setLevel(logging.DEBUG)
         activity_path = self.file_path + '/unknown'
-        file_names = FileProcessor.dir_to_files(activity_path, Fit.File.name_regex, False)
+        file_names = FileProcessor.dir_to_files(activity_path, Fit.file.name_regex, False)
         for file_name in file_names:
             self.check_unknown_file(file_name)
 

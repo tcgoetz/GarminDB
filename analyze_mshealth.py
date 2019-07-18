@@ -1,17 +1,18 @@
-#!/usr/bin/env python
+"""Objects for analyzing MS Health data exports."""
 
-#
-# copyright Tom Goetz
-#
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
+
 
 import sys
 import logging
 import datetime
 import calendar
 
+import Fit.conversions as conversions
 import HealthDB
 import MSHealthDB
-import Fit.Conversions
 
 
 logger = logging.getLogger(__file__)
@@ -57,8 +58,8 @@ class Analyze(object):
             day = int(days[index])
             next_day = int(days[index + 1])
             if next_day != day + 1:
-                day_str = str(Fit.Conversions.day_of_the_year_to_datetime(year_int, day))
-                next_day_str = str(Fit.Conversions.day_of_the_year_to_datetime(year_int, next_day))
+                day_str = str(conversions.day_of_the_year_to_datetime(year_int, day))
+                next_day_str = str(conversions.day_of_the_year_to_datetime(year_int, next_day))
                 stat_logger.info("Days gap between %d (%s) and %d (%s)", day, day_str, next_day, next_day_str)
 
     def summary(self):

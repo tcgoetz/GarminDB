@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 
-#
-# copyright Tom Goetz
-#
+"""
+A script that imports and analyzes Garmin health device data into a database.
+
+The data is either copied from a USB mounted Garmin device or downloaded from Garmin Connect.
+"""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import logging
 import sys

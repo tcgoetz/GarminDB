@@ -1,23 +1,25 @@
-#
-# copyright Tom Goetz
-#
+"""Objects representing a database and database objects for storing health summary data from a Garmin device."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import logging
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Date, DateTime
 
-from HealthDB import DB, DbVersionObject, DBObject, KeyValueObject, SummaryBase
+import HealthDB
 
 
 logger = logging.getLogger(__name__)
 
 
-class GarminSummaryDB(DB):
+class GarminSummaryDB(HealthDB.DB):
     Base = declarative_base()
     db_name = 'garmin_summary'
     db_version = 7
 
-    class DbVersion(Base, DbVersionObject):
+    class DbVersion(Base, HealthDB.DbVersionObject):
         pass
 
     def __init__(self, db_params_dict, debug=False):
@@ -37,35 +39,35 @@ class GarminSummaryDB(DB):
         DaysSummary.create_days_view(self)
 
 
-class Summary(GarminSummaryDB.Base, KeyValueObject):
+class Summary(GarminSummaryDB.Base, HealthDB.KeyValueObject):
     __tablename__ = 'summary'
     table_version = 1
 
 
-class MonthsSummary(GarminSummaryDB.Base, SummaryBase):
+class MonthsSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     __tablename__ = 'months_summary'
     table_version = 1
-    view_version = SummaryBase.view_version
+    view_version = HealthDB.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
 
     time_col_name = 'first_day'
 
 
-class WeeksSummary(GarminSummaryDB.Base, SummaryBase):
+class WeeksSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     __tablename__ = 'weeks_summary'
     table_version = 1
-    view_version = SummaryBase.view_version
+    view_version = HealthDB.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
 
     time_col_name = 'first_day'
 
 
-class DaysSummary(GarminSummaryDB.Base, SummaryBase):
+class DaysSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     __tablename__ = 'days_summary'
     table_version = 1
-    view_version = SummaryBase.view_version
+    view_version = HealthDB.SummaryBase.view_version
 
     day = Column(Date, primary_key=True)
 
@@ -75,7 +77,7 @@ class DaysSummary(GarminSummaryDB.Base, SummaryBase):
 #
 # Monitoring heart rate values that fall within a intensity period.
 #
-class IntensityHR(GarminSummaryDB.Base, DBObject):
+class IntensityHR(GarminSummaryDB.Base, HealthDB.DBObject):
     __tablename__ = 'intensity_hr'
     table_version = 1
 

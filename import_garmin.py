@@ -14,10 +14,10 @@ import dateutil.parser
 import progressbar
 
 import Fit
+import GarminDB
 from JsonFileProcessor import JsonFileProcessor
 from FileProcessor import FileProcessor
 from FitFileProcessor import FitFileProcessor
-import GarminDB
 
 
 logger = logging.getLogger(__file__)
@@ -53,7 +53,7 @@ class GarminMonitoringFitData():
         self.measurement_system = measurement_system
         self.debug = debug
         if input_dir:
-            self.file_names = FileProcessor.dir_to_files(input_dir, Fit.File.name_regex, latest, True)
+            self.file_names = FileProcessor.dir_to_files(input_dir, Fit.file.name_regex, latest, True)
 
     def file_count(self):
         return len(self.file_names)
@@ -62,7 +62,7 @@ class GarminMonitoringFitData():
         fp = FitFileProcessor(db_params_dict, self.debug)
         for file_name in progressbar.progressbar(self.file_names):
             try:
-                fp.write_file(Fit.File(file_name, self.measurement_system))
+                fp.write_file(Fit.file.File(file_name, self.measurement_system))
             except Fit.FitFileError as e:
                 logger.error("Failed to parse %s: %s", file_name, e)
 
@@ -90,13 +90,13 @@ class GarminSleepData(JsonFileProcessor):
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {
             'calendarDate'              : dateutil.parser.parse,
-            'sleepTimeSeconds'          : Fit.Conversions.secs_to_dt_time,
-            'sleepStartTimestampGMT'    : Fit.Conversions.epoch_ms_to_dt,
-            'sleepEndTimestampGMT'      : Fit.Conversions.epoch_ms_to_dt,
-            'deepSleepSeconds'          : Fit.Conversions.secs_to_dt_time,
-            'lightSleepSeconds'         : Fit.Conversions.secs_to_dt_time,
-            'remSleepSeconds'           : Fit.Conversions.secs_to_dt_time,
-            'awakeSleepSeconds'         : Fit.Conversions.secs_to_dt_time,
+            'sleepTimeSeconds'          : Fit.conversions.secs_to_dt_time,
+            'sleepStartTimestampGMT'    : Fit.conversions.epoch_ms_to_dt,
+            'sleepEndTimestampGMT'      : Fit.conversions.epoch_ms_to_dt,
+            'deepSleepSeconds'          : Fit.conversions.secs_to_dt_time,
+            'lightSleepSeconds'         : Fit.conversions.secs_to_dt_time,
+            'remSleepSeconds'           : Fit.conversions.secs_to_dt_time,
+            'awakeSleepSeconds'         : Fit.conversions.secs_to_dt_time,
             'startGMT'                  : dateutil.parser.parse,
             'endGMT'                    : dateutil.parser.parse
         }
@@ -173,7 +173,7 @@ class GarminProfile(JsonFileProcessor):
         self.conversions = {'calendarDate' : dateutil.parser.parse}
 
     def process_json(self, json_data):
-        measurement_system = Fit.FieldEnums.DisplayMeasure.from_string(json_data['measurementSystem'])
+        measurement_system = Fit.fieldenums.DisplayMeasure.from_string(json_data['measurementSystem'])
         attributes = {
             'name'                  : string.replace(json_data['displayName'], '_', ' '),
             'time_zone'             : json_data['timeZone'],
@@ -195,9 +195,9 @@ class GarminSummaryData(JsonFileProcessor):
         self.garmin_db = GarminDB.GarminDB(db_params_dict)
         self.conversions = {
             'calendarDate'              : dateutil.parser.parse,
-            'moderateIntensityMinutes'  : Fit.Conversions.min_to_dt_time,
-            'vigorousIntensityMinutes'  : Fit.Conversions.min_to_dt_time,
-            'intensityMinutesGoal'      : Fit.Conversions.min_to_dt_time,
+            'moderateIntensityMinutes'  : Fit.conversions.min_to_dt_time,
+            'vigorousIntensityMinutes'  : Fit.conversions.min_to_dt_time,
+            'intensityMinutesGoal'      : Fit.conversions.min_to_dt_time,
         }
 
     def process_json(self, json_data):

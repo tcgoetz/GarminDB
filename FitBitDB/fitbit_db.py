@@ -1,20 +1,22 @@
-#
-# copyright Tom Goetz
-#
+"""Objects representing a database and database objects for storing health data from a FitBit device."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import logging
 import datetime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Date, Float, Time
 
-from HealthDB import DB, DBObject, KeyValueObject
-from Fit import Conversions
+import Fit
+import HealthDB
 
 
 logger = logging.getLogger(__name__)
 
 
-class FitBitDB(DB):
+class FitBitDB(HealthDB.DB):
     Base = declarative_base()
     db_name = 'fitbit'
 
@@ -23,11 +25,11 @@ class FitBitDB(DB):
         FitBitDB.Base.metadata.create_all(self.engine)
 
 
-class Attributes(FitBitDB.Base, KeyValueObject):
+class Attributes(FitBitDB.Base, HealthDB.KeyValueObject):
     __tablename__ = 'attributes'
 
 
-class DaysSummary(FitBitDB.Base, DBObject):
+class DaysSummary(FitBitDB.Base, HealthDB.DBObject):
     __tablename__ = 'days_summary'
 
     day = Column(Date, primary_key=True)
@@ -59,13 +61,13 @@ class DaysSummary(FitBitDB.Base, DBObject):
 
     @classmethod
     def get_activity_mins_stats(cls, db, func, start_ts, end_ts):
-        moderate_activity_time = Conversions.min_to_dt_time(func(db, cls.fairly_active_mins, start_ts, end_ts))
-        vigorous_activity_time = Conversions.min_to_dt_time(func(db, cls.very_active_mins, start_ts, end_ts))
+        moderate_activity_time = Fit.conversions.min_to_dt_time(func(db, cls.fairly_active_mins, start_ts, end_ts))
+        vigorous_activity_time = Fit.conversions.min_to_dt_time(func(db, cls.very_active_mins, start_ts, end_ts))
         intensity_time = datetime.time.min
         if moderate_activity_time:
-            intensity_time = Conversions.add_time(intensity_time, moderate_activity_time)
+            intensity_time = Fit.conversions.add_time(intensity_time, moderate_activity_time)
         if vigorous_activity_time:
-            intensity_time = Conversions.add_time(intensity_time, vigorous_activity_time, 2)
+            intensity_time = Fit.conversions.add_time(intensity_time, vigorous_activity_time, 2)
         stats = {
             'intensity_time'            : intensity_time,
             'moderate_activity_time'    : moderate_activity_time,
@@ -93,9 +95,9 @@ class DaysSummary(FitBitDB.Base, DBObject):
     @classmethod
     def get_sleep_stats(cls, db, start_ts, end_ts):
         return {
-            'sleep_avg' : Conversions.min_to_dt_time(cls.get_col_avg(db, cls.asleep_mins, start_ts, end_ts, True)),
-            'sleep_min' : Conversions.min_to_dt_time(cls.get_col_min(db, cls.asleep_mins, start_ts, end_ts, True)),
-            'sleep_max' : Conversions.min_to_dt_time(cls.get_col_max(db, cls.asleep_mins, start_ts, end_ts)),
+            'sleep_avg' : Fit.conversions.min_to_dt_time(cls.get_col_avg(db, cls.asleep_mins, start_ts, end_ts, True)),
+            'sleep_min' : Fit.conversions.min_to_dt_time(cls.get_col_min(db, cls.asleep_mins, start_ts, end_ts, True)),
+            'sleep_max' : Fit.conversions.min_to_dt_time(cls.get_col_max(db, cls.asleep_mins, start_ts, end_ts)),
         }
 
     @classmethod

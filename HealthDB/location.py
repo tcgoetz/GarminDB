@@ -1,9 +1,13 @@
-#
-# copyright Tom Goetz
-#
+"""Objects for implementing location objects."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 
 class Location(object):
+    """Object representing a geographic location."""
+
     def __init__(self, lat_deg, long_deg):
         self.lat_deg = lat_deg
         self.long_deg = long_deg

@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-#
-# copyright Tom Goetz
-#
+"""A script for importing CSV formatted FitBit export data."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import sys
 import logging
@@ -17,7 +19,8 @@ logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-class FitBitData():
+class FitBitData(object):
+    """A object for importing CSV formatted FitBit export data."""
 
     cols_map = {
         'sleep-minutesAwake': ('awake_mins', CsvImporter.map_integer),

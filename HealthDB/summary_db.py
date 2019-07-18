@@ -1,26 +1,30 @@
-#
-# copyright Tom Goetz
-#
+"""Objects representing a database and database objects summarizing health data."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import logging
 from sqlalchemy import Column, Date
 from sqlalchemy.ext.declarative import declarative_base
 
-from DB import DB
-from SummaryBase import SummaryBase
-from DbVersionObject import DbVersionObject
-from KeyValueObject import KeyValueObject
+import db
+import summary_base as sb
+import db_version as dbv
+import keyvalue
 
 
 logger = logging.getLogger(__name__)
 
 
-class SummaryDB(DB):
+class SummaryDB(db.DB):
+    """Objects representing a database summarizing health data."""
+
     Base = declarative_base()
     db_name = 'summary'
     db_version = 6
 
-    class DbVersion(Base, DbVersionObject):
+    class DbVersion(Base, dbv.DbVersionObject):
         pass
 
     def __init__(self, db_params_dict, debug=False):
@@ -40,33 +44,41 @@ class SummaryDB(DB):
         DaysSummary.create_days_view(self)
 
 
-class Summary(SummaryDB.Base, KeyValueObject):
+class Summary(SummaryDB.Base, keyvalue.KeyValueObject):
+    """Object representing health data statistics."""
+
     __tablename__ = 'summary'
     table_version = 1
 
 
-class MonthsSummary(SummaryDB.Base, SummaryBase):
+class MonthsSummary(SummaryDB.Base, sb.SummaryBase):
+    """Object representing summarized monthly health data."""
+
     __tablename__ = 'months_summary'
     table_version = 1
-    view_version = SummaryBase.view_version
+    view_version = sb.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
     time_col_name = 'first_day'
 
 
-class WeeksSummary(SummaryDB.Base, SummaryBase):
+class WeeksSummary(SummaryDB.Base, sb.SummaryBase):
+    """Object representing summarized weekly health data."""
+
     __tablename__ = 'weeks_summary'
     table_version = 1
-    view_version = SummaryBase.view_version
+    view_version = sb.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
     time_col_name = 'first_day'
 
 
-class DaysSummary(SummaryDB.Base, SummaryBase):
+class DaysSummary(SummaryDB.Base, sb.SummaryBase):
+    """Object representing summarized daily health data."""
+
     __tablename__ = 'days_summary'
     table_version = 1
-    view_version = SummaryBase.view_version
+    view_version = sb.SummaryBase.view_version
 
     day = Column(Date, primary_key=True)
     time_col_name = 'day'

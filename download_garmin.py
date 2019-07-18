@@ -1,6 +1,8 @@
-#
-# copyright Tom Goetz
-#
+"""Class for downloading health data from Garmin Connect."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import os
 import sys
@@ -14,9 +16,9 @@ import json
 import requests
 import progressbar
 
+import Fit.conversions as conversions
 from GarminConnectConfigManager import GarminConnectConfigManager
 import GarminDBConfigManager
-from Fit import Conversions
 from RestClient import RestClient
 
 
@@ -26,6 +28,7 @@ root_logger = logging.getLogger()
 
 
 class Download(object):
+    """Class for downloading health data from Garmin Connect."""
 
     garmin_connect_base_url = "https://connect.garmin.com"
     garmin_connect_enus_url = garmin_connect_base_url + "/en-US"
@@ -191,7 +194,7 @@ class Download(object):
         date_str = date.strftime('%Y-%m-%d')
         params = {
             'calendarDate' : date_str,
-            '_'         : str(Conversions.dt_to_epoch_ms(Conversions.date_to_dt(date)))
+            '_'         : str(conversions.dt_to_epoch_ms(conversions.date_to_dt(date)))
         }
         url = self.garmin_connect_daily_summary_url + self.display_name
         return self.rest_client.download_json_file(url, params, directory + '/daily_summary_' + date_str, overwite)
@@ -220,7 +223,7 @@ class Download(object):
         params = {
             'startDate' : date_str,
             'endDate'   : date_str,
-            '_'         : str(Conversions.dt_to_epoch_ms(Conversions.date_to_dt(day)))
+            '_'         : str(conversions.dt_to_epoch_ms(conversions.date_to_dt(day)))
         }
         return self.rest_client.download_json_file(self.garmin_connect_weight_url, params, directory + '/weight_' + date_str, overwite)
 
@@ -256,7 +259,7 @@ class Download(object):
         activities = self.get_activity_summaries(0, count)
         for activity in progressbar.progressbar(activities):
             activity_id_str = str(activity['activityId'])
-            activity_name_str = Conversions.printable(activity['activityName'])
+            activity_name_str = conversions.printable(activity['activityName'])
             root_logger.info("get_activities: %s (%s)" % (activity_name_str, activity_id_str))
             json_filename = directory + '/activity_' + activity_id_str + '.json'
             if not os.path.isfile(json_filename) or overwite:

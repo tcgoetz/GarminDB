@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-#
-# copyright Tom Goetz
-#
+"""A script for importing CSV formatted Microsoft Health export data."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import sys
 import re
@@ -18,7 +20,7 @@ logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-class MSHealthData():
+class MSHealthData(object):
 
     cols_map = {
         'Date': ('day', CsvImporter.map_ymd_date),
@@ -81,7 +83,7 @@ class MSHealthData():
             csvimporter.process_file(not self.metric)
 
 
-class MSVaultData():
+class MSVaultData(object):
 
     def __init__(self, input_file, input_dir, db_params_dict, metric, debug):
         self.metric = metric

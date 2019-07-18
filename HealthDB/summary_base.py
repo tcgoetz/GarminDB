@@ -1,16 +1,20 @@
-#
-# copyright Tom Goetz
-#
+"""Object for implementing summary databse objects."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import datetime
 from sqlalchemy import Column, Float, Time, Integer, func
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from Fit import Conversions
-from DB import DBObject
+import Fit.conversions as conversions
+import db
 
 
-class SummaryBase(DBObject):
+class SummaryBase(db.DBObject):
+    """Base class for implementing summary databse objects."""
+
     view_version = 6
 
     hr_avg = Column(Float)
@@ -49,9 +53,19 @@ class SummaryBase(DBObject):
     activities_distance = Column(Integer)
 
     @hybrid_property
+    def intensity_time_mins(self):
+        if self.intensity_time is not None:
+            return (conversions.time_to_secs(self.intensity_time) / 60)
+        return 0
+
+    @intensity_time_mins.expression
+    def intensity_time_mins(cls):
+        return (cls.secs_from_time(cls.intensity_time) / 60)
+
+    @hybrid_property
     def intensity_time_goal_percent(self):
         if self.intensity_time is not None and self.intensity_time_goal is not None:
-            return (Conversions.time_to_secs(self.intensity_time) * 100) / Conversions.time_to_secs(self.intensity_time_goal)
+            return (conversions.time_to_secs(self.intensity_time) * 100) / conversions.time_to_secs(self.intensity_time_goal)
         return 0.0
 
     @intensity_time_goal_percent.expression

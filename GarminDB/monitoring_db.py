@@ -1,6 +1,8 @@
-#
-# copyright Tom Goetz
-#
+"""Objects representing a database and database objects for storing health monitoring data from a Garmin device."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import logging
 import datetime
@@ -8,19 +10,19 @@ from sqlalchemy import Column, Integer, DateTime, Time, Float, Enum, FLOAT, Uniq
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from HealthDB import DB, DbVersionObject, DBObject
-from Fit import Conversions, FieldEnums
+import Fit
+import HealthDB
 
 
 logger = logging.getLogger(__name__)
 
 
-class MonitoringDB(DB):
+class MonitoringDB(HealthDB.DB):
     Base = declarative_base()
     db_name = 'garmin_monitoring'
     db_version = 5
 
-    class DbVersion(Base, DbVersionObject):
+    class DbVersion(Base, HealthDB.DbVersionObject):
         pass
 
     def __init__(self, db_params_dict, debug=False):
@@ -36,13 +38,13 @@ class MonitoringDB(DB):
                 table.delete_view(self)
 
 
-class MonitoringInfo(MonitoringDB.Base, DBObject):
+class MonitoringInfo(MonitoringDB.Base, HealthDB.DBObject):
     __tablename__ = 'monitoring_info'
     table_version = 1
 
     timestamp = Column(DateTime, primary_key=True)
     file_id = Column(Integer, nullable=False)
-    activity_type = Column(Enum(FieldEnums.ActivityType))
+    activity_type = Column(Enum(Fit.fieldenums.ActivityType))
     resting_metabolic_rate = Column(Integer)
     cycles_to_distance = Column(FLOAT)
     cycles_to_calories = Column(FLOAT)
@@ -61,7 +63,7 @@ class MonitoringInfo(MonitoringDB.Base, DBObject):
         return stats
 
 
-class MonitoringHeartRate(MonitoringDB.Base, DBObject):
+class MonitoringHeartRate(MonitoringDB.Base, HealthDB.DBObject):
     __tablename__ = 'monitoring_hr'
     table_version = 1
 
@@ -84,7 +86,7 @@ class MonitoringHeartRate(MonitoringDB.Base, DBObject):
         return cls.get_col_min(db, cls.heart_rate, start_ts, wake_ts, True)
 
 
-class MonitoringIntensity(MonitoringDB.Base, DBObject):
+class MonitoringIntensity(MonitoringDB.Base, HealthDB.DBObject):
     __tablename__ = 'monitoring_intensity'
     table_version = 1
 
@@ -100,7 +102,7 @@ class MonitoringIntensity(MonitoringDB.Base, DBObject):
 
     @hybrid_property
     def intensity_time(self):
-        return Conversions.add_time(self.moderate_activity_time, self.vigorous_activity_time, 2)
+        return Fit.conversions.add_time(self.moderate_activity_time, self.vigorous_activity_time, 2)
 
     @intensity_time.expression
     def intensity_time(cls):
@@ -115,7 +117,7 @@ class MonitoringIntensity(MonitoringDB.Base, DBObject):
         }
 
 
-class MonitoringClimb(MonitoringDB.Base, DBObject):
+class MonitoringClimb(MonitoringDB.Base, HealthDB.DBObject):
     __tablename__ = 'monitoring_climb'
     table_version = 1
 
@@ -140,7 +142,7 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
     def get_stats(cls, session, func, start_ts, end_ts, measurement_system):
         cum_ascent = func(session, cls.cum_ascent, start_ts, end_ts)
         if cum_ascent:
-            if measurement_system is FieldEnums.DisplayMeasure.metric:
+            if measurement_system is Fit.fieldenums.DisplayMeasure.metric:
                 floors = cum_ascent / cls.feet_to_floors
             else:
                 floors = cum_ascent / cls.meters_to_floors
@@ -167,13 +169,13 @@ class MonitoringClimb(MonitoringDB.Base, DBObject):
         return stats
 
 
-class Monitoring(MonitoringDB.Base, DBObject):
+class Monitoring(MonitoringDB.Base, HealthDB.DBObject):
     __tablename__ = 'monitoring'
     table_version = 1
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, nullable=False)
-    activity_type = Column(Enum(FieldEnums.ActivityType))
+    activity_type = Column(Enum(Fit.fieldenums.ActivityType))
     intensity = Column(Integer)
     duration = Column(Time, nullable=False, default=datetime.time.min)
     distance = Column(Float)
@@ -201,9 +203,9 @@ class Monitoring(MonitoringDB.Base, DBObject):
         return {
             'steps'                 : func(session, cls.steps, start_ts, end_ts),
             'calories_active_avg'   : (
-                cls.get_active_calories(session, FieldEnums.ActivityType.running, start_ts, end_ts) +
-                cls.get_active_calories(session, FieldEnums.ActivityType.cycling, start_ts, end_ts) +
-                cls.get_active_calories(session, FieldEnums.ActivityType.walking, start_ts, end_ts)
+                cls.get_active_calories(session, Fit.fieldenums.ActivityType.running, start_ts, end_ts) +
+                cls.get_active_calories(session, Fit.fieldenums.ActivityType.cycling, start_ts, end_ts) +
+                cls.get_active_calories(session, Fit.fieldenums.ActivityType.walking, start_ts, end_ts)
             )
         }
 

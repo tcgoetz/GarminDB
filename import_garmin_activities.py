@@ -1,8 +1,9 @@
-#!/usr/bin/env python
+"""Objects for importing Garmin activity data from Garmin Connect downloads and FIT files."""
 
-#
-# copyright Tom Goetz
-#
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
+
 
 import os
 import sys
@@ -25,16 +26,17 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 
-class GarminActivitiesFitData():
+class GarminActivitiesFitData(object):
+    """Class for importing Garmin activity data from FIT files."""
 
     def __init__(self, input_file, input_dir, latest, measurement_system, debug):
         logger.info("Processing activities FIT data")
         self.measurement_system = measurement_system
         self.debug = debug
         if input_file:
-            self.file_names = FileProcessor.match_file(input_file, Fit.File.name_regex)
+            self.file_names = FileProcessor.match_file(input_file, Fit.file.name_regex)
         if input_dir:
-            self.file_names = FileProcessor.dir_to_files(input_dir, Fit.File.name_regex, latest)
+            self.file_names = FileProcessor.dir_to_files(input_dir, Fit.file.name_regex, latest)
 
     def file_count(self):
         return len(self.file_names)
@@ -43,13 +45,14 @@ class GarminActivitiesFitData():
         fp = FitFileProcessor(db_params_dict, self.debug)
         for file_name in progressbar.progressbar(self.file_names):
             try:
-                fp.write_file(Fit.File(file_name, self.measurement_system))
+                fp.write_file(Fit.file.File(file_name, self.measurement_system))
             except Exception as e:
                 logger.error("Failed to parse %s: %s", file_name, e)
                 raise
 
 
-class GarminTcxData():
+class GarminTcxData(object):
+    """Class for importing Garmin activity data from TCX files."""
 
     tcx_filename_regex = r'.*\.tcx'
 
@@ -95,7 +98,7 @@ class GarminTcxData():
             'serial_number' : serial_number,
         }
         GarminDB.File._find_or_create(self.garmin_db_session, file)
-        distance = Fit.Distance.from_meters(tcx.distance)
+        distance = Fit.measurement.Distance.from_meters(tcx.distance)
         # ascent = Fit.Distance.from_meters(tcx.ascent)
         # descent = Fit.Distance.from_meters(tcx.descent)
         activity = {
@@ -132,6 +135,7 @@ class GarminTcxData():
 
 
 class GarminJsonSummaryData(JsonFileProcessor):
+    """Class for importing Garmin activity data from JSON formatted Garmin Connect summary downloads."""
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, measurement_system, debug):
         logger.info("Processing %s activities summary data from %s", 'latest' if latest else 'all', input_dir)
@@ -155,7 +159,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
             'avg_step_length'           : avg_step_length.meters_or_feet(self.measurement_system),
             'avg_gct_balance'           : self.get_field(activity_summary, 'avgGroundContactBalance', float),
             'avg_vertical_oscillation'  : avg_vertical_oscillation.meters_or_feet(self.measurement_system),
-            'avg_ground_contact_time'   : Fit.Conversions.ms_to_dt_time(self.get_field(activity_summary, 'avgGroundContactTime', float)),
+            'avg_ground_contact_time'   : Fit.conversions.ms_to_dt_time(self.get_field(activity_summary, 'avgGroundContactTime', float)),
             'vo2_max'                   : self.get_field(activity_summary, 'vO2MaxValue', float),
         }
         GarminDB.StepsActivities._create_or_update_not_none(self.garmin_act_db_session, run)
@@ -246,8 +250,8 @@ class GarminJsonSummaryData(JsonFileProcessor):
             'sport'                     : sport.name,
             'sub_sport'                 : sub_sport.name,
             'start_time'                : dateutil.parser.parse(self.get_field(json_data, 'startTimeLocal'), ignoretz=True),
-            'elapsed_time'              : Fit.Conversions.secs_to_dt_time(self.get_field(json_data, 'elapsedDuration', int)),
-            'moving_time'               : Fit.Conversions.secs_to_dt_time(self.get_field(json_data, 'movingDuration', int)),
+            'elapsed_time'              : Fit.conversions.secs_to_dt_time(self.get_field(json_data, 'elapsedDuration', int)),
+            'moving_time'               : Fit.conversions.secs_to_dt_time(self.get_field(json_data, 'movingDuration', int)),
             'start_lat'                 : self.get_field(json_data, 'startLatitude', float),
             'start_long'                : self.get_field(json_data, 'startLongitude', float),
             'stop_lat'                  : self.get_field(json_data, 'endLatitude', float),
@@ -286,6 +290,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
 
 
 class GarminJsonDetailsData(JsonFileProcessor):
+    """Class for importing Garmin activity data from JSON formatted Garmin Connect details downloads."""
 
     def __init__(self, db_params_dict, input_file, input_dir, latest, measurement_system, debug):
         logger.info("Processing activities detail data")
@@ -300,10 +305,10 @@ class GarminJsonDetailsData(JsonFileProcessor):
     def process_steps_activity(self, activity_id, json_data):
         summary_dto = json_data['summaryDTO']
         avg_moving_speed_mps = summary_dto.get('averageMovingSpeed')
-        avg_moving_speed = Fit.Conversions.mps_to_mph(avg_moving_speed_mps)
+        avg_moving_speed = Fit.conversions.mps_to_mph(avg_moving_speed_mps)
         run = {
             'activity_id'               : activity_id,
-            'avg_moving_pace'           : Fit.Conversions.speed_to_pace(avg_moving_speed),
+            'avg_moving_pace'           : Fit.conversions.speed_to_pace(avg_moving_speed),
         }
         root_logger.info("process_steps_activity for %d: %r", activity_id, run)
         GarminDB.StepsActivities._create_or_update_not_none(self.garmin_act_db_session, run)

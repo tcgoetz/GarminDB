@@ -1,6 +1,8 @@
-#
-# copyright Tom Goetz
-#
+"""Functions for deriving enums from other enums."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import enum
 
