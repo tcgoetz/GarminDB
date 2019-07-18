@@ -26,22 +26,30 @@ class DB(object):
     """Object representing a database."""
 
     def __init__(self, db_params_dict, debug=False):
+        """
+        Return an instance a databse access class.
+
+        Parameters:
+            db_params_dict (dict): config data for accessing the database
+            debug (Boolean): enable debug logging
+
+        """
         logger.info("%s: %r debug: %s ", self.__class__.__name__, db_params_dict, debug)
         if debug > 0:
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.INFO)
         self.db_params_dict = db_params_dict
-        url_func = getattr(self, self.db_params_dict['db_type'] + '_url')
+        url_func = getattr(self, '_%s_url' % self.db_params_dict['db_type'])
         self.engine = create_engine(url_func(self.db_params_dict), echo=(debug > 1))
         self.session_maker = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     @classmethod
-    def sqlite_url(cls, db_params_dict):
+    def _sqlite_url(cls, db_params_dict):
         return "sqlite:///" + db_params_dict['db_path'] + '/' + cls.db_name + '.db'
 
     @classmethod
-    def sqlite_delete(cls, db_params_dict):
+    def _sqlite_delete(cls, db_params_dict):
         filename = db_params_dict['db_path'] + '/' + cls.db_name + '.db'
         try:
             os.remove(filename)
@@ -49,14 +57,16 @@ class DB(object):
             logger.warning('%s not removed', filename)
 
     @classmethod
-    def mysql_url(cls, db_params_dict):
+    def _mysql_url(cls, db_params_dict):
         return "mysql+pymysql://%s:%s@%s/%s" % (db_params_dict['db_username'], db_params_dict['db_password'], db_params_dict['db_host'], cls.db_name)
 
     def session(self):
+        """Return a databse session."""
         return self.session_maker()
 
     @contextmanager
     def managed_session(self):
+        """Return a session with automatic commit, rollback, and cleanup."""
         session = self.session()
         try:
             yield session
@@ -69,7 +79,8 @@ class DB(object):
 
     @classmethod
     def delete_db(cls, db_params_dict):
-        delete_func = getattr(cls, db_params_dict['db_type'] + '_delete')
+        """Delete a databse."""
+        delete_func = getattr(cls, '_%s_delete' % db_params_dict['db_type'])
         delete_func(db_params_dict)
 
 
@@ -87,28 +98,31 @@ class DBObject(object):
 
     @classmethod
     def round_col_text(cls, col_name, alt_col_name=None, places=1, seperator=','):
+        """Return a SQL phrase for rounding an optionally aliasing a column."""
         if alt_col_name is None:
             alt_col_name = col_name
         return 'ROUND(%s, %d) AS %s%s ' % (col_name, places, alt_col_name, seperator)
 
     @classmethod
     def round_col(cls, col_name, alt_col_name=None, places=1):
-        if alt_col_name is None:
-            alt_col_name = col_name
-        return 'ROUND(%s, %d) AS %s ' % (col_name, places, alt_col_name)
+        """Return a SQL phrase for rounding an optionally aliasing a column."""
+        return cls.round_col_text(col_name, alt_col_name, places, seperator='')
 
     @declared_attr
     def col_count(cls):
+        """Return the number of columns in database object class."""
         if hasattr(cls, '__table__'):
             return len(cls.__table__.columns)
 
     @declared_attr
     def time_col(cls):
+        """Return the column that represents linear time for database object class."""
         if cls.time_col_name is not None:
             return synonym(cls.time_col_name)
 
     @declared_attr
     def match_cols(cls):
+        """Return a dict of the columns to match against when checking if a database object exists in the database in the form of {column name : column object}."""
         if cls.match_col_names is not None:
             return {col_name : synonym(col_name) for col_name in cls.match_col_names}
         cls.match_col_names = [cls.time_col_name]
@@ -116,31 +130,37 @@ class DBObject(object):
 
     @hybrid_method
     def during(self, start_ts, end_ts):
+        """Return True if the databse object's timestamp is between the given times."""
         return self.time_col >= start_ts and self.time_col < end_ts
 
     @during.expression
     def during(cls, start_ts, end_ts):
+        """Return True if the databse object's timestamp is between the given times."""
         return and_(cls.time_col >= start_ts, cls.time_col < end_ts)
 
     @hybrid_method
     def after(self, start_ts):
+        """Return True if the databse object's timestamp is after the given time."""
         if start_ts is not None:
             return self.time_col >= start_ts
 
     @after.expression
     def after(cls, start_ts):
+        """Return True if the databse object's timestamp is after the given time."""
         return cls.time_col >= start_ts
 
     @hybrid_method
     def before(self, end_ts):
+        """Return True if the databse object's timestamp is before the given time."""
         return self.time_col < end_ts
 
     @before.expression
     def before(cls, end_ts):
+        """Return True if the databse object's timestamp is before the given time."""
         return cls.time_col < end_ts
 
     @classmethod
-    def get_default_view_name(cls):
+    def _get_default_view_name(cls):
         return cls.__tablename__ + '_view'
 
     @classmethod
@@ -164,28 +184,28 @@ class DBObject(object):
         return self
 
     @classmethod
-    def _delete_view(cls, db, view_name):
+    def __delete_view(cls, db, view_name):
         with db.managed_session() as session:
             session.execute('DROP VIEW IF EXISTS ' + view_name)
 
     @classmethod
     def delete_view(cls, db, view_name=None):
-        cls._delete_view(db, view_name if view_name is not None else cls.get_default_view_name())
+        cls.__delete_view(db, view_name if view_name is not None else cls.get_default_view_name())
 
     @classmethod
-    def _create_view_if_not_exists(cls, session, view_name, query_str):
+    def __create_view_if_not_exists(cls, session, view_name, query_str):
         session.execute('CREATE VIEW IF NOT EXISTS ' + view_name + ' AS ' + query_str)
 
     @classmethod
     def create_view_if_doesnt_exist(cls, db, view_name, query_str):
         with db.managed_session() as session:
-            cls._create_view_if_not_exists(session, view_name, query_str)
+            cls.__create_view_if_not_exists(session, view_name, query_str)
 
     @classmethod
     def create_join_view(cls, db, view_name, selectable, join_table, order_by):
         with db.managed_session() as session:
             query = Query(selectable, session=session).join(join_table).order_by(order_by)
-            cls._create_view_if_not_exists(session, view_name, str(query))
+            cls.__create_view_if_not_exists(session, view_name, str(query))
 
     @classmethod
     def create_multi_join_view(cls, db, view_name, selectable, joins, order_by):
@@ -194,13 +214,13 @@ class DBObject(object):
             for (join_table, join_clause) in joins:
                 query = query.join(join_table, join_clause)
             query = query.order_by(order_by)
-            cls._create_view_if_not_exists(session, view_name, str(query))
+            cls.__create_view_if_not_exists(session, view_name, str(query))
 
     @classmethod
     def _create_view(cls, db, view_name, selectable, order_by):
         with db.managed_session() as session:
             query = Query(selectable, session=session).order_by(order_by)
-            cls._create_view_if_not_exists(session, view_name, str(query))
+            cls.__create_view_if_not_exists(session, view_name, str(query))
 
     @classmethod
     def intersection(cls, values_dict):

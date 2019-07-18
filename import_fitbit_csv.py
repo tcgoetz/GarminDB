@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """A script for importing CSV formatted FitBit export data."""
 
 __author__ = "Tom Goetz"
@@ -12,7 +10,7 @@ import progressbar
 
 from HealthDB import CsvImporter
 import FitBitDB
-import FileProcessor
+from file_processor import FileProcessor
 
 
 logger = logging.getLogger(__file__)
@@ -51,21 +49,24 @@ class FitBitData(object):
     }
 
     def __init__(self, input_file, input_dir, db_params_dict, metric, debug):
+        """Return a new instance of FitBitData given the location of the data files, paramters for accessing the database, and if the data should be stored in metric units."""
         self.metric = metric
         self.fitbitdb = FitBitDB.FitBitDB(db_params_dict, debug)
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, r'.*\.csv')
+            self.file_names = FileProcessor.match_file(input_file, r'.*\.csv')
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, r'.*\.csv')
+            self.file_names = FileProcessor.dir_to_files(input_dir, r'.*\.csv')
 
     def file_count(self):
+        """Return the number of files that will be propcessed."""
         return len(self.file_names)
 
-    def write_entry(self, db_entry):
+    def __write_entry(self, db_entry):
         FitBitDB.DaysSummary.find_or_create(self.fitbitdb, FitBitDB.DaysSummary.intersection(db_entry))
 
     def process_files(self):
+        """Import files into a database."""
         for file_name in progressbar.progressbar(self.file_names):
             logger.info("Processing file: " + file_name)
-            self.csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
+            self.csvimporter = CsvImporter(file_name, self.cols_map, self.__write_entry)
             self.csvimporter.process_file(not self.metric)

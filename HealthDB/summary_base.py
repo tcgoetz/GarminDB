@@ -54,50 +54,60 @@ class SummaryBase(db.DBObject):
 
     @hybrid_property
     def intensity_time_mins(self):
+        """Return intensity time as minutes."""
         if self.intensity_time is not None:
             return (conversions.time_to_secs(self.intensity_time) / 60)
         return 0
 
     @intensity_time_mins.expression
     def intensity_time_mins(cls):
+        """Return intensity time as minutes."""
         return (cls.secs_from_time(cls.intensity_time) / 60)
 
     @hybrid_property
     def intensity_time_goal_percent(self):
+        """Return the percentage of intensity time goal achieved."""
         if self.intensity_time is not None and self.intensity_time_goal is not None:
             return (conversions.time_to_secs(self.intensity_time) * 100) / conversions.time_to_secs(self.intensity_time_goal)
         return 0.0
 
     @intensity_time_goal_percent.expression
     def intensity_time_goal_percent(cls):
+        """Return the percentage of intensity time goal achieved."""
         return func.round((cls.secs_from_time(cls.intensity_time) * 100) / cls.secs_from_time(cls.intensity_time_goal))
 
     @hybrid_property
     def steps_goal_percent(self):
+        """Return the percentage of steps goal achieved."""
         if self.steps is not None and self.steps_goal is not None:
             return (self.steps * 100) / self.steps_goal
         return 0.0
 
     @steps_goal_percent.expression
     def steps_goal_percent(cls):
+        """Return the percentage of steps goal achieved."""
         return func.round((cls.steps * 100) / cls.steps_goal)
 
     @hybrid_property
     def floors_goal_percent(self):
+        """Return the percentage of floors goal achieved."""
         if self.floors is not None and self.floors_goal is not None:
             return (self.floors * 100) / self.floors_goal
         return 0.0
 
     @floors_goal_percent.expression
     def floors_goal_percent(cls):
+        """Return the percentage of floors goal achieved."""
         return func.round((cls.floors * 100) / cls.floors_goal)
 
     @classmethod
     def create_summary_view(cls, db, selectable):
-        cls._create_view(db, cls.get_default_view_name(), selectable, cls.time_col.desc())
+        """Create a view in the database from the passed in selectable."""
+        cls._create_view(db, cls._get_default_view_name(), selectable, cls.time_col.desc())
 
     @classmethod
     def create_months_view(cls, db):
+        """Create a monthly summary view in the database."""
         cls.create_summary_view(db,
             [
                 cls.time_col.label('first_day'),
@@ -128,6 +138,7 @@ class SummaryBase(db.DBObject):
 
     @classmethod
     def create_weeks_view(cls, db):
+        """Create a weekly summary view in the database."""
         cls.create_summary_view(db,
             [
                 cls.time_col.label('first_day'),
@@ -158,6 +169,7 @@ class SummaryBase(db.DBObject):
 
     @classmethod
     def create_days_view(cls, db):
+        """Create a daily summary view in the database."""
         cls.create_summary_view(db,
             [
                 cls.time_col.label('day'),

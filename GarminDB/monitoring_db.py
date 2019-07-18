@@ -44,7 +44,7 @@ class MonitoringInfo(MonitoringDB.Base, HealthDB.DBObject):
 
     timestamp = Column(DateTime, primary_key=True)
     file_id = Column(Integer, nullable=False)
-    activity_type = Column(Enum(Fit.fieldenums.ActivityType))
+    activity_type = Column(Enum(Fit.field_enums.ActivityType))
     resting_metabolic_rate = Column(Integer)
     cycles_to_distance = Column(FLOAT)
     cycles_to_calories = Column(FLOAT)
@@ -142,7 +142,7 @@ class MonitoringClimb(MonitoringDB.Base, HealthDB.DBObject):
     def get_stats(cls, session, func, start_ts, end_ts, measurement_system):
         cum_ascent = func(session, cls.cum_ascent, start_ts, end_ts)
         if cum_ascent:
-            if measurement_system is Fit.fieldenums.DisplayMeasure.metric:
+            if measurement_system is Fit.field_enums.DisplayMeasure.metric:
                 floors = cum_ascent / cls.feet_to_floors
             else:
                 floors = cum_ascent / cls.meters_to_floors
@@ -175,7 +175,7 @@ class Monitoring(MonitoringDB.Base, HealthDB.DBObject):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, nullable=False)
-    activity_type = Column(Enum(Fit.fieldenums.ActivityType))
+    activity_type = Column(Enum(Fit.field_enums.ActivityType))
     intensity = Column(Integer)
     duration = Column(Time, nullable=False, default=datetime.time.min)
     distance = Column(Float)
@@ -203,9 +203,9 @@ class Monitoring(MonitoringDB.Base, HealthDB.DBObject):
         return {
             'steps'                 : func(session, cls.steps, start_ts, end_ts),
             'calories_active_avg'   : (
-                cls.get_active_calories(session, Fit.fieldenums.ActivityType.running, start_ts, end_ts) +
-                cls.get_active_calories(session, Fit.fieldenums.ActivityType.cycling, start_ts, end_ts) +
-                cls.get_active_calories(session, Fit.fieldenums.ActivityType.walking, start_ts, end_ts)
+                cls.get_active_calories(session, Fit.field_enums.ActivityType.running, start_ts, end_ts) +
+                cls.get_active_calories(session, Fit.field_enums.ActivityType.cycling, start_ts, end_ts) +
+                cls.get_active_calories(session, Fit.field_enums.ActivityType.walking, start_ts, end_ts)
             )
         }
 

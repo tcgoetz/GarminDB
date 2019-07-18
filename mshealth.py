@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-#
-# copyright Tom Goetz
-#
+"""Script for importing into a DB and summarizing CSV formatted Microsoft Health export data."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import sys
 import getopt
@@ -11,7 +13,7 @@ import logging
 import MSHealthDB
 from import_mshealth_csv import MSHealthData, MSVaultData
 from analyze_mshealth import Analyze
-import GarminDBConfigManager
+import garmin_db_config_manager as GarminDBConfigManager
 
 
 logging.basicConfig(filename='mshealth.log', filemode='w', level=logging.DEBUG)
@@ -20,7 +22,7 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 
-def usage(program):
+def __usage(program):
     print '%s -i <inputfile>' % program
     sys.exit()
 
@@ -34,11 +36,11 @@ def main(argv):
         opts, args = getopt.getopt(argv, "hi:t", ["help", "delete_db", "trace", "input_file="])
     except getopt.GetoptError:
         print "Bad argument"
-        usage(sys.argv[0])
+        __usage(sys.argv[0])
 
     for opt, arg in opts:
         if opt == '-h':
-            usage(sys.argv[0])
+            __usage(sys.argv[0])
         elif opt in ("--delete_db"):
             logging.debug("Delete DB")
             _delete_db = True

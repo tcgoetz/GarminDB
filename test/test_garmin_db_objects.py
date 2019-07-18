@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-#
-# copyright Tom Goetz
-#
+"""Test Garmin database data."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import unittest
 import logging
@@ -14,8 +16,8 @@ sys.path.append('../.')
 
 import GarminDB
 import Fit
-from FileProcessor import FileProcessor
-import GarminDBConfigManager
+from file_processor import FileProcessor
+import garmin_db_config_manager as GarminDBConfigManager
 
 
 root_logger = logging.getLogger()
@@ -27,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 class TestGarminDbObjects(unittest.TestCase):
+    """Class for testing Garmin database data."""
 
     @classmethod
     def setUpClass(cls):
@@ -68,7 +71,7 @@ class TestGarminDbObjects(unittest.TestCase):
 
     def test_file_type(self):
         file_types_list = list(GarminDB.File.FileType)
-        self.assertIn(GarminDB.File.FileType.convert(Fit.fieldenums.FileType.goals), file_types_list)
+        self.assertIn(GarminDB.File.FileType.convert(Fit.field_enums.FileType.goals), file_types_list)
 
 
 if __name__ == '__main__':

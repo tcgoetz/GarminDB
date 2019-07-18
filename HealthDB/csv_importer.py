@@ -1,4 +1,4 @@
-"""Object for importing data from a CSV file."""
+"""Class for importing data from a CSV file."""
 
 __author__ = "Tom Goetz"
 __copyright__ = "Copyright Tom Goetz"
@@ -13,8 +13,17 @@ logger = logging.getLogger(__name__)
 
 
 class CsvImporter(object):
+    """Class for importing data from a CSV file."""
 
     def __init__(self, filename, cols_map, write_entry_func):
+        """
+        Return an instance of CsvImporter.
+
+        Paramters:
+            filename (string): name (full path) of the file to import
+            cols_map (dict): A mapping of columns of the form 'source col': ('destination col', map_function)
+            write_entry_func (function): Will be called once for each line of data.
+        """
         self.filename = filename
         self.cols_map = cols_map
         self.write_entry_func = write_entry_func
@@ -88,6 +97,7 @@ class CsvImporter(object):
         }
 
     def process_file(self, english_units):
+        """Import the file ito the database."""
         logger.info("Reading file: " + self.filename)
         with open(self.filename) as csv_file:
             read_csv = csv.DictReader(csv_file, delimiter=',')

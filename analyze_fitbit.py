@@ -27,18 +27,7 @@ class Analyze(object):
         self.fitbitdb = FitBitDB.FitBitDB(db_params_dict)
         self.sumdb = HealthDB.SummaryDB(db_params_dict)
 
-    def get_years(self):
-        years = FitBitDB.DaysSummary.get_years(self.fitbitdb)
-        print "Years (%d): %s" % (len(years), years)
-        for year in years:
-            self.get_months(year)
-            self.get_days(year)
-
-    def get_months(self, year):
-        months = FitBitDB.DaysSummary.get_month_names(self.fitbitdb, year)
-        print "%s Months (%d): %s" % (year, len(months), months)
-
-    def get_days(self, year):
+    def __get_days(self, year):
         year_int = int(year)
         days = FitBitDB.DaysSummary.get_days(self.fitbitdb, year)
         days_count = len(days)
@@ -56,6 +45,17 @@ class Analyze(object):
                 day_str = str(conversions.day_of_the_year_to_datetime(year_int, day))
                 next_day_str = str(conversions.day_of_the_year_to_datetime(year_int, next_day))
                 print "Days gap between %d (%s) and %d (%s)" % (day, day_str, next_day, next_day_str)
+
+    def __get_months(self, year):
+        months = FitBitDB.DaysSummary.get_month_names(self.fitbitdb, year)
+        print "%s Months (%d): %s" % (year, len(months), months)
+
+    def get_years(self):
+        years = FitBitDB.DaysSummary.get_years(self.fitbitdb)
+        print "Years (%d): %s" % (len(years), years)
+        for year in years:
+            self.__get_months(year)
+            self.__get_days(year)
 
     def summary(self):
         years = FitBitDB.DaysSummary.get_years(self.fitbitdb)

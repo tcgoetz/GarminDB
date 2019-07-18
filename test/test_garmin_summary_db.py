@@ -8,12 +8,12 @@ import unittest
 import logging
 import sys
 
-from TestSummaryDBBase import TestSummaryDBBase
+from test_summary_db_base import TestSummaryDBBase
 
 sys.path.append('../.')
 
 import GarminDB
-import GarminDBConfigManager
+import garmin_db_config_manager as GarminDBConfigManager
 
 
 root_logger = logging.getLogger()

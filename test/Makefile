@@ -5,15 +5,18 @@ PROJECT_BASE ?= $(PWD)/../.
 
 include $(PROJECT_BASE)/defines.mk
 
+DB_TEST_GROUPS=garmin_db activities_db monitoring_db garminsummary_db summary_db
+DB_OBJECTS_TEST_GROUPS=garmin_db_objects
+TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) fit
 
 #
 # Over all targets
 #
-all: db dbobjects fit
+all: $(TEST_GROUPS)
 
-db: garmindb activitiesdb monitoringdb garminsummarydb summarydb
+db: $(DB_TEST_GROUPS)
 
-dbobjects: garmindb_objects
+db_objects: $(DB_OBJECTS_TEST_GROUPS)
 
 clean:
 	rm -f *.pyc
@@ -22,23 +25,5 @@ clean:
 #
 # Targets for testing smaller slices of functionality.
 #
-garmindb:
-	$(PYTHON) TestGarminDb.py
-
-garmindb_objects:
-	$(PYTHON) TestGarminDbObjects.py
-
-activitiesdb:
-	$(PYTHON) TestActivitiesDb.py
-
-monitoringdb:
-	$(PYTHON) TestMonitoringDB.py
-
-garminsummarydb:
-	$(PYTHON) TestGarminSummaryDB.py
-
-summarydb:
-	$(PYTHON) TestSummaryDB.py
-
-fit:
-	$(PYTHON) TestFit.py
+$(TEST_GROUPS):
+	$(PYTHON) test_$@.py

@@ -9,12 +9,12 @@ import logging
 import sys
 import datetime
 
-from TestDBBase import TestDBBase
+from test_db_base import TestDBBase
 
 sys.path.append('../.')
 
 import GarminDB
-import GarminDBConfigManager
+import garmin_db_config_manager as GarminDBConfigManager
 
 
 root_logger = logging.getLogger()

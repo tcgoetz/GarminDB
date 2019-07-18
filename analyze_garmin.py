@@ -166,6 +166,7 @@ class Analyze(object):
         stat_logger.info("Total monitoring days: %d", total_days)
 
     def get_stats(self):
+        """Calculate summary statistics."""
         self.__get_files_stats()
         self.__get_activities_stats()
         self.__get_monitoring_stats()
@@ -287,6 +288,7 @@ class Analyze(object):
                             self.__calculate_months(year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
 
     def summary(self):
+        """Summarize Garmin health data. Daily, weekly, and monthly, tables will be generated."""
         logger.info("___Summary Table Generation___")
         years = GarminDB.Monitoring.get_years(self.garmin_mon_db)
         for year in years:

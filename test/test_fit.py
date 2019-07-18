@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-#
-# copyright Tom Goetz
-#
+"""Test FIT file parsing."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import unittest
 import logging
@@ -13,7 +15,7 @@ import re
 sys.path.append('../.')
 
 import Fit
-from FileProcessor import FileProcessor
+from file_processor import FileProcessor
 
 
 root_logger = logging.getLogger()
@@ -25,10 +27,11 @@ logger = logging.getLogger(__name__)
 
 
 class TestFit(unittest.TestCase):
+    """Class for testing FIT file parsing."""
 
     @classmethod
     def setUpClass(cls):
-        cls.measurement_system = Fit.fieldenums.DisplayMeasure.statute
+        cls.measurement_system = Fit.field_enums.DisplayMeasure.statute
         cls.file_path = 'test_files/fit'
 
     def check_message_types(self, fit_file, dump_message=False):
@@ -82,14 +85,14 @@ class TestFit(unittest.TestCase):
     def check_file_id(self, fit_file, file_type):
         messages = fit_file[Fit.MessageType.file_id]
         for message in messages:
-            self.check_value(message, 'manufacturer', Fit.fieldenums.Manufacturer.Garmin)
+            self.check_value(message, 'manufacturer', Fit.field_enums.Manufacturer.Garmin)
             self.check_value(message, 'type', file_type)
 
     def check_monitoring_file(self, filename):
         fit_file = Fit.file.File(filename, self.measurement_system)
         self.check_message_types(fit_file)
         logger.info(filename + ' message types: %s', fit_file.message_types())
-        self.check_file_id(fit_file, Fit.fieldenums.FileType.monitoring_b)
+        self.check_file_id(fit_file, Fit.field_enums.FileType.monitoring_b)
         messages = fit_file[Fit.MessageType.monitoring]
         for message in messages:
             self.check_message_fields(message.type(), message)
@@ -115,7 +118,7 @@ class TestFit(unittest.TestCase):
         fit_file = Fit.file.File(filename, self.measurement_system)
         logger.info(filename + ' message types: %s', fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
-        self.check_file_id(fit_file, Fit.fieldenums.FileType.activity)
+        self.check_file_id(fit_file, Fit.field_enums.FileType.activity)
         for message in fit_file[Fit.MessageType.record]:
             self.check_lap_or_record(message)
         for message in fit_file[Fit.MessageType.lap]:
@@ -133,7 +136,7 @@ class TestFit(unittest.TestCase):
         fit_file = Fit.file.File(filename, self.measurement_system)
         logger.info(filename + ' message types: %s', fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
-        self.check_file_id(fit_file, Fit.fieldenums.FileType.sleep)
+        self.check_file_id(fit_file, Fit.field_enums.FileType.sleep)
 
     def test_parse_sleep(self):
         activity_path = self.file_path + '/sleep'

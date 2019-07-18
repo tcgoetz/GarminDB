@@ -6,7 +6,7 @@
 
 import logging
 
-from TestDBBase import TestDBBase
+from test_db_base import TestDBBase
 
 
 logger = logging.getLogger(__name__)

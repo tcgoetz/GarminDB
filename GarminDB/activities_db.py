@@ -233,7 +233,7 @@ class SportActivities(HealthDB.DBObject):
 
     @classmethod
     def create_activity_view(cls, db, selectable):
-        cls.create_join_view(db, cls.get_default_view_name(), selectable, Activities, Activities.start_time.desc())
+        cls.create_join_view(db, cls._get_default_view_name(), selectable, Activities, Activities.start_time.desc())
 
 
 class StepsActivities(ActivitiesDB.Base, SportActivities):

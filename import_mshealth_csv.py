@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """A script for importing CSV formatted Microsoft Health export data."""
 
 __author__ = "Tom Goetz"
@@ -13,7 +11,7 @@ import progressbar
 
 from HealthDB import CsvImporter
 import MSHealthDB
-import FileProcessor
+from file_processor import FileProcessor
 
 
 logger = logging.getLogger(__file__)
@@ -21,6 +19,7 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 class MSHealthData(object):
+    """A classs for importing CSV formatted Microsoft Health export data."""
 
     cols_map = {
         'Date': ('day', CsvImporter.map_ymd_date),
@@ -66,51 +65,56 @@ class MSHealthData(object):
         self.metric = metric
         self.mshealth_db = MSHealthDB.MSHealthDB(db_params_dict, debug)
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, r'Daily_Summary_.*\.csv')
+            self.file_names = FileProcessor.match_file(input_file, r'Daily_Summary_.*\.csv')
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, r'Daily_Summary_.*\.csv')
+            self.file_names = FileProcessor.dir_to_files(input_dir, r'Daily_Summary_.*\.csv')
 
     def file_count(self):
+        """Return the number of files that will be processed."""
         return len(self.file_names)
 
-    def write_entry(self, db_entry):
+    def __write_entry(self, db_entry):
         MSHealthDB.DaysSummary.find_or_create(self.mshealth_db, db_entry)
 
     def process_files(self):
+        """Import files into the databse."""
         for file_name in progressbar.progressbar(self.file_names):
             logger.info("Processing file: " + file_name)
-            csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
+            csvimporter = CsvImporter(file_name, self.cols_map, self.__write_entry)
             csvimporter.process_file(not self.metric)
 
 
 class MSVaultData(object):
+    """A class for importing CSV formatted Microsoft Health Vault export data."""
 
     def __init__(self, input_file, input_dir, db_params_dict, metric, debug):
         self.metric = metric
         self.mshealth_db = MSHealthDB.MSHealthDB(db_params_dict, debug)
         self.cols_map = {
             'Date': ('timestamp', CsvImporter.map_mdy_date),
-            'Weight': ('weight', MSVaultData.map_weight),
+            'Weight': ('weight', MSVaultData.__map_weight),
         }
         if input_file:
-            self.file_names = FileProcessor.FileProcessor.match_file(input_file, r'HealthVault_Weight_.*\.csv')
+            self.file_names = FileProcessor.match_file(input_file, r'HealthVault_Weight_.*\.csv')
         if input_dir:
-            self.file_names = FileProcessor.FileProcessor.dir_to_files(input_dir, r'HealthVault_Weight_.*\.csv')
+            self.file_names = FileProcessor.dir_to_files(input_dir, r'HealthVault_Weight_.*\.csv')
 
     def file_count(self):
+        """Return the number of files that will be processed."""
         return len(self.file_names)
 
-    def write_entry(self, db_entry):
+    def __write_entry(self, db_entry):
         MSHealthDB.MSVaultWeight.find_or_create(self.mshealth_db, MSHealthDB.MSVaultWeight.intersection(db_entry))
 
     def process_files(self):
+        """Import files into the databse."""
         for file_name in progressbar.progressbar(self.file_names):
             logger.info("Processing file: " + file_name)
-            csvimporter = CsvImporter(file_name, self.cols_map, self.write_entry)
+            csvimporter = CsvImporter(file_name, self.cols_map, self.__write_entry)
             csvimporter.process_file(not self.metric)
 
     @classmethod
-    def map_weight(cls, metric, value):
+    def __map_weight(cls, metric, value):
         m = re.search(r'(\d{2,3}\.\d{2}) .*', value)
         if m:
             logger.debug("Matched weight: " + m.group(1))

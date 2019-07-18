@@ -24,8 +24,9 @@ from analyze_garmin import Analyze
 
 import HealthDB
 import GarminDB
-import GarminDBConfigManager
-from GarminConnectConfigManager import GarminConnectConfigManager
+import garmin_db_config_manager as GarminDBConfigManager
+from garmin_connect_config_manager import GarminConnectConfigManager
+
 
 logging.basicConfig(filename='garmin.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
@@ -35,7 +36,7 @@ root_logger = logging.getLogger()
 gc_gonfig = GarminConnectConfigManager()
 
 
-def get_date_and_days(db, latest, table, col, stat_name):
+def __get_date_and_days(db, latest, table, col, stat_name):
     if latest:
         last_ts = table.latest_time(db, col)
         if last_ts is None:
@@ -62,6 +63,7 @@ def get_date_and_days(db, latest, table, col, stat_name):
 
 
 def copy_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
+    """Copy data from a mounted Garmin USB device to files."""
     copy = Copy(gc_gonfig.device_mount_dir())
 
     if activities:
@@ -76,6 +78,7 @@ def copy_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
 
 
 def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
+    """Download selected activity types from Garmin Connect and save the data in files. Overwrite previously downloaded data if indicated."""
     db_params_dict = GarminDBConfigManager.get_db_params()
 
     download = Download()
@@ -95,7 +98,7 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
         download.unzip_files(activities_dir)
 
     if monitoring:
-        date, days = get_date_and_days(GarminDB.MonitoringDB(db_params_dict), latest, GarminDB.MonitoringHeartRate, GarminDB.MonitoringHeartRate.heart_rate, 'monitoring')
+        date, days = __get_date_and_days(GarminDB.MonitoringDB(db_params_dict), latest, GarminDB.MonitoringHeartRate, GarminDB.MonitoringHeartRate.heart_rate, 'monitoring')
         if days > 0:
             monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_dir(date.year)
             root_logger.info("Date range to update: %s (%d) to %s", date, days, monitoring_dir)
@@ -105,7 +108,7 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
             root_logger.info("Saved monitoring files for %s (%d) to %s for processing", date, days, monitoring_dir)
 
     if sleep:
-        date, days = get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'sleep')
+        date, days = __get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'sleep')
         if days > 0:
             sleep_dir = GarminDBConfigManager.get_or_create_sleep_dir()
             root_logger.info("Date range to update: %s (%d) to %s", date, days, sleep_dir)
@@ -113,7 +116,7 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
             root_logger.info("Saved sleep files for %s (%d) to %s for processing", date, days, sleep_dir)
 
     if weight:
-        date, days = get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.Weight, GarminDB.Weight.weight, 'weight')
+        date, days = __get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.Weight, GarminDB.Weight.weight, 'weight')
         if days > 0:
             weight_dir = GarminDBConfigManager.get_or_create_weight_dir()
             root_logger.info("Date range to update: %s (%d) to %s", date, days, weight_dir)
@@ -121,7 +124,7 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
             root_logger.info("Saved weight files for %s (%d) to %s for processing", date, days, weight_dir)
 
     if rhr:
-        date, days = get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'rhr')
+        date, days = __get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'rhr')
         if days > 0:
             rhr_dir = GarminDBConfigManager.get_or_create_rhr_dir()
             root_logger.info("Date range to update: %s (%d) to %s", date, days, rhr_dir)
@@ -130,6 +133,7 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
 
 
 def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities):
+    """Import previously downloaded Garmin data into the database."""
     db_params_dict = GarminDBConfigManager.get_db_params(test_db=test)
 
     gp = GarminProfile(db_params_dict, GarminDBConfigManager.get_fit_files_dir(), debug)
@@ -141,16 +145,16 @@ def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities)
 
     if weight:
         weight_dir = GarminDBConfigManager.get_weight_dir()
-        gwd = GarminWeightData(db_params_dict, None, weight_dir, latest, measurement_system, debug)
+        gwd = GarminWeightData(db_params_dict, weight_dir, latest, measurement_system, debug)
         if gwd.file_count() > 0:
             gwd.process()
 
     if monitoring:
         monitoring_dir = GarminDBConfigManager.get_monitoring_base_dir()
-        gsd = GarminSummaryData(db_params_dict, None, monitoring_dir, latest, measurement_system, debug)
+        gsd = GarminSummaryData(db_params_dict, monitoring_dir, latest, measurement_system, debug)
         if gsd.file_count() > 0:
             gsd.process()
-        ged = GarminMonitoringExtraData(db_params_dict, None, monitoring_dir, latest, debug)
+        ged = GarminMonitoringExtraData(db_params_dict, monitoring_dir, latest, debug)
         if ged.file_count() > 0:
             ged.process()
         gfd = GarminMonitoringFitData(monitoring_dir, latest, measurement_system, debug)
@@ -159,47 +163,49 @@ def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities)
 
     if sleep:
         sleep_dir = GarminDBConfigManager.get_sleep_dir()
-        gsd = GarminSleepData(db_params_dict, None, sleep_dir, latest, debug)
+        gsd = GarminSleepData(db_params_dict, sleep_dir, latest, debug)
         if gsd.file_count() > 0:
             gsd.process()
 
     if rhr:
         rhr_dir = GarminDBConfigManager.get_rhr_dir()
-        grhrd = GarminRhrData(db_params_dict, None, rhr_dir, latest, debug)
+        grhrd = GarminRhrData(db_params_dict, rhr_dir, latest, debug)
         if grhrd.file_count() > 0:
             grhrd.process()
 
     if activities:
         activities_dir = GarminDBConfigManager.get_activities_dir()
-        gjsd = GarminJsonSummaryData(db_params_dict, None, activities_dir, latest, measurement_system, debug)
+        gjsd = GarminJsonSummaryData(db_params_dict, activities_dir, latest, measurement_system, debug)
         if gjsd.file_count() > 0:
             gjsd.process()
 
-        gdjd = GarminJsonDetailsData(db_params_dict, None, activities_dir, latest, measurement_system, debug)
+        gdjd = GarminJsonDetailsData(db_params_dict, activities_dir, latest, measurement_system, debug)
         if gdjd.file_count() > 0:
             gdjd.process()
 
-        ged = GarminActivitiesExtraData(db_params_dict, None, activities_dir, latest, debug)
+        ged = GarminActivitiesExtraData(db_params_dict, activities_dir, latest, debug)
         if ged.file_count() > 0:
             ged.process()
 
-        gtd = GarminTcxData(None, activities_dir, latest, measurement_system, debug)
+        gtd = GarminTcxData(activities_dir, latest, measurement_system, debug)
         if gtd.file_count() > 0:
             gtd.process_files(db_params_dict)
 
-        gfd = GarminActivitiesFitData(None, activities_dir, latest, measurement_system, debug)
+        gfd = GarminActivitiesFitData(activities_dir, latest, measurement_system, debug)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
 
 
 def analyze_data(debug):
+    """Analyze the downloaded and imported Garmin data and create summary tables."""
     db_params_dict = GarminDBConfigManager.get_db_params()
     analyze = Analyze(db_params_dict, debug - 1)
     analyze.get_stats()
     analyze.summary()
 
 
-def delete_db(debug):
+def delete_dbs(debug):
+    """Delete all GarminDB database files."""
     db_params_dict = GarminDBConfigManager.get_db_params()
     GarminDB.GarminDB.delete_db(db_params_dict)
     GarminDB.MonitoringDB.delete_db(db_params_dict)
@@ -209,6 +215,7 @@ def delete_db(debug):
 
 
 def print_usage(program, error=None):
+    """Print usage information for the script."""
     if error is not None:
         print error
         print
@@ -232,10 +239,12 @@ def print_usage(program, error=None):
 
 
 def print_version(program):
+    """Print version information for the script."""
     print '%s' % version
 
 
 def main(argv):
+    """Manage Garmin device data."""
     _download_data = False
     _copy_data = False
     _import_data = False
@@ -315,7 +324,7 @@ def main(argv):
         root_logger.setLevel(logging.INFO)
 
     if _delete_db:
-        delete_db(debug)
+        delete_dbs(debug)
         sys.exit()
 
     if _copy_data:

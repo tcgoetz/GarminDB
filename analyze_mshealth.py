@@ -27,25 +27,14 @@ class Analyze(object):
         self.mshealthdb = MSHealthDB.MSHealthDB(db_params_dict)
         self.sumdb = HealthDB.SummaryDB(db_params_dict)
 
-    def days_from_years(self, year):
+    def __days_from_years(self, year):
         sum_days = MSHealthDB.DaysSummary.get_days(self.mshealthdb, year)
         weight_days = MSHealthDB.MSVaultWeight.get_days(self.mshealthdb, year)
         return sum_days + list(set(weight_days) - set(sum_days))
 
-    def get_years(self):
-        years = MSHealthDB.DaysSummary.get_years(self.mshealthdb)
-        stat_logger.info("Years (%d): %s", len(years), years)
-        for year in years:
-            self.get_months(year)
-            self.get_days(year)
-
-    def get_months(self, year):
-        months = MSHealthDB.DaysSummary.get_month_names(self.mshealthdb, year)
-        stat_logger.info("%s Months (%d): %s", year, len(months), months)
-
-    def get_days(self, year):
+    def __get_days(self, year):
         year_int = int(year)
-        days = self.days_from_years(year)
+        days = self.__days_from_years(year)
         days_count = len(days)
         if days_count > 0:
             first_day = days[0]
@@ -62,10 +51,21 @@ class Analyze(object):
                 next_day_str = str(conversions.day_of_the_year_to_datetime(year_int, next_day))
                 stat_logger.info("Days gap between %d (%s) and %d (%s)", day, day_str, next_day, next_day_str)
 
+    def __get_months(self, year):
+        months = MSHealthDB.DaysSummary.get_month_names(self.mshealthdb, year)
+        stat_logger.info("%s Months (%d): %s", year, len(months), months)
+
+    def get_years(self):
+        years = MSHealthDB.DaysSummary.get_years(self.mshealthdb)
+        stat_logger.info("Years (%d): %s", len(years), years)
+        for year in years:
+            self.__get_months(year)
+            self.__get_days(year)
+
     def summary(self):
         years = MSHealthDB.DaysSummary.get_years(self.mshealthdb)
         for year in years:
-            days = self.days_from_years(year)
+            days = self.__days_from_years(year)
             for day in days:
                 day_ts = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
                 stats = MSHealthDB.DaysSummary.get_daily_stats(self.mshealthdb, day_ts)

@@ -11,7 +11,7 @@ from sqlalchemy.ext.declarative import declarative_base
 import db
 import summary_base as sb
 import db_version as dbv
-import keyvalue
+import key_value
 
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class SummaryDB(db.DB):
         DaysSummary.create_days_view(self)
 
 
-class Summary(SummaryDB.Base, keyvalue.KeyValueObject):
+class Summary(SummaryDB.Base, key_value.KeyValueObject):
     """Object representing health data statistics."""
 
     __tablename__ = 'summary'

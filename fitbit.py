@@ -14,7 +14,7 @@ import logging
 import FitBitDB
 from import_fitbit_csv import FitBitData
 from analyze_fitbit import Analyze
-import GarminDBConfigManager
+import garmin_db_config_manager as GarminDBConfigManager
 
 
 logging.basicConfig(filename='fitbit.log', filemode='w', level=logging.DEBUG)
@@ -24,6 +24,7 @@ root_logger = logging.getLogger()
 
 
 def usage(program):
+    """Print the usage info for the script."""
     print '%s -i <inputfile> ...' % program
     sys.exit()
 

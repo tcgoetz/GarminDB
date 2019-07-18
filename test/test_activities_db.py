@@ -8,14 +8,14 @@ import unittest
 import logging
 import sys
 
-from TestDBBase import TestDBBase
+from test_db_base import TestDBBase
 
 sys.path.append('../.')
 
 import GarminDB
 import Fit
 from import_garmin_activities import GarminActivitiesFitData
-import GarminDBConfigManager
+import garmin_db_config_manager as GarminDBConfigManager
 
 
 root_logger = logging.getLogger()
@@ -57,7 +57,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
 
     def test_fit_file_import(self):
         db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
-        gfd = GarminActivitiesFitData(None, 'test_files/fit/activity', latest=False, measurement_system=Fit.fieldenums.DisplayMeasure.statute, debug=2)
+        gfd = GarminActivitiesFitData(None, 'test_files/fit/activity', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
 

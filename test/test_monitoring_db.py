@@ -1,22 +1,24 @@
 #!/usr/bin/env python
 
-#
-# copyright Tom Goetz
-#
+"""Test Garmin monitoring database data."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import unittest
 import logging
 import sys
 import datetime
 
-from TestDBBase import TestDBBase
+from test_db_base import TestDBBase
 
 sys.path.append('../.')
 
 import GarminDB
 import Fit
 from FileProcessor import FileProcessor
-import GarminDBConfigManager
+import garmin_db_config_manager as GarminDBConfigManager
 
 
 root_logger = logging.getLogger()
@@ -28,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 class TestMonitoringDB(TestDBBase, unittest.TestCase):
+    """Class for testing Garmin monitoring database data."""
 
     @classmethod
     def setUpClass(cls):

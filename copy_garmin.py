@@ -11,8 +11,8 @@ import progressbar
 import logging
 
 import Fit
-from FileProcessor import FileProcessor
-import GarminDBConfigManager
+from file_processor import FileProcessor
+import garmin_db_config_manager as GarminDBConfigManager
 
 
 logger = logging.getLogger(__file__)
@@ -23,6 +23,7 @@ class Copy(object):
     """Class for copying data from a USB mounted Garmin device."""
 
     def __init__(self, device_mount_dir):
+        """Create a Copy object given the directory where the Garmin USB device is mounted."""
         self.device_mount_dir = device_mount_dir
         if not os.path.exists(self.device_mount_dir):
             raise RuntimeError('%s not found' % self.device_mount_dir)

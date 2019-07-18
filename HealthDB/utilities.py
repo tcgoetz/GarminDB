@@ -24,7 +24,7 @@ def list_intersection_count(list1, list2):
 
 
 def dict_filter_none_values(in_dict):
-    """Given a dictionary, return a new dictionary with all of the non-None items."""
+    """Given a dictionary, return a new dictionary with only the dict items with non-None values."""
     return {key : value for key, value in in_dict.iteritems() if value is not None}
 
 

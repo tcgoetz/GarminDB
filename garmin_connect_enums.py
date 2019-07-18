@@ -13,6 +13,8 @@ logger = logging.getLogger(__file__)
 
 
 class Event(enum.Enum):
+    """Garmin Connect event types enum."""
+
     race            = 1
     recreation      = 2
     special_event   = 3
@@ -25,6 +27,7 @@ class Event(enum.Enum):
 
     @classmethod
     def from_json(cls, json_data):
+        """Create a Event enum instance from Garmin Connect JSON data."""
         json_event = json_data['eventType']
         try:
             return cls(json_event['typeId'])
@@ -34,6 +37,8 @@ class Event(enum.Enum):
 
 
 class Sport(enum.Enum):
+    """Garmin Connect sport types enum."""
+
     running                         = 1
     cycling                         = 2
     hiking                          = 3
@@ -98,6 +103,7 @@ class Sport(enum.Enum):
 
     @classmethod
     def from_json(cls, json_data):
+        """Create a Sport enum instance from Garmin Connect JSON data."""
         json_activity = json_data['activityType']
         try:
             return Sport(json_activity['parentTypeId'])
@@ -107,6 +113,7 @@ class Sport(enum.Enum):
 
     @classmethod
     def from_details_json(cls, json_data):
+        """Create a Sport enum instance from Garmin Connect JSON details data."""
         json_activity = json_data['activityTypeDTO']
         try:
             return Sport(json_activity['parentTypeId'])
@@ -116,6 +123,7 @@ class Sport(enum.Enum):
 
     @classmethod
     def subsport_from_json(cls, json_data):
+        """Create a Sport enum instance from Garmin Connect subsport JSON data."""
         json_activity = json_data['activityType']
         try:
             return Sport(json_activity['typeId'])
@@ -125,6 +133,7 @@ class Sport(enum.Enum):
 
     @classmethod
     def subsport_from_details_json(cls, json_data):
+        """Create a Sport enum instance from Garmin Connect subsport JSON details data."""
         json_activity = json_data['activityTypeDTO']
         try:
             return Sport(json_activity['typeId'])

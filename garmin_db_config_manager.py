@@ -1,12 +1,14 @@
-#
-# copyright Tom Goetz
-#
+"""Functions for managing the application config."""
+
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import os
 import logging
 import tempfile
 
-import GarminDBConfig
+from garmin_db_config import GarminDBConfig
 
 
 logger = logging.getLogger(__name__)

@@ -1,4 +1,4 @@
-"""Class for finding matching files."""
+"""Class for finding files that match a regex."""
 
 __author__ = "Tom Goetz"
 __copyright__ = "Copyright Tom Goetz"
@@ -14,7 +14,7 @@ logger = logging.getLogger(__file__)
 
 
 class FileProcessor(object):
-    """Class for finding matching files."""
+    """Class for finding files that match a regex."""
 
     @classmethod
     def __regex_matches_file(cls, file, file_regex):

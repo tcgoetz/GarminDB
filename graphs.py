@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+"""A script that generated graphs for health data in a database."""
 
-#
-# copyright Tom Goetz
-#
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import logging
 import sys
@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import enum
 
 import HealthDB
-import GarminDBConfigManager
+import garmin_db_config_manager as GarminDBConfigManager
 import version.version as version
 
 
@@ -28,6 +28,7 @@ class YAxisLabelPostion(enum.Enum):
 
     @classmethod
     def from_integer(cls, integer):
+        """Create an instance of a YAxisLabelPostion enum from an integer."""
         return YAxisLabelPostion(integer % 2)
 
 
@@ -43,10 +44,11 @@ class Colors(enum.Enum):
 
     @classmethod
     def from_integer(cls, integer):
+        """Create an instance of a Color enum from an integer."""
         return Colors(integer % 8)
 
 
-def graph_mulitple_single_axes(time, data_list, stat_name, ylabel, save):
+def __graph_mulitple_single_axes(time, data_list, stat_name, ylabel, save):
     title = '%s Over Time' % stat_name
     figure = plt.figure()
     for index, data in enumerate(data_list):
@@ -62,7 +64,7 @@ def graph_mulitple_single_axes(time, data_list, stat_name, ylabel, save):
     plt.show()
 
 
-def graph_mulitple(time, data_list, stat_name, period, ylabel_list, save):
+def __graph_mulitple(time, data_list, stat_name, period, ylabel_list, save):
     units = {
         'days'      : 'Day',
         'weeks'     : 'Week',
@@ -93,27 +95,27 @@ def graph_mulitple(time, data_list, stat_name, period, ylabel_list, save):
 def graph_steps(time, data, period, save):
     steps = [entry.steps for entry in data]
     steps_goal_percent = [entry.steps_goal_percent for entry in data]
-    graph_mulitple(time, [steps, steps_goal_percent], 'Steps', period, ['Steps', 'Step Goal Percent'], save)
+    __graph_mulitple(time, [steps, steps_goal_percent], 'Steps', period, ['Steps', 'Step Goal Percent'], save)
 
 
 def graph_hr(time, data, period, save):
     rhr = [entry.rhr_avg for entry in data]
     inactive_hr = [entry.inactive_hr_avg for entry in data]
-    graph_mulitple(time, [rhr, inactive_hr], 'Heart Rate', period, ['RHR', 'Inactive hr'], save)
+    __graph_mulitple(time, [rhr, inactive_hr], 'Heart Rate', period, ['RHR', 'Inactive hr'], save)
 
 
 def graph_itime(time, data, period, save):
     itime = [entry.intensity_time_mins for entry in data]
     itime_goal_percent = [entry.intensity_time_goal_percent for entry in data]
-    graph_mulitple(time, [itime, itime_goal_percent], 'Intensity Minutes', period, ['Intensity Minutes', 'Intensity Minutes Goal Percent'], save)
+    __graph_mulitple(time, [itime, itime_goal_percent], 'Intensity Minutes', period, ['Intensity Minutes', 'Intensity Minutes Goal Percent'], save)
 
 
 def graph_weight(time, data, period, save):
     weight = [entry.weight_avg for entry in data]
-    graph_mulitple_single_axes(time, [weight], 'Weight', 'weight', save)
+    __graph_mulitple_single_axes(time, [weight], 'Weight', 'weight', save)
 
 
-def print_usage(program, error=None):
+def __print_usage(program, error=None):
     if error is not None:
         print error
         print
@@ -130,7 +132,7 @@ def print_usage(program, error=None):
     sys.exit()
 
 
-def print_version(program):
+def __print_version(program):
     print '%s' % version
 
 
@@ -154,13 +156,13 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, "adhHl:p:rsSt:wv", ["all", "latest=", "period=", "hr", "itime", "save", "steps", "trace=", "weight", "version"])
     except getopt.GetoptError as e:
-        print_usage(sys.argv[0], str(e))
+        __print_usage(sys.argv[0], str(e))
 
     for opt, arg in opts:
         if opt == '-h':
-            print_usage(sys.argv[0])
+            __print_usage(sys.argv[0])
         elif opt in ("-v", "--version"):
-            print_version(sys.argv[0])
+            __print_version(sys.argv[0])
         elif opt in ("-a", "--all"):
             logger.info("All: " + arg)
             hr = GarminDBConfigManager.is_stat_enabled('rhr')
