@@ -19,19 +19,19 @@ class GarminSummaryDB(HealthDB.DB):
     db_name = 'garmin_summary'
     db_version = 7
 
-    class DbVersion(Base, HealthDB.DbVersionObject):
+    class _DbVersion(Base, HealthDB.DbVersionObject):
         pass
 
     def __init__(self, db_params_dict, debug=False):
         super(GarminSummaryDB, self).__init__(db_params_dict, debug)
         GarminSummaryDB.Base.metadata.create_all(self.engine)
-        version = GarminSummaryDB.DbVersion()
-        version.version_check(self, self.db_version)
+        self.version = GarminSummaryDB._DbVersion()
+        self.version.version_check(self, self.db_version)
         #
         self.tables = [Summary, MonthsSummary, WeeksSummary, DaysSummary, IntensityHR]
         for table in self.tables:
-            version.table_version_check(self, table)
-            if not version.view_version_check(self, table):
+            self.version.table_version_check(self, table)
+            if not self.version.view_version_check(self, table):
                 table.delete_view(self)
         #
         MonthsSummary.create_months_view(self)

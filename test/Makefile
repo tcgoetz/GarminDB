@@ -1,11 +1,12 @@
 #
 # This Makefile automates running tests for the project.
 #
+
 PROJECT_BASE ?= $(PWD)/../.
 
 include $(PROJECT_BASE)/defines.mk
 
-DB_TEST_GROUPS=garmin_db activities_db monitoring_db garminsummary_db summary_db
+DB_TEST_GROUPS=garmin_db activities_db monitoring_db garmin_summary_db summary_db
 DB_OBJECTS_TEST_GROUPS=garmin_db_objects
 TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) fit
 

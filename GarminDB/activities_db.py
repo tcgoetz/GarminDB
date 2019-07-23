@@ -25,19 +25,19 @@ class ActivitiesDB(HealthDB.DB):
     db_name = 'garmin_activities'
     db_version = 12
 
-    class DbVersion(Base, HealthDB.DbVersionObject):
+    class _DbVersion(Base, HealthDB.DbVersionObject):
         pass
 
     def __init__(self, db_params_dict, debug=False):
         super(ActivitiesDB, self).__init__(db_params_dict, debug)
         ActivitiesDB.Base.metadata.create_all(self.engine)
-        version = ActivitiesDB.DbVersion()
-        version.version_check(self, self.db_version)
+        self.version = ActivitiesDB._DbVersion()
+        self.version.version_check(self, self.db_version)
         #
         self.tables = [Activities, ActivityLaps, ActivityRecords, ActivityRecords, StepsActivities, PaddleActivities, EllipticalActivities, ActivitiesExtraData]
         for table in self.tables:
-            version.table_version_check(self, table)
-            if not version.view_version_check(self, table):
+            self.version.table_version_check(self, table)
+            if not self.version.view_version_check(self, table):
                 table.delete_view(self)
         # Create or Recreate views
         StepsActivities.create_view(self)
@@ -57,6 +57,7 @@ class ActivitiesLocationSegment(HealthDB.DBObject):
 
     @hybrid_property
     def start_loc(self):
+        """Return the starting location of activity segment as a Location instance."""
         return HealthDB.Location(self.start_lat, self.start_long)
 
     @start_loc.setter
@@ -66,6 +67,7 @@ class ActivitiesLocationSegment(HealthDB.DBObject):
 
     @hybrid_property
     def stop_loc(self):
+        """Return the ending location of activity segment as a Location instance."""
         return HealthDB.Location(self.stop_lat, self.stop_long)
 
     @stop_loc.setter

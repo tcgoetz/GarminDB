@@ -18,27 +18,30 @@ logger = logging.getLogger(__name__)
 
 
 class MonitoringDB(HealthDB.DB):
+    """Class representing a databse storing daily health monitoring data from a Garmin device."""
+
     Base = declarative_base()
     db_name = 'garmin_monitoring'
     db_version = 5
 
-    class DbVersion(Base, HealthDB.DbVersionObject):
+    class _DbVersion(Base, HealthDB.DbVersionObject):
         pass
 
     def __init__(self, db_params_dict, debug=False):
         super(MonitoringDB, self).__init__(db_params_dict, debug)
         MonitoringDB.Base.metadata.create_all(self.engine)
-        version = MonitoringDB.DbVersion()
-        version.version_check(self, self.db_version)
+        self.version = MonitoringDB._DbVersion()
+        self.version.version_check(self, self.db_version)
         #
         self.tables = [MonitoringInfo, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb, Monitoring]
         for table in self.tables:
-            version.table_version_check(self, table)
-            if not version.view_version_check(self, table):
+            self.version.table_version_check(self, table)
+            if not self.version.view_version_check(self, table):
                 table.delete_view(self)
 
 
 class MonitoringInfo(MonitoringDB.Base, HealthDB.DBObject):
+    """Class representing data from a health monitoring file."""
     __tablename__ = 'monitoring_info'
     table_version = 1
 
@@ -53,6 +56,7 @@ class MonitoringInfo(MonitoringDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_daily_bmr(cls, db, day_ts):
+        """Return the base metabolic rate for the given day."""
         return cls.get_col_avg_of_max_per_day(db, cls.resting_metabolic_rate, day_ts, day_ts + datetime.timedelta(1))
 
     @classmethod
@@ -87,6 +91,8 @@ class MonitoringHeartRate(MonitoringDB.Base, HealthDB.DBObject):
 
 
 class MonitoringIntensity(MonitoringDB.Base, HealthDB.DBObject):
+    """Class representing monitoring data about cardio minutes."""
+
     __tablename__ = 'monitoring_intensity'
     table_version = 1
 
@@ -102,6 +108,7 @@ class MonitoringIntensity(MonitoringDB.Base, HealthDB.DBObject):
 
     @hybrid_property
     def intensity_time(self):
+        """Return the total cardio minutes, moderate and vigorous, with vigorous counted double."""
         return Fit.conversions.add_time(self.moderate_activity_time, self.vigorous_activity_time, 2)
 
     @intensity_time.expression
@@ -118,6 +125,8 @@ class MonitoringIntensity(MonitoringDB.Base, HealthDB.DBObject):
 
 
 class MonitoringClimb(MonitoringDB.Base, HealthDB.DBObject):
+    """Class representing monitoring data about elvation gained."""
+
     __tablename__ = 'monitoring_climb'
     table_version = 1
 

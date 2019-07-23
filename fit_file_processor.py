@@ -46,8 +46,11 @@ class FitFileProcessor(object):
                 # parse the message with lower case field names
                 message_dict = message.to_lower_dict()
                 function(fit_file, message_dict)
+            elif isinstance(message_type, Fit.UnknownMessageType) or message_type.is_unknown():
+                root_logger.debug("No entry handler %s for message type %r (%d) from %s: %s",
+                                  handler_name, message_type, len(messages), fit_file.filename, messages[0])
             else:
-                root_logger.info("No entry handler %s for message type %r (%d) from %s: %s",
+                root_logger.info("No entry handler %s for known message type %r (%d) from %s: %s",
                                  handler_name, message_type, len(messages), fit_file.filename, messages[0])
 
     def __write_message_type(self, fit_file, message_type):
@@ -167,15 +170,15 @@ class FitFileProcessor(object):
 
     def _write_running_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("run entry: %r", message_dict)
-        return self.__write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
+        return self._write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
 
     def _write_walking_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("walk entry: %r", message_dict)
-        return self.__write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
+        return self._write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
 
     def _write_hiking_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("hike entry: %r", message_dict)
-        return self.__write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
+        return self._write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
 
     def _write_cycling_entry(self, fit_file, activity_id, sub_sport, message_dict):
         ride = {
@@ -196,7 +199,7 @@ class FitFileProcessor(object):
 
     def _write_rowing_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("row entry: %r", message_dict)
-        return self.__write_stand_up_paddleboarding_entry(fit_file, activity_id, sub_sport, message_dict)
+        return self._write_stand_up_paddleboarding_entry(fit_file, activity_id, sub_sport, message_dict)
 
     def _write_elliptical_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("elliptical entry: %r", message_dict)
@@ -209,7 +212,7 @@ class FitFileProcessor(object):
 
     def _write_fitness_equipment_entry(self, fit_file, activity_id, sub_sport, message_dict):
         try:
-            function = getattr(self, 'write_' + sub_sport.name + '_entry')
+            function = getattr(self, '_write_' + sub_sport.name + '_entry')
             function(fit_file, activity_id, sub_sport, message_dict)
         except AttributeError:
             root_logger.info("No sub sport handler type %s from %s: %s", sub_sport, fit_file.filename, message_dict)
@@ -260,11 +263,15 @@ class FitFileProcessor(object):
             if current.sub_sport is None:
                 activity['sub_sport'] = sub_sport.name
         GarminDB.Activities._create_or_update_not_none(self.garmin_act_db_session, activity)
+        function_name = '_write_' + sport.name + '_entry'
         try:
-            function = getattr(self, 'write_' + sport.name + '_entry')
-            function(fit_file, activity_id, sub_sport, message_dict)
-        except AttributeError:
-            root_logger.info("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_dict)
+            function = getattr(self, function_name, None)
+            if function is not None:
+                function(fit_file, activity_id, sub_sport, message_dict)
+            else:
+                root_logger.warning("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_dict)
+        except Exception as e:
+            root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
 
     def _write_device_settings_entry(self, fit_file, device_settings_message_dict):
         root_logger.debug("device settings message: %r", device_settings_message_dict)

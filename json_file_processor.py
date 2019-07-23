@@ -26,11 +26,11 @@ class JsonFileProcessor(object):
         Return an instance of JsonFileProcessor.
 
         Parameters:
-        input_file (string): file (full path) to check for data
-        input_dir (string): directory (full path) to check for data files
-        latest (Boolean): check for latest files only
-        debug (Boolean): enable debug logging
-        recursive (Boolean): check the search directory recursively
+            input_file (string): file (full path) to check for data
+            input_dir (string): directory (full path) to check for data files
+            latest (Boolean): check for latest files only
+            debug (Boolean): enable debug logging
+            recursive (Boolean): check the search directory recursively
 
         """
         self.debug = debug
@@ -83,6 +83,18 @@ class JsonFileProcessor(object):
 
     def _commit(self):
         pass
+
+    def call_process_func(self, name, id, json_data):
+        """Call a JSON data processor function given it's base name."""
+        process_function = '_process_' + name
+        try:
+            function = getattr(self, process_function, None)
+            if function is not None:
+                function(id, json_data)
+            else:
+                root_logger.warning("No handler %s from %s %s", process_function, id, self.__class__.__name__)
+        except Exception as e:
+            root_logger.error("Exception in %s from %s %s: %s", process_function, id, self.__class__.__name__, e)
 
     def _process_files(self):
         root_logger.info("Processing %d json files", self.file_count())

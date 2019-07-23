@@ -57,7 +57,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
 
     def test_fit_file_import(self):
         db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
-        gfd = GarminActivitiesFitData(None, 'test_files/fit/activity', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
+        gfd = GarminActivitiesFitData('test_files/fit/activity', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
 

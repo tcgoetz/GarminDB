@@ -671,18 +671,21 @@ class DBObject(object):
 
     @classmethod
     def get_daily_stats(cls, session, day_ts):
+        """Return a dictionary of aggregate statistics for the given day."""
         stats = cls.get_stats(session, day_ts, day_ts + datetime.timedelta(1))
         stats['day'] = day_ts
         return stats
 
     @classmethod
     def get_weekly_stats(cls, session, first_day_ts):
+        """Return a dictionary of aggregate statistics for the given week."""
         stats = cls.get_stats(session, first_day_ts, first_day_ts + datetime.timedelta(7))
         stats['first_day'] = first_day_ts
         return stats
 
     @classmethod
     def get_monthly_stats(cls, session, first_day_ts, last_day_ts):
+        """Return a dictionary of aggregate statistics for the given month."""
         stats = cls.get_stats(session, first_day_ts, last_day_ts)
         stats['first_day'] = first_day_ts
         return stats

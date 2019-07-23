@@ -17,7 +17,7 @@ sys.path.append('../.')
 
 import GarminDB
 import Fit
-from FileProcessor import FileProcessor
+from file_processor import FileProcessor
 import garmin_db_config_manager as GarminDBConfigManager
 
 

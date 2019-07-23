@@ -173,6 +173,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
         """
         logger.info("Processing %s activities summary data from %s", 'latest' if latest else 'all', input_dir)
         super(GarminJsonSummaryData, self).__init__(None, input_dir, r'activity_\d*\.json', latest, debug)
+        self.input_dir = input_dir
         self.measurement_system = measurement_system
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
         self.conversions = {}
@@ -228,13 +229,13 @@ class GarminJsonSummaryData(JsonFileProcessor):
         }
         GarminDB.PaddleActivities._create_or_update_not_none(self.garmin_act_db_session, paddle)
 
-    def __process_cycling(self, activity_id, activity_summary):
+    def _process_cycling(self, activity_id, activity_summary):
         activity = {
             'activity_id'               : activity_id,
             'avg_cadence'               : self._get_field(activity_summary, 'averageBikingCadenceInRevPerMinute', float),
             'max_cadence'               : self._get_field(activity_summary, 'maxBikingCadenceInRevPerMinute', float),
         }
-        GarminDB.Activities._create_or_update_not_none(self.garmin_act_db, activity)
+        GarminDB.Activities._create_or_update_not_none(self.garmin_act_db_session, activity)
         ride = {
             'activity_id'               : activity_id,
             'strokes'                   : self._get_field(activity_summary, 'strokes', float),
@@ -243,7 +244,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
         GarminDB.CycleActivities._create_or_update_not_none(self.garmin_act_db_session, ride)
 
     def _process_mountain_biking(self, activity_id, activity_summary):
-        return self.process_cycling(activity_id, activity_summary)
+        return self._process_cycling(activity_id, activity_summary)
 
     def _process_elliptical(self, activity_id, activity_summary):
         if activity_summary is not None:
@@ -252,7 +253,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
                 'avg_cadence'               : self._get_field(activity_summary, 'averageRunningCadenceInStepsPerMinute', float),
                 'max_cadence'               : self._get_field(activity_summary, 'maxRunningCadenceInStepsPerMinute', float),
             }
-            GarminDB.Activities._create_or_update_not_none(self.garmin_act_db, activity)
+            GarminDB.Activities._create_or_update_not_none(self.garmin_act_db_session, activity)
             workout = {
                 'activity_id'               : activity_id,
                 'steps'                     : self._get_field(activity_summary, 'steps', float),
@@ -306,15 +307,10 @@ class GarminJsonSummaryData(JsonFileProcessor):
         GarminDB.Activities._create_or_update_not_none(self.garmin_act_db_session, activity)
         if extra_data:
             extra_data['activity_id'] = activity_id
-            json_filename = self.input_dir + '/extra_data_' + activity_id + '.json'
+            json_filename = '%s/extra_data_%s.json' % (self.input_dir, activity_id)
             if not os.path.isfile(json_filename):
                 self._save_json_file(json_filename, extra_data)
-        try:
-            process_function = '_process_' + sub_sport.name
-            function = getattr(self, process_function)
-            function(activity_id, json_data)
-        except AttributeError:
-            root_logger.info("No sport handler %s from %s", process_function, activity_id)
+        self.call_process_func(sub_sport.name, activity_id, json_data)
         return 1
 
     def process(self):
@@ -355,19 +351,19 @@ class GarminJsonDetailsData(JsonFileProcessor):
             'activity_id'               : activity_id,
             'avg_moving_pace'           : Fit.conversions.speed_to_pace(avg_moving_speed),
         }
-        root_logger.info("process_steps_activity for %d: %r", activity_id, run)
+        root_logger.debug("process_steps_activity for %d: %r", activity_id, run)
         GarminDB.StepsActivities._create_or_update_not_none(self.garmin_act_db_session, run)
 
     def _process_running(self, activity_id, json_data):
-        root_logger.info("process_running for %d: %r", activity_id, json_data)
+        root_logger.debug("process_running for %d: %r", activity_id, json_data)
         self._process_steps_activity(activity_id, json_data)
 
     def _process_walking(self, activity_id, json_data):
-        root_logger.info("process_walking for %d: %r", activity_id, json_data)
+        root_logger.debug("process_walking for %d: %r", activity_id, json_data)
         self._process_steps_activity(activity_id, json_data)
 
     def _process_hiking(self, activity_id, json_data):
-        root_logger.info("process_hiking for %d: %r", activity_id, json_data)
+        root_logger.debug("process_hiking for %d: %r", activity_id, json_data)
         self._process_steps_activity(activity_id, json_data)
 
     def _process_json(self, json_data):
@@ -385,12 +381,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
             'avg_temperature'           : avg_temperature.c_or_f(self.measurement_system) if avg_temperature is not None else None,
         }
         GarminDB.Activities._create_or_update_not_none(self.garmin_act_db_session, activity)
-        try:
-            process_function = '_process_' + sub_sport.name
-            function = getattr(self, process_function)
-            function(activity_id, json_data)
-        except AttributeError:
-            root_logger.info("No sport handler %s from %s", process_function, activity_id)
+        self.call_process_func(sub_sport.name, activity_id, json_data)
         return 1
 
     def process(self):

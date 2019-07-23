@@ -26,29 +26,39 @@ class GarminDB(HealthDB.DB):
     db_name = 'garmin'
     db_version = 13
 
-    class DbVersion(Base, HealthDB.DbVersionObject):
+    class _DbVersion(Base, HealthDB.DbVersionObject):
         pass
 
     def __init__(self, db_params_dict, debug=False):
+        """
+        Return an instance of GarminDB.
+
+        Paramters:
+            db_params_dict (dict): Config data for accessing the database
+            debug (Boolean): enable debug logging
+        """
         super(GarminDB, self).__init__(db_params_dict, debug)
         GarminDB.Base.metadata.create_all(self.engine)
-        version = GarminDB.DbVersion()
-        version.version_check(self, self.db_version)
+        self.version = GarminDB._DbVersion()
+        self.version.version_check(self, self.db_version)
         self.tables = [Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate, DailySummary, DailyExtraData]
         for table in self.tables:
-            version.table_version_check(self, table)
-            if not version.view_version_check(self, table):
+            self.version.table_version_check(self, table)
+            if not self.version.view_version_check(self, table):
                 table.delete_view(self)
         DeviceInfo.create_view(self)
         File.create_view(self)
 
 
 class Attributes(GarminDB.Base, HealthDB.KeyValueObject):
+    """Object representing genertic key-value data from a Garmin device."""
+
     __tablename__ = 'attributes'
     table_version = 1
 
     @classmethod
     def measurements_type(cls, db):
+        """Return the database units type (metric, statute, etc)."""
         return Fit.field_enums.DisplayMeasure.from_string(cls.get(db, 'measurement_system'))
 
     @classmethod
@@ -77,10 +87,12 @@ class Device(GarminDB.Base, HealthDB.DBObject):
 
     @property
     def product_as_enum(self):
+        """Convert the product attribute form a string to an enum and return it."""
         return Fit.field_enums.product_enum(self.manufacturer, self.product)
 
     @classmethod
     def get(cls, db, serial_number):
+        """Return a device entry given the device's serial number."""
         return cls.find_one(db, {'serial_number' : serial_number})
 
     @classmethod
@@ -110,6 +122,7 @@ class DeviceInfo(GarminDB.Base, HealthDB.DBObject):
 
     @classmethod
     def create_view(cls, db):
+        """Create a databse view that presents the device info data in a more user friendly way."""
         cls.create_join_view(db, cls._get_default_view_name(),
             [
                 cls.timestamp.label('timestamp'),
@@ -143,14 +156,17 @@ class File(GarminDB.Base, HealthDB.DBObject):
 
     @classmethod
     def _get_id(cls, session, pathname):
+        """Return the id of a file given it's pathname."""
         return cls._find_id(session, {'name' : os.path.basename(pathname)})
 
     @classmethod
     def get_id(cls, db, pathname):
+        """Return the id of a file given it's pathname."""
         return cls.find_id(db, {'name' : os.path.basename(pathname)})
 
     @classmethod
     def create_view(cls, db):
+        """Create a databse view that presents the file data in a more user friendly way."""
         cls.create_multi_join_view(db, cls._get_default_view_name(),
             [
                 DeviceInfo.timestamp.label('timestamp'),
@@ -166,12 +182,14 @@ class File(GarminDB.Base, HealthDB.DBObject):
 
     @classmethod
     def name_and_id_from_path(cls, pathname):
+        """Return the name and id of a file given it's pathname."""
         name = os.path.basename(pathname)
         id = name.split('.')[0]
         return (id, name)
 
     @classmethod
     def id_from_path(cls, pathname):
+        """Return the id of a file given it's pathname."""
         return os.path.basename(pathname).split('.')[0]
 
 
