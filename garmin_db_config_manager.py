@@ -149,3 +149,13 @@ def device_monitoring_dir(mount_dir):
 
 def device_activities_dir(mount_dir):
     return mount_dir + os.sep + GarminDBConfig.device_directories['base'] + os.sep + GarminDBConfig.device_directories['activities']
+
+
+def graphs_activity(activity):
+    """Return a dictionary of graph config items for a given activity."""
+    return GarminDBConfig.graphs.get(activity)
+
+def graphs_activity_config(activity, key):
+    activity = graphs_activity(activity)
+    if activity is not None:
+        return activity.get(key)

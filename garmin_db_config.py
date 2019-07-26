@@ -30,6 +30,8 @@ class GarminDBConfig(object):
     }
     enabled_stats = {
         'monitoring'            : True,
+        'steps'                 : True,
+        'itime'                 : True,
         'sleep'                 : True,
         'rhr'                   : True,
         'weight'                : True,
@@ -39,4 +41,10 @@ class GarminDBConfig(object):
         'base'                  : 'GARMIN',
         'activities'            : 'ACTIVITY',
         'monitoring'            : 'MONITOR'
+    }
+    graphs = {
+        'steps'                 : {'period' : 'weeks', 'days' : 730},
+        'hr'                    : {'period' : 'weeks', 'days' : 730},
+        'itime'                 : {'period' : 'weeks', 'days' : 730},
+        'weight'                : {'period' : 'weeks', 'days' : 730}
     }

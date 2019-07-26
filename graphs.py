@@ -13,7 +13,7 @@ import enum
 
 import HealthDB
 import garmin_db_config_manager as GarminDBConfigManager
-import version.version as version
+from version import version
 
 
 logging.basicConfig(filename='graphs.log', filemode='w', level=logging.INFO)
@@ -47,72 +47,99 @@ class Colors(enum.Enum):
         """Create an instance of a Color enum from an integer."""
         return Colors(integer % 8)
 
+class Graph(object):
 
-def __graph_mulitple_single_axes(time, data_list, stat_name, ylabel, save):
-    title = '%s Over Time' % stat_name
-    figure = plt.figure()
-    for index, data in enumerate(data_list):
-        color = Colors.from_integer(index).name
-        axes = figure.add_subplot(111, frame_on=(index == 0))
-        axes.plot(time, data, color=color)
-        axes.grid()
-    axes.set_title(title)
-    axes.set_xlabel('Time')
-    axes.set_ylabel(ylabel)
-    if save:
-        figure.savefig(stat_name + ".png")
-    plt.show()
-
-
-def __graph_mulitple(time, data_list, stat_name, period, ylabel_list, save):
-    units = {
-        'days'      : 'Day',
-        'weeks'     : 'Week',
-        'months'    : 'Month'
+    __table = {
+        'days'      : HealthDB.DaysSummary,
+        'weeks'     : HealthDB.WeeksSummary,
+        'months'    : HealthDB.MonthsSummary
     }
-    title = '%s per %s' % (stat_name, units[period])
-    figure = plt.figure()
-    for index, data in enumerate(data_list):
-        color = Colors.from_integer(index).name
-        axes = figure.add_subplot(111, label=ylabel_list[index], frame_on=(index == 0))
-        axes.plot(time, data, color=color)
-        axes.set_ylabel(ylabel_list[index], color=color)
-        axes.yaxis.set_label_position(YAxisLabelPostion.from_integer(index).name)
-        if (index % 2) == 0:
-            axes.yaxis.tick_right()
+
+    def __init__(self, debug, save):
+        self.debug = debug
+        self.save = save
+
+    @classmethod
+    def __graph_mulitple_single_axes(cls, time, data_list, stat_name, ylabel, save):
+        title = '%s Over Time' % stat_name
+        figure = plt.figure()
+        for index, data in enumerate(data_list):
+            color = Colors.from_integer(index).name
+            axes = figure.add_subplot(111, frame_on=(index == 0))
+            axes.plot(time, data, color=color)
+            axes.grid()
+        axes.set_title(title)
+        axes.set_xlabel('Time')
+        axes.set_ylabel(ylabel)
+        if save:
+            figure.savefig(stat_name + ".png")
+        plt.show()
+
+    @classmethod
+    def __graph_mulitple(cls, time, data_list, stat_name, period, ylabel_list, save):
+        units = {
+            'days'      : 'Day',
+            'weeks'     : 'Week',
+            'months'    : 'Month'
+        }
+        title = '%s per %s' % (stat_name, units[period])
+        figure = plt.figure()
+        for index, data in enumerate(data_list):
+            color = Colors.from_integer(index).name
+            axes = figure.add_subplot(111, label=ylabel_list[index], frame_on=(index == 0))
+            axes.plot(time, data, color=color)
+            axes.set_ylabel(ylabel_list[index], color=color)
+            axes.yaxis.set_label_position(YAxisLabelPostion.from_integer(index).name)
+            if (index % 2) == 0:
+                axes.yaxis.tick_right()
+            else:
+                axes.yaxis.tick_left()
+            axes.tick_params(axis='y', colors=color)
+            axes.set_ylim([min(data), max(data)])
+            axes.grid()
+        axes.set_title(title)
+        axes.set_xlabel('Time')
+        if save:
+            figure.savefig(stat_name + ".png")
+        plt.show()
+
+    def _graph_steps(self, time, data, period):
+        steps = [entry.steps for entry in data]
+        steps_goal_percent = [entry.steps_goal_percent for entry in data]
+        self.__graph_mulitple(time, [steps, steps_goal_percent], 'Steps', period, ['Steps', 'Step Goal Percent'], self.save)
+
+    def _graph_hr(self, time, data, period):
+        rhr = [entry.rhr_avg for entry in data]
+        inactive_hr = [entry.inactive_hr_avg for entry in data]
+        self.__graph_mulitple(time, [rhr, inactive_hr], 'Heart Rate', period, ['RHR', 'Inactive hr'], self.save)
+
+    def _graph_itime(self, time, data, period):
+        itime = [entry.intensity_time_mins for entry in data]
+        itime_goal_percent = [entry.intensity_time_goal_percent for entry in data]
+        self.__graph_mulitple(time, [itime, itime_goal_percent], 'Intensity Minutes', period, ['Intensity Minutes', 'Intensity Minutes Goal Percent'], self.save)
+
+    def _graph_weight(self, time, data, period):
+        weight = [entry.weight_avg for entry in data]
+        self.__graph_mulitple_single_axes(time, [weight], 'Weight', 'weight', self.save)
+
+    def graph_activity(self, activity, period, days):
+        if period is None or period == 'default':
+            period = GarminDBConfigManager.graphs_activity_config(activity, 'period')
+        if days is None or days == 'default':
+            days = GarminDBConfigManager.graphs_activity_config(activity, 'days')
+        db_params_dict = GarminDBConfigManager.get_db_params()
+        sum_db = HealthDB.SummaryDB(db_params_dict, self.debug)
+        end_ts = datetime.datetime.now()
+        start_ts = end_ts - datetime.timedelta(days=days)
+        table = self.__table[period]
+        data = table.get_for_period(sum_db, table, start_ts, end_ts)
+        if period == 'days':
+            time = [entry.day for entry in data]
         else:
-            axes.yaxis.tick_left()
-        axes.tick_params(axis='y', colors=color)
-        axes.set_ylim([min(data), max(data)])
-        axes.grid()
-    axes.set_title(title)
-    axes.set_xlabel('Time')
-    if save:
-        figure.savefig(stat_name + ".png")
-    plt.show()
-
-
-def graph_steps(time, data, period, save):
-    steps = [entry.steps for entry in data]
-    steps_goal_percent = [entry.steps_goal_percent for entry in data]
-    __graph_mulitple(time, [steps, steps_goal_percent], 'Steps', period, ['Steps', 'Step Goal Percent'], save)
-
-
-def graph_hr(time, data, period, save):
-    rhr = [entry.rhr_avg for entry in data]
-    inactive_hr = [entry.inactive_hr_avg for entry in data]
-    __graph_mulitple(time, [rhr, inactive_hr], 'Heart Rate', period, ['RHR', 'Inactive hr'], save)
-
-
-def graph_itime(time, data, period, save):
-    itime = [entry.intensity_time_mins for entry in data]
-    itime_goal_percent = [entry.intensity_time_goal_percent for entry in data]
-    __graph_mulitple(time, [itime, itime_goal_percent], 'Intensity Minutes', period, ['Intensity Minutes', 'Intensity Minutes Goal Percent'], save)
-
-
-def graph_weight(time, data, period, save):
-    weight = [entry.weight_avg for entry in data]
-    __graph_mulitple_single_axes(time, [weight], 'Weight', 'weight', save)
+            time = [entry.first_day for entry in data]
+        graph_func_name = '_graph_' + activity
+        graph_func = getattr(self, graph_func_name, None)
+        graph_func(time, data, period)
 
 
 def __print_usage(program, error=None):
@@ -140,21 +167,17 @@ def main(argv):
     debug = 0
     save = False
     hr = False
+    hr_period = None
     itime = False
+    itime_period = None
     steps = False
+    steps_period = None
     weight = False
-    days = 31
-    end_ts = datetime.datetime.now()
-    start_ts = end_ts - datetime.timedelta(days=days)
-    period = 'days'
-    table = {
-        'days'      : HealthDB.DaysSummary,
-        'weeks'     : HealthDB.WeeksSummary,
-        'months'    : HealthDB.MonthsSummary
-    }
+    weight_period = None
+    days = None
 
     try:
-        opts, args = getopt.getopt(argv, "adhHl:p:rsSt:wv", ["all", "latest=", "period=", "hr", "itime", "save", "steps", "trace=", "weight", "version"])
+        opts, args = getopt.getopt(argv, "adhHl:p:rsSt:wv", ["all", "latest=", "hr=", "itime", "save", "steps=", "trace=", "weight=", "version"])
     except getopt.GetoptError as e:
         __print_usage(sys.argv[0], str(e))
 
@@ -166,26 +189,29 @@ def main(argv):
         elif opt in ("-a", "--all"):
             logger.info("All: " + arg)
             hr = GarminDBConfigManager.is_stat_enabled('rhr')
+            steps = GarminDBConfigManager.is_stat_enabled('steps')
+            itime = GarminDBConfigManager.is_stat_enabled('itime')
+            weight = GarminDBConfigManager.is_stat_enabled('weight')
         elif opt in ("-l", "--latest"):
             days = int(arg)
-            end_ts = datetime.datetime.now()
-            start_ts = end_ts - datetime.timedelta(days=days)
-        elif opt in ("-p", "--period"):
-            logging.info("Period: %s", arg)
-            period = arg
         elif opt in ("-S", "--save"):
             save = True
         elif opt in ("-s", "--steps"):
+            logging.debug("Steps: %s", arg)
             steps = True
+            steps_period = arg
         elif opt in ("-H", "--hr"):
-            logging.debug("HR")
+            logging.debug("HR: %s", arg)
             hr = True
+            hr_period = arg
         elif opt in ("-i", "--itime"):
-            logging.debug("Intenist time")
+            logging.debug("Intenist time: %s", arg)
             itime = True
+            itime_period = arg
         elif opt in ("-w", "--weight"):
-            logging.info("Weight")
+            logging.info("Weight: %s", arg)
             weight = True
+            weight_period = arg
         elif opt in ("-t", "--trace"):
             debug = int(arg)
 
@@ -194,25 +220,19 @@ def main(argv):
     else:
         root_logger.setLevel(logging.INFO)
 
-    db_params_dict = GarminDBConfigManager.get_db_params()
-    sum_db = HealthDB.SummaryDB(db_params_dict, debug)
-    data = table[period].get_for_period(sum_db, table[period], start_ts, end_ts)
-    if period == 'days':
-        time = [entry.day for entry in data]
-    else:
-        time = [entry.first_day for entry in data]
+    graph = Graph(debug, save)
 
     if hr:
-        graph_hr(time, data, period, save)
+        graph.graph_activity('hr', hr_period, days)
 
     if itime:
-        graph_itime(time, data, period, save)
+        graph.graph_activity('itime', itime_period, days)
 
     if steps:
-        graph_steps(time, data, period, save)
+        graph.graph_activity('steps', steps_period, days)
 
     if weight:
-        graph_weight(time, data, period, save)
+        graph.graph_activity('weight', weight_period, days)
 
 
 if __name__ == "__main__":
