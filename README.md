@@ -1,5 +1,7 @@
 [![Screen shot of browsing the DB](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/ScreenShot_browsing_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
+[![Screen shot of a steps graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_steps_graph.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+
 [![Screen shot of the scripts running](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_running.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
 # GarminDB
@@ -14,6 +16,7 @@ What they can do:
 * Import Fitbit daily summary CSV files (files with one summary entry per day).
 * Import MS Health daily summary CSV files and MS Health Vault weight export CSV files.
 * Summarizing data into a common DB with tables containing daily summaries, weekly summaries, and monthly summaries.
+* Graph your data.
 * Retain data as JSON files or FIT files so that the DB can be regenerated without connecting to Garmin.
 
 Once you have your data in the DB, I recomend using a SQLite browser like [SQLite Studio](http://sqlitestudio.pl) or [DB Browser for SQLite](https://sqlitebrowser.org/) for browsing and working with the data. The scripts create some default [views](http://www.tutorialspoint.com/sqlite/sqlite_views.htm) in the DBs that make browsing the data easier.
