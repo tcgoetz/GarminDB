@@ -7,12 +7,13 @@ __license__ = "GPL"
 import os
 import datetime
 import logging
-from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enum, ForeignKey
+from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enum, ForeignKey, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import HealthDB
 import Fit
+import Fit.conversions as conversions
 from extra_data import ExtraData
 
 
@@ -334,11 +335,49 @@ class DailySummary(GarminDB.Base, HealthDB.DBObject):
 
     @hybrid_property
     def intensity_time(self):
+        """Return intensity_time computed from moderate_activity_time and vigorous_activity_time."""
         return Fit.conversions.add_time(self.moderate_activity_time, self.vigorous_activity_time, 2)
 
     @intensity_time.expression
     def intensity_time(cls):
+        """Return intensity_time computed from moderate_activity_time and vigorous_activity_time."""
         return cls.time_from_secs(2 * cls.secs_from_time(cls.vigorous_activity_time) + cls.secs_from_time(cls.moderate_activity_time))
+
+    @hybrid_property
+    def intensity_time_goal_percent(self):
+        """Return the percentage of intensity time goal achieved."""
+        if self.intensity_time is not None and self.intensity_time_goal is not None:
+            return (conversions.time_to_secs(self.intensity_time) * 100) / conversions.time_to_secs(self.intensity_time_goal)
+        return 0.0
+
+    @intensity_time_goal_percent.expression
+    def intensity_time_goal_percent(cls):
+        """Return the percentage of intensity time goal achieved."""
+        return func.round((cls.secs_from_time(cls.intensity_time) * 100) / cls.secs_from_time(cls.intensity_time_goal))
+
+    @hybrid_property
+    def steps_goal_percent(self):
+        """Return the percentage of steps goal achieved."""
+        if self.steps is not None and self.step_goal is not None:
+            return (self.steps * 100) / self.step_goal
+        return 0.0
+
+    @steps_goal_percent.expression
+    def steps_goal_percent(cls):
+        """Return the percentage of steps goal achieved."""
+        return func.round((cls.steps * 100) / cls.step_goal)
+
+    @hybrid_property
+    def floors_goal_percent(self):
+        """Return the percentage of floors goal achieved."""
+        if self.floors_up is not None and self.floors_goal is not None:
+            return (self.floors_up * 100) / self.floors_goal
+        return 0.0
+
+    @floors_goal_percent.expression
+    def floors_goal_percent(cls):
+        """Return the percentage of floors goal achieved."""
+        return func.round((cls.floors_up * 100) / cls.floors_goal)
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):

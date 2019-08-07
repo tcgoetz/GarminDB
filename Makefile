@@ -115,6 +115,9 @@ zip_packages: package_garmin package_fitbit package_mshealth
 graphs:
 	$(PYTHON) graphs.py --all
 
+checkup:
+	$(PYTHON) checkup.py --goals
+
 #
 # Garmin targets
 #

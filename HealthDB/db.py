@@ -376,7 +376,9 @@ class DBObject(object):
         return query
 
     @classmethod
-    def _get_for_period(cls, session, selectable, start_ts, end_ts, not_none_col=None):
+    def _get_for_period(cls, session, start_ts, end_ts, selectable=None, not_none_col=None):
+        if selectable is None:
+            selectable = cls
         query = cls._query(session, selectable, cls.time_col, start_ts, end_ts)
         if not_none_col is not None:
             # filter does not use 'is not None'
@@ -384,15 +386,16 @@ class DBObject(object):
         return query.all()
 
     @classmethod
-    def get_for_period(cls, db, selectable, start_ts, end_ts, not_none_col=None):
+    def get_for_period(cls, db, start_ts, end_ts, selectable=None, not_none_col=None):
+        """Return all DB records matching the selection criteria."""
         with db.managed_session() as session:
-            return cls._get_for_period(session, selectable, start_ts, end_ts, not_none_col)
+            return cls._get_for_period(session, start_ts, end_ts, selectable, not_none_col)
 
     @classmethod
-    def _get_for_day(cls, db, selectable, day_date, not_none_col=None):
+    def _get_for_day(cls, db, day_date, selectable=None, not_none_col=None):
         start_ts = datetime.datetime.combine(day_date, datetime.time.min)
         end_ts = start_ts + datetime.timedelta(1)
-        return cls._get_for_period(db, selectable, start_ts, end_ts, not_none_col)
+        return cls._get_for_period(db, start_ts, end_ts, selectable, not_none_col)
 
     @classmethod
     def get_for_day(cls, db, selectable, day_date, not_none_col=None):

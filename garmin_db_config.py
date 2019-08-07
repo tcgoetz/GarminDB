@@ -48,3 +48,6 @@ class GarminDBConfig(object):
         'itime'                 : {'period' : 'weeks', 'days' : 730},
         'weight'                : {'period' : 'weeks', 'days' : 730}
     }
+    checkup = {
+        'look_back_days'        : 90
+    }

@@ -155,7 +155,13 @@ def graphs_activity(activity):
     """Return a dictionary of graph config items for a given activity."""
     return GarminDBConfig.graphs.get(activity)
 
+
 def graphs_activity_config(activity, key):
     activity = graphs_activity(activity)
     if activity is not None:
         return activity.get(key)
+
+
+def checkup(item):
+    """Return an item from the checkup config."""
+    return GarminDBConfig.checkup.get(item)
