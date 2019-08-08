@@ -17,10 +17,19 @@ logger = logging.getLogger(__name__)
 
 
 class FitBitDB(HealthDB.DB):
+    """Object representing a database for storing health data from FitBit."""
+
     Base = declarative_base()
     db_name = 'fitbit'
 
     def __init__(self, db_params_dict, debug=False):
+        """
+        Return an instance of FitBitDB.
+
+        Paramters:
+            db_params_dict (dict): Config data for accessing the database
+            debug (Boolean): enable debug logging
+        """
         super(FitBitDB, self).__init__(db_params_dict, debug)
         FitBitDB.Base.metadata.create_all(self.engine)
 

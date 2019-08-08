@@ -17,10 +17,19 @@ logger = logging.getLogger(__name__)
 
 
 class MSHealthDB(HealthDB.DB):
+    """Object representing a database for storing health data from Microsoft."""
+
     Base = declarative_base()
     db_name = 'mshealth'
 
     def __init__(self, db_params_dict, debug=False):
+        """
+        Return an instance of MSHealthDB.
+
+        Paramters:
+            db_params_dict (dict): Config data for accessing the database
+            debug (Boolean): enable debug logging
+        """
         super(MSHealthDB, self).__init__(db_params_dict, debug)
         MSHealthDB.Base.metadata.create_all(self.engine)
 
@@ -74,15 +83,16 @@ class DaysSummary(MSHealthDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_hr_stats(cls, db, start_ts, end_ts):
-        stats = {
+        """Return a dictionary of aggregate heart rate statistics for the given time period."""
+        return {
             'hr_avg' : cls.get_col_avg(db, cls.hr_avg, start_ts, end_ts, True),
             'hr_min' : cls.get_col_min(db, cls.hr_min, start_ts, end_ts, True),
             'hr_max' : cls.get_col_max(db, cls.hr_max, start_ts, end_ts),
         }
-        return stats
 
     @classmethod
     def get_activity_mins_stats(cls, db, func, start_ts, end_ts):
+        """Return a dictionary of aggregate activity mins statistics for the given time period."""
         active_hours = func(db, cls.active_hours, start_ts, end_ts)
         if active_hours is not None:
             intensity_time = conversions.min_to_dt_time(active_hours * 60)
@@ -97,14 +107,17 @@ class DaysSummary(MSHealthDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_floors_stats(cls, db, func, start_ts, end_ts):
+        """Return a dictionary of aggregate floors statistics for the given time period."""
         return {'floors' : func(db, cls.floors, start_ts, end_ts)}
 
     @classmethod
     def get_steps_stats(cls, db, func, start_ts, end_ts):
+        """Return a dictionary of aggregate steps statistics for the given time period."""
         return {'steps' : func(db, cls.steps, start_ts, end_ts)}
 
     @classmethod
     def get_sleep_stats(cls, db, start_ts, end_ts):
+        """Return a dictionary of aggregate sleep statistics for the given time period."""
         return {
             'sleep_avg' : conversions.secs_to_dt_time(cls.get_col_avg(db, cls.sleep_secs, start_ts, end_ts, True)),
             'sleep_min' : conversions.secs_to_dt_time(cls.get_col_min(db, cls.sleep_secs, start_ts, end_ts, True)),
@@ -113,6 +126,7 @@ class DaysSummary(MSHealthDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_calories_stats(cls, db, start_ts, end_ts):
+        """Return a dictionary of aggregate calorie statistics for the given time period."""
         calories_avg = cls.get_col_avg(db, cls.calories, start_ts, end_ts)
         calories_active_avg = cls.get_col_avg(db, cls.activity_calories, start_ts, end_ts)
         if calories_active_avg is not None:
@@ -127,6 +141,7 @@ class DaysSummary(MSHealthDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_daily_stats(cls, db, day_ts):
+        """Return a dictionary of aggregate statistics for the given day."""
         stats = cls.get_activity_mins_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1))
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1)))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, day_ts, day_ts + datetime.timedelta(1)))
@@ -138,6 +153,7 @@ class DaysSummary(MSHealthDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_weekly_stats(cls, db, first_day_ts):
+        """Return a dictionary of aggregate statistics for the given week."""
         stats = cls.get_activity_mins_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7))
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7)))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, first_day_ts, first_day_ts + datetime.timedelta(7)))
@@ -149,6 +165,7 @@ class DaysSummary(MSHealthDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_monthly_stats(cls, db, first_day_ts, last_day_ts):
+        """Return a dictionary of aggregate statistics for the given month."""
         stats = cls.get_activity_mins_stats(db, cls.get_col_sum, first_day_ts, last_day_ts)
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
         stats.update(cls.get_steps_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
@@ -160,6 +177,8 @@ class DaysSummary(MSHealthDB.Base, HealthDB.DBObject):
 
 
 class MSVaultWeight(MSHealthDB.Base, HealthDB.DBObject):
+    """Class for a databse table holding weight data from Microsoft Health Vault."""
+
     __tablename__ = 'weight'
 
     timestamp = Column(DateTime, primary_key=True, unique=True)
@@ -169,6 +188,7 @@ class MSVaultWeight(MSHealthDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):
+        """Return a dictionary of aggregate statistics for the given time period."""
         stats = {
             'weight_avg' : cls.get_col_avg(db, cls.weight, start_ts, end_ts, True),
             'weight_min' : cls.get_col_min(db, cls.weight, start_ts, end_ts, True),

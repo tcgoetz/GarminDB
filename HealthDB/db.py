@@ -165,22 +165,24 @@ class DBObject(object):
 
     @classmethod
     def get_col_names(cls):
+        """Return the column names of the database object."""
         return [col.name for col in cls.__table__.columns]
 
     @classmethod
     def get_col_by_name(cls, name):
+        """Return the column object given the column name."""
         for col in cls.__table__._columns:
             if col.name == name:
                 return col
 
-    def set_col_value(self, name, value):
+    def __set_col_value(self, name, value):
         if name in self.get_col_names():
             set_attribute(self, name, value)
 
-    def update_from_dict(self, values_dict, ignore_none=False):
+    def __update_from_dict(self, values_dict, ignore_none=False):
         for key, value in values_dict.iteritems():
             if not ignore_none or value is not None:
-                self.set_col_value(key, value)
+                self.__set_col_value(key, value)
         return self
 
     @classmethod
@@ -245,16 +247,19 @@ class DBObject(object):
 
     @classmethod
     def find_one(cls, db, values_dict):
+        """Find a table row that matched the values in the values_dict."""
         with db.managed_session() as session:
             return cls._find_one(session, values_dict)
 
     @classmethod
     def _find_id(cls, session, values_dict):
+        """Return the id for a table row that matched the values in the values_dict."""
         logger.debug("%s::find_id %r", cls.__name__, values_dict)
         return cls._find_one(session, values_dict).id
 
     @classmethod
     def find_id(cls, db, values_dict):
+        """Return the id for a table row that matched the values in the values_dict."""
         with db.managed_session() as session:
             return cls._find_id(session, values_dict)
 
@@ -274,6 +279,7 @@ class DBObject(object):
 
     @classmethod
     def find_or_create(cls, db, values_dict):
+        """Find a table row that matched the values in the values_dict. Create a row if not found."""
         with db.managed_session() as session:
             cls._find_or_create(session, values_dict)
 
@@ -284,7 +290,7 @@ class DBObject(object):
         if instance is None:
             cls._create(session, values_dict, ignore_none)
         else:
-            instance.update_from_dict(values_dict, ignore_none)
+            instance.__update_from_dict(values_dict, ignore_none)
 
     @classmethod
     def create_or_update(cls, db, values_dict, ignore_none=False):

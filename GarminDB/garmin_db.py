@@ -207,6 +207,7 @@ class Weight(GarminDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
+        """Return a dictionary of aggregate statistics for the given time period."""
         stats = {
             'weight_avg' : cls._get_col_avg(session, cls.weight, start_ts, end_ts, True),
             'weight_min' : cls._get_col_min(session, cls.weight, start_ts, end_ts, True),
@@ -228,6 +229,7 @@ class Stress(GarminDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
+        """Return a dictionary of aggregate statistics for the given time period."""
         stats = {
             'stress_avg' : cls._get_col_avg(session, cls.stress, start_ts, end_ts, True),
         }
@@ -253,6 +255,7 @@ class Sleep(GarminDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
+        """Return a dictionary of aggregate statistics for the given time period."""
         return {
             'sleep_avg'     : cls._get_time_col_avg(session, cls.total_sleep, start_ts, end_ts),
             'sleep_min'     : cls._get_time_col_min(session, cls.total_sleep, start_ts, end_ts),
@@ -296,6 +299,7 @@ class RestingHeartRate(GarminDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
+        """Return a dictionary of aggregate statistics for the given time period."""
         stats = {
             'rhr_avg' : cls._get_col_avg(session, cls.resting_heart_rate, start_ts, end_ts, True),
             'rhr_min' : cls._get_col_min(session, cls.resting_heart_rate, start_ts, end_ts, True),
@@ -381,6 +385,7 @@ class DailySummary(GarminDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
+        """Return a dictionary of aggregate statistics for the given time period."""
         return {
             'rhr_avg'                   : cls._get_col_avg(session, cls.rhr, start_ts, end_ts),
             'rhr_min'                   : cls._get_col_min(session, cls.rhr, start_ts, end_ts),
@@ -402,6 +407,7 @@ class DailySummary(GarminDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_daily_stats(cls, session, day_ts):
+        """Return a dictionary of aggregate statistics for the given day."""
         stats = cls.get_stats(session, day_ts, day_ts + datetime.timedelta(1))
         # intensity_time_goal is a weekly goal, so the daily value is 1/7 of the weekly goal
         stats['intensity_time_goal'] = cls.time_from_secs(cls.secs_from_time(stats['intensity_time_goal']) / 7)
@@ -410,6 +416,7 @@ class DailySummary(GarminDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_monthly_stats(cls, session, first_day_ts, last_day_ts):
+        """Return a dictionary of aggregate statistics for the given month."""
         stats = cls.get_stats(session, first_day_ts, last_day_ts)
         # intensity time is a weekly goal, so sum up the weekly average values
         first_week_end = first_day_ts + datetime.timedelta(7)

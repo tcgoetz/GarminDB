@@ -28,6 +28,7 @@ def __usage(program):
 
 
 def main(argv):
+    """Import and analyze Microsoft Health data."""
     debug = False
     input_file = None
     _delete_db = False

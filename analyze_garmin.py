@@ -25,6 +25,7 @@ class Analyze(object):
     """Object for analyzing health data from Garmin devices."""
 
     def __init__(self, db_params_dict, debug):
+        """Return an instance of the Analyze class."""
         self.garmin_db = GarminDB.GarminDB(db_params_dict, debug)
         self.garmin_mon_db = GarminDB.MonitoringDB(db_params_dict, debug)
         self.garmin_sum_db = GarminDB.GarminSummaryDB(db_params_dict, debug)

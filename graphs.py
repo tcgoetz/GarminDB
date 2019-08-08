@@ -23,6 +23,8 @@ root_logger = logging.getLogger()
 
 
 class YAxisLabelPostion(enum.Enum):
+    """An enum of the label postions for the Y axis."""
+
     right   = 0
     left    = 1
 
@@ -33,6 +35,8 @@ class YAxisLabelPostion(enum.Enum):
 
 
 class Colors(enum.Enum):
+    """An enum of the colors used for generating graphs."""
+
     b   = 0
     g   = 1
     r   = 2
@@ -47,7 +51,9 @@ class Colors(enum.Enum):
         """Create an instance of a Color enum from an integer."""
         return Colors(integer % 8)
 
+
 class Graph(object):
+    """A class that generates graphs for GarminDB data sets."""
 
     __table = {
         'days'      : HealthDB.DaysSummary,
@@ -56,6 +62,7 @@ class Graph(object):
     }
 
     def __init__(self, debug, save):
+        """Return an instance of the Graph class."""
         self.debug = debug
         self.save = save
 
@@ -123,6 +130,7 @@ class Graph(object):
         self.__graph_mulitple_single_axes(time, [weight], 'Weight', 'weight', self.save)
 
     def graph_activity(self, activity, period, days):
+        """Generate a graph for the given activity with points every period spanning days."""
         if period is None or period == 'default':
             period = GarminDBConfigManager.graphs_activity_config(activity, 'period')
         if days is None or days == 'default':
@@ -164,6 +172,7 @@ def __print_version(program):
 
 
 def main(argv):
+    """Generate graphs based on commandline options."""
     debug = 0
     save = False
     hr = False

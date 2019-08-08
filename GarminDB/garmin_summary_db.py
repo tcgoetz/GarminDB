@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class GarminSummaryDB(HealthDB.DB):
+    """Object representing a database for storing health summary data from a Garmin device."""
+
     Base = declarative_base()
     db_name = 'garmin_summary'
     db_version = 7
@@ -23,6 +25,13 @@ class GarminSummaryDB(HealthDB.DB):
         pass
 
     def __init__(self, db_params_dict, debug=False):
+        """
+        Return an instance of GarminSummaryDB.
+
+        Paramters:
+            db_params_dict (dict): Config data for accessing the database
+            debug (Boolean): enable debug logging
+        """
         super(GarminSummaryDB, self).__init__(db_params_dict, debug)
         GarminSummaryDB.Base.metadata.create_all(self.engine)
         self.version = GarminSummaryDB._DbVersion()
@@ -89,6 +98,7 @@ class IntensityHR(GarminSummaryDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
+        """Return a dictionary of aggregate statistics for the given time period."""
         stats = {
             'inactive_hr_avg' : cls._get_col_avg_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
             'inactive_hr_min' : cls._get_col_min_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),

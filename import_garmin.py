@@ -63,6 +63,16 @@ class GarminMonitoringFitData(object):
     """Class for importing monitoring FIT files into a database."""
 
     def __init__(self, input_dir, latest, measurement_system, debug):
+        """
+        Return an instance of GarminMonitoringFitData.
+
+        Parameters:
+        input_dir (string): directory (full path) to check for monitoring data files
+        latest (Boolean): check for latest files only
+        measurement_system (enum): which measurement system to use when importing the files
+        debug (Boolean): enable debug logging
+
+        """
         logger.info("Processing daily FIT data")
         self.measurement_system = measurement_system
         self.debug = debug

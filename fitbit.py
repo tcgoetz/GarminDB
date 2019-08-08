@@ -30,6 +30,7 @@ def usage(program):
 
 
 def main(argv):
+    """Import into a DB and summarize CSV formatted FitBit export data."""
     debug = False
     input_file = None
     _delete_db = False

@@ -28,6 +28,13 @@ class MonitoringDB(HealthDB.DB):
         pass
 
     def __init__(self, db_params_dict, debug=False):
+        """
+        Return an instance of MonitoringDB.
+
+        Paramters:
+            db_params_dict (dict): Config data for accessing the database
+            debug (Boolean): enable debug logging
+        """
         super(MonitoringDB, self).__init__(db_params_dict, debug)
         MonitoringDB.Base.metadata.create_all(self.engine)
         self.version = MonitoringDB._DbVersion()
@@ -42,6 +49,7 @@ class MonitoringDB(HealthDB.DB):
 
 class MonitoringInfo(MonitoringDB.Base, HealthDB.DBObject):
     """Class representing data from a health monitoring file."""
+
     __tablename__ = 'monitoring_info'
     table_version = 1
 
@@ -61,6 +69,7 @@ class MonitoringInfo(MonitoringDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
+        """Return a dict of stats for table entries within the time span."""
         stats = {
             'calories_bmr_avg' : cls._get_col_avg(session, cls.resting_metabolic_rate, start_ts, end_ts),
         }
@@ -78,6 +87,7 @@ class MonitoringHeartRate(MonitoringDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
+        """Return a dict of stats for table entries within the time span."""
         return {
             'hr_avg' : cls._get_col_avg(session, cls.heart_rate, start_ts, end_ts, True),
             'hr_min' : cls._get_col_min(session, cls.heart_rate, start_ts, end_ts, True),
@@ -117,6 +127,7 @@ class MonitoringIntensity(MonitoringDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
+        """Return a dict of stats for table entries within the time span."""
         return {
             'intensity_time'            : cls._get_time_col_sum(session, cls.intensity_time, start_ts, end_ts),
             'moderate_activity_time'    : cls._get_time_col_sum(session, cls.moderate_activity_time, start_ts, end_ts),
@@ -149,6 +160,7 @@ class MonitoringClimb(MonitoringDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_stats(cls, session, func, start_ts, end_ts, measurement_system):
+        """Return a dict of stats for table entries within the time span."""
         cum_ascent = func(session, cls.cum_ascent, start_ts, end_ts)
         if cum_ascent:
             if measurement_system is Fit.field_enums.DisplayMeasure.metric:
@@ -161,6 +173,7 @@ class MonitoringClimb(MonitoringDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_daily_stats(cls, session, day_ts, measurement_system):
+        """Return a dict of stats for table entries for the given day."""
         stats = cls.get_stats(session, cls._get_col_max, day_ts, day_ts + datetime.timedelta(1), measurement_system)
         stats['day'] = day_ts
         return stats
@@ -209,6 +222,7 @@ class Monitoring(MonitoringDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_stats(cls, session, func, start_ts, end_ts):
+        """Return a dict of stats for table entries within the time span."""
         return {
             'steps'                 : func(session, cls.steps, start_ts, end_ts),
             'calories_active_avg'   : (
@@ -220,6 +234,7 @@ class Monitoring(MonitoringDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_daily_stats(cls, session, day_ts):
+        """Return a dict of stats for table entries for the given day."""
         stats = cls.get_stats(session, cls._get_col_max, day_ts, day_ts + datetime.timedelta(1))
         stats['day'] = day_ts
         return stats

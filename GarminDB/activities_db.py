@@ -29,6 +29,13 @@ class ActivitiesDB(HealthDB.DB):
         pass
 
     def __init__(self, db_params_dict, debug=False):
+        """
+        Return an instance of ActivitiesDB.
+
+        Paramters:
+            db_params_dict (dict): Config data for accessing the database
+            debug (Boolean): enable debug logging
+        """
         super(ActivitiesDB, self).__init__(db_params_dict, debug)
         ActivitiesDB.Base.metadata.create_all(self.engine)
         self.version = ActivitiesDB._DbVersion()
@@ -121,6 +128,10 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
 
     time_col_name = 'start_time'
     match_col_names = ['activity_id']
+
+    def is_steps_activity(self):
+        """Return if the activity is a steps based activity."""
+        return self.sport in ['walking', 'running', 'hiking']
 
     @classmethod
     def get(cls, db, activity_id):
@@ -231,6 +242,7 @@ class ActivityRecords(ActivitiesDB.Base, HealthDB.DBObject):
 
     @hybrid_property
     def position(self):
+        """Return the location where the record was recorded."""
         return HealthDB.Location(self.position_lat, self.position_long)
 
     @position.setter
@@ -240,6 +252,7 @@ class ActivityRecords(ActivitiesDB.Base, HealthDB.DBObject):
 
 
 class SportActivities(HealthDB.DBObject):
+    """Base class for all sport based activity tables."""
 
     match_col_names = ['activity_id']
 
@@ -254,6 +267,10 @@ class SportActivities(HealthDB.DBObject):
     @classmethod
     def create_activity_view(cls, db, selectable):
         cls.create_join_view(db, cls._get_default_view_name(), selectable, Activities, Activities.start_time.desc())
+
+    @classmethod
+    def get(cls, db, activity_id):
+        return cls.find_one(db, {'activity_id' : activity_id})
 
 
 class StepsActivities(ActivitiesDB.Base, SportActivities):
