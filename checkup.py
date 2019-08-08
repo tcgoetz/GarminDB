@@ -57,6 +57,21 @@ class CheckUp(object):
         logger.info('Floors: on goal %d of %d days', floors_goal_days, look_back_days)
         logger.info('Intensity mins: on goal %d of %d weeks', intensity_goal_weeks, intensity_weeks)
 
+    def __activity_string(self, activity):
+        return '%s: "%s" %s in %s (%s)' % (activity.start_time, activity.name, activity.distance, activity.elapsed_time, activity.avg_speed)
+
+    def runs(self, course_id):
+        activity_db = GarminDB.ActivitiesDB(self.db_params_dict, self.debug)
+        activities = GarminDB.Activities.get_by_course_id(activity_db, course_id)
+        activities_count = len(activities)
+        fastest_activity = GarminDB.Activities.get_fastest_by_course_id(activity_db, course_id)
+        slowest_activity = GarminDB.Activities.get_slowest_by_course_id(activity_db, course_id)
+        logger.info('Matching Activities: %d', activities_count)
+        logger.info('  first: %s', self.__activity_string(activities[0]))
+        logger.info('  lastest: %s', self.__activity_string(activities[-1]))
+        logger.info('  fastest: %s', self.__activity_string(fastest_activity))
+        logger.info('  slowest: %s', self.__activity_string(slowest_activity))
+
 
 def __print_usage(program, error=None):
     if error is not None:
@@ -74,9 +89,10 @@ def __print_version(program):
 def main(argv):
     debug = 0
     goals = False
+    runs = None
 
     try:
-        opts, args = getopt.getopt(argv, "gt:v", ["goals", "trace=", "version"])
+        opts, args = getopt.getopt(argv, "gr:t:v", ["goals", 'runs=', "trace=", "version"])
     except getopt.GetoptError as e:
         __print_usage(sys.argv[0], str(e))
 
@@ -88,12 +104,17 @@ def main(argv):
         elif opt in ("-g", "--goals"):
             logging.debug("Goals: %s", arg)
             goals = True
+        elif opt in ("-r", "--runs"):
+            logging.debug("Goals: %s", arg)
+            runs = arg
         elif opt in ("-t", "--trace"):
             debug = int(arg)
 
     checkup = CheckUp(debug)
     if goals:
         checkup.goals()
+    if runs:
+        checkup.runs(runs)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

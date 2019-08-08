@@ -142,6 +142,7 @@ clean_garmin_dbs:
 package_garmin:
 	pyinstaller --clean --noconfirm --onefile garmin.py
 	pyinstaller --clean --noconfirm --onefile graphs.py
+	pyinstaller --clean --noconfirm --onefile checkup.py
 
 
 

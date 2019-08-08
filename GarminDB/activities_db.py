@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, String, Float, Integer, DateTime, Time, ForeignKey, PrimaryKeyConstraint
+from sqlalchemy import Column, String, Float, Integer, DateTime, Time, ForeignKey, PrimaryKeyConstraint, desc
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -125,6 +125,24 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     @classmethod
     def get(cls, db, activity_id):
         return cls.find_one(db, {'activity_id' : activity_id})
+
+    @classmethod
+    def get_by_course_id(cls, db, course_id):
+        """Return all activities records for activities with the matching course_id."""
+        with db.managed_session() as session:
+            return session.query(cls).filter(cls.course_id == course_id).order_by(cls.start_time).all()
+
+    @classmethod
+    def get_fastest_by_course_id(cls, db, course_id):
+        """Return an activities record for the activity with the matching course_id with the fastest speed."""
+        with db.managed_session() as session:
+            return session.query(cls).filter(cls.course_id == course_id).order_by(desc(cls.avg_speed)).limit(1).one_or_none()
+
+    @classmethod
+    def get_slowest_by_course_id(cls, db, course_id):
+        """Return an activities record for the activity with the matching course_id with the slowest speed."""
+        with db.managed_session() as session:
+            return session.query(cls).filter(cls.course_id == course_id).order_by(cls.avg_speed).limit(1).one_or_none()
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
