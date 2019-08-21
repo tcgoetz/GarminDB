@@ -123,7 +123,7 @@ class MonitoringIntensity(MonitoringDB.Base, HealthDB.DBObject):
 
     @intensity_time.expression
     def intensity_time(cls):
-        return cls.time_from_secs(2 * cls.secs_from_time(cls.vigorous_activity_time) + cls.secs_from_time(cls.moderate_activity_time))
+        return cls.time_from_secs(2 * cls._secs_from_time(cls.vigorous_activity_time) + cls._secs_from_time(cls.moderate_activity_time))
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):

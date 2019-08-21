@@ -62,7 +62,7 @@ class SummaryBase(db.DBObject):
     @intensity_time_mins.expression
     def intensity_time_mins(cls):
         """Return intensity time as minutes."""
-        return (cls.secs_from_time(cls.intensity_time) / 60)
+        return (cls._secs_from_time(cls.intensity_time) / 60)
 
     @hybrid_property
     def intensity_time_goal_percent(self):
@@ -74,7 +74,7 @@ class SummaryBase(db.DBObject):
     @intensity_time_goal_percent.expression
     def intensity_time_goal_percent(cls):
         """Return the percentage of intensity time goal achieved."""
-        return func.round((cls.secs_from_time(cls.intensity_time) * 100) / cls.secs_from_time(cls.intensity_time_goal))
+        return func.round((cls._secs_from_time(cls.intensity_time) * 100) / cls._secs_from_time(cls.intensity_time_goal))
 
     @hybrid_property
     def steps_goal_percent(self):
