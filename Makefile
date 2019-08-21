@@ -107,7 +107,7 @@ backup: $(BACKUP_DIR)
 
 PLATFORM=$(shell uname)
 VERSION=$(shell $(PYTHON) garmin.py --version)
-BIN_FILES=dist/garmin dist/graphs dist/fitbit dist/mshealth
+BIN_FILES=dist/garmin dist/graphs dist/checkup dist/fitbit dist/mshealth
 ZIP_FILES=dist_files/download_create_dbs.sh dist_files/download_update_dbs.sh dist_files/copy_create_dbs.sh dist_files/copy_update_dbs.sh
 zip_packages: package_garmin package_fitbit package_mshealth
 	zip -j -r GarminDb_$(PLATFORM)_$(VERSION).zip GarminConnectConfig.json.example $(BIN_FILES) $(ZIP_FILES)
