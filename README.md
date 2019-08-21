@@ -4,6 +4,10 @@
 
 [![Screen shot of the scripts running](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_running.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
+[![Screen shot of checkup course](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_checkup_course_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+
+[![Screen shot of checkup goals](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_checkup_goals.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+
 # GarminDB
 
 [Python scripts](https://www.python.org/) for parsing health data into and manipulating data in a [SQLite](http://sqlite.org/) DB. SQLite is a light weight DB that requires no server.
