@@ -13,7 +13,7 @@
 [Python scripts](https://www.python.org/) for parsing health data into and manipulating data in a [SQLite](http://sqlite.org/) DB. SQLite is a light weight DB that requires no server.
 
 What they can do:
-* Automatically download and import Garmin daily monitoring files (all day heart rate, activity, climb/decend, stress, and intensity minutes) from the user's Garmin Connect "Daily Summary" page.
+* Automatically download and import Garmin daily monitoring files (all day heart rate, activity, climb/descend, stress, and intensity minutes) from the user's Garmin Connect "Daily Summary" page.
 * Extract sleep, weight, and resting heart rate data from Garmin Connect, store it as JSON files, and import it into the DB.
 * Download and import activity files from Garmin Connect. A summary table for all activities and more detailed data for some activity types. Lap and record entries for activities.
 * Copy daily monitoring and/or activities Fit files from a USB connected Garmin device.
@@ -23,17 +23,17 @@ What they can do:
 * Graph your data.
 * Retain data as JSON files or FIT files so that the DB can be regenerated without connecting to Garmin.
 
-Once you have your data in the DB, I recomend using a SQLite browser like [SQLite Studio](http://sqlitestudio.pl) or [DB Browser for SQLite](https://sqlitebrowser.org/) for browsing and working with the data. The scripts create some default [views](http://www.tutorialspoint.com/sqlite/sqlite_views.htm) in the DBs that make browsing the data easier.
+Once you have your data in the DB, I recommend using a SQLite browser like [SQLite Studio](http://sqlitestudio.pl) or [DB Browser for SQLite](https://sqlitebrowser.org/) for browsing and working with the data. The scripts create some default [views](http://www.tutorialspoint.com/sqlite/sqlite_views.htm) in the DBs that make browsing the data easier.
 
 # Using It
 
 ## Binary Release
 
-I have just started offering a bianry release for MacOS. Binary release for other platforms may be added. You can download releases from the [release page](https://github.com/tcgoetz/GarminDB/releases).
+I have just started offering a binary release for MacOS. Binary release for other platforms may be added. You can download releases from the [release page](https://github.com/tcgoetz/GarminDB/releases).
 For the MacOS binary release:
 * Download the zip file and unzip it into a directory.
 * Copy GarminConnectConfig.json.example to GarminConnectConfig.json, edit it, and add your Garmin Connect username and password.
-* Then run `create_dbs.sh` or `update_dbs.sh` from a Terminal window.
+* Then run `download_create_dbs.sh` or `download_update_dbs.sh` from a Terminal window to download from Garmin Connect (or copy_create_dbs.sh and copy_update_dbs.sh to copy files from a plugged in device).
 
 ## From Source
 
@@ -50,9 +50,9 @@ More [usage](https://github.com/tcgoetz/GarminDB/wiki/Usage)
 
 # Notes
 
-* You may get a DB version exception after updating the code, this means that the DB schema was updated and you need to rebuild your DBs by running `make rebuild_dbs`. Your DBs will be regenerated from the previously donwloaded data files. All of your data will not be redownloaded from Garmin.
+* You may get a DB version exception after updating the code, this means that the DB schema was updated and you need to rebuild your DBs by running `make rebuild_dbs`. Your DBs will be regenerated from the previously downloaded data files. All of your data will not be redownloaded from Garmin.
 * The scripts were developed on MacOS. Information or patches on using these scripts on other platforms are welcome.
 * Running the scripts on Linux should require little or no changes. You may need to [install](https://github.com/tcgoetz/GarminDB/wiki/Usage) `git` and `make`.
-* There are two ways to use this project on Windows. Installing the [Ubuntu subsystem](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) on Windows 10 is one way. Using a Linux container or VM is also possibie.
+* There are two ways to use this project on Windows. Installing the [Ubuntu subsystem](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) on Windows 10 is one way. Using a Linux container or VM is also possible.
 * If you have issues, file a bug here on the project. See the Issues tab at the top of the project page. Run `make bugreport`and include bugreport.txt in your bug report.
 * When a run of `make` finishes, a summary of the data in the DB will be printed. The output includes the date ranges included in the downloaded daily monitoring files and activities. It includes the number of records for daily monitoring, activities, sleep, resting heart rate, weight, etc. Use the summary information to determine if all of your data has been downloaded from Garmin Connect. If not, use the make targets download_monitoring, download_all_activities, download_sleep, download_weight, and download_rhr as needed to download any remaining data.
