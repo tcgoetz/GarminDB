@@ -385,6 +385,12 @@ class DBObject(object):
         return query
 
     @classmethod
+    def get_all(cls, db):
+        """Return all DB records in the table."""
+        with db.managed_session() as session:
+            return session.query(cls).all()
+
+    @classmethod
     def _get_for_period(cls, session, start_ts, end_ts, selectable=None, not_none_col=None):
         if selectable is None:
             selectable = cls
