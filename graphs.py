@@ -140,7 +140,7 @@ class Graph(object):
         end_ts = datetime.datetime.now()
         start_ts = end_ts - datetime.timedelta(days=days)
         table = self.__table[period]
-        data = table.get_for_period(sum_db, table, start_ts, end_ts)
+        data = table.get_for_period(sum_db, start_ts, end_ts, table)
         if period == 'days':
             time = [entry.day for entry in data]
         else:
