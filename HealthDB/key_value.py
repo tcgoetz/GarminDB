@@ -36,17 +36,17 @@ class KeyValueObject(db.DBObject):
         cls.create_or_update(db, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
 
     @classmethod
-    def _set_newer(cls, session, key, value, timestamp=datetime.datetime.now()):
+    def s_set_newer(cls, session, key, value, timestamp=datetime.datetime.now()):
         """Set a key-value pair in the database if the timestamp is newer than the one in the database."""
-        item = cls._find_one(session, {'key' : key})
+        item = cls.s_find_one(session, {'key' : key})
         if item is None or item.timestamp < timestamp:
-            cls._create_or_update(session, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
+            cls.s_create_or_update(session, {'timestamp' : timestamp, 'key' : key, 'value' : str(value)})
 
     @classmethod
     def set_newer(cls, db, key, value, timestamp=datetime.datetime.now()):
         """Set a key-value pair in the database if the timestamp is newer than the one in the database."""
         with db.managed_session() as session:
-            cls._set_newer(session, key, value, timestamp)
+            cls.s_set_newer(session, key, value, timestamp)
 
     @classmethod
     def set_if_unset(cls, db, key, value, timestamp=datetime.datetime.now()):
@@ -60,7 +60,7 @@ class KeyValueObject(db.DBObject):
         logger.debug("%s::get %s", cls.__name__, key)
         try:
             with db.managed_session() as session:
-                instance = cls._find_one(session, {'key' : key})
+                instance = cls.s_find_one(session, {'key' : key})
                 return instance.value
         except Exception:
             logger.warning("%s::get failed to get %s: %s", cls.__name__, key, traceback.format_exc())

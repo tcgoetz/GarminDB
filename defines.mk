@@ -21,8 +21,3 @@ INSTALL_DEPS_TO_SYSTEM ?= y
 # File ID for test activities
 #
 TEST_GC_ID ?= 10724054307
-
-#
-# File name to use when generating a bug report.
-#
-BUGREPORT=bugreport.txt

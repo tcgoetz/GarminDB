@@ -85,7 +85,6 @@ clean: test_clean
 	rm -f HealthDB/*.pyc
 	rm -f GarminDB/*.pyc
 	rm -f FitBitDB/*.pyc
-	rm -f $(BUGREPORT)
 	rm -f *.log
 	rm -rf dist
 	rm -rf build
@@ -108,7 +107,7 @@ backup: $(BACKUP_DIR)
 PLATFORM=$(shell uname)
 VERSION=$(shell $(PYTHON) garmin.py --version)
 BIN_FILES=dist/garmin dist/graphs dist/checkup dist/fitbit dist/mshealth
-ZIP_FILES=dist_files/download_create_dbs.sh dist_files/download_update_dbs.sh dist_files/copy_create_dbs.sh dist_files/copy_update_dbs.sh
+ZIP_FILES=dist_files/download_create_dbs.sh dist_files/download_update_dbs.sh dist_files/copy_create_dbs.sh dist_files/copy_update_dbs.sh bugreport.sh
 zip_packages: package_garmin package_fitbit package_mshealth
 	zip -j -r GarminDb_$(PLATFORM)_$(VERSION).zip GarminConnectConfig.json.example $(BIN_FILES) $(ZIP_FILES)
 
@@ -186,12 +185,6 @@ test_clean:
 # bugreport target
 #
 bugreport:
-	uname -a > $(BUGREPORT)
-	which $(PYTHON) >> $(BUGREPORT)
-	$(PYTHON) --version >> $(BUGREPORT) 2>&1
-	echo $(PYTHON_PACKAGES)
-	for package in $(PYTHON_PACKAGES); do \
-		pip show $$package >> $(BUGREPORT); \
-	done
+	./bugreport.sh
 
 .PHONY: all setup create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release

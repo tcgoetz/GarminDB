@@ -62,10 +62,10 @@ class TestFit(unittest.TestCase):
                     logger.info("Unknown %s message field: %s value: %s", message_type, field_name, field_value.value)
                     unknown_message_fields[message_type].append(field_name)
 
-    def check_value(self, message, key, expected_value):
+    def check_value(self, fit_file, message, key, expected_value):
         if key in message:
             value = message[key].value
-            self.assertEqual(value, expected_value)
+            self.assertEqual(value, expected_value, 'file %s expected %r found %r' % (fit_file.filename, expected_value, value))
 
     def check_value_range(self, message, key, min_value, max_value):
         if key in message:
@@ -85,8 +85,8 @@ class TestFit(unittest.TestCase):
     def check_file_id(self, fit_file, file_type):
         messages = fit_file[Fit.MessageType.file_id]
         for message in messages:
-            self.check_value(message, 'manufacturer', Fit.field_enums.Manufacturer.Garmin)
-            self.check_value(message, 'type', file_type)
+            self.check_value(fit_file, message, 'manufacturer', Fit.field_enums.Manufacturer.Garmin)
+            self.check_value(fit_file, message, 'type', file_type)
 
     def check_monitoring_file(self, filename):
         fit_file = Fit.file.File(filename, self.measurement_system)
@@ -112,7 +112,7 @@ class TestFit(unittest.TestCase):
             self.check_value_range(message, 'distance', 0, 100 * 5280)
             self.check_value_range(message, 'avg_vertical_oscillation', 0, 10)
             self.check_value_range(message, 'step_length', 0, 64)
-            self.check_value_range(message, 'speed', 0, 25)
+            self.check_value_range(message, 'speed', 0, 100)
 
     def check_activity_file(self, filename):
         fit_file = Fit.file.File(filename, self.measurement_system)

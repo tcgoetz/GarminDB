@@ -138,6 +138,10 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
         return cls.find_one(db, {'activity_id' : activity_id})
 
     @classmethod
+    def s_get(cls, session, activity_id):
+        return cls.s_find_one(session, {'activity_id' : activity_id})
+
+    @classmethod
     def get_by_course_id(cls, db, course_id):
         """Return all activities records for activities with the matching course_id."""
         with db.managed_session() as session:
@@ -158,9 +162,9 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
         stats = {
-            'activities'            : cls._row_count_for_period(session, start_ts, end_ts),
-            'activities_calories'   : cls._get_col_sum(session, cls.calories, start_ts, end_ts),
-            'activities_distance'   : cls._get_col_sum(session, cls.distance, start_ts, end_ts),
+            'activities'            : cls.s_row_count_for_period(session, start_ts, end_ts),
+            'activities_calories'   : cls.s_get_col_sum(session, cls.calories, start_ts, end_ts),
+            'activities_distance'   : cls.s_get_col_sum(session, cls.distance, start_ts, end_ts),
         }
         return stats
 

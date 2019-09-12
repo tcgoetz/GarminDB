@@ -71,7 +71,7 @@ class MonitoringInfo(MonitoringDB.Base, HealthDB.DBObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dict of stats for table entries within the time span."""
         stats = {
-            'calories_bmr_avg' : cls._get_col_avg(session, cls.resting_metabolic_rate, start_ts, end_ts),
+            'calories_bmr_avg' : cls.s_get_col_avg(session, cls.resting_metabolic_rate, start_ts, end_ts),
         }
         return stats
 
@@ -89,7 +89,7 @@ class MonitoringHeartRate(MonitoringDB.Base, HealthDB.DBObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dict of stats for table entries within the time span."""
         return {
-            'hr_avg' : cls._get_col_avg(session, cls.heart_rate, start_ts, end_ts, True),
+            'hr_avg' : cls.s_get_col_avg(session, cls.heart_rate, start_ts, end_ts, True),
             'hr_min' : cls._get_col_min(session, cls.heart_rate, start_ts, end_ts, True),
             'hr_max' : cls._get_col_max(session, cls.heart_rate, start_ts, end_ts),
         }
@@ -129,9 +129,9 @@ class MonitoringIntensity(MonitoringDB.Base, HealthDB.DBObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dict of stats for table entries within the time span."""
         return {
-            'intensity_time'            : cls._get_time_col_sum(session, cls.intensity_time, start_ts, end_ts),
-            'moderate_activity_time'    : cls._get_time_col_sum(session, cls.moderate_activity_time, start_ts, end_ts),
-            'vigorous_activity_time'    : cls._get_time_col_sum(session, cls.vigorous_activity_time, start_ts, end_ts),
+            'intensity_time'            : cls.s_get_time_col_sum(session, cls.intensity_time, start_ts, end_ts),
+            'moderate_activity_time'    : cls.s_get_time_col_sum(session, cls.moderate_activity_time, start_ts, end_ts),
+            'vigorous_activity_time'    : cls.s_get_time_col_sum(session, cls.vigorous_activity_time, start_ts, end_ts),
         }
 
 
@@ -180,13 +180,13 @@ class MonitoringClimb(MonitoringDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_weekly_stats(cls, session, first_day_ts, measurement_system):
-        stats = cls.get_stats(session, cls._get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7), measurement_system)
+        stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7), measurement_system)
         stats['first_day'] = first_day_ts
         return stats
 
     @classmethod
     def get_monthly_stats(cls, session, first_day_ts, last_day_ts, measurement_system):
-        stats = cls.get_stats(session, cls._get_col_sum_of_max_per_day, first_day_ts, last_day_ts, measurement_system)
+        stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, last_day_ts, measurement_system)
         stats['first_day'] = first_day_ts
         return stats
 
@@ -215,7 +215,7 @@ class Monitoring(MonitoringDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_active_calories(cls, session, activity_type, start_ts, end_ts):
-        active_calories = cls._get_col_avg_of_max_per_day_for_value(session, cls.active_calories, cls.activity_type, activity_type, start_ts, end_ts)
+        active_calories = cls.s_get_col_avg_of_max_per_day_for_value(session, cls.active_calories, cls.activity_type, activity_type, start_ts, end_ts)
         if active_calories is not None:
             return active_calories
         return 0
@@ -241,12 +241,12 @@ class Monitoring(MonitoringDB.Base, HealthDB.DBObject):
 
     @classmethod
     def get_weekly_stats(cls, session, first_day_ts):
-        stats = cls.get_stats(session, cls._get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7))
+        stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7))
         stats['first_day'] = first_day_ts
         return stats
 
     @classmethod
     def get_monthly_stats(cls, session, first_day_ts, last_day_ts):
-        stats = cls.get_stats(session, cls._get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
+        stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
         stats['first_day'] = first_day_ts
         return stats
