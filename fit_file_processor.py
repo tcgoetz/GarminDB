@@ -259,9 +259,15 @@ class FitFileProcessor(object):
         current = GarminDB.Activities.s_get(self.garmin_act_db_session, activity_id)
         if current:
             if current.sport is None:
-                activity['sport'] = sport.name
+                if isinstance(sub_sport, Fit.field_enums.Sport) and sport != Fit.field_enums.Sport.invalid:
+                    activity['sport'] = sport.name
+                else:
+                    logger.error("%s session invalid sport value: %s", fit_file.filename, sport)
             if current.sub_sport is None:
-                activity['sub_sport'] = sub_sport.name
+                if isinstance(sub_sport, Fit.field_enums.SubSport) and sub_sport != Fit.field_enums.SubSport.invalid:
+                    activity['sub_sport'] = sub_sport.name
+                else:
+                    logger.error("%s session invalid subsport value: %s", fit_file.filename, sub_sport)
         GarminDB.Activities.s_create_or_update_not_none(self.garmin_act_db_session, activity)
         function_name = '_write_' + sport.name + '_entry'
         try:

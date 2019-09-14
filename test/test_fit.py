@@ -52,6 +52,7 @@ class TestFit(unittest.TestCase):
         unknown_message_fields = {}
         self.check_timestamp(fit_file, message)
         self.check_temperature(message)
+        self.check_sport_value(fit_file, message)
         for field_name in message:
             field_value = message[field_name]
             if not field_value.is_invalid() and field_name.startswith('unknown'):
@@ -61,6 +62,12 @@ class TestFit(unittest.TestCase):
                 elif field_name not in unknown_message_fields[message_type]:
                     logger.info("Unknown %s message field: %s value: %s", message_type, field_name, field_value.value)
                     unknown_message_fields[message_type].append(field_name)
+
+    def check_type(self, fit_file, message, key, expected_type):
+        if key in message:
+            value = message[key].value
+            self.assertIsInstance(value, expected_type, 'file %s expected %r found %r' % (fit_file.filename, expected_type, value))
+            logger.info("%s %r: %r", fit_file.filename, message.type(), value)
 
     def check_value(self, fit_file, message, key, expected_value):
         if key in message:
@@ -91,6 +98,20 @@ class TestFit(unittest.TestCase):
         for message in messages:
             self.check_value(fit_file, message, 'manufacturer', Fit.field_enums.Manufacturer.Garmin)
             self.check_value(fit_file, message, 'type', file_type)
+
+    def check_sport_value(self, fit_file, message):
+        self.check_type(fit_file, message, 'sport', Fit.field_enums.Sport)
+        self.check_type(fit_file, message, 'sub_sport', Fit.field_enums.SubSport)
+
+    def check_sport(self, fit_file):
+        sport_messages = fit_file[Fit.MessageType.sport]
+        if sport_messages:
+            for sport_message in sport_messages:
+                self.check_sport_value(fit_file, sport_message)
+            sport = sport_messages[0].get('sport')
+            sub_sport = sport_messages[0].get('sub_sport')
+            logger.info("%s: %r %r", fit_file.filename, sport, sub_sport)
+            return sport
 
     def check_monitoring_file(self, filename):
         fit_file = Fit.file.File(filename, self.measurement_system)
@@ -127,16 +148,13 @@ class TestFit(unittest.TestCase):
         logger.info(filename + ' message types: %s', fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
         self.check_file_id(fit_file, Fit.field_enums.FileType.activity)
-        sport_messages = fit_file[Fit.MessageType.sport]
-        if len(sport_messages) > 0:
-            sport = sport_messages[0].get('sport')
-            if sport:
-                for message in fit_file[Fit.MessageType.record]:
-                    self.check_lap_or_record(fit_file, sport, message)
-                for message in fit_file[Fit.MessageType.lap]:
-                    self.check_lap_or_record(fit_file, sport, message)
-                for message in fit_file[Fit.MessageType.session]:
-                    self.check_lap_or_record(fit_file, sport, message)
+        sport = self.check_sport(fit_file)
+        for message in fit_file[Fit.MessageType.record]:
+            self.check_lap_or_record(fit_file, sport, message)
+        for message in fit_file[Fit.MessageType.lap]:
+            self.check_lap_or_record(fit_file, sport, message)
+        for message in fit_file[Fit.MessageType.session]:
+            self.check_lap_or_record(fit_file, sport, message)
 
     def test_parse_activity(self):
         activity_path = self.file_path + '/activity'
