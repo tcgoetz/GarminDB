@@ -19,14 +19,14 @@ from file_processor import FileProcessor
 
 
 root_logger = logging.getLogger()
-handler = logging.FileHandler('fit.log', 'w')
+handler = logging.FileHandler('fit_file.log', 'w')
 root_logger.addHandler(handler)
 root_logger.setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
 
 
-class TestFit(unittest.TestCase):
+class TestFitFile(unittest.TestCase):
     """Class for testing FIT file parsing."""
 
     @classmethod
@@ -67,7 +67,7 @@ class TestFit(unittest.TestCase):
         if key in message:
             value = message[key].value
             self.assertIsInstance(value, expected_type, 'file %s expected %r found %r' % (fit_file.filename, expected_type, value))
-            logger.info("%s %r: %r", fit_file.filename, message.type(), value)
+            logger.info("%s %r: %r", fit_file.filename, message.type, value)
 
     def check_value(self, fit_file, message, key, expected_value):
         if key in message:
