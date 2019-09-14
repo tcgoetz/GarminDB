@@ -121,19 +121,19 @@ checkup:
 # Garmin targets
 #
 garmin:
-	$(PYTHON) garmin.py --all --download --import --analyze
+	time $(PYTHON) garmin.py --all --download --import --analyze
 
 build_garmin:
-	$(PYTHON) garmin.py --all --import --analyze
+	time $(PYTHON) garmin.py --all --import --analyze
 
 copy_garmin:
-	$(PYTHON) garmin.py --all --copy --import --analyze
+	time $(PYTHON) garmin.py --all --copy --import --analyze
 
 update_garmin:
-	$(PYTHON) garmin.py --all --download --import --analyze --latest
+	time $(PYTHON) garmin.py --all --download --import --analyze --latest
 
 copy_garmin_latest:
-	$(PYTHON) garmin.py --all --copy --import --analyze --latest
+	time $(PYTHON) garmin.py --all --copy --import --analyze --latest
 
 clean_garmin_dbs:
 	$(PYTHON) garmin.py --delete_db

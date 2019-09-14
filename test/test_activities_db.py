@@ -14,7 +14,7 @@ sys.path.append('../.')
 
 import GarminDB
 import Fit
-from import_garmin_activities import GarminActivitiesFitData
+from import_garmin_activities import GarminActivitiesFitData, GarminTcxData
 import garmin_db_config_manager as GarminDBConfigManager
 
 
@@ -60,6 +60,12 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         gfd = GarminActivitiesFitData('test_files/fit/activity', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
+
+    def test_tcx_file_import(self):
+        db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
+        gtd = GarminTcxData('test_files/tcx', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
+        if gtd.file_count() > 0:
+            gtd.process_files(db_params_dict)
 
 
 if __name__ == '__main__':

@@ -9,8 +9,6 @@ import os
 import sys
 import re
 import logging
-import tcxparser
-import dateutil.parser
 import progressbar
 
 import Fit
@@ -19,6 +17,7 @@ from file_processor import FileProcessor
 from fit_file_processor import FitFileProcessor
 from json_file_processor import JsonFileProcessor
 import garmin_connect_enums as GarminConnectEnums
+import tcx_file
 
 
 logger = logging.getLogger(__file__)
@@ -91,18 +90,12 @@ class GarminTcxData(object):
 
     def __process_file(self, file_name):
         root_logger.info("Processing file: " + file_name)
-        tcx = tcxparser.TCXParser(file_name)
-        end_time = dateutil.parser.parse(tcx.completed_at, ignoretz=True)
-        start_time = dateutil.parser.parse(tcx.started_at, ignoretz=True)
-        manufacturer = GarminDB.Device.Manufacturer.Unknown
-        product = tcx.creator
-        if product is not None:
-            match = re.search('Microsoft', product)
-            if match:
-                manufacturer = GarminDB.Device.Manufacturer.Microsoft
-        serial_number = tcx.creator_version
-        if serial_number is None or serial_number == 0:
-            serial_number = GarminDB.Device.unknown_device_serial_number
+        tcx = tcx_file.TcxFile(file_name)
+        end_time = tcx.get_date('completed_at')
+        start_time = tcx.get_date('started_at')
+        (manufacturer, product) = tcx.get_manufacturer_and_product()
+        serial_number = tcx.get_value('creator_version')
+        serial_number = tcx.get_serial_number()
         device = {
             'serial_number'     : serial_number,
             'timestamp'         : start_time,
@@ -119,25 +112,23 @@ class GarminTcxData(object):
             'serial_number' : serial_number,
         }
         GarminDB.File._find_or_create(self.garmin_db_session, file)
-        distance = Fit.measurement.Distance.from_meters(tcx.distance)
-        # ascent = Fit.Distance.from_meters(tcx.ascent)
-        # descent = Fit.Distance.from_meters(tcx.descent)
+        distance = Fit.measurement.Distance.from_meters(tcx.get_value('distance'))
         activity = {
             'activity_id'               : file_id,
             'start_time'                : start_time,
             'stop_time'                 : end_time,
-            'laps'                      : len(tcx.activity.Lap),
-            # 'sport'                     : tcx.activity_type,
-            'calories'                  : tcx.calories,
-            'start_lat'                 : tcx.start_latitude,
-            'start_long'                : tcx.start_longitude,
-            'stop_lat'                  : tcx.end_latitude,
-            'stop_long'                 : tcx.end_longitude,
+            'laps'                      : tcx.get_lap_count(),
+            'sport'                     : tcx.get_sport(),
+            'calories'                  : tcx.get_value('calories'),
+            'start_lat'                 : tcx.get_value('start_latitude'),
+            'start_long'                : tcx.get_value('start_longitude'),
+            'stop_lat'                  : tcx.get_value('end_latitude'),
+            'stop_long'                 : tcx.get_value('end_longitude'),
             'distance'                  : distance.kms_or_miles(self.measurement_system),
-            'avg_hr'                    : tcx.hr_avg,
-            'max_hr'                    : tcx.hr_max,
-            'max_cadence'               : tcx.cadence_max,
-            'avg_cadence'               : tcx.cadence_avg,
+            'avg_hr'                    : tcx.get_value('hr_avg'),
+            'max_hr'                    : tcx.get_value('hr_max'),
+            'max_cadence'               : tcx.get_value('cadence_max'),
+            'avg_cadence'               : tcx.get_value('cadence_avg'),
             # 'ascent'                    : ascent.meters_or_feet(self.measurement_system),
             # 'descent'                   : descent.meters_or_feet(self.measurement_system)
         }
@@ -145,9 +136,9 @@ class GarminTcxData(object):
         GarminDB.Activities.s_create_or_update_not_none(self.garmin_act_db_session, activity_not_zero)
 
     def process_files(self, db_params_dict):
-        """Import data from files into the databse."""
+        """Import data from TCX files into the database."""
         garmin_db = GarminDB.GarminDB(db_params_dict, self.debug - 1)
-        garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug)
+        garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
         with garmin_db.managed_session() as self.garmin_db_session:
             with garmin_act_db.managed_session() as self.garmin_act_db_session:
                 for file_name in progressbar.progressbar(self.file_names):
