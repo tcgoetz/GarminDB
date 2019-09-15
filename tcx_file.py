@@ -22,11 +22,15 @@ class TcxFile(object):
     """Wraps third party TCX library and handles requests for nonexistent fields."""
 
     def __init__(self, filename):
+        """Return an instance of TcxFile containing a parsed TCX file."""
         self.tcx = tcxparser.TCXParser(filename)
 
     def get_value(self, attribute):
         """Return a value named 'attribute' from the parsed TCX file."""
-        return getattr(self.tcx, attribute, None)
+        try:
+            return getattr(self.tcx, attribute, None)
+        except Exception:
+            return None
 
     def get_date(self, attribute):
         """Return a datetime named 'attribute' from the parsed TCX file."""

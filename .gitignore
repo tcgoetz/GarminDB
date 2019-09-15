@@ -93,11 +93,11 @@ bugreport.txt
 
 *.zip
 *.fit
+*.tcx
+*.json
 *.html
 .*.conf
 GarminConnectConfig.json
 stats.txt
 ms_stats.txt
 *.png
-
-

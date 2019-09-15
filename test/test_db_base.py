@@ -18,6 +18,11 @@ class TestDBBase(object):
         cls.table_dict = table_dict
         cls.table_not_none_cols_dict = table_not_none_cols_dict
 
+    def check_not_none_cols(self, db, table_not_none_cols_dict):
+        for table, not_none_cols_list in table_not_none_cols_dict.iteritems():
+            for not_none_col in not_none_cols_list:
+                self.assertTrue(table.row_count(db, not_none_col, None) == 0, 'table %s col %s has None values' % (table, not_none_col))
+
     def test_db_exists(self):
         logger.info("Checking DB %s exists", self.db.db_name)
         self.assertIsNotNone(self.db, 'DB %s doesnt exist' % self.db.db_name)
@@ -28,6 +33,4 @@ class TestDBBase(object):
             self.assertTrue(table.row_count(self.db) > 0, 'table %s has no data' % table_name)
 
     def test_not_none_cols(self):
-        for table, not_none_cols_list in self.table_not_none_cols_dict.iteritems():
-            for not_none_col in not_none_cols_list:
-                self.assertTrue(table.row_count(self.db, not_none_col, None) == 0, 'table %s col %s has None values' % (table, not_none_col))
+        self.check_not_none_cols(self.db, self.table_not_none_cols_dict)
