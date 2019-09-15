@@ -55,13 +55,19 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         self.assertGreater(GarminDB.CycleActivities.row_count(self.garmin_act_db), 0)
         self.assertGreater(GarminDB.EllipticalActivities.row_count(self.garmin_act_db), 0)
 
-    def test_fit_file_import(self):
-        db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
+    def fit_file_import(self, db_params_dict):
         gfd = GarminActivitiesFitData('test_files/fit/activity', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
+        self.gfd_file_count = gfd.file_count()
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
-        garmin_act_db = GarminDB.ActivitiesDB(db_params_dict)
-        self.check_not_none_cols(garmin_act_db,
+
+    def test_fit_file_import(self):
+        db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
+        self.profile_function('fit_activities_import', self.fit_file_import, db_params_dict)
+        test_mon_db = GarminDB.GarminDB(db_params_dict)
+        self.check_db_tables_exists(test_mon_db, {'device_table' : GarminDB.Device})
+        self.check_db_tables_exists(test_mon_db, {'file_table' : GarminDB.File, 'device_info_table' : GarminDB.DeviceInfo}, self.gfd_file_count)
+        self.check_not_none_cols(GarminDB.ActivitiesDB(db_params_dict),
             {GarminDB.Activities : [GarminDB.Activities.start_time, GarminDB.Activities.stop_time, GarminDB.Activities.elapsed_time]}
         )
 
@@ -70,22 +76,20 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         gtd = GarminTcxData('test_files/tcx', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
         if gtd.file_count() > 0:
             gtd.process_files(db_params_dict)
-        garmin_act_db = GarminDB.ActivitiesDB(db_params_dict)
-        self.check_not_none_cols(garmin_act_db, {GarminDB.Activities : [GarminDB.Activities.sport, GarminDB.Activities.laps]})
+        self.check_not_none_cols(GarminDB.ActivitiesDB(db_params_dict), {GarminDB.Activities : [GarminDB.Activities.sport, GarminDB.Activities.laps]})
 
     def test_summary_json_file_import(self):
         db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
-        gjsd = GarminJsonSummaryData(db_params_dict, 'test_files/summary_json', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
+        gjsd = GarminJsonSummaryData(db_params_dict, 'test_files/json/activity/summary', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
         if gjsd.file_count() > 0:
             gjsd.process()
-        garmin_act_db = GarminDB.ActivitiesDB(db_params_dict)
-        self.check_not_none_cols(garmin_act_db,
+        self.check_not_none_cols(GarminDB.ActivitiesDB(db_params_dict),
             {GarminDB.Activities : [GarminDB.Activities.name, GarminDB.Activities.type, GarminDB.Activities.sport, GarminDB.Activities.sub_sport]}
         )
 
     def test_details_json_file_import(self):
         db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
-        gjsd = GarminJsonDetailsData(db_params_dict, 'test_files/details_json', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
+        gjsd = GarminJsonDetailsData(db_params_dict, 'test_files/json/activity/details', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
         if gjsd.file_count() > 0:
             gjsd.process()
 

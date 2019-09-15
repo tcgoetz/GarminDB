@@ -19,6 +19,7 @@ import GarminDB
 import Fit
 from file_processor import FileProcessor
 import garmin_db_config_manager as GarminDBConfigManager
+from import_garmin import GarminMonitoringFitData, GarminSummaryData
 
 
 root_logger = logging.getLogger()
@@ -69,6 +70,27 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
             latest = GarminDB.MonitoringHeartRate.latest_time(self.db, GarminDB.MonitoringHeartRate.heart_rate)
             logger.info("Latest data for %s: %s", table_name, latest)
             self.assertLess(datetime.datetime.now() - latest, datetime.timedelta(days=2))
+
+    def test_fit_file_import(self):
+        db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
+        gfd = GarminMonitoringFitData('test_files/fit/monitoring', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
+        if gfd.file_count() > 0:
+            gfd.process_files(db_params_dict)
+        test_mon_db = GarminDB.GarminDB(db_params_dict)
+        self.check_db_tables_exists(test_mon_db, {'device_table' : GarminDB.Device})
+        self.check_db_tables_exists(test_mon_db, {'file_table' : GarminDB.File, 'device_info_table' : GarminDB.DeviceInfo}, gfd.file_count())
+        self.check_not_none_cols(GarminDB.MonitoringDB(db_params_dict),
+            {GarminDB.Monitoring : [GarminDB.Monitoring.timestamp, GarminDB.Monitoring.activity_type, GarminDB.Monitoring.duration]}
+        )
+
+    def test_summary_json_file_import(self):
+        db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
+        gjsd = GarminSummaryData(db_params_dict, 'test_files/json/monitoring/summary', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
+        if gjsd.file_count() > 0:
+            gjsd.process()
+        self.check_not_none_cols(GarminDB.GarminDB(db_params_dict),
+            {GarminDB.DailySummary : [GarminDB.DailySummary.rhr, GarminDB.DailySummary.distance, GarminDB.DailySummary.steps, GarminDB.DailySummary.floors_goal]}
+        )
 
 
 if __name__ == '__main__':

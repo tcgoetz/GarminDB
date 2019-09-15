@@ -7,9 +7,9 @@ __license__ = "GPL"
 
 import os
 import sys
-import re
 import logging
 import progressbar
+import dateutil.parser
 
 import Fit
 import GarminDB

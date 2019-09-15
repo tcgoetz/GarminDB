@@ -30,12 +30,10 @@ class FitFileProcessor(object):
         debug (Boolean): if True, debug logging is enabled
         """
         root_logger.info("Debug: %s", debug)
-        self.db_params_dict = db_params_dict
         self.debug = debug
-
         self.garmin_db = GarminDB.GarminDB(db_params_dict, debug - 1)
-        self.garmin_mon_db = GarminDB.MonitoringDB(self.db_params_dict, self.debug - 1)
-        self.garmin_act_db = GarminDB.ActivitiesDB(self.db_params_dict, self.debug - 1)
+        self.garmin_mon_db = GarminDB.MonitoringDB(db_params_dict, self.debug - 1)
+        self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
 
     def __write_generic(self, fit_file, message_type, messages):
         """Write all messages of a given message type to the databse."""

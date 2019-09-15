@@ -8,7 +8,8 @@ include $(PROJECT_BASE)/defines.mk
 
 DB_TEST_GROUPS=garmin_db activities_db monitoring_db garmin_summary_db summary_db
 DB_OBJECTS_TEST_GROUPS=garmin_db_objects
-TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) fit_file fit_field_enum tcx_file
+FILE_PARSE_TEST_GROUPS=fit_file tcx_file
+TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS) fit_field_enum
 
 #
 # Over all targets
@@ -17,11 +18,14 @@ all: $(TEST_GROUPS)
 
 db: $(DB_TEST_GROUPS)
 
+file_parse: $(FILE_PARSE_TEST_GROUPS)
+
 db_objects: $(DB_OBJECTS_TEST_GROUPS)
 
 clean:
 	rm -f *.pyc
 	rm -f *.log
+	rm -f *.txt
 
 #
 # Targets for testing smaller slices of functionality.
