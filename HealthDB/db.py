@@ -179,7 +179,8 @@ class DBObject(object):
         if name in self.get_col_names():
             set_attribute(self, name, value)
 
-    def __update_from_dict(self, values_dict, ignore_none=False):
+    def update_from_dict(self, values_dict, ignore_none=False):
+        """Update a DB object instance from values in a dict by matching the dict keys to DB object attributes."""
         for key, value in values_dict.iteritems():
             if not ignore_none or value is not None:
                 self.__set_col_value(key, value)
@@ -242,19 +243,18 @@ class DBObject(object):
 
     @classmethod
     def s_find_one(cls, session, values_dict):
-        logger.debug("%s::s_find_one %r", cls.__name__, values_dict)
+        """Find a table row that matches the values in the values_dict."""
         return cls._find_query(session, values_dict).one_or_none()
 
     @classmethod
     def find_one(cls, db, values_dict):
-        """Find a table row that matched the values in the values_dict."""
+        """Find a table row that matches the values in the values_dict."""
         with db.managed_session() as session:
             return cls.s_find_one(session, values_dict)
 
     @classmethod
     def s_find_id(cls, session, values_dict):
         """Return the id for a table row that matched the values in the values_dict."""
-        logger.debug("%s::find_id %r", cls.__name__, values_dict)
         return cls.s_find_one(session, values_dict).id
 
     @classmethod
@@ -264,50 +264,38 @@ class DBObject(object):
             return cls.s_find_id(session, values_dict)
 
     @classmethod
-    def s_create(cls, session, values_dict, ignore_none=False):
-        logger.debug("%s::s_create %r", cls.__name__, values_dict)
-        if ignore_none:
-            values_dict = dict_filter_none_values(values_dict)
+    def s_exists(cls, session, values_dict):
+        return cls._exists_query(session, values_dict).count() > 0
+
+    @classmethod
+    def s_create(cls, session, values_dict):
         instance = cls(**values_dict)
         session.add(instance)
 
     @classmethod
-    def _find_or_create(cls, session, values_dict):
-        logger.debug("%s::find_or_create %r", cls.__name__, values_dict)
-        if cls.s_find_one(session, values_dict) is None:
+    def s_find_or_create(cls, session, values_dict):
+        if cls._find_query(session, values_dict).one_or_none() is None:
             cls.s_create(session, values_dict)
 
     @classmethod
     def find_or_create(cls, db, values_dict):
         """Find a table row that matched the values in the values_dict. Create a row if not found."""
         with db.managed_session() as session:
-            cls._find_or_create(session, values_dict)
+            cls.s_find_or_create(session, values_dict)
 
     @classmethod
     def s_create_or_update(cls, session, values_dict, ignore_none=False):
-        logger.debug("%s::create_or_update %r", cls.__name__, values_dict)
-        instance = cls.s_find_one(session, values_dict)
+        instance = cls._find_query(session, values_dict).one_or_none()
         if instance is None:
-            cls.s_create(session, values_dict, ignore_none)
+            cls.s_create(session, values_dict)
         else:
-            instance.__update_from_dict(values_dict, ignore_none)
+            instance.update_from_dict(values_dict, ignore_none)
 
     @classmethod
     def create_or_update(cls, db, values_dict, ignore_none=False):
         """Create a database record if it doesn't exist. Update it if does exist."""
         with db.managed_session() as session:
             cls.s_create_or_update(session, values_dict, ignore_none)
-
-    @classmethod
-    def s_create_or_update_not_none(cls, session, values_dict):
-        """Create a database record if it doesn't exist. Update it if does exist."""
-        logger.debug("%s::s_create_or_update_not_none %r", cls.__name__, values_dict)
-        cls.s_create_or_update(session, values_dict, True)
-
-    @classmethod
-    def create_or_update_not_none(cls, db, values_dict):
-        """Create a database record if it doesn't exist. Update it if does exist."""
-        cls.create_or_update(db, values_dict, True)
 
     @classmethod
     def _secs_from_time(cls, col):

@@ -189,7 +189,7 @@ class Analyze(object):
                             'intensity'     : monitoring.intensity,
                             'heart_rate'    : hr.heart_rate
                         }
-                        GarminDB.IntensityHR.s_create_or_update_not_none(garmin_sum_session, entry)
+                        GarminDB.IntensityHR.s_create_or_update(garmin_sum_session, entry, ignore_none=True)
                 previous_ts = monitoring.timestamp
 
     def __calculate_day_stats(self, day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
@@ -211,8 +211,8 @@ class Analyze(object):
         stats.update(GarminDB.Sleep.get_daily_stats(garmin_session, day_date))
         stats.update(GarminDB.Activities.get_daily_stats(garmin_act_session, day_date))
         # save it to the db
-        GarminDB.DaysSummary.s_create_or_update_not_none(garmin_sum_session, stats)
-        HealthDB.DaysSummary.s_create_or_update_not_none(sum_session, stats)
+        GarminDB.DaysSummary.s_create_or_update(garmin_sum_session, stats)
+        HealthDB.DaysSummary.s_create_or_update(sum_session, stats)
 
     def __calculate_days(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         days = GarminDB.Monitoring.s_get_days(garmin_mon_session, year)
@@ -240,8 +240,8 @@ class Analyze(object):
         stats.update(GarminDB.Sleep.get_weekly_stats(garmin_session, day_date))
         stats.update(GarminDB.Activities.get_weekly_stats(garmin_act_session, day_date))
         # save it to the db
-        GarminDB.WeeksSummary.s_create_or_update_not_none(garmin_sum_session, stats)
-        HealthDB.WeeksSummary.s_create_or_update_not_none(sum_session, stats)
+        GarminDB.WeeksSummary.s_create_or_update(garmin_sum_session, stats)
+        HealthDB.WeeksSummary.s_create_or_update(sum_session, stats)
 
     def __calculate_weeks(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         for week_starting_day in progressbar.progressbar(xrange(1, 365, 7)):
@@ -268,8 +268,8 @@ class Analyze(object):
         stats.update(GarminDB.Sleep.get_monthly_stats(garmin_session, start_day_date, end_day_date))
         stats.update(GarminDB.Activities.get_monthly_stats(garmin_act_session, start_day_date, end_day_date))
         # save it to the db
-        GarminDB.MonthsSummary.s_create_or_update_not_none(garmin_sum_session, stats)
-        HealthDB.MonthsSummary.s_create_or_update_not_none(sum_session, stats)
+        GarminDB.MonthsSummary.s_create_or_update(garmin_sum_session, stats)
+        HealthDB.MonthsSummary.s_create_or_update(sum_session, stats)
 
     def __calculate_months(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         months = GarminDB.Monitoring._get_months(garmin_mon_session, year)

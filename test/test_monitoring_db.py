@@ -71,14 +71,18 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
             logger.info("Latest data for %s: %s", table_name, latest)
             self.assertLess(datetime.datetime.now() - latest, datetime.timedelta(days=2))
 
-    def test_fit_file_import(self):
-        db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
+    def fit_file_import(self, db_params_dict):
         gfd = GarminMonitoringFitData('test_files/fit/monitoring', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
+        self.gfd_file_count = gfd.file_count()
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
+
+    def test_fit_file_import(self):
+        db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
+        self.profile_function('fit_mon_import', self.fit_file_import, db_params_dict)
         test_mon_db = GarminDB.GarminDB(db_params_dict)
         self.check_db_tables_exists(test_mon_db, {'device_table' : GarminDB.Device})
-        self.check_db_tables_exists(test_mon_db, {'file_table' : GarminDB.File, 'device_info_table' : GarminDB.DeviceInfo}, gfd.file_count())
+        self.check_db_tables_exists(test_mon_db, {'file_table' : GarminDB.File, 'device_info_table' : GarminDB.DeviceInfo}, self.gfd_file_count)
         self.check_not_none_cols(GarminDB.MonitoringDB(db_params_dict),
             {GarminDB.Monitoring : [GarminDB.Monitoring.timestamp, GarminDB.Monitoring.activity_type, GarminDB.Monitoring.duration]}
         )

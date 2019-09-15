@@ -88,7 +88,9 @@ class GarminMonitoringFitData(object):
         fp = FitFileProcessor(db_params_dict, self.debug)
         for file_name in progressbar.progressbar(self.file_names):
             try:
-                fp.write_file(Fit.file.File(file_name, self.measurement_system))
+                fit_file = Fit.file.File(file_name, self.measurement_system)
+                if fit_file.type() == Fit.field_enums.FileType.monitoring_b:
+                    fp.write_file(fit_file)
             except Fit.exceptions.FitFileError as e:
                 logger.error("Failed to parse %s: %s", file_name, e)
 
@@ -166,7 +168,7 @@ class GarminSleepData(JsonFileProcessor):
             'rem_sleep' : daily_sleep.get('remSleepSeconds'),
             'awake' : daily_sleep.get('awakeSleepSeconds')
         }
-        GarminDB.Sleep.create_or_update_not_none(self.garmin_db, day_data)
+        GarminDB.Sleep.create_or_update(self.garmin_db, day_data, ignore_none=True)
         sleep_levels = json_data.get('sleepLevels')
         if sleep_levels is None:
             return 0
@@ -180,7 +182,7 @@ class GarminSleepData(JsonFileProcessor):
                 'event' : event.name,
                 'duration' : duration
             }
-            GarminDB.SleepEvents.create_or_update_not_none(self.garmin_db, level_data)
+            GarminDB.SleepEvents.create_or_update(self.garmin_db, level_data, ignore_none=True)
         return len(sleep_levels)
 
 
@@ -212,7 +214,7 @@ class GarminRhrData(JsonFileProcessor):
                     'day'                   : json_data['statisticsStartDate'].date(),
                     'resting_heart_rate'    : rhr
                 }
-                GarminDB.RestingHeartRate.create_or_update_not_none(self.garmin_db, point)
+                GarminDB.RestingHeartRate.create_or_update(self.garmin_db, point, ignore_none=True)
                 return 1
 
 
@@ -301,7 +303,7 @@ class GarminSummaryData(JsonFileProcessor):
             'calories_consumed'         : json_data['consumedKilocalories'],
             'description'               : description,
         }
-        GarminDB.DailySummary.create_or_update_not_none(self.garmin_db, summary)
+        GarminDB.DailySummary.create_or_update(self.garmin_db, summary, ignore_none=True)
         if extra_data:
             extra_data['day'] = day
             logger.info("Extra data: %r", extra_data)
@@ -333,5 +335,5 @@ class GarminMonitoringExtraData(JsonFileProcessor):
     def _process_json(self, json_data):
         root_logger.info("Extra data: %r", json_data)
         json_data['day'] = json_data['day'].date()
-        GarminDB.DailyExtraData.create_or_update_not_none(self.garmin_db, GarminDB.DailyExtraData.convert_eums(json_data))
+        GarminDB.DailyExtraData.create_or_update(self.garmin_db, GarminDB.DailyExtraData.convert_eums(json_data), ignore_none=True)
         return 1

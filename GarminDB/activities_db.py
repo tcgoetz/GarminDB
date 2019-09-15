@@ -127,7 +127,10 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     anaerobic_training_effect = Column(Float)
 
     time_col_name = 'start_time'
-    match_col_names = ['activity_id']
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.activity_id == values_dict['activity_id'])
 
     def is_steps_activity(self):
         """Return if the activity is a steps based activity."""
@@ -139,7 +142,7 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
 
     @classmethod
     def s_get(cls, session, activity_id):
-        return cls.s_find_one(session, {'activity_id' : activity_id})
+        return session.query(cls).filter(cls.activity_id == activity_id).one_or_none()
 
     @classmethod
     def get_by_course_id(cls, db, course_id):
@@ -205,7 +208,14 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
     )
 
     time_col_name = 'start_time'
-    match_col_names = ['activity_id', 'lap']
+
+    @classmethod
+    def _exists_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.lap == values_dict['lap'])
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.lap == values_dict['lap'])
 
     @hybrid_property
     def start_loc(self):
@@ -242,7 +252,14 @@ class ActivityRecords(ActivitiesDB.Base, HealthDB.DBObject):
     )
 
     time_col_name = 'timestamp'
-    match_col_names = ['activity_id', 'record']
+
+    @classmethod
+    def _exists_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.record == values_dict['record'])
+
+    @classmethod
+    def _find_query(cls, session, values_dict):
+        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.record == values_dict['record'])
 
     @hybrid_property
     def position(self):
