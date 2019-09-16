@@ -260,7 +260,7 @@ class FitFileProcessor(object):
                     current.sub_sport = sub_sport.name
             current.update_from_dict(activity, ignore_none=True)
         else:
-            GarminDB.Activities.s_create(self.garmin_act_db_session, activity)
+            self.garmin_act_db_session.add(GarminDB.Activities(**activity))
         function_name = '_write_' + sport.name + '_entry'
         try:
             function = getattr(self, function_name, None)
@@ -304,7 +304,7 @@ class FitFileProcessor(object):
                 'max_temperature'                   : self.__get_field_value(message_dict, 'max_temperature'),
                 'avg_temperature'                   : self.__get_field_value(message_dict, 'avg_temperature'),
             }
-            GarminDB.ActivityLaps.s_create(self.garmin_act_db_session, lap)
+            self.garmin_act_db_session.add(GarminDB.ActivityLaps(**lap))
             self.lap += 1
 
     def _write_battery_entry(self, fit_file, battery_message_dict):
@@ -347,7 +347,7 @@ class FitFileProcessor(object):
                 'speed'                             : self.__get_field_value(message_dict, 'speed'),
                 'temperature'                       : self.__get_field_value(message_dict, 'temperature'),
             }
-            GarminDB.ActivityRecords.s_create(self.garmin_act_db_session, record)
+            self.garmin_act_db_session.add(GarminDB.ActivityRecords(**record))
             self.record += 1
 
     def _write_dev_data_id_entry(self, fit_file, dev_data_id_message_dict):

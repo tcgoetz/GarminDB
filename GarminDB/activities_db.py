@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, String, Float, Integer, DateTime, Time, ForeignKey, PrimaryKeyConstraint, desc
+from sqlalchemy import Column, String, Float, Integer, DateTime, Time, ForeignKey, PrimaryKeyConstraint, desc, func
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -211,7 +211,7 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
 
     @classmethod
     def _exists_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.lap == values_dict['lap'])
+        return session.query(func.count(cls.activity_id)).filter(cls.activity_id == values_dict['activity_id']).filter(cls.lap == values_dict['lap'])
 
     @classmethod
     def _find_query(cls, session, values_dict):
@@ -255,7 +255,7 @@ class ActivityRecords(ActivitiesDB.Base, HealthDB.DBObject):
 
     @classmethod
     def _exists_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.record == values_dict['record'])
+        return session.query(func.count(cls.activity_id)).filter(cls.activity_id == values_dict['activity_id']).filter(cls.record == values_dict['record'])
 
     @classmethod
     def _find_query(cls, session, values_dict):

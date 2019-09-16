@@ -175,15 +175,12 @@ class DBObject(object):
             if col.name == name:
                 return col
 
-    def __set_col_value(self, name, value):
-        if name in self.get_col_names():
-            set_attribute(self, name, value)
-
     def update_from_dict(self, values_dict, ignore_none=False):
         """Update a DB object instance from values in a dict by matching the dict keys to DB object attributes."""
+        col_names = self.get_col_names()
         for key, value in values_dict.iteritems():
-            if not ignore_none or value is not None:
-                self.__set_col_value(key, value)
+            if (not ignore_none or value is not None) and key in col_names:
+                set_attribute(self, key, value)
         return self
 
     @classmethod
@@ -265,17 +262,12 @@ class DBObject(object):
 
     @classmethod
     def s_exists(cls, session, values_dict):
-        return cls._exists_query(session, values_dict).count() > 0
-
-    @classmethod
-    def s_create(cls, session, values_dict):
-        instance = cls(**values_dict)
-        session.add(instance)
+        return cls._exists_query(session, values_dict).scalar() > 0
 
     @classmethod
     def s_find_or_create(cls, session, values_dict):
         if cls._find_query(session, values_dict).one_or_none() is None:
-            cls.s_create(session, values_dict)
+            session.add(cls(**values_dict))
 
     @classmethod
     def find_or_create(cls, db, values_dict):
@@ -286,10 +278,10 @@ class DBObject(object):
     @classmethod
     def s_create_or_update(cls, session, values_dict, ignore_none=False):
         instance = cls._find_query(session, values_dict).one_or_none()
-        if instance is None:
-            cls.s_create(session, values_dict)
-        else:
+        if instance:
             instance.update_from_dict(values_dict, ignore_none)
+        else:
+            session.add(cls(**values_dict))
 
     @classmethod
     def create_or_update(cls, db, values_dict, ignore_none=False):
