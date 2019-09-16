@@ -10,7 +10,10 @@ import enum
 @classmethod
 def _convert(cls, parent_enum_value):
     if parent_enum_value is not None:
-        return getattr(cls, cls.prefix + parent_enum_value.name)
+        try:
+            return getattr(cls, cls.prefix + parent_enum_value.name)
+        except Exception:
+            return parent_enum_value
 
 
 @classmethod
