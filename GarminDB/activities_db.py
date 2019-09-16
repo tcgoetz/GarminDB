@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, String, Float, Integer, DateTime, Time, ForeignKey, PrimaryKeyConstraint, desc, func
+from sqlalchemy import Column, String, Float, Integer, DateTime, Time, ForeignKey, PrimaryKeyConstraint, desc, exists
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -129,8 +129,9 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     time_col_name = 'start_time'
 
     @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id'])
+    def s_find_one(cls, session, values_dict):
+        """Find a table row that matches the values in the values_dict."""
+        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).one_or_none()
 
     def is_steps_activity(self):
         """Return if the activity is a steps based activity."""
@@ -210,12 +211,13 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
     time_col_name = 'start_time'
 
     @classmethod
-    def _exists_query(cls, session, values_dict):
-        return session.query(func.count(cls.activity_id)).filter(cls.activity_id == values_dict['activity_id']).filter(cls.lap == values_dict['lap'])
+    def s_exists(cls, session, values_dict):
+        return session.query(exists().where(cls.activity_id == values_dict['activity_id']).where(cls.lap == values_dict['lap'])).scalar()
 
     @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.lap == values_dict['lap'])
+    def s_find_one(cls, session, values_dict):
+        """Find a table row that matches the values in the values_dict."""
+        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.lap == values_dict['lap']).one_or_none()
 
     @hybrid_property
     def start_loc(self):
@@ -254,12 +256,13 @@ class ActivityRecords(ActivitiesDB.Base, HealthDB.DBObject):
     time_col_name = 'timestamp'
 
     @classmethod
-    def _exists_query(cls, session, values_dict):
-        return session.query(func.count(cls.activity_id)).filter(cls.activity_id == values_dict['activity_id']).filter(cls.record == values_dict['record'])
+    def s_exists(cls, session, values_dict):
+        return session.query(exists().where(cls.activity_id == values_dict['activity_id']).where(cls.record == values_dict['record'])).scalar()
 
     @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.record == values_dict['record'])
+    def s_find_one(cls, session, values_dict):
+        """Find a table row that matches the values in the values_dict."""
+        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.record == values_dict['record']).one_or_none()
 
     @hybrid_property
     def position(self):

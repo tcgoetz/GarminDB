@@ -103,9 +103,9 @@ class JsonFileProcessor(object):
                 json_data = self.__parse_file(file_name)
                 updates = self._process_json(json_data)
                 if updates > 0:
-                    root_logger.info("DB updated with %d entries from %s", updates, file_name)
+                    root_logger.debug("DB updated with %d entries from %s", updates, file_name)
                 else:
-                    root_logger.info("No data saved for %s", file_name)
+                    root_logger.warning("No data saved for %s", file_name)
             except Exception:
                 root_logger.error("Failed to parse %s: %s", file_name, traceback.format_exc())
             self._commit()

@@ -59,9 +59,9 @@ class FitFileProcessor(object):
 
     def __write_message_types(self, fit_file, message_types):
         """Write all messages from the FIT file to the database ordered by message type."""
-        root_logger.info("Importing %s (%s) [%s] with message types: %s", fit_file.filename, fit_file.time_created(), fit_file.type(), message_types)
+        root_logger.debug("Importing %s (%s) [%s] with message types: %s", fit_file.filename, fit_file.time_created(), fit_file.type(), message_types)
         #
-        # Some ordering is import: 1. create new file entries 2. create new device entries
+        # Some ordering is important: 1. create new file entries 2. create new device entries
         #
         priority_message_types = [Fit.MessageType.file_id, Fit.MessageType.device_info]
         for message_type in priority_message_types:
@@ -90,7 +90,7 @@ class FitFileProcessor(object):
     # Message type handlers
     #
     def _write_file_id_entry(self, fit_file, message_dict):
-        root_logger.info("file_id message: %r", message_dict)
+        root_logger.debug("file_id message: %r", message_dict)
         self.serial_number = message_dict.get('serial_number')
         _manufacturer = GarminDB.Device.Manufacturer.convert(message_dict.get('manufacturer'))
         if _manufacturer is not None:
@@ -123,6 +123,12 @@ class FitFileProcessor(object):
     def _write_event_entry(self, fit_file, event_message_dict):
         root_logger.debug("event message: %r", event_message_dict)
 
+    def _write_hrv_entry(self, fit_file, hrv_message_dict):
+        root_logger.debug("hrv message: %r", hrv_message_dict)
+
+    def _write_ohr_settings_entry(self, fit_file, message_dict):
+        root_logger.debug("ohr_settings message: %r", message_dict)
+
     def _write_software_entry(self, fit_file, software_message_dict):
         root_logger.debug("software message: %r", software_message_dict)
 
@@ -148,15 +154,19 @@ class FitFileProcessor(object):
             if value is not None:
                 return value
 
+    def _write_training_file_entry(self, fit_file, message_dict):
+        root_logger.debug("Training file entry: %r", message_dict)
+
     def _write_steps_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("run entry: %r", message_dict)
+        def spm_from_cadence(cad): cad * 2 if cad is not None else None
         steps = {
             'activity_id'                       : activity_id,
             'steps'                             : self.__get_field_value(message_dict, 'total_steps'),
             'avg_pace'                          : Fit.conversions.speed_to_pace(message_dict.get('avg_speed')),
             'max_pace'                          : Fit.conversions.speed_to_pace(message_dict.get('max_speed')),
-            'avg_steps_per_min'                 : message_dict.get('avg_cadence', 0) * 2,
-            'max_steps_per_min'                 : message_dict.get('max_cadence', 0) * 2,
+            'avg_steps_per_min'                 : spm_from_cadence(message_dict.get('avg_cadence')),
+            'max_steps_per_min'                 : spm_from_cadence(message_dict.get('max_cadence')),
             'avg_step_length'                   : self.__get_field_value(message_dict, 'avg_step_length'),
             'avg_vertical_ratio'                : self.__get_field_value(message_dict, 'avg_vertical_ratio'),
             'avg_vertical_oscillation'          : self.__get_field_value(message_dict, 'avg_vertical_oscillation'),
@@ -180,11 +190,10 @@ class FitFileProcessor(object):
             'activity_id'                        : activity_id,
             'strokes'                            : self.__get_field_value(message_dict, 'total_strokes'),
         }
-        root_logger.debug("ride entry: %r writing %r", message_dict, ride)
         GarminDB.CycleActivities.s_create_or_update(self.garmin_act_db_session, ride, ignore_none=True)
 
     def _write_stand_up_paddleboarding_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("sup entry: %r", message_dict)
+        root_logger.debug("sup sport entry: %r", message_dict)
         paddle = {
             'activity_id'                       : activity_id,
             'strokes'                           : self.__get_field_value(message_dict, 'total_strokes'),
@@ -193,8 +202,11 @@ class FitFileProcessor(object):
         GarminDB.PaddleActivities.s_create_or_update(self.garmin_act_db_session, paddle, ignore_none=True)
 
     def _write_rowing_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("row entry: %r", message_dict)
+        root_logger.debug("row sport entry: %r", message_dict)
         return self._write_stand_up_paddleboarding_entry(fit_file, activity_id, sub_sport, message_dict)
+
+    def _write_boating_entry(self, fit_file, activity_id, sub_sport, message_dict):
+        root_logger.debug("boating sport entry: %r", message_dict)
 
     def _write_elliptical_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("elliptical entry: %r", message_dict)
@@ -213,14 +225,24 @@ class FitFileProcessor(object):
             root_logger.info("No sub sport handler type %s from %s: %s", sub_sport, fit_file.filename, message_dict)
 
     def _write_alpine_skiing_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("Skiing entry: %r", message_dict)
+        root_logger.debug("Skiing sport entry: %r", message_dict)
+
+    def _write_swimming_entry(self, fit_file, activity_id, sub_sport, message_dict):
+        root_logger.debug("Swimming sport entry: %r", message_dict)
 
     def _write_training_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("Training entry: %r", message_dict)
+        root_logger.debug("Training sport entry: %r", message_dict)
+
+    def _write_transition_entry(self, fit_file, activity_id, sub_sport, message_dict):
+        root_logger.debug("Transition sport entry: %r", message_dict)
+
+    def _write_generic_entry(self, fit_file, activity_id, sub_sport, message_dict):
+        root_logger.debug("Generic sport entry: %r", message_dict)
 
     def _write_session_entry(self, fit_file, message_dict):
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
         sport = message_dict['sport']
+        sub_sport = message_dict['sub_sport']
         activity = {
             'activity_id'                       : activity_id,
             'start_time'                        : message_dict['start_time'],
@@ -255,7 +277,6 @@ class FitFileProcessor(object):
                 if sport != Fit.field_enums.Sport.invalid:
                     current.sport = sport.name
             if current.sub_sport is None:
-                sub_sport = message_dict['sub_sport']
                 if sub_sport != Fit.field_enums.SubSport.invalid:
                     current.sub_sport = sub_sport.name
             current.update_from_dict(activity, ignore_none=True)
@@ -356,6 +377,9 @@ class FitFileProcessor(object):
     def _write_field_description_entry(self, fit_file, field_description_message_dict):
         root_logger.debug("field_description message: %r", field_description_message_dict)
 
+    def _write_length_entry(self, fit_file, length_message_dict):
+        root_logger.debug("length message: %r", length_message_dict)
+
     def _write_monitoring_info_entry(self, fit_file, message_dict):
         activity_types = message_dict['activity_type']
         if isinstance(activity_types, list):
@@ -391,6 +415,9 @@ class FitFileProcessor(object):
         except Exception:
             logger.error("Exception on monitoring entry: %r: %s", entry, traceback.format_exc())
 
+    def _write_set_entry(self, fit_file, set_message_dict):
+        root_logger.debug("set message: %r", set_message_dict)
+
     def _write_device_info_entry(self, fit_file, device_info_message_dict):
         try:
             device_type = device_info_message_dict.get('device_type')
@@ -407,7 +434,7 @@ class FitFileProcessor(object):
                 if product is None and self.product is not None:
                     product = self.product
         except Exception as e:
-            logger.warning("Unrecognized device: %r - %s", device_info_message_dict, e)
+            logger.warning("Unrecognized device in %s: %r - %s", fit_file.filename, device_info_message_dict, e)
 
         if serial_number is not None:
             device = {

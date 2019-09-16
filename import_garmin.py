@@ -73,7 +73,7 @@ class GarminMonitoringFitData(object):
         debug (Boolean): enable debug logging
 
         """
-        logger.info("Processing daily FIT data")
+        logger.info("Processing daily monitoring FIT data")
         self.measurement_system = measurement_system
         self.debug = debug
         if input_dir:
@@ -91,6 +91,8 @@ class GarminMonitoringFitData(object):
                 fit_file = Fit.file.File(file_name, self.measurement_system)
                 if fit_file.type() == Fit.field_enums.FileType.monitoring_b:
                     fp.write_file(fit_file)
+                else:
+                    root_logger.info("skipping non monitoring file %s type %r message types %r", file_name, fit_file.type(), fit_file.message_types())
             except Fit.exceptions.FitFileError as e:
                 logger.error("Failed to parse %s: %s", file_name, e)
 

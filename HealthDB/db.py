@@ -227,7 +227,8 @@ class DBObject(object):
         return filter_dict_by_list(values_dict, cls.get_col_names())
 
     @classmethod
-    def _find_query(cls, session, values_dict):
+    def s_find_one(cls, session, values_dict):
+        """Find a table row that matches the values in the values_dict."""
         query = session.query(cls)
         if cls.match_col_names is not None:
             # for match_col_name, match_col in cls.match_cols.iteritems():
@@ -236,12 +237,7 @@ class DBObject(object):
                 query = query.filter(cls.get_col_by_name(match_col_name) == values_dict[match_col_name])
         else:
             query = query.filter(cls.time_col == values_dict[cls.time_col_name])
-        return query
-
-    @classmethod
-    def s_find_one(cls, session, values_dict):
-        """Find a table row that matches the values in the values_dict."""
-        return cls._find_query(session, values_dict).one_or_none()
+        return query.one_or_none()
 
     @classmethod
     def find_one(cls, db, values_dict):
@@ -261,12 +257,8 @@ class DBObject(object):
             return cls.s_find_id(session, values_dict)
 
     @classmethod
-    def s_exists(cls, session, values_dict):
-        return cls._exists_query(session, values_dict).scalar() > 0
-
-    @classmethod
     def s_find_or_create(cls, session, values_dict):
-        if cls._find_query(session, values_dict).one_or_none() is None:
+        if cls.s_find_one(session, values_dict) is None:
             session.add(cls(**values_dict))
 
     @classmethod
@@ -277,7 +269,7 @@ class DBObject(object):
 
     @classmethod
     def s_create_or_update(cls, session, values_dict, ignore_none=False):
-        instance = cls._find_query(session, values_dict).one_or_none()
+        instance = cls.s_find_one(session, values_dict)
         if instance:
             instance.update_from_dict(values_dict, ignore_none)
         else:

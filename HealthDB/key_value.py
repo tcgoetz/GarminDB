@@ -27,8 +27,9 @@ class KeyValueObject(db.DBObject):
     match_col_names = ['key']
 
     @classmethod
-    def _find_query(cls, session, values_dict):
-        return session.query(cls).filter(cls.key == values_dict['key'])
+    def s_find_one(cls, session, values_dict):
+        """Find a table row that matches the values in the values_dict."""
+        return session.query(cls).filter(cls.key == values_dict['key']).one_or_none()
 
     @classmethod
     def set(cls, db, key, value, timestamp=datetime.datetime.now()):
