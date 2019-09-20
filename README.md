@@ -19,7 +19,7 @@ What they can do:
 * Copy daily monitoring and/or activities Fit files from a USB connected Garmin device.
 * Import Fitbit daily summary CSV files (files with one summary entry per day).
 * Import MS Health daily summary CSV files and MS Health Vault weight export CSV files.
-* Summarizing data into a common DB with tables containing daily summaries, weekly summaries, and monthly summaries.
+* Summarizing data into `stats.txt` and a common DB with tables containing daily summaries, weekly summaries, and monthly summaries.
 * Graph your data.
 * Retain data as JSON files or FIT files so that the DB can be regenerated without connecting to Garmin.
 
