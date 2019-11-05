@@ -14,7 +14,7 @@ import re
 
 sys.path.append('../.')
 
-from file_processor import FileProcessor
+from utilities import FileProcessor
 import tcx_file
 
 

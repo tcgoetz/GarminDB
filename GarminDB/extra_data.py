@@ -10,6 +10,7 @@ import json
 from sqlalchemy import Column, String, Enum
 
 import HealthDB
+import utilities
 
 
 class FuzzyMatchEnum(enum.Enum):
@@ -45,7 +46,7 @@ class Condition(FuzzyMatchEnum):
     Sick        = 4
 
 
-class ExtraData(HealthDB.DBObject):
+class ExtraData(utilities.DBObject):
 
     mood = Column(Enum(Mood))
     condition = Column(Enum(Condition))

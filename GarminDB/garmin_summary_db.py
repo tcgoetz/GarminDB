@@ -9,19 +9,20 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Date, DateTime
 
 import HealthDB
+import utilities
 
 
 logger = logging.getLogger(__name__)
 
 
-class GarminSummaryDB(HealthDB.DB):
+class GarminSummaryDB(utilities.DB):
     """Object representing a database for storing health summary data from a Garmin device."""
 
     Base = declarative_base()
     db_name = 'garmin_summary'
     db_version = 7
 
-    class _DbVersion(Base, HealthDB.DbVersionObject):
+    class _DbVersion(Base, utilities.DbVersionObject):
         pass
 
     def __init__(self, db_params_dict, debug=False):
@@ -48,7 +49,7 @@ class GarminSummaryDB(HealthDB.DB):
         DaysSummary.create_days_view(self)
 
 
-class Summary(GarminSummaryDB.Base, HealthDB.KeyValueObject):
+class Summary(GarminSummaryDB.Base, utilities.KeyValueObject):
     __tablename__ = 'summary'
     table_version = 1
 
@@ -86,7 +87,7 @@ class DaysSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
 #
 # Monitoring heart rate values that fall within a intensity period.
 #
-class IntensityHR(GarminSummaryDB.Base, HealthDB.DBObject):
+class IntensityHR(GarminSummaryDB.Base, utilities.DBObject):
     __tablename__ = 'intensity_hr'
     table_version = 1
 

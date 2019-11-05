@@ -12,19 +12,20 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 import Fit
 import HealthDB
+import utilities
 
 
 logger = logging.getLogger(__name__)
 
 
-class MonitoringDB(HealthDB.DB):
+class MonitoringDB(utilities.DB):
     """Class representing a databse storing daily health monitoring data from a Garmin device."""
 
     Base = declarative_base()
     db_name = 'garmin_monitoring'
     db_version = 5
 
-    class _DbVersion(Base, HealthDB.DbVersionObject):
+    class _DbVersion(Base, utilities.DbVersionObject):
         pass
 
     def __init__(self, db_params_dict, debug=False):
@@ -47,7 +48,7 @@ class MonitoringDB(HealthDB.DB):
                 table.delete_view(self)
 
 
-class MonitoringInfo(MonitoringDB.Base, HealthDB.DBObject):
+class MonitoringInfo(MonitoringDB.Base, utilities.DBObject):
     """Class representing data from a health monitoring file."""
 
     __tablename__ = 'monitoring_info'
@@ -76,7 +77,7 @@ class MonitoringInfo(MonitoringDB.Base, HealthDB.DBObject):
         return stats
 
 
-class MonitoringHeartRate(MonitoringDB.Base, HealthDB.DBObject):
+class MonitoringHeartRate(MonitoringDB.Base, utilities.DBObject):
     __tablename__ = 'monitoring_hr'
     table_version = 1
 
@@ -100,7 +101,7 @@ class MonitoringHeartRate(MonitoringDB.Base, HealthDB.DBObject):
         return cls.get_col_min(db, cls.heart_rate, start_ts, wake_ts, True)
 
 
-class MonitoringIntensity(MonitoringDB.Base, HealthDB.DBObject):
+class MonitoringIntensity(MonitoringDB.Base, utilities.DBObject):
     """Class representing monitoring data about cardio minutes."""
 
     __tablename__ = 'monitoring_intensity'
@@ -135,7 +136,7 @@ class MonitoringIntensity(MonitoringDB.Base, HealthDB.DBObject):
         }
 
 
-class MonitoringClimb(MonitoringDB.Base, HealthDB.DBObject):
+class MonitoringClimb(MonitoringDB.Base, utilities.DBObject):
     """Class representing monitoring data about elvation gained."""
 
     __tablename__ = 'monitoring_climb'
@@ -191,7 +192,7 @@ class MonitoringClimb(MonitoringDB.Base, HealthDB.DBObject):
         return stats
 
 
-class Monitoring(MonitoringDB.Base, HealthDB.DBObject):
+class Monitoring(MonitoringDB.Base, utilities.DBObject):
     __tablename__ = 'monitoring'
     table_version = 1
 

@@ -10,13 +10,13 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Date, Float, Time
 
 import Fit
-import HealthDB
+import utilities
 
 
 logger = logging.getLogger(__name__)
 
 
-class FitBitDB(HealthDB.DB):
+class FitBitDB(utilities.DB):
     """Object representing a database for storing health data from FitBit."""
 
     Base = declarative_base()
@@ -34,11 +34,11 @@ class FitBitDB(HealthDB.DB):
         FitBitDB.Base.metadata.create_all(self.engine)
 
 
-class Attributes(FitBitDB.Base, HealthDB.KeyValueObject):
+class Attributes(FitBitDB.Base, utilities.KeyValueObject):
     __tablename__ = 'attributes'
 
 
-class DaysSummary(FitBitDB.Base, HealthDB.DBObject):
+class DaysSummary(FitBitDB.Base, utilities.DBObject):
     __tablename__ = 'days_summary'
 
     day = Column(Date, primary_key=True)

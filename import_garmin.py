@@ -16,8 +16,7 @@ import progressbar
 
 import Fit
 import GarminDB
-from json_file_processor import JsonFileProcessor
-from file_processor import FileProcessor
+from utilities import JsonFileProcessor, FileProcessor
 from fit_file_processor import FitFileProcessor
 
 

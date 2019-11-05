@@ -11,7 +11,7 @@ import progressbar
 import logging
 
 import Fit
-from file_processor import FileProcessor
+from utilities import FileProcessor
 import garmin_db_config_manager as GarminDBConfigManager
 
 

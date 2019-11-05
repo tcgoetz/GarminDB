@@ -13,9 +13,8 @@ import dateutil.parser
 
 import Fit
 import GarminDB
-from file_processor import FileProcessor
+from utilities import FileProcessor, JsonFileProcessor
 from fit_file_processor import FitFileProcessor
-from json_file_processor import JsonFileProcessor
 import garmin_connect_enums as GarminConnectEnums
 import tcx_file
 

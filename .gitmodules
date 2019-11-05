@@ -4,3 +4,6 @@
 [submodule "python-tcxparser"]
 	path = python-tcxparser
 	url = ../python-tcxparser.git
+[submodule "utilities"]
+	path = utilities
+	url = git@github.com:tcgoetz/utilities.git

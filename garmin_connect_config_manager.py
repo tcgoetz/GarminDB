@@ -5,26 +5,20 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 import sys
-import json
 import platform
 import subprocess
-import dateutil.parser
+from utilities import JsonConfig
 
 
-class GarminConnectConfigManager(object):
+class GarminConnectConfigManager(JsonConfig):
     """Class that manages Garmin Connect downloads."""
 
     config_filename = 'GarminConnectConfig.json'
 
     def __init__(self):
         """Return a new GarminConnectConfigManager instance."""
-        def parser(entry):
-            for (entry_key, entry_value) in entry.iteritems():
-                if str(entry_value).endswith('_date'):
-                    entry[entry_key] = dateutil.parser.parse(entry_value)
-            return entry
         try:
-            self.config = json.load(open(self.config_filename), object_hook=parser)
+            super(GarminConnectConfigManager, self).__init__(self.config_filename)
         except Exception as e:
             print str(e)
             print "Missing config: copy GarminConnectConfig.json.example to GarminConnectConfig.json and edit GarminConnectConfig.json to " + \
@@ -60,7 +54,7 @@ class GarminConnectConfigManager(object):
 
     def stat_start_date(self, stat_type):
         """Return a tuple containing the start date and the number of days to fetch stats from."""
-        date = dateutil.parser.parse(self.config['data'][stat_type + '_start_date']).date()
+        date = self.config['data'][stat_type + '_start_date']
         days = self.config['data']['download_days']
         return (date, days)
 

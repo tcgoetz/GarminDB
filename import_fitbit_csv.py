@@ -8,9 +8,9 @@ import sys
 import logging
 import progressbar
 
-from HealthDB import CsvImporter
+from utilities import CsvImporter
 import FitBitDB
-from file_processor import FileProcessor
+from utilities import FileProcessor
 
 
 logger = logging.getLogger(__file__)

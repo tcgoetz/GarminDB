@@ -19,7 +19,7 @@ import progressbar
 import Fit.conversions as conversions
 from garmin_connect_config_manager import GarminConnectConfigManager
 import garmin_db_config_manager as GarminDBConfigManager
-from rest_client import RestClient
+from utilities import RestClient, RestException, RestResponseException
 
 
 logger = logging.getLogger(__file__)
@@ -33,7 +33,6 @@ class Download(object):
     garmin_connect_base_url = "https://connect.garmin.com"
     garmin_connect_enus_url = garmin_connect_base_url + "/en-US"
 
-    garmin_sso_base_url = 'https://sso.garmin.com/sso'
     garmin_connect_sso_login = 'signin'
 
     garmin_connect_login_url = garmin_connect_enus_url + "/signin"
@@ -42,32 +41,26 @@ class Download(object):
 
     garmin_connect_privacy_url = "//connect.garmin.com/en-U/privacy"
 
-    garmin_connect_modern_url = garmin_connect_base_url + "/modern"
+    garmin_connect_user_profile_url = "proxy/userprofile-service/userprofile"
+    garmin_connect_wellness_url = "proxy/wellness-service/wellness"
+    garmin_connect_sleep_daily_url = garmin_connect_wellness_url + "proxy/dailySleepData"
+    garmin_connect_rhr = "proxy/userstats-service/wellness/daily"
+    garmin_connect_weight_url = "proxy/weight-service/weight/dateRange"
 
-    garmin_connect_modern_proxy = 'proxy'
-    garmin_connect_download_service = garmin_connect_modern_proxy + "/download-service/files"
+    garmin_connect_activity_search_url = "proxy/activitylist-service/activities/search/activities"
 
-    garmin_connect_user_profile_url = garmin_connect_modern_proxy + "/userprofile-service/userprofile"
-    garmin_connect_wellness_url = garmin_connect_modern_proxy + "/wellness-service/wellness"
-    garmin_connect_sleep_daily_url = garmin_connect_wellness_url + "/dailySleepData"
-    garmin_connect_rhr = garmin_connect_modern_proxy + "/userstats-service/wellness/daily"
-    garmin_connect_weight_url = garmin_connect_modern_proxy + "/weight-service/weight/dateRange"
-
-    garmin_connect_activity_service = garmin_connect_modern_proxy + "/activity-service/activity"
-    garmin_connect_activity_search_url = garmin_connect_modern_proxy + "/activitylist-service/activities/search/activities"
-
-    garmin_connect_usersummary_url = garmin_connect_modern_proxy + "/usersummary-service/usersummary"
+    garmin_connect_usersummary_url = "proxy/usersummary-service/usersummary"
     garmin_connect_daily_summary_url = garmin_connect_usersummary_url + "/daily/"
 
     def __init__(self):
         """Create a new Download class instance."""
         self.temp_dir = tempfile.mkdtemp()
-        logger.debug("__init__: temp_dir= " + self.temp_dir)
+        logger.debug("__init__: temp_dir=%s", self.temp_dir)
         self.session = requests.session()
-        self.sso_rest_client = RestClient(self.session, self.garmin_sso_base_url)
-        self.rest_client = RestClient(self.session, self.garmin_connect_modern_url)
-        self.activity_service_rest_client = RestClient.inherit(self.rest_client, self.garmin_connect_activity_service)
-        self.download_service_rest_client = RestClient.inherit(self.rest_client, self.garmin_connect_download_service)
+        self.sso_rest_client = RestClient(self.session, 'sso.garmin.com', 'sso')
+        self.modern_rest_client = RestClient(self.session, 'connect.garmin.com', 'modern')
+        self.activity_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/activity-service/activity")
+        self.download_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/download-service/files")
         self.gc_gonfig = GarminConnectConfigManager()
         self.download_days_overlap = self.gc_gonfig.download_days_overlap()
 
@@ -91,12 +84,12 @@ class Download(object):
             'Referer'                           : self.garmin_connect_login_url
         }
         params = {
-            'service'                           : self.garmin_connect_modern_url,
+            'service'                           : self.modern_rest_client.url(),
             'webhost'                           : self.garmin_connect_base_url,
             'source'                            : self.garmin_connect_login_url,
-            'redirectAfterAccountLoginUrl'      : self.garmin_connect_modern_url,
-            'redirectAfterAccountCreationUrl'   : self.garmin_connect_modern_url,
-            'gauthHost'                         : self.garmin_sso_base_url,
+            'redirectAfterAccountLoginUrl'      : self.modern_rest_client.url(),
+            'redirectAfterAccountCreationUrl'   : self.modern_rest_client.url(),
+            'gauthHost'                         : self.sso_rest_client.url(),
             'locale'                            : 'en_US',
             'id'                                : 'gauth-widget',
             'cssUrl'                            : self.garmin_connect_css_url,
@@ -121,15 +114,16 @@ class Download(object):
             'locationPromptShown'               : 'true',
             'showPassword'                      : 'true'
         }
-        response = self.sso_rest_client.get(self.garmin_connect_sso_login, get_headers, params)
-        if response.status_code != 200:
-            logger.error("Login get failed (%d).", response.status_code)
-            self.__save_binary_file('login_get.html', response)
+        try:
+            response = self.sso_rest_client.get(self.garmin_connect_sso_login, get_headers, params)
+        except RestResponseException as e:
+            root_logger.error("Exception during login get: %s", e)
+            RestClient.save_binary_file('login_get.html', e.data['response'])
             return False
         found = re.search(r"name=\"_csrf\" value=\"(\w*)", response.text, re.M)
         if not found:
             logger.error("_csrf not found.", response.status_code)
-            self.__save_binary_file('login_get.html', response)
+            RestClient.save_binary_file('login_get.html', response)
             return False
         logger.debug("_csrf found (%s).", found.group(1))
 
@@ -143,34 +137,33 @@ class Download(object):
             'Referer'       : response.url,
             'Content-Type'  : 'application/x-www-form-urlencoded'
         }
-        response = self.sso_rest_client.post(self.garmin_connect_sso_login, post_headers, params, data)
+        try:
+            response = self.sso_rest_client.post(self.garmin_connect_sso_login, post_headers, params, data)
+        except RestException as e:
+            root_logger.error("Exception during login post: %s", e)
+            return False
         found = re.search(r"\?ticket=([\w-]*)", response.text, re.M)
         if not found:
             logger.error("Login ticket not found (%d).", response.status_code)
-            self.__save_binary_file('login_post.html', response)
+            RestClient.save_binary_file('login_post.html', response)
             return False
-
         params = {
             'ticket' : found.group(1)
         }
-        response = self.rest_client.get('', params=params)
-        if response.status_code != 200:
+        try:
+            response = self.modern_rest_client.get('', params=params)
+        except RestException as e:
             logger.error("Login get homepage failed (%d).", response.status_code)
-            self.__save_binary_file('login_home.html', response)
+            RestClient.save_binary_file('login_home.html', response)
             return False
         self.user_prefs = self.__get_json(response.text, 'VIEWER_USERPREFERENCES')
         if profile_dir:
-            self.rest_client.save_json_to_file(profile_dir + "/profile.json", self.user_prefs)
+            self.modern_rest_client.save_json_to_file(profile_dir + "/profile.json", self.user_prefs)
         self.display_name = self.user_prefs['displayName']
         self.social_profile = self.__get_json(response.text, 'VIEWER_SOCIAL_PROFILE')
         self.full_name = self.social_profile['fullName']
         root_logger.info("login: %s (%s)", self.full_name, self.display_name)
         return True
-
-    def __save_binary_file(self, filename, response):
-        with open(filename, 'wb') as file:
-            for chunk in response:
-                file.write(chunk)
 
     def unzip_files(self, outdir):
         """Unzip and downloaded zipped files into the directory supplied."""
@@ -200,7 +193,10 @@ class Download(object):
             '_'         : str(conversions.dt_to_epoch_ms(conversions.date_to_dt(date)))
         }
         url = self.garmin_connect_daily_summary_url + self.display_name
-        return self.rest_client.download_json_file(url, params, directory + '/daily_summary_' + date_str, overwite)
+        try:
+            self.modern_rest_client.download_json_file(url, directory + '/daily_summary_' + date_str, overwite, params)
+        except RestException as e:
+            root_logger.error("Exception geting daily summary: %s", e)
 
     def get_daily_summaries(self, directory, date, days, overwite):
         """Download the daily summary data from Garmin Connect and save to a JSON file."""
@@ -209,9 +205,11 @@ class Download(object):
 
     def __get_monitoring_day(self, date):
         root_logger.info("get_monitoring_day: %s", date)
-        response = self.download_service_rest_client.get('wellness/' + date.strftime("%Y-%m-%d"))
-        if response and response.status_code == 200:
-            self.__save_binary_file(self.temp_dir + '/' + str(date) + '.zip', response)
+        zip_filename = self.temp_dir + '/' + str(date) + '.zip'
+        try:
+            self.download_service_rest_client.download_binary_file('wellness/' + date.strftime("%Y-%m-%d"), zip_filename)
+        except RestException as e:
+            root_logger.error("Exception geting daily summary: %s", e)
 
     def get_monitoring(self, date, days):
         """Download the daily monitoring data from Garmin Connect, unzip and save the raw files."""
@@ -230,7 +228,10 @@ class Download(object):
             'endDate'   : date_str,
             '_'         : str(conversions.dt_to_epoch_ms(conversions.date_to_dt(day)))
         }
-        return self.rest_client.download_json_file(self.garmin_connect_weight_url, params, directory + '/weight_' + date_str, overwite)
+        try:
+            self.modern_rest_client.download_json_file(self.garmin_connect_weight_url, directory + '/weight_' + date_str, overwite, params)
+        except RestException as e:
+            root_logger.error("Exception geting daily summary: %s", e)
 
     def get_weight(self, directory, date, days, overwite):
         """Download the sleep data from Garmin Connect and save to a JSON file."""
@@ -243,22 +244,27 @@ class Download(object):
             'start' : str(start),
             "limit" : str(count)
         }
-        response = self.rest_client.get(self.garmin_connect_activity_search_url, params=params)
-        if response.status_code == 200:
+        try:
+            response = self.modern_rest_client.get(self.garmin_connect_activity_search_url, params=params)
             return response.json()
+        except RestException as e:
+            root_logger.error("Exception geting activity summary: %s", e)
 
     def __save_activity_details(self, directory, activity_id_str, overwite):
         root_logger.debug("save_activity_details")
         json_filename = directory + '/activity_details_' + activity_id_str
-        return self.activity_service_rest_client.download_json_file(activity_id_str, None, json_filename, overwite)
+        try:
+            self.activity_service_rest_client.download_json_file(activity_id_str, json_filename, overwite)
+        except RestException as e:
+            root_logger.error("Exception geting daily summary: %s", e)
 
     def __save_activity_file(self, activity_id_str):
-        root_logger.debug("save_activity_file: " + activity_id_str)
-        response = self.download_service_rest_client.get('activity/' + activity_id_str)
-        if response.status_code == 200:
-            self.__save_binary_file(self.temp_dir + '/activity_' + activity_id_str + '.zip', response)
-        else:
-            root_logger.error("save_activity_file: %s failed (%d): %s", response.url, response.status_code, response.text)
+        root_logger.debug("save_activity_file: %s", activity_id_str)
+        zip_filename = self.temp_dir + '/activity_' + activity_id_str + '.zip'
+        try:
+            self.download_service_rest_client.download_binary_file('activity/' + activity_id_str, zip_filename)
+        except RestException as e:
+            root_logger.error("Exception downloading activity file: %s", e)
 
     def get_activities(self, directory, count, overwite=False):
         """Download activities files from Garmin Connect and save the raw files."""
@@ -272,7 +278,7 @@ class Download(object):
             if not os.path.isfile(json_filename) or overwite:
                 root_logger.info("get_activities: %s <- %r" % (json_filename, activity))
                 self.__save_activity_details(directory, activity_id_str, overwite)
-                self.rest_client.save_json_to_file(json_filename, activity)
+                self.modern_rest_client.save_json_to_file(json_filename, activity)
                 if not os.path.isfile(directory + '/' + activity_id_str + '.fit') or overwite:
                     self.__save_activity_file(activity_id_str)
                 # pause for a second between every page access
@@ -281,14 +287,20 @@ class Download(object):
     def get_activity_types(self, directory, overwite):
         """Download the activity types from Garmin Connect and save to a JSON file."""
         root_logger.info("get_activity_types: '%s'", directory)
-        return self.activity_service_rest_client.download_json_file('activityTypes', None, directory + '/activity_types', overwite)
+        try:
+            self.activity_service_rest_client.download_json_file('activityTypes', directory + '/activity_types', overwite)
+        except RestException as e:
+            root_logger.error("Exception geting daily summary: %s", e)
 
     def __get_sleep_day(self, directory, date, overwite=False):
         json_filename = directory + '/sleep_' + str(date)
         params = {
             'date' : date.strftime("%Y-%m-%d")
         }
-        return self.rest_client.download_json_file(self.garmin_connect_sleep_daily_url + '/' + self.display_name, params, json_filename, overwite)
+        try:
+            self.modern_rest_client.download_json_file(self.garmin_connect_sleep_daily_url + '/' + self.display_name, json_filename, overwite, params)
+        except RestException as e:
+            root_logger.error("Exception geting daily summary: %s", e)
 
     def get_sleep(self, directory, date, days, overwite):
         """Download the sleep data from Garmin Connect and save to a JSON file."""
@@ -303,7 +315,10 @@ class Download(object):
             'untilDate' : date_str,
             'metricId'  : 60
         }
-        return self.rest_client.download_json_file(self.garmin_connect_rhr + '/' + self.display_name, params, json_filename, overwite)
+        try:
+            self.modern_rest_client.download_json_file(self.garmin_connect_rhr + '/' + self.display_name, json_filename, overwite, params)
+        except RestException as e:
+            root_logger.error("Exception geting daily summary: %s", e)
 
     def get_rhr(self, directory, date, days, overwite):
         """Download the resting heart rate data from Garmin Connect and save to a JSON file."""

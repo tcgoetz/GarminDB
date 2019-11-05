@@ -8,10 +8,10 @@ import logging
 from sqlalchemy import Column, Date
 from sqlalchemy.ext.declarative import declarative_base
 
-import db
+from utilities import db
 import summary_base as sb
-import db_version as dbv
-import key_value
+from utilities import db_version as dbv
+from utilities import key_value
 
 
 logger = logging.getLogger(__name__)

@@ -10,7 +10,7 @@ import traceback
 
 import Fit
 import GarminDB
-import HealthDB
+import utilities
 
 
 logger = logging.getLogger(__file__)
@@ -396,7 +396,7 @@ class FitFileProcessor(object):
 
     def _write_monitoring_entry(self, fit_file, message_dict):
         # Only include not None values so that we match and update only if a table's columns if it has values.
-        entry = HealthDB.utilities.dict_filter_none_values(message_dict)
+        entry = utilities.list_and_dict.dict_filter_none_values(message_dict)
         try:
             intersection = GarminDB.MonitoringHeartRate.intersection(entry)
             if len(intersection) > 1 and intersection['heart_rate'] > 0:

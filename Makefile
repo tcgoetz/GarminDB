@@ -17,12 +17,6 @@ endif
 
 
 #
-# All third party Python packages needed to use the project. They will be installed with pip.
-#
-PYTHON_PACKAGES=sqlalchemy requests python-dateutil enum34 progressbar2 PyInstaller matplotlib
-
-
-#
 # Master targets
 #
 all: update_dbs
@@ -64,24 +58,25 @@ clean_deps_tcxparser:
 	cd python-tcxparser && cat files.txt | xargs rm -rf
 
 install_deps: deps_tcxparser
-	for package in $(PYTHON_PACKAGES); do \
-		pip install --upgrade  $$package; \
-	done
+	$(MAKE) -C Fit deps
+	$(MAKE) -C utilities deps
+	pip install --upgrade --requirement requirements.txt
 
 deps:
 	$(DEPS_SUDO) $(MAKE) install_deps
 
 remove_deps: clean_deps_tcxparser
-	for package in $(PYTHON_PACKAGES); do \
-		pip uninstall -y $$package; \
-	done
+	pip uninstall --requirement requirements.txt
+	$(MAKE) -C Fit remove_deps
+	$(MAKE) -C utilities remove_deps
 
 clean_deps:
 	$(DEPS_SUDO) $(MAKE) remove_deps
 
 clean: test_clean
+	$(MAKE) -C Fit clean
+	$(MAKE) -C utilities clean
 	rm -f *.pyc
-	rm -f Fit/*.pyc
 	rm -f HealthDB/*.pyc
 	rm -f GarminDB/*.pyc
 	rm -f FitBitDB/*.pyc

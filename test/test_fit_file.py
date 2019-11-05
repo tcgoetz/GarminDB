@@ -15,7 +15,7 @@ import re
 sys.path.append('../.')
 
 import Fit
-from file_processor import FileProcessor
+from utilities import FileProcessor
 
 
 root_logger = logging.getLogger()

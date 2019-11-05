@@ -10,13 +10,13 @@ from sqlalchemy import Column, Integer, Date, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
 
 import Fit.conversions as conversions
-import HealthDB
+import utilities
 
 
 logger = logging.getLogger(__name__)
 
 
-class MSHealthDB(HealthDB.DB):
+class MSHealthDB(utilities.DB):
     """Object representing a database for storing health data from Microsoft."""
 
     Base = declarative_base()
@@ -34,11 +34,11 @@ class MSHealthDB(HealthDB.DB):
         MSHealthDB.Base.metadata.create_all(self.engine)
 
 
-class Attributes(MSHealthDB.Base, HealthDB.KeyValueObject):
+class Attributes(MSHealthDB.Base, utilities.KeyValueObject):
     __tablename__ = 'attributes'
 
 
-class DaysSummary(MSHealthDB.Base, HealthDB.DBObject):
+class DaysSummary(MSHealthDB.Base, utilities.DBObject):
     __tablename__ = 'days_summary'
 
     day = Column(Date, primary_key=True)
@@ -95,7 +95,7 @@ class DaysSummary(MSHealthDB.Base, HealthDB.DBObject):
         """Return a dictionary of aggregate activity mins statistics for the given time period."""
         active_hours = func(db, cls.active_hours, start_ts, end_ts)
         if active_hours is not None:
-            intensity_time = conversions.min_to_dt_time(active_hours * 60)
+            intensity_time = conversions.hours_to_dt_time(active_hours)
             stats = {
                 'intensity_time' : intensity_time,
                 'moderate_activity_time' : intensity_time,
@@ -176,7 +176,7 @@ class DaysSummary(MSHealthDB.Base, HealthDB.DBObject):
         return stats
 
 
-class MSVaultWeight(MSHealthDB.Base, HealthDB.DBObject):
+class MSVaultWeight(MSHealthDB.Base, utilities.DBObject):
     """Class for a databse table holding weight data from Microsoft Health Vault."""
 
     __tablename__ = 'weight'

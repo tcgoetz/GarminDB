@@ -15,19 +15,20 @@ import HealthDB
 import Fit
 import Fit.conversions as conversions
 from extra_data import ExtraData
+import utilities
 
 
 logger = logging.getLogger(__name__)
 
 
-class GarminDB(HealthDB.DB):
+class GarminDB(utilities.DB):
     """Object representing a database for storing health data from a Garmin device."""
 
     Base = declarative_base()
     db_name = 'garmin'
     db_version = 13
 
-    class _DbVersion(Base, HealthDB.DbVersionObject):
+    class _DbVersion(Base, utilities.DbVersionObject):
         pass
 
     def __init__(self, db_params_dict, debug=False):
@@ -51,7 +52,7 @@ class GarminDB(HealthDB.DB):
         File.create_view(self)
 
 
-class Attributes(GarminDB.Base, HealthDB.KeyValueObject):
+class Attributes(GarminDB.Base, utilities.KeyValueObject):
     """Object representing genertic key-value data from a Garmin device."""
 
     __tablename__ = 'attributes'
@@ -68,14 +69,14 @@ class Attributes(GarminDB.Base, HealthDB.KeyValueObject):
         return (cls.measurements_type(db) == Fit.field_enums.DisplayMeasure.metric)
 
 
-class Device(GarminDB.Base, HealthDB.DBObject):
+class Device(GarminDB.Base, utilities.DBObject):
     """Class representing a Garmin device."""
 
     __tablename__ = 'devices'
     table_version = 3
     unknown_device_serial_number = 9999999999
 
-    Manufacturer = HealthDB.derived_enum.derive('Manufacturer', Fit.field_enums.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
+    Manufacturer = utilities.derived_enum.derive('Manufacturer', Fit.field_enums.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
 
     serial_number = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
@@ -102,7 +103,7 @@ class Device(GarminDB.Base, HealthDB.DBObject):
         return '%s%06d' % (serial_number, device_type.value)
 
 
-class DeviceInfo(GarminDB.Base, HealthDB.DBObject):
+class DeviceInfo(GarminDB.Base, utilities.DBObject):
     """Class representing a Garmin device info message from a FIT file."""
 
     __tablename__ = 'device_info'
@@ -138,7 +139,7 @@ class DeviceInfo(GarminDB.Base, HealthDB.DBObject):
             Device, cls.timestamp.desc())
 
 
-class File(GarminDB.Base, HealthDB.DBObject):
+class File(GarminDB.Base, utilities.DBObject):
     """Class representing a data file."""
 
     __tablename__ = 'files'
@@ -146,7 +147,7 @@ class File(GarminDB.Base, HealthDB.DBObject):
     view_version = 4
 
     fit_file_types_prefix = 'fit_'
-    FileType = HealthDB.derived_enum.derive('FileType', Fit.field_enums.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
+    FileType = utilities.derived_enum.derive('FileType', Fit.field_enums.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
 
     id = Column(String, primary_key=True)
     name = Column(String, unique=True)
@@ -194,7 +195,7 @@ class File(GarminDB.Base, HealthDB.DBObject):
         return os.path.basename(pathname).split('.')[0]
 
 
-class Weight(GarminDB.Base, HealthDB.DBObject):
+class Weight(GarminDB.Base, utilities.DBObject):
     """Class representing a weight entry."""
 
     __tablename__ = 'weight'
@@ -216,7 +217,7 @@ class Weight(GarminDB.Base, HealthDB.DBObject):
         return stats
 
 
-class Stress(GarminDB.Base, HealthDB.DBObject):
+class Stress(GarminDB.Base, utilities.DBObject):
     """Class representing a stress reading."""
 
     __tablename__ = 'stress'
@@ -236,7 +237,7 @@ class Stress(GarminDB.Base, HealthDB.DBObject):
         return stats
 
 
-class Sleep(GarminDB.Base, HealthDB.DBObject):
+class Sleep(GarminDB.Base, utilities.DBObject):
     """Class representing a sleep session."""
 
     __tablename__ = 'sleep'
@@ -266,7 +267,7 @@ class Sleep(GarminDB.Base, HealthDB.DBObject):
         }
 
 
-class SleepEvents(GarminDB.Base, HealthDB.DBObject):
+class SleepEvents(GarminDB.Base, utilities.DBObject):
     __tablename__ = 'sleep_events'
     table_version = 1
 
@@ -286,7 +287,7 @@ class SleepEvents(GarminDB.Base, HealthDB.DBObject):
             return values[0][0]
 
 
-class RestingHeartRate(GarminDB.Base, HealthDB.DBObject):
+class RestingHeartRate(GarminDB.Base, utilities.DBObject):
     """Class representing a daily resting heart rate reading."""
 
     __tablename__ = 'resting_hr'
@@ -308,7 +309,7 @@ class RestingHeartRate(GarminDB.Base, HealthDB.DBObject):
         return stats
 
 
-class DailySummary(GarminDB.Base, HealthDB.DBObject):
+class DailySummary(GarminDB.Base, utilities.DBObject):
     """Class representing a Garmin daily summary."""
 
     __tablename__ = 'daily_summary'

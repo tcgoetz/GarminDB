@@ -9,7 +9,7 @@ from sqlalchemy import Column, Float, Time, Integer, func
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import Fit.conversions as conversions
-import db
+from utilities import db
 
 
 class SummaryBase(db.DBObject):
