@@ -3,6 +3,7 @@
 # between downloading and geenrating varies types of data. It wraps the core Python scripts and runs them with appropriate parameters.
 #
 PROJECT_BASE=$(PWD)
+export PROJECT_BASE
 
 include defines.mk
 
@@ -170,10 +171,12 @@ package_mshealth:
 # test targets
 #
 test:
-	export PROJECT_BASE=$(PROJECT_BASE) && $(MAKE) -C test
+	$(MAKE) -C Fit test
+	$(MAKE) -C test
 
 test_clean:
-	export PROJECT_BASE=$(PROJECT_BASE) && $(MAKE) -C test clean
+	$(MAKE) -C Fit clean
+	$(MAKE) -C test clean
 
 
 #

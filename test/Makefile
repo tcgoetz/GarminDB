@@ -9,7 +9,7 @@ include $(PROJECT_BASE)/defines.mk
 DB_TEST_GROUPS=garmin_db activities_db monitoring_db garmin_summary_db summary_db
 DB_OBJECTS_TEST_GROUPS=garmin_db_objects
 FILE_PARSE_TEST_GROUPS=fit_file tcx_file
-TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS) fit_field_enum
+TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS)
 
 #
 # Over all targets
