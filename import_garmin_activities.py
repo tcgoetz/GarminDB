@@ -131,7 +131,7 @@ class GarminTcxData(object):
             # 'ascent'                    : ascent.meters_or_feet(self.measurement_system),
             # 'descent'                   : descent.meters_or_feet(self.measurement_system)
         }
-        activity_not_zero = {key : value for (key, value) in activity.iteritems() if value}
+        activity_not_zero = {key : value for (key, value) in activity.items() if value}
         GarminDB.Activities.s_create_or_update(self.garmin_act_db_session, activity_not_zero, ignore_none=True)
 
     def process_files(self, db_params_dict):
@@ -199,9 +199,6 @@ class GarminJsonSummaryData(JsonFileProcessor):
 
     def _process_stand_up_paddleboarding(self, activity_id, activity_summary):
         root_logger.debug("stand_up_paddleboarding for %s: %r", activity_id, activity_summary)
-
-    def _process_resort_skiing_snowboarding(self, activity_id, activity_summary):
-        root_logger.debug("resort_skiing_snowboarding for %s: %r", activity_id, activity_summary)
 
     def _process_resort_skiing_snowboarding(self, activity_id, activity_summary):
         root_logger.debug("resort_skiing_snowboarding for %s: %r", activity_id, activity_summary)

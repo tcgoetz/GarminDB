@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """Class running a checkup against the DB data."""
 
 __author__ = "Tom Goetz"
@@ -12,7 +14,7 @@ from datetime import datetime, timedelta
 import Fit
 import GarminDB
 import garmin_db_config_manager as GarminDBConfigManager
-from version import version
+from version import print_version
 
 logging.basicConfig(filename='graphs.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
@@ -86,15 +88,11 @@ class CheckUp(object):
 
 def __print_usage(program, error=None):
     if error is not None:
-        print error
+        print(error)
         print
-    print '%s [--goals]' % program
-    print '    --goals        : run a checkup on the user\'s goals.'
+    print('%s [--goals]' % program)
+    print('    --goals        : run a checkup on the user\'s goals.')
     sys.exit()
-
-
-def __print_version(program):
-    print '%s' % version
 
 
 def main(argv):
@@ -112,7 +110,7 @@ def main(argv):
         if opt == '-h':
             __print_usage(sys.argv[0])
         elif opt in ("-v", "--version"):
-            __print_version(sys.argv[0])
+            print_version(sys.argv[0])
         elif opt in ("-g", "--goals"):
             logging.debug("Goals: %s", arg)
             goals = True

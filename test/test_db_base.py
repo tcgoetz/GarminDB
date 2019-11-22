@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+"""A building block for other tests."""
 
-#
-# copyright Tom Goetz
-#
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import logging
 import cProfile
@@ -29,12 +29,12 @@ class TestDBBase(object):
         ps_tot.print_stats()
 
     def check_not_none_cols(self, db, table_not_none_cols_dict):
-        for table, not_none_cols_list in table_not_none_cols_dict.iteritems():
+        for table, not_none_cols_list in table_not_none_cols_dict.items():
             for not_none_col in not_none_cols_list:
                 self.assertTrue(table.row_count(db, not_none_col, None) == 0, 'table %s col %s has None values' % (table, not_none_col))
 
     def check_db_tables_exists(self, db, table_dict, min_rows=1):
-        for table_name, table in table_dict.iteritems():
+        for table_name, table in table_dict.items():
             logger.info("Checking %s exists", table_name)
             self.assertGreaterEqual(table.row_count(db), min_rows, 'table %s has no data' % table_name)
 

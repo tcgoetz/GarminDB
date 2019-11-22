@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """A script that generated graphs for health data in a database."""
 
 __author__ = "Tom Goetz"
@@ -13,7 +15,7 @@ import enum
 
 import HealthDB
 import garmin_db_config_manager as GarminDBConfigManager
-from version import version
+from version import print_version
 
 
 logging.basicConfig(filename='graphs.log', filemode='w', level=logging.INFO)
@@ -152,23 +154,19 @@ class Graph(object):
 
 def __print_usage(program, error=None):
     if error is not None:
-        print error
+        print(error)
         print
-    print '%s [--all | --rhr | --weight] [--latest <x days>]' % program
-    print '    --all        : Graph data for all enabled stats.'
-    print '    --hr        : Graph resting heart rate data.'
-    print '    --itime      : Graph intensity time data.'
-    print '    --weight     : Graph weight data.'
-    print '    --steps      : Graph steps data.'
-    print '    --latest     : Graph x most recent days.'
-    print '    --period     : days, weeks, or months.'
-    print '    --trace      : Turn on debug tracing. Extra logging will be written to log file.'
-    print '    '
+    print('%s [--all | --rhr | --weight] [--latest <x days>]' % program)
+    print('    --all        : Graph data for all enabled stats.')
+    print('    --hr        : Graph resting heart rate data.')
+    print('    --itime      : Graph intensity time data.')
+    print('    --weight     : Graph weight data.')
+    print('    --steps      : Graph steps data.')
+    print('    --latest     : Graph x most recent days.')
+    print('    --period     : days, weeks, or months.')
+    print('    --trace      : Turn on debug tracing. Extra logging will be written to log file.')
+    print('    ')
     sys.exit()
-
-
-def __print_version(program):
-    print '%s' % version
 
 
 def main(argv):
@@ -194,7 +192,7 @@ def main(argv):
         if opt == '-h':
             __print_usage(sys.argv[0])
         elif opt in ("-v", "--version"):
-            __print_version(sys.argv[0])
+            print_version(sys.argv[0])
         elif opt in ("-a", "--all"):
             logger.info("All: " + arg)
             hr = GarminDBConfigManager.is_stat_enabled('rhr')

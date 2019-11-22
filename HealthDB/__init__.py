@@ -5,5 +5,5 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 
-from summary_base import SummaryBase
-from summary_db import SummaryDB, Summary, MonthsSummary, WeeksSummary, DaysSummary
+from HealthDB.summary_base import SummaryBase
+from HealthDB.summary_db import SummaryDB, Summary, MonthsSummary, WeeksSummary, DaysSummary

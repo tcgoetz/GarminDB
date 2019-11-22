@@ -2,19 +2,10 @@
 # This Makefile handles downloading data from Garmin Connect and generating SQLite DB files from that data. The Makefile targets handle the dependaancies
 # between downloading and geenrating varies types of data. It wraps the core Python scripts and runs them with appropriate parameters.
 #
-PROJECT_BASE=$(PWD)
+PROJECT_BASE=$(CURDIR)
 export PROJECT_BASE
 
 include defines.mk
-
-#
-# Install Python dependancies as root?
-#
-ifeq ($(INSTALL_DEPS_TO_SYSTEM), y)
-	DEPS_SUDO = sudo
-else
-	DEPS_SUDO =
-endif
 
 
 #
@@ -53,7 +44,7 @@ submodules_update:
 	git submodule update
 
 deps_tcxparser:
-	cd python-tcxparser && python setup.py install --record files.txt
+	cd python-tcxparser && $(PYTHON) setup.py install --user --record files.txt
 
 clean_deps_tcxparser:
 	cd python-tcxparser && cat files.txt | xargs rm -rf
@@ -61,20 +52,20 @@ clean_deps_tcxparser:
 install_deps: deps_tcxparser
 	$(MAKE) -C Fit deps
 	$(MAKE) -C utilities deps
-	pip install --upgrade --requirement requirements.txt
+	$(PIP) install --user --upgrade --requirement requirements.txt
 
 deps:
-	$(DEPS_SUDO) $(MAKE) install_deps
+	$(MAKE) install_deps
 
 remove_deps: clean_deps_tcxparser
-	pip uninstall --requirement requirements.txt
+	$(PIP) uninstall --requirement requirements.txt
 	$(MAKE) -C Fit remove_deps
 	$(MAKE) -C utilities remove_deps
 
 clean_deps:
 	$(DEPS_SUDO) $(MAKE) remove_deps
 
-clean: test_clean
+clean: test_clean tcxparser_clean
 	$(MAKE) -C Fit clean
 	$(MAKE) -C utilities clean
 	rm -f *.pyc
@@ -87,8 +78,13 @@ clean: test_clean
 	rm -f *.spec
 	rm -f *.zip
 	rm -f *.png
-	rm -f *.txt
+	rm -rf __pycache__
 
+tcxparser_clean:
+	rm -rf python-tcxparser/build
+	rm -rf python-tcxparser/dist
+	rm -rf python-tcxparser/python_tcxparser.egg-info
+	rm -rf python-tcxparser/files.txt
 
 #
 # Fitness System independant targets
@@ -172,7 +168,7 @@ package_mshealth:
 #
 test:
 	$(MAKE) -C Fit test
-	$(MAKE) -C test
+	$(MAKE) -C test all
 
 test_clean:
 	$(MAKE) -C Fit clean
@@ -185,4 +181,4 @@ test_clean:
 bugreport:
 	./bugreport.sh
 
-.PHONY: all setup create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release
+.PHONY: all setup create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release clean test test_clean

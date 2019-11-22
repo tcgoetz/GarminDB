@@ -240,10 +240,10 @@ class GarminProfile(JsonFileProcessor):
     def _process_json(self, json_data):
         measurement_system = Fit.field_enums.DisplayMeasure.from_string(json_data['measurementSystem'])
         attributes = {
-            'name'                  : string.replace(json_data['displayName'], '_', ' '),
+            'name'                  : json_data['displayName'].replace('_', ' '),
             'time_zone'             : json_data['timeZone'],
             'measurement_system'    : str(measurement_system),
-            'date_format'           : json_data['dateFormat']['formatKey'],
+            'date_format'           : json_data['dateFormat']['formatKey']
         }
         for attribute_name, attribute_value in attributes.items():
             GarminDB.Attributes.set_newer(self.garmin_db, attribute_name, attribute_value)

@@ -137,7 +137,7 @@ class Analyze(object):
         self.__save_summary_stat(str(year) + '_days', days_count)
         self.__save_summary_stat(str(year) + '_days_span', span)
         stat_logger.info("%d Days with data (%d count vs %d span): %s", year, days_count, span, days)
-        for index in xrange(days_count - 1):
+        for index in range(days_count - 1):
             day = int(days[index])
             next_day = int(days[index + 1])
             if next_day != day + 1:
@@ -244,7 +244,7 @@ class Analyze(object):
         HealthDB.WeeksSummary.s_create_or_update(sum_session, stats)
 
     def __calculate_weeks(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
-        for week_starting_day in progressbar.progressbar(xrange(1, 365, 7)):
+        for week_starting_day in progressbar.progressbar(range(1, 365, 7)):
             day_date = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
             if day_date < datetime.datetime.now().date():
                 self.__calculate_week_stats(day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)

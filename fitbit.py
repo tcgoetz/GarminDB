@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Script for importing into a DB and summarizing CSV formatted FitBit export data."""
 
@@ -25,7 +25,7 @@ root_logger = logging.getLogger()
 
 def usage(program):
     """Print the usage info for the script."""
-    print '%s -i <inputfile> ...' % program
+    print('%s -i <inputfile> ...' % program)
     sys.exit()
 
 

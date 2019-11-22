@@ -6,14 +6,14 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, String, Float, Integer, DateTime, Time, ForeignKey, PrimaryKeyConstraint, desc, exists
+from sqlalchemy import Column, String, Float, Integer, DateTime, Time, ForeignKey, PrimaryKeyConstraint, desc, exists, literal_column
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import HealthDB
 import utilities
-from extra_data import ExtraData
+from GarminDB.extra_data import ExtraData
 
 
 logger = logging.getLogger(__name__)
@@ -85,6 +85,8 @@ class ActivitiesLocationSegment(utilities.DBObject):
 
 
 class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
+    """Class represents a databse table that contains data about recorded activities."""
+
     __tablename__ = 'activities'
     table_version = 2
 
@@ -297,6 +299,11 @@ class SportActivities(utilities.DBObject):
     def get(cls, db, activity_id):
         return cls.find_one(db, {'activity_id' : activity_id})
 
+    @classmethod
+    def google_map_loc(cls, label):
+        """Return a literal column composed of a google map URL for either the start or stop location off the activity."""
+        return literal_column(utilities.Location.google_maps_url('activities.%s_lat' % label, 'activities.%s_long' % label) + ' AS %s_loc' % label)
+
 
 class StepsActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'steps_activities'
@@ -367,8 +374,8 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
                 cls.vo2_max.label('vo2_max'),
                 Activities.training_effect.label('training_effect'),
                 Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
-                utilities.Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
-                utilities.Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc',
+                cls.google_map_loc('start'),
+                cls.google_map_loc('stop'),
             ]
         )
 
@@ -406,8 +413,8 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
                 cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
                 Activities.training_effect.label('training_effect'),
                 Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
-                utilities.Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
-                utilities.Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc'
+                cls.google_map_loc('start'),
+                cls.google_map_loc('stop'),
             ]
         )
 
@@ -444,8 +451,8 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
                 cls.vo2_max.label('vo2_max'),
                 Activities.training_effect.label('training_effect'),
                 Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
-                utilities.Location.google_maps_url('activities.start_lat', 'activities.start_long') + ' AS start_loc',
-                utilities.Location.google_maps_url('activities.stop_lat', 'activities.stop_long') + ' AS stop_loc'
+                cls.google_map_loc('start'),
+                cls.google_map_loc('stop'),
             ]
         )
 

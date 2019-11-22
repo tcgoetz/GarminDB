@@ -11,10 +11,9 @@ from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enu
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
-import HealthDB
 import Fit
 import Fit.conversions as conversions
-from extra_data import ExtraData
+from GarminDB.extra_data import ExtraData
 import utilities
 
 

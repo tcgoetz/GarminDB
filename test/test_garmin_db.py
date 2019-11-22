@@ -1,18 +1,14 @@
-#!/usr/bin/env python
+"""Test garmin db."""
 
-#
-# copyright Tom Goetz
-#
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import unittest
 import logging
-import sys
 import datetime
 
 from test_db_base import TestDBBase
-
-sys.path.append('../.')
-
 import GarminDB
 import garmin_db_config_manager as GarminDBConfigManager
 
@@ -31,19 +27,18 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
     def setUpClass(cls):
         db_params_dict = GarminDBConfigManager.get_db_params()
         cls.garmindb = GarminDB.GarminDB(db_params_dict)
-        super(TestGarminDb, cls).setUpClass(cls.garmindb,
-            {
-                'attributes_table' : GarminDB.Attributes,
-                'device_table' : GarminDB.Device,
-                'device_info_table' : GarminDB.DeviceInfo,
-                'file_table' : GarminDB.File,
-                'weight_table' : GarminDB.Weight,
-                'stress_table' : GarminDB.Stress,
-                'sleep_table' : GarminDB.Sleep,
-                'sleep_events_table' : GarminDB.SleepEvents,
-                'resting_heart_rate_table' : GarminDB.RestingHeartRate
-            }
-        )
+        table_dict = {
+            'attributes_table' : GarminDB.Attributes,
+            'device_table' : GarminDB.Device,
+            'device_info_table' : GarminDB.DeviceInfo,
+            'file_table' : GarminDB.File,
+            'weight_table' : GarminDB.Weight,
+            'stress_table' : GarminDB.Stress,
+            'sleep_table' : GarminDB.Sleep,
+            'sleep_events_table' : GarminDB.SleepEvents,
+            'resting_heart_rate_table' : GarminDB.RestingHeartRate
+        }
+        super(TestGarminDb, cls).setUpClass(cls.garmindb, table_dict)
 
     def check_col_stat(self, value_name, value, bounds):
         min_value, max_value = bounds

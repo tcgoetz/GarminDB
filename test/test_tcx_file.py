@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Test FIT file parsing."""
 
 __author__ = "Tom Goetz"
@@ -8,11 +6,6 @@ __license__ = "GPL"
 
 import unittest
 import logging
-import sys
-import datetime
-import re
-
-sys.path.append('../.')
 
 from utilities import FileProcessor
 import tcx_file
@@ -53,7 +46,8 @@ class TestTcxFile(unittest.TestCase):
         max_speed = tcx.get_value('speed_max')
         max_cadence = tcx.get_value('cadence_max')
         avg_cadence = tcx.get_value('cadence_avg')
-        logger.info("%s: sport %r end_time %r start_time %r manufacturer %r product %r serial_number %r laps %r distance %r calories %r start %r, %r end %r, %r hr %r, %r max speed %r cadence %r, %r",
+        logger.info("%s: sport %r end_time %r start_time %r manufacturer %r product %r serial_number %r laps %r distance %r calories %r start %r, %r end %r,"
+                    " %r hr %r, %r max speed %r cadence %r, %r",
                     filename, sport, end_time, start_time, manufacturer, product, serial_number, laps, distance, calories, start_lat, start_long,
                     stop_lat, stop_long, avg_hr, max_hr, max_speed, avg_cadence, max_cadence)
 

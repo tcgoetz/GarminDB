@@ -2,7 +2,15 @@
 #
 # What python are we using?
 #
-PYTHON=python
+PYTHON2=/usr/bin/python
+#PYTHON3=/usr/bin/python3
+PYTHON3=/usr/local/bin/python3
+#PYTHON=${PYTHON2}
+PYTHON=${PYTHON3}
+
+PIP3=/usr/local/bin/pip3
+PIP=${PIP3}
+export PYTHON PIP
 
 #
 # Directories where data is stored
@@ -11,11 +19,6 @@ HEALTH_DATA_DIR=$(HOME)/HealthData
 DB_DIR=$(HEALTH_DATA_DIR)/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 
-
-#
-# Install Python dependancies as root (as opposed to installing as the user)?
-#
-INSTALL_DEPS_TO_SYSTEM ?= y
 
 #
 # File ID for test activities

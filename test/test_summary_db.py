@@ -1,17 +1,13 @@
-#!/usr/bin/env python
+"""Test summary db."""
 
-#
-# copyright Tom Goetz
-#
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import unittest
 import logging
-import sys
 
 from test_summary_db_base import TestSummaryDBBase
-
-sys.path.append('../.')
-
 import HealthDB
 import garmin_db_config_manager as GarminDBConfigManager
 
@@ -30,14 +26,13 @@ class TestSummaryDB(TestSummaryDBBase, unittest.TestCase):
     def setUpClass(cls):
         db_params_dict = GarminDBConfigManager.get_db_params()
         db = HealthDB.SummaryDB(db_params_dict)
-        super(TestSummaryDB, cls).setUpClass(db,
-            {
-                'summary_table' : HealthDB.Summary,
-                'months_table' : HealthDB.MonthsSummary,
-                'weeks_table' : HealthDB.WeeksSummary,
-                'days_table' : HealthDB.DaysSummary
-            }
-        )
+        table_dict = {
+            'summary_table' : HealthDB.Summary,
+            'months_table' : HealthDB.MonthsSummary,
+            'weeks_table' : HealthDB.WeeksSummary,
+            'days_table' : HealthDB.DaysSummary
+        }
+        super(TestSummaryDB, cls).setUpClass(db, table_dict)
 
 
 if __name__ == '__main__':

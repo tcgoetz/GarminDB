@@ -76,7 +76,7 @@ class Download(object):
         username = self.gc_gonfig.get_user()
         password = self.gc_gonfig.get_password()
         if not username or not password:
-            print "Missing config: need username and password. Edit GarminConnectConfig.json."
+            print("Missing config: need username and password. Edit GarminConnectConfig.json.")
             return
 
         logger.debug("login: %s %s", username, password)
@@ -152,7 +152,7 @@ class Download(object):
         }
         try:
             response = self.modern_rest_client.get('', params=params)
-        except RestException as e:
+        except RestException:
             logger.error("Login get homepage failed (%d).", response.status_code)
             RestClient.save_binary_file('login_home.html', response)
             return False
@@ -176,7 +176,7 @@ class Download(object):
                 files_zip.close()
 
     def __get_stat(self, stat_function, directory, date, days, overwite):
-        for day in progressbar.progressbar(xrange(0, days + 1)):
+        for day in progressbar.progressbar(range(0, days + 1)):
             download_date = date + datetime.timedelta(days=day)
             # always overight for yesterday and today since the last download may have been a partial result
             delta = datetime.datetime.now().date() - download_date
@@ -214,7 +214,7 @@ class Download(object):
     def get_monitoring(self, date, days):
         """Download the daily monitoring data from Garmin Connect, unzip and save the raw files."""
         root_logger.info("Geting monitoring: %s (%d)", date, days)
-        for day in progressbar.progressbar(xrange(0, days + 1)):
+        for day in progressbar.progressbar(range(0, days + 1)):
             day_date = date + datetime.timedelta(day)
             self.__get_monitoring_day(day_date)
             # pause for a second between every page access

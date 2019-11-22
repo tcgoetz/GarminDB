@@ -1,0 +1,6 @@
+sqlalchemy
+requests
+python-dateutil
+progressbar2
+PyInstaller
+matplotlib

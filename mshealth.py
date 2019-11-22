@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Script for importing into a DB and summarizing CSV formatted Microsoft Health export data."""
 
@@ -23,7 +23,7 @@ root_logger = logging.getLogger()
 
 
 def __usage(program):
-    print '%s -i <inputfile>' % program
+    print('%s -i <inputfile>' % program)
     sys.exit()
 
 
@@ -36,7 +36,7 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, "hi:t", ["help", "delete_db", "trace", "input_file="])
     except getopt.GetoptError:
-        print "Bad argument"
+        print("Bad argument")
         __usage(sys.argv[0])
 
     for opt, arg in opts:

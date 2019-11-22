@@ -20,9 +20,9 @@ class GarminConnectConfigManager(JsonConfig):
         try:
             super(GarminConnectConfigManager, self).__init__(self.config_filename)
         except Exception as e:
-            print str(e)
-            print "Missing config: copy GarminConnectConfig.json.example to GarminConnectConfig.json and edit GarminConnectConfig.json to " + \
-                  "add your Garmin Connect username and password."
+            print(str(e))
+            print("Missing config: copy GarminConnectConfig.json.example to GarminConnectConfig.json and edit GarminConnectConfig.json to "
+                  "add your Garmin Connect username and password.")
             sys.exit(-1)
 
     def get_secure_password(self):

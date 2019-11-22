@@ -9,7 +9,7 @@ from sqlalchemy import Column, Date
 from sqlalchemy.ext.declarative import declarative_base
 
 from utilities import db
-import summary_base as sb
+import HealthDB.summary_base as sb
 from utilities import db_version as dbv
 from utilities import key_value
 

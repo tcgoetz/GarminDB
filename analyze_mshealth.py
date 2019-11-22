@@ -45,7 +45,7 @@ class Analyze(object):
         else:
             span = 0
         stat_logger.info("%d Days (%d vs %d): %s", year_int, days_count, span, days)
-        for index in xrange(days_count - 1):
+        for index in range(days_count - 1):
             day = int(days[index])
             next_day = int(days[index + 1])
             if next_day != day + 1:
@@ -73,7 +73,7 @@ class Analyze(object):
                 stats = MSHealthDB.DaysSummary.get_daily_stats(self.mshealthdb, day_ts)
                 stats.update(MSHealthDB.MSVaultWeight.get_daily_stats(self.mshealthdb, day_ts))
                 HealthDB.DaysSummary.create_or_update(self.sumdb, stats, ignore_none=True)
-            for week_starting_day in xrange(1, 365, 7):
+            for week_starting_day in range(1, 365, 7):
                 day_ts = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
                 stats = MSHealthDB.DaysSummary.get_weekly_stats(self.mshealthdb, day_ts)
                 stats.update(MSHealthDB.MSVaultWeight.get_weekly_stats(self.mshealthdb, day_ts))

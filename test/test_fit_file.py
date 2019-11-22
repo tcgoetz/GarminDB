@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Test FIT file parsing."""
 
 __author__ = "Tom Goetz"
@@ -8,11 +6,8 @@ __license__ = "GPL"
 
 import unittest
 import logging
-import sys
 import datetime
 import re
-
-sys.path.append('../.')
 
 import Fit
 from utilities import FileProcessor

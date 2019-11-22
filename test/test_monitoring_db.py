@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Test Garmin monitoring database data."""
 
 __author__ = "Tom Goetz"
@@ -8,16 +6,11 @@ __license__ = "GPL"
 
 import unittest
 import logging
-import sys
 import datetime
 
 from test_db_base import TestDBBase
-
-sys.path.append('../.')
-
 import GarminDB
 import Fit
-from utilities import FileProcessor
 import garmin_db_config_manager as GarminDBConfigManager
 from import_garmin import GarminMonitoringFitData, GarminSummaryData
 
@@ -37,15 +30,14 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
     def setUpClass(cls):
         db_params_dict = GarminDBConfigManager.get_db_params()
         garmin_mon_db = GarminDB.MonitoringDB(db_params_dict)
-        super(TestMonitoringDB, cls).setUpClass(garmin_mon_db,
-            {
-                'monitoring_info_table'         : GarminDB.MonitoringInfo,
-                'monitoring_hr_table'           : GarminDB.MonitoringHeartRate,
-                'monitoring_intensity_table'    : GarminDB.MonitoringIntensity,
-                'monitoring_climb_table'        : GarminDB.MonitoringClimb,
-                'monitoring_table'              : GarminDB.Monitoring,
-            }
-        )
+        table_dict = {
+            'monitoring_info_table'         : GarminDB.MonitoringInfo,
+            'monitoring_hr_table'           : GarminDB.MonitoringHeartRate,
+            'monitoring_intensity_table'    : GarminDB.MonitoringIntensity,
+            'monitoring_climb_table'        : GarminDB.MonitoringClimb,
+            'monitoring_table'              : GarminDB.Monitoring,
+        }
+        super(TestMonitoringDB, cls).setUpClass(garmin_mon_db, table_dict)
 
     def test_garmin_mon_db_tables_exists(self):
         self.assertGreater(GarminDB.MonitoringInfo.row_count(self.db), 0)
@@ -66,7 +58,7 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
                 'monitoring_hr_table'           : GarminDB.MonitoringHeartRate,
                 'monitoring_table'              : GarminDB.Monitoring,
             }
-        for table_name, table in uptodate_tables.iteritems():
+        for table_name, table in uptodate_tables.items():
             latest = GarminDB.MonitoringHeartRate.latest_time(self.db, GarminDB.MonitoringHeartRate.heart_rate)
             logger.info("Latest data for %s: %s", table_name, latest)
             self.assertLess(datetime.datetime.now() - latest, datetime.timedelta(days=2))
@@ -83,18 +75,18 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
         test_mon_db = GarminDB.GarminDB(db_params_dict)
         self.check_db_tables_exists(test_mon_db, {'device_table' : GarminDB.Device})
         self.check_db_tables_exists(test_mon_db, {'file_table' : GarminDB.File, 'device_info_table' : GarminDB.DeviceInfo}, self.gfd_file_count)
-        self.check_not_none_cols(GarminDB.MonitoringDB(db_params_dict),
-            {GarminDB.Monitoring : [GarminDB.Monitoring.timestamp, GarminDB.Monitoring.activity_type, GarminDB.Monitoring.duration]}
-        )
+        table_not_none_cols_dict = {GarminDB.Monitoring : [GarminDB.Monitoring.timestamp, GarminDB.Monitoring.activity_type, GarminDB.Monitoring.duration]}
+        self.check_not_none_cols(GarminDB.MonitoringDB(db_params_dict), table_not_none_cols_dict)
 
     def test_summary_json_file_import(self):
         db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
         gjsd = GarminSummaryData(db_params_dict, 'test_files/json/monitoring/summary', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
         if gjsd.file_count() > 0:
             gjsd.process()
-        self.check_not_none_cols(GarminDB.GarminDB(db_params_dict),
-            {GarminDB.DailySummary : [GarminDB.DailySummary.rhr, GarminDB.DailySummary.distance, GarminDB.DailySummary.steps, GarminDB.DailySummary.floors_goal]}
-        )
+        table_not_none_cols_dict = {
+            GarminDB.DailySummary : [GarminDB.DailySummary.rhr, GarminDB.DailySummary.distance, GarminDB.DailySummary.steps, GarminDB.DailySummary.floors_goal]
+        }
+        self.check_not_none_cols(GarminDB.GarminDB(db_params_dict), table_not_none_cols_dict)
 
 
 if __name__ == '__main__':

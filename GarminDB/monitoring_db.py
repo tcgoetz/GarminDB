@@ -11,7 +11,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import Fit
-import HealthDB
 import utilities
 
 
@@ -78,6 +77,8 @@ class MonitoringInfo(MonitoringDB.Base, utilities.DBObject):
 
 
 class MonitoringHeartRate(MonitoringDB.Base, utilities.DBObject):
+    """Class that reprsents a database table holding resting heart rate data."""
+
     __tablename__ = 'monitoring_hr'
     table_version = 1
 
@@ -97,6 +98,7 @@ class MonitoringHeartRate(MonitoringDB.Base, utilities.DBObject):
 
     @classmethod
     def get_resting_heartrate(cls, db, wake_ts):
+        """Return a resting heart rate value for the day specified."""
         start_ts = wake_ts - datetime.timedelta(0, 0, 0, 0, 10)
         return cls.get_col_min(db, cls.heart_rate, start_ts, wake_ts, True)
 

@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+"""A building block for other db tests."""
 
-#
-# copyright Tom Goetz
-#
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
 
 import logging
 

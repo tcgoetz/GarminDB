@@ -2,13 +2,16 @@
 # This Makefile automates running tests for the project.
 #
 
-PROJECT_BASE ?= $(PWD)/../.
+PROJECT_BASE ?= $(CURDIR)/../.
 
 include $(PROJECT_BASE)/defines.mk
 
+PYTHONPATH=${PROJECT_BASE}
+export PYTHONPATH
+
 DB_TEST_GROUPS=garmin_db activities_db monitoring_db garmin_summary_db summary_db
 DB_OBJECTS_TEST_GROUPS=garmin_db_objects
-FILE_PARSE_TEST_GROUPS=fit_file tcx_file
+FILE_PARSE_TEST_GROUPS=fit_file tcx_file profile_file
 TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS)
 
 #
@@ -26,9 +29,12 @@ clean:
 	rm -f *.pyc
 	rm -f *.log
 	rm -f *.txt
+	rm -rf __pycache__
 
 #
 # Targets for testing smaller slices of functionality.
 #
 $(TEST_GROUPS):
 	$(PYTHON) test_$@.py
+
+.PHONY: all db file_parse db_objects clean file_parse

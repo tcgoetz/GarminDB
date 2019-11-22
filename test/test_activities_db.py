@@ -1,17 +1,14 @@
-#!/usr/bin/env python
+"""Test activities db."""
 
-#
-# copyright Tom Goetz
-#
+__author__ = "Tom Goetz"
+__copyright__ = "Copyright Tom Goetz"
+__license__ = "GPL"
+
 
 import unittest
 import logging
-import sys
 
 from test_db_base import TestDBBase
-
-sys.path.append('../.')
-
 import GarminDB
 import Fit
 from import_garmin_activities import GarminActivitiesFitData, GarminTcxData, GarminJsonSummaryData, GarminJsonDetailsData
@@ -67,9 +64,8 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         test_mon_db = GarminDB.GarminDB(db_params_dict)
         self.check_db_tables_exists(test_mon_db, {'device_table' : GarminDB.Device})
         self.check_db_tables_exists(test_mon_db, {'file_table' : GarminDB.File, 'device_info_table' : GarminDB.DeviceInfo}, self.gfd_file_count)
-        self.check_not_none_cols(GarminDB.ActivitiesDB(db_params_dict),
-            {GarminDB.Activities : [GarminDB.Activities.start_time, GarminDB.Activities.stop_time, GarminDB.Activities.elapsed_time]}
-        )
+        activities_fields = [GarminDB.Activities.start_time, GarminDB.Activities.stop_time, GarminDB.Activities.elapsed_time]
+        self.check_not_none_cols(GarminDB.ActivitiesDB(db_params_dict), {GarminDB.Activities : activities_fields})
 
     def test_tcx_file_import(self):
         db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
@@ -83,9 +79,8 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         gjsd = GarminJsonSummaryData(db_params_dict, 'test_files/json/activity/summary', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
         if gjsd.file_count() > 0:
             gjsd.process()
-        self.check_not_none_cols(GarminDB.ActivitiesDB(db_params_dict),
-            {GarminDB.Activities : [GarminDB.Activities.name, GarminDB.Activities.type, GarminDB.Activities.sport, GarminDB.Activities.sub_sport]}
-        )
+        activities_fields = [GarminDB.Activities.name, GarminDB.Activities.type, GarminDB.Activities.sport, GarminDB.Activities.sub_sport]
+        self.check_not_none_cols(GarminDB.ActivitiesDB(db_params_dict), {GarminDB.Activities : activities_fields})
 
     def test_details_json_file_import(self):
         db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Test Garmin database data."""
 
 __author__ = "Tom Goetz"
@@ -8,15 +6,10 @@ __license__ = "GPL"
 
 import unittest
 import logging
-import sys
-
 from sqlalchemy.exc import IntegrityError
-
-sys.path.append('../.')
 
 import GarminDB
 import Fit
-from utilities import FileProcessor
 import garmin_db_config_manager as GarminDBConfigManager
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 A script that imports and analyzes Garmin health device data into a database.
@@ -15,7 +15,7 @@ import sys
 import getopt
 import datetime
 
-from version import version
+from version import print_version
 from download_garmin import Download
 from copy_garmin import Copy
 from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringExtraData, GarminMonitoringFitData, GarminSleepData, GarminRhrData
@@ -57,7 +57,7 @@ def __get_date_and_days(db, latest, table, col, stat_name):
         if days > max_days:
             days = max_days
     if date is None or days is None:
-        print "Missing config: need %s_start_date and download_days. Edit GarminConnectConfig.py." % stat_name
+        print("Missing config: need %s_start_date and download_days. Edit GarminConnectConfig.py." % stat_name)
         sys.exit()
     return (date, days)
 
@@ -217,30 +217,25 @@ def delete_dbs(debug):
 def print_usage(program, error=None):
     """Print usage information for the script."""
     if error is not None:
-        print error
+        print(error)
         print
-    print '%s [--all | --activities | --monitoring | --rhr | --sleep | --weight] [--download | --copy | --import | --analyze] [--latest]' % program
-    print '    --all        : Download and/or import data for all enabled stats.'
-    print '    --activities : Download and/or import activities data.'
-    print '    --monitoring : Download and/or import monitoring data.'
-    print '    --rhr        : Download and/or import resting heart rate data.'
-    print '    --sleep      : Download and/or import sleep data.'
-    print '    --weight     : Download and/or import weight data.'
-    print '    --download   : Download data from Garmin Connect for the chosen stats.'
-    print '    --copy       : Copy data from a USB mounted Garmin device for the chosen stats.'
-    print '    --import     : Import data for the chosen stats.'
-    print '    --analyze    : Analyze data in the db and create summary and derived tables.'
-    print '    --latest     : Only download and/or import the latest data.'
-    print '    --overwrite  : Overwite existing files when downloading. The default is to only download missing files.'
-    print '    --delete_db  : Delete Garmin DB db files.'
-    print '    --trace      : Turn on debug tracing. Extra logging will be written to log file.'
-    print '    '
+    print('%s [--all | --activities | --monitoring | --rhr | --sleep | --weight] [--download | --copy | --import | --analyze] [--latest]' % program)
+    print('    --all        : Download and/or import data for all enabled stats.')
+    print('    --activities : Download and/or import activities data.')
+    print('    --monitoring : Download and/or import monitoring data.')
+    print('    --rhr        : Download and/or import resting heart rate data.')
+    print('    --sleep      : Download and/or import sleep data.')
+    print('    --weight     : Download and/or import weight data.')
+    print('    --download   : Download data from Garmin Connect for the chosen stats.')
+    print('    --copy       : Copy data from a USB mounted Garmin device for the chosen stats.')
+    print('    --import     : Import data for the chosen stats.')
+    print('    --analyze    : Analyze data in the db and create summary and derived tables.')
+    print('    --latest     : Only download and/or import the latest data.')
+    print('    --overwrite  : Overwite existing files when downloading. The default is to only download missing files.')
+    print('    --delete_db  : Delete Garmin DB db files.')
+    print('    --trace      : Turn on debug tracing. Extra logging will be written to log file.')
+    print('    ')
     sys.exit()
-
-
-def print_version(program):
-    """Print version information for the script."""
-    print '%s' % version
 
 
 def main(argv):
@@ -261,7 +256,7 @@ def main(argv):
     latest = False
 
     try:
-        opts, args = getopt.getopt(argv, "acAdimolrstT:w",
+        opts, args = getopt.getopt(argv, "acAdimolrstT:vw",
                                    ["all", "activities", "analyze", "copy", "delete_db", "download", "import", "trace=", "test", "monitoring", "overwrite",
                                     "latest", "rhr", "sleep", "weight", "version"])
     except getopt.GetoptError as e:
