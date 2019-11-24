@@ -4,3 +4,4 @@ python-dateutil
 progressbar2
 PyInstaller
 matplotlib
+PyInstaller
