@@ -15,7 +15,7 @@ import sys
 import getopt
 import datetime
 
-from version import print_version
+from version import print_version, python_version_check, log_version
 from download_garmin import Download
 from copy_garmin import Copy
 from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringExtraData, GarminMonitoringFitData, GarminSleepData, GarminRhrData
@@ -255,6 +255,8 @@ def main(argv):
     sleep = False
     latest = False
 
+    python_version_check(sys.argv[0])
+
     try:
         opts, args = getopt.getopt(argv, "acAdimolrstT:vw",
                                    ["all", "activities", "analyze", "copy", "delete_db", "download", "import", "trace=", "test", "monitoring", "overwrite",
@@ -312,6 +314,8 @@ def main(argv):
         elif opt in ("-w", "--weight"):
             logging.debug("Weight")
             weight = True
+
+    log_version(sys.argv[0])
 
     if debug > 0:
         root_logger.setLevel(logging.DEBUG)
