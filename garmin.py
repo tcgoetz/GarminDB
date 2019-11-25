@@ -21,6 +21,7 @@ from copy_garmin import Copy
 from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringExtraData, GarminMonitoringFitData, GarminSleepData, GarminRhrData
 from import_garmin_activities import GarminJsonSummaryData, GarminJsonDetailsData, GarminActivitiesExtraData, GarminTcxData, GarminActivitiesFitData
 from analyze_garmin import Analyze
+from export_activities import ActivityExporter
 
 import HealthDB
 import GarminDB
@@ -214,6 +215,16 @@ def delete_dbs(debug):
     HealthDB.SummaryDB.delete_db(db_params_dict)
 
 
+def export_activity(debug, export_activity_id):
+    """Export an activity given its databse id."""
+    db_params_dict = GarminDBConfigManager.get_db_params()
+    garmindb = GarminDB.GarminDB(db_params_dict)
+    measurement_system = GarminDB.Attributes.measurements_type(garmindb)
+    ae = ActivityExporter(export_activity_id, measurement_system, debug)
+    ae.process(db_params_dict)
+    ae.write('activity_%s.tcx' % export_activity_id)
+
+
 def print_usage(program, error=None):
     """Print usage information for the script."""
     if error is not None:
@@ -254,13 +265,14 @@ def main(argv):
     rhr = False
     sleep = False
     latest = False
+    export_activity_id = None
 
     python_version_check(sys.argv[0])
 
     try:
-        opts, args = getopt.getopt(argv, "acAdimolrstT:vw",
-                                   ["all", "activities", "analyze", "copy", "delete_db", "download", "import", "trace=", "test", "monitoring", "overwrite",
-                                    "latest", "rhr", "sleep", "weight", "version"])
+        opts, args = getopt.getopt(argv, "acAde:imolrstT:vw",
+                                   ["all", "activities", "analyze", "copy", "delete_db", "download", "export-activity=", "import", "trace=", "test",
+                                    "monitoring", "overwrite", "latest", "rhr", "sleep", "weight", "version"])
     except getopt.GetoptError as e:
         print_usage(sys.argv[0], str(e))
 
@@ -314,6 +326,9 @@ def main(argv):
         elif opt in ("-w", "--weight"):
             logging.debug("Weight")
             weight = True
+        elif opt in ("-e", "--export-activity"):
+            export_activity_id = arg
+            logging.debug("Export activity %s", export_activity_id)
 
     log_version(sys.argv[0])
 
@@ -338,6 +353,8 @@ def main(argv):
     if _analyze_data:
         analyze_data(debug)
 
+    if export_activity_id:
+        export_activity(debug, export_activity_id)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

@@ -127,6 +127,9 @@ update_garmin:
 copy_garmin_latest:
 	time $(PYTHON) garmin.py --all --copy --import --analyze --latest
 
+export:
+	$(PYTHON) garmin.py --export-activity ${EXPORT_ACTIVITY_ID}
+
 clean_garmin_dbs:
 	$(PYTHON) garmin.py --delete_db
 

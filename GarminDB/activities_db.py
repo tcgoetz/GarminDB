@@ -177,6 +177,8 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
 
 
 class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
+    """Class that holds data for an activity lap."""
+
     __tablename__ = 'activity_laps'
     table_version = 2
 
@@ -221,6 +223,16 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
     def s_find_one(cls, session, values_dict):
         """Find a table row that matches the values in the values_dict."""
         return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.lap == values_dict['lap']).one_or_none()
+
+    @classmethod
+    def get(cls, db, activity_id):
+        """Return all laps for the activity with id activity_id."""
+        return cls.find(db, {'activity_id' : activity_id})
+
+    @classmethod
+    def s_get(cls, session, activity_id):
+        """Return all laps for the activity with id activity_id."""
+        return session.query(cls).filter(cls.activity_id == activity_id).all()
 
     @hybrid_property
     def start_loc(self):
@@ -270,7 +282,7 @@ class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
     @hybrid_property
     def position(self):
         """Return the location where the record was recorded."""
-        return HealthDB.Location(self.position_lat, self.position_long)
+        return utilities.Location(self.position_lat, self.position_long)
 
     @position.setter
     def position(self, location):
