@@ -142,10 +142,12 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
 
     @classmethod
     def get(cls, db, activity_id):
+        """Return a single activity instance for the given id."""
         return cls.find_one(db, {'activity_id' : activity_id})
 
     @classmethod
     def s_get(cls, session, activity_id):
+        """Return a single activity instance for the given id."""
         return session.query(cls).filter(cls.activity_id == activity_id).one_or_none()
 
     @classmethod
@@ -168,6 +170,7 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
+        """Return a dict of stats for the time range."""
         stats = {
             'activities'            : cls.s_row_count_for_period(session, start_ts, end_ts),
             'activities_calories'   : cls.s_get_col_sum(session, cls.calories, start_ts, end_ts),
@@ -217,6 +220,7 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
 
     @classmethod
     def s_exists(cls, session, values_dict):
+        """Return if a matching lap instance exists."""
         return session.query(exists().where(cls.activity_id == values_dict['activity_id']).where(cls.lap == values_dict['lap'])).scalar()
 
     @classmethod
@@ -236,6 +240,7 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
 
     @hybrid_property
     def start_loc(self):
+        """Return the lap start location."""
         return HealthDB.Location(self.start_lat, self.start_long)
 
     @start_loc.setter
@@ -245,6 +250,8 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
 
 
 class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
+    """Encapsilates record for a single point in time from an activity."""
+
     __tablename__ = 'activity_records'
     table_version = 2
 
@@ -258,7 +265,7 @@ class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
     cadence = Column(Integer)
     hr = Column(Integer)
     # feet or meters
-    alititude = Column(Float)
+    altitude = Column(Float)
     # kmph or mph
     speed = Column(Float)
     # C or F
@@ -272,6 +279,7 @@ class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
 
     @classmethod
     def s_exists(cls, session, values_dict):
+        """Return if a matching record exists in the database."""
         return session.query(exists().where(cls.activity_id == values_dict['activity_id']).where(cls.record == values_dict['record'])).scalar()
 
     @classmethod
