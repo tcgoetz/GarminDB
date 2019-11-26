@@ -64,6 +64,11 @@ def get_monitoring_base_dir():
     return get_fit_files_dir() + os.sep + GarminDBConfig.directories['monitoring_file_dir']
 
 
+def get_or_create_monitoring_base_dir():
+    """Return the configured directory of where the monitoring files will be stored creating it if needed."""
+    return _create_dir_if_needed(get_monitoring_base_dir())
+
+
 def get_monitoring_dir(year):
     """Return the configured directory of where the new monitoring files will be stored."""
     return get_monitoring_base_dir() + os.sep + str(year)
