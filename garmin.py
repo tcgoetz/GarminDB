@@ -137,7 +137,7 @@ def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities)
     """Import previously downloaded Garmin data into the database."""
     db_params_dict = GarminDBConfigManager.get_db_params(test_db=test)
 
-    gp = GarminProfile(db_params_dict, GarminDBConfigManager.get_fit_files_dir(), debug)
+    gp = GarminProfile(db_params_dict, GarminDBConfigManager.get_or_create_fit_files_dir(), debug)
     if gp.file_count() > 0:
         gp.process()
 
@@ -145,13 +145,13 @@ def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities)
     measurement_system = GarminDB.Attributes.measurements_type(garmindb)
 
     if weight:
-        weight_dir = GarminDBConfigManager.get_weight_dir()
+        weight_dir = GarminDBConfigManager.get_or_create_weight_dir()
         gwd = GarminWeightData(db_params_dict, weight_dir, latest, measurement_system, debug)
         if gwd.file_count() > 0:
             gwd.process()
 
     if monitoring:
-        monitoring_dir = GarminDBConfigManager.get_monitoring_base_dir()
+        monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_base_dir()
         gsd = GarminSummaryData(db_params_dict, monitoring_dir, latest, measurement_system, debug)
         if gsd.file_count() > 0:
             gsd.process()
@@ -163,19 +163,19 @@ def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities)
             gfd.process_files(db_params_dict)
 
     if sleep:
-        sleep_dir = GarminDBConfigManager.get_sleep_dir()
+        sleep_dir = GarminDBConfigManager.get_or_create_sleep_dir()
         gsd = GarminSleepData(db_params_dict, sleep_dir, latest, debug)
         if gsd.file_count() > 0:
             gsd.process()
 
     if rhr:
-        rhr_dir = GarminDBConfigManager.get_rhr_dir()
+        rhr_dir = GarminDBConfigManager.get_or_create_rhr_dir()
         grhrd = GarminRhrData(db_params_dict, rhr_dir, latest, debug)
         if grhrd.file_count() > 0:
             grhrd.process()
 
     if activities:
-        activities_dir = GarminDBConfigManager.get_activities_dir()
+        activities_dir = GarminDBConfigManager.get_or_create_activities_dir()
         gjsd = GarminJsonSummaryData(db_params_dict, activities_dir, latest, measurement_system, debug)
         if gjsd.file_count() > 0:
             gjsd.process()
@@ -355,6 +355,7 @@ def main(argv):
 
     if export_activity_id:
         export_activity(debug, export_activity_id)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
