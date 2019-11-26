@@ -97,6 +97,11 @@ class Device(GarminDB.Base, utilities.DBObject):
         return cls.find_one(db, {'serial_number' : serial_number})
 
     @classmethod
+    def s_get(cls, session, serial_number):
+        """Return a device entry given the device's serial number."""
+        return session.query(cls).filter(cls.serial_number == serial_number).one_or_none()
+
+    @classmethod
     def local_device_serial_number(cls, serial_number, device_type):
         """Return a synthetic serial number for a sub device composed of the parent's serial number and the sub device type."""
         return '%s%06d' % (serial_number, device_type.value)
@@ -164,6 +169,11 @@ class File(GarminDB.Base, utilities.DBObject):
     def get_id(cls, db, pathname):
         """Return the id of a file given it's pathname."""
         return cls.find_id(db, {'name' : os.path.basename(pathname)})
+
+    @classmethod
+    def s_get(cls, session, file_id):
+        """Return the file record given it's id."""
+        return session.query(cls).filter(cls.id == file_id).one_or_none()
 
     @classmethod
     def create_view(cls, db):
@@ -438,6 +448,8 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
 
 
 class DailyExtraData(GarminDB.Base, ExtraData):
+    """This table holds data extracted form comments in daily summaries."""
+
     __tablename__ = 'daily_extra_data'
     table_version = 1
 

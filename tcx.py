@@ -34,7 +34,7 @@ class Tcx(object):
         self.activity = ET.SubElement(activities, 'Activity', attrib={'Sport' : sport})
         ET.SubElement(self.activity, 'Id').text = start_dt.isoformat()
 
-    def lap(self, start_dt, end_dt, distance, calories):
+    def add_lap(self, start_dt, end_dt, distance, calories):
         """Add a lap to the TCX file data."""
         lap = ET.SubElement(self.activity, 'Lap', attrib={'StartTime': start_dt.isoformat()})
         ET.SubElement(lap, 'TotalTimeSeconds').text = str((end_dt - start_dt).total_seconds())
@@ -45,7 +45,7 @@ class Tcx(object):
         track = ET.SubElement(lap, 'Track')
         return track
 
-    def point(self, track, dt, location, alititude, heart_rate, speed):
+    def add_point(self, track, dt, location, alititude, heart_rate, speed):
         """Add a point to the lap."""
         point = ET.SubElement(track, 'Trackpoint')
         ET.SubElement(point, 'Time').text = dt.isoformat()
@@ -63,6 +63,21 @@ class Tcx(object):
             ate = ET.SubElement(extensions, 'ActivityTrackpointExtension', atrib=attrib)
             ET.SubElement(ate, 'Speed').text = str(speed)
         return point
+
+    def add_creator(self, name, serial_number, product_id=None, version=None):
+        """Add a creator element."""
+        creator = ET.SubElement(self.activity, 'Creator', attrib={'xsi:type': 'Device_t'})
+        ET.SubElement(creator, 'Name').text = name
+        ET.SubElement(creator, 'UnitId').text = str(serial_number)
+        if product_id is not None:
+            ET.SubElement(creator, 'ProductID').text = str(product_id)
+        if version is not None:
+            version = ET.SubElement(creator, 'Version')
+            ET.SubElement(version, 'VersionMajor').text = version[0]
+            ET.SubElement(version, 'VersionMinor').text = version[1]
+            ET.SubElement(version, 'BuildMajor').text = version[2]
+            ET.SubElement(version, 'BuildMinor').text = version[3]
+
 
     def write(self, filename):
         """Write the TCX XML data to a file."""

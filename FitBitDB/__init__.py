@@ -4,4 +4,6 @@ __author__ = "Tom Goetz"
 __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
+# flake8: noqa
+
 from FitBitDB.fitbit_db import FitBitDB, Attributes, DaysSummary
