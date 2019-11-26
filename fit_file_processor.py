@@ -145,8 +145,12 @@ class FitFileProcessor(object):
         root_logger.debug("source message: %r", source_message_dict)
 
     def __get_field_value(self, message_dict, field_name):
-        # developer fields take precedence over regular fields
-        return message_dict.get('dev_' + field_name, message_dict.get(field_name))
+        prefixes = ['dev_', 'enhanced_']
+        for prefix in prefixes:
+            value = message_dict.get(prefix + field_name)
+            if value is not None:
+                return value
+        return message_dict.get(field_name)
 
     def __get_field_list_value(self, message_dict, field_name_list):
         for field_name in field_name_list:
@@ -364,7 +368,7 @@ class FitFileProcessor(object):
                 'distance'                          : self.__get_field_value(message_dict, 'distance'),
                 'cadence'                           : self.__get_field_value(message_dict, 'cadence'),
                 'hr'                                : self.__get_field_value(message_dict, 'heart_rate'),
-                'alititude'                         : self.__get_field_value(message_dict, 'altitude'),
+                'altitude'                          : self.__get_field_value(message_dict, 'altitude'),
                 'speed'                             : self.__get_field_value(message_dict, 'speed'),
                 'temperature'                       : self.__get_field_value(message_dict, 'temperature'),
             }
