@@ -50,11 +50,15 @@ class GarminSummaryDB(utilities.DB):
 
 
 class Summary(GarminSummaryDB.Base, utilities.KeyValueObject):
+    """A table holding statistics about health data as key-value pairs."""
+
     __tablename__ = 'summary'
     table_version = 1
 
 
 class MonthsSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
+    """A table holding summarizzed data with one row per month."""
+
     __tablename__ = 'months_summary'
     table_version = 1
     view_version = HealthDB.SummaryBase.view_version
@@ -65,6 +69,8 @@ class MonthsSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
 
 
 class WeeksSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
+    """A table holding summarizzed data with one row per week."""
+
     __tablename__ = 'weeks_summary'
     table_version = 1
     view_version = HealthDB.SummaryBase.view_version
@@ -75,6 +81,8 @@ class WeeksSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
 
 
 class DaysSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
+    """A table holding summarizzed data with one row per day."""
+
     __tablename__ = 'days_summary'
     table_version = 1
     view_version = HealthDB.SummaryBase.view_version
@@ -84,10 +92,9 @@ class DaysSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     time_col_name = 'day'
 
 
-#
-# Monitoring heart rate values that fall within a intensity period.
-#
 class IntensityHR(GarminSummaryDB.Base, utilities.DBObject):
+    """Monitoring heart rate values that fall within a intensity period."""
+
     __tablename__ = 'intensity_hr'
     table_version = 1
 

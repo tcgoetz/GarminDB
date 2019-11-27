@@ -35,10 +35,14 @@ class MSHealthDB(utilities.DB):
 
 
 class Attributes(MSHealthDB.Base, utilities.KeyValueObject):
+    """A table that holds attributes about the user as key-value pairs."""
+
     __tablename__ = 'attributes'
 
 
 class DaysSummary(MSHealthDB.Base, utilities.DBObject):
+    """A table that holds summarized information about a day with one row per day."""
+
     __tablename__ = 'days_summary'
 
     day = Column(Date, primary_key=True)
