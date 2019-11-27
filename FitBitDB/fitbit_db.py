@@ -30,7 +30,7 @@ class FitBitDB(utilities.DB):
             db_params_dict (dict): Config data for accessing the database
             debug (Boolean): enable debug logging
         """
-        super(FitBitDB, self).__init__(db_params_dict, debug)
+        super().__init__(db_params_dict, debug)
         FitBitDB.Base.metadata.create_all(self.engine)
 
 

@@ -18,7 +18,7 @@ class GarminConnectConfigManager(JsonConfig):
     def __init__(self):
         """Return a new GarminConnectConfigManager instance."""
         try:
-            super(GarminConnectConfigManager, self).__init__(self.config_filename)
+            super().__init__(self.config_filename)
         except Exception as e:
             print(str(e))
             print("Missing config: copy GarminConnectConfig.json.example to GarminConnectConfig.json and edit GarminConnectConfig.json to "

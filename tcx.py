@@ -78,7 +78,6 @@ class Tcx(object):
             ET.SubElement(version, 'BuildMajor').text = version[2]
             ET.SubElement(version, 'BuildMinor').text = version[3]
 
-
     def write(self, filename):
         """Write the TCX XML data to a file."""
         tree = ET.ElementTree(self.root)

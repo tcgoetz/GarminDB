@@ -22,7 +22,7 @@ root_logger = logging.getLogger()
 class FitData(object):
     """Class for importing FIT files into a database."""
 
-    def __init__(self, input_dir, debug, latest=False, fit_type=None, measurement_system=Fit.field_enums.DisplayMeasure.metric):
+    def __init__(self, input_dir, debug, latest=False, recursive=False, fit_type=None, measurement_system=Fit.field_enums.DisplayMeasure.metric):
         """
         Return an instance of FitData.
 
@@ -34,12 +34,11 @@ class FitData(object):
         measurement_system (enum): which measurement system to use when importing the files
 
         """
-        logger.info("Processing %s FIT data", fit_type)
+        logger.info("Processing %s FIT data from %s", fit_type, input_dir)
         self.measurement_system = measurement_system
         self.debug = debug
         self.fit_type = fit_type
-        if input_dir:
-            self.file_names = FileProcessor.dir_to_files(input_dir, Fit.file.name_regex, latest, True)
+        self.file_names = FileProcessor.dir_to_files(input_dir, Fit.file.name_regex, latest, recursive)
 
     def file_count(self):
         """Return the number of files that will be processed."""

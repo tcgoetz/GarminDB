@@ -35,7 +35,7 @@ class SummaryDB(db.DB):
             db_params_dict (dict): Config data for accessing the database
             debug (Boolean): enable debug logging
         """
-        super(SummaryDB, self).__init__(db_params_dict, debug)
+        super().__init__(db_params_dict, debug)
         SummaryDB.Base.metadata.create_all(self.engine)
         version = SummaryDB._DbVersion()
         version.version_check(self, self.db_version)

@@ -33,7 +33,7 @@ class TestGarminSummaryDB(TestSummaryDBBase, unittest.TestCase):
             'weeks_table' : GarminDB.WeeksSummary,
             'days_table' : GarminDB.DaysSummary
         }
-        super(TestGarminSummaryDB, cls).setUpClass(db, table_dict)
+        super().setUpClass(db, table_dict)
 
 
 if __name__ == '__main__':

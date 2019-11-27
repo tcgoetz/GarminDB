@@ -39,7 +39,7 @@ class GarminActivitiesFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, debug, latest, Fit.field_enums.FileType.activity, measurement_system)
+        super().__init__(input_dir, debug, latest, False, Fit.field_enums.FileType.activity, measurement_system)
 
 
 class GarminTcxData(object):
@@ -144,7 +144,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
 
         """
         logger.info("Processing %s activities summary data from %s", 'latest' if latest else 'all', input_dir)
-        super(GarminJsonSummaryData, self).__init__(None, input_dir, r'activity_\d*\.json', latest, debug)
+        super().__init__(None, input_dir, r'activity_\d*\.json', latest, debug)
         self.input_dir = input_dir
         self.measurement_system = measurement_system
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
@@ -322,7 +322,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
 
         """
         logger.info("Processing activities detail data")
-        super(GarminJsonDetailsData, self).__init__(None, input_dir, r'activity_details_\d*\.json', latest, debug)
+        super().__init__(None, input_dir, r'activity_details_\d*\.json', latest, debug)
         self.measurement_system = measurement_system
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
         self.conversions = {}
@@ -423,7 +423,7 @@ class GarminActivitiesExtraData(JsonFileProcessor):
 
         """
         logger.info("Processing activities extra data")
-        super(GarminActivitiesExtraData, self).__init__(None, input_dir, r'extra_data_\d*\.json', latest, debug)
+        super().__init__(None, input_dir, r'extra_data_\d*\.json', latest, debug)
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
         self.conversions = {}
 

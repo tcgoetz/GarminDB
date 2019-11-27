@@ -32,7 +32,7 @@ class TestSummaryDB(TestSummaryDBBase, unittest.TestCase):
             'weeks_table' : HealthDB.WeeksSummary,
             'days_table' : HealthDB.DaysSummary
         }
-        super(TestSummaryDB, cls).setUpClass(db, table_dict)
+        super().setUpClass(db, table_dict)
 
 
 if __name__ == '__main__':

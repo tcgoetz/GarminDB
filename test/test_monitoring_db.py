@@ -37,7 +37,7 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
             'monitoring_climb_table'        : GarminDB.MonitoringClimb,
             'monitoring_table'              : GarminDB.Monitoring,
         }
-        super(TestMonitoringDB, cls).setUpClass(garmin_mon_db, table_dict)
+        super().setUpClass(garmin_mon_db, table_dict)
 
     def test_garmin_mon_db_tables_exists(self):
         self.assertGreater(GarminDB.MonitoringInfo.row_count(self.db), 0)

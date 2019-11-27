@@ -37,7 +37,7 @@ class ActivitiesDB(utilities.DB):
             db_params_dict (dict): Config data for accessing the database
             debug (Boolean): enable debug logging
         """
-        super(ActivitiesDB, self).__init__(db_params_dict, debug)
+        super().__init__(db_params_dict, debug)
         ActivitiesDB.Base.metadata.create_all(self.engine)
         self.version = ActivitiesDB._DbVersion()
         self.version.version_check(self, self.db_version)

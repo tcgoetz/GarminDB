@@ -38,7 +38,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
             'sleep_events_table' : GarminDB.SleepEvents,
             'resting_heart_rate_table' : GarminDB.RestingHeartRate
         }
-        super(TestGarminDb, cls).setUpClass(cls.garmindb, table_dict)
+        super().setUpClass(cls.garmindb, table_dict)
 
     def check_col_stat(self, value_name, value, bounds):
         min_value, max_value = bounds

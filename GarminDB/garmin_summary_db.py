@@ -33,7 +33,7 @@ class GarminSummaryDB(utilities.DB):
             db_params_dict (dict): Config data for accessing the database
             debug (Boolean): enable debug logging
         """
-        super(GarminSummaryDB, self).__init__(db_params_dict, debug)
+        super().__init__(db_params_dict, debug)
         GarminSummaryDB.Base.metadata.create_all(self.engine)
         self.version = GarminSummaryDB._DbVersion()
         self.version.version_check(self, self.db_version)
