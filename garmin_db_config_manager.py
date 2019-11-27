@@ -174,6 +174,11 @@ def is_stat_enabled(stat_name):
     return GarminDBConfig.enabled_stats[stat_name]
 
 
+def device_settings_dir(mount_dir):
+    """Return the full path to the settings file on a mounted device."""
+    return mount_dir + os.sep + GarminDBConfig.device_directories['base'] + os.sep + GarminDBConfig.device_directories['settings']
+
+
 def device_monitoring_dir(mount_dir):
     """Return the full path to the monitoring files on a mounted device."""
     return mount_dir + os.sep + GarminDBConfig.device_directories['base'] + os.sep + GarminDBConfig.device_directories['monitoring']

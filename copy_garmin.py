@@ -30,18 +30,24 @@ class Copy(object):
         if not os.path.isdir(self.device_mount_dir):
             raise RuntimeError('%s not a directory' % self.device_mount_dir)
 
+    def __copy(self, src_dir, dest_dir, latest=False):
+        """Copy FIT files from a USB mounted Garmin device to the given directory."""
+        file_names = FileProcessor.dir_to_files(src_dir, Fit.file.name_regex, latest)
+        logger.info("Copying files from %s to %s", src_dir, dest_dir)
+        for file in progressbar.progressbar(file_names):
+            shutil.copy(file, dest_dir)
+
     def copy_activities(self, activities_dir, latest):
         """Copy activites data FIT files from a USB mounted Garmin device to the given directory."""
         device_activities_dir = GarminDBConfigManager.device_activities_dir(self.device_mount_dir)
-        logger.info("Copying activities files from %s to %s", device_activities_dir, activities_dir)
-        file_names = FileProcessor.dir_to_files(device_activities_dir, Fit.file.name_regex, latest)
-        for file in progressbar.progressbar(file_names):
-            shutil.copy(file, activities_dir)
+        self.__copy(device_activities_dir, activities_dir, latest)
 
     def copy_monitoring(self, monitoring_dir, latest):
         """Copy daily monitoring data FIT files from a USB mounted Garmin device to the given directory."""
         device_monitoring_dir = GarminDBConfigManager.device_monitoring_dir(self.device_mount_dir)
-        logger.info("Copying monitoring files from %s to %s", device_monitoring_dir, monitoring_dir)
-        file_names = FileProcessor.dir_to_files(device_monitoring_dir, Fit.file.name_regex, latest)
-        for file in progressbar.progressbar(file_names):
-            shutil.copy(file, monitoring_dir)
+        self.__copy(device_monitoring_dir, monitoring_dir, latest)
+
+    def copy_settings(self, settings_dir):
+        """Copy settings FIT files from a USB mounted Garmin device to the given directory."""
+        device_settings_dir = GarminDBConfigManager.device_settings_dir(self.device_mount_dir)
+        self.__copy(device_settings_dir, settings_dir)

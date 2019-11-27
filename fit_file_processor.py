@@ -296,8 +296,26 @@ class FitFileProcessor(object):
         except Exception as e:
             root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
 
+    def _write_attribute(self, timestamp, parsed_message, attribute_name, db_attribute_name=None):
+        attribute = parsed_message.get(attribute_name)
+        if attribute is not None:
+            if db_attribute_name is None:
+                db_attribute_name = attribute_name
+            GarminDB.Attributes.s_set_newer(self.garmin_db_session, db_attribute_name, attribute, timestamp)
+
+    def _write_attributes(self, timestamp, parsed_message, attribute_names):
+        for attribute_name in attribute_names:
+            self._write_attribute(timestamp, parsed_message, attribute_name)
+
     def _write_device_settings_entry(self, fit_file, device_settings_message_dict):
         root_logger.debug("device settings message: %r", device_settings_message_dict)
+        timestamp = fit_file.time_created()
+        attribute_names = [
+                'active_time_zone', 'date_mode'
+        ]
+        self._write_attributes(timestamp, device_settings_message_dict, attribute_names)
+        self._write_attribute(timestamp, device_settings_message_dict, 'active_time_zone', 'time_zone')
+        self._write_attribute(timestamp, device_settings_message_dict, 'date_mode', 'date_format')
 
     def _write_lap_entry(self, fit_file, message_dict):
         # we don't get laps data from multiple sources so we don't need to coellesce data in the DB.
@@ -335,18 +353,15 @@ class FitFileProcessor(object):
     def _write_battery_entry(self, fit_file, battery_message_dict):
         root_logger.debug("battery message: %r", battery_message_dict)
 
-    def _write_attribute(self, timestamp, parsed_message, attribute_name):
-        attribute = parsed_message.get(attribute_name)
-        if attribute is not None:
-            GarminDB.Attributes.s_set_newer(self.garmin_db_session, attribute_name, attribute, timestamp)
-
     def _write_user_profile_entry(self, fit_file, message_dict):
         root_logger.debug("user profile message: %r", message_dict)
         timestamp = fit_file.time_created()
-        for attribute_name in [
-                'gender', 'height', 'weight', 'language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time'
-        ]:
-            self._write_attribute(timestamp, message_dict, attribute_name)
+        attribute_names = [
+                'gender', 'height', 'weight', 'language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time',
+                'speed_setting'
+        ]
+        self._write_attributes(timestamp, message_dict, attribute_names)
+        self._write_attribute(timestamp, message_dict, 'dist_setting', 'measurement_system')
 
     def _write_activity_entry(self, fit_file, activity_message_dict):
         root_logger.debug("activity message: %r", activity_message_dict)

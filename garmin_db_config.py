@@ -40,7 +40,8 @@ class GarminDBConfig(object):
     device_directories = {
         'base'                  : 'GARMIN',
         'activities'            : 'ACTIVITY',
-        'monitoring'            : 'MONITOR'
+        'monitoring'            : 'MONITOR',
+        'settings'              : 'SETTINGS'
     }
     graphs = {
         'steps'                 : {'period' : 'weeks', 'days' : 730},

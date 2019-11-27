@@ -118,6 +118,9 @@ garmin:
 build_garmin:
 	time $(PYTHON) garmin.py --all --import --analyze
 
+copy_garmin_settings:
+	time $(PYTHON) garmin.py --copy
+
 copy_garmin:
 	time $(PYTHON) garmin.py --all --copy --import --analyze
 

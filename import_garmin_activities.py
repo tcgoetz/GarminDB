@@ -14,9 +14,9 @@ import dateutil.parser
 import Fit
 import GarminDB
 from utilities import FileProcessor, JsonFileProcessor
-from fit_file_processor import FitFileProcessor
 import garmin_connect_enums as GarminConnectEnums
 import tcx_file
+from fit_data import FitData
 
 
 logger = logging.getLogger(__file__)
@@ -24,7 +24,7 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 
-class GarminActivitiesFitData(object):
+class GarminActivitiesFitData(FitData):
     """Class for importing Garmin activity data from FIT files."""
 
     def __init__(self, input_dir, latest, measurement_system, debug):
@@ -39,25 +39,7 @@ class GarminActivitiesFitData(object):
         debug (Boolean): enable debug logging
 
         """
-        logger.info("Processing activities FIT data")
-        self.measurement_system = measurement_system
-        self.debug = debug
-        if input_dir:
-            self.file_names = FileProcessor.dir_to_files(input_dir, Fit.file.name_regex, latest)
-
-    def file_count(self):
-        """Return the number of files that will be propcessed."""
-        return len(self.file_names)
-
-    def process_files(self, db_params_dict):
-        """Process files into the database."""
-        fp = FitFileProcessor(db_params_dict, self.debug)
-        for file_name in progressbar.progressbar(self.file_names):
-            try:
-                fp.write_file(Fit.file.File(file_name, self.measurement_system))
-            except Exception as e:
-                logger.error("Failed to parse %s: %s", file_name, e)
-                raise
+        super().__init__(input_dir, debug, latest, Fit.field_enums.FileType.activity, measurement_system)
 
 
 class GarminTcxData(object):

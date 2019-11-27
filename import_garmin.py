@@ -7,17 +7,15 @@ __license__ = "GPL"
 
 import os
 import sys
-import string
 import logging
 import datetime
 import enum
 import dateutil.parser
-import progressbar
 
 import Fit
 import GarminDB
-from utilities import JsonFileProcessor, FileProcessor
-from fit_file_processor import FitFileProcessor
+from utilities import JsonFileProcessor
+from fit_data import FitData
 
 
 logger = logging.getLogger(__file__)
@@ -58,7 +56,7 @@ class GarminWeightData(JsonFileProcessor):
             return 1
 
 
-class GarminMonitoringFitData(object):
+class GarminMonitoringFitData(FitData):
     """Class for importing monitoring FIT files into a database."""
 
     def __init__(self, input_dir, latest, measurement_system, debug):
@@ -72,28 +70,22 @@ class GarminMonitoringFitData(object):
         debug (Boolean): enable debug logging
 
         """
-        logger.info("Processing daily monitoring FIT data")
-        self.measurement_system = measurement_system
-        self.debug = debug
-        if input_dir:
-            self.file_names = FileProcessor.dir_to_files(input_dir, Fit.file.name_regex, latest, True)
+        super().__init__(input_dir, debug, latest, Fit.field_enums.FileType.monitoring_b, measurement_system)
 
-    def file_count(self):
-        """Return the number of files that will be processed."""
-        return len(self.file_names)
 
-    def process_files(self, db_params_dict):
-        """Import monitoring FIT files into the database."""
-        fp = FitFileProcessor(db_params_dict, self.debug)
-        for file_name in progressbar.progressbar(self.file_names):
-            try:
-                fit_file = Fit.file.File(file_name, self.measurement_system)
-                if fit_file.type() == Fit.field_enums.FileType.monitoring_b:
-                    fp.write_file(fit_file)
-                else:
-                    root_logger.info("skipping non monitoring file %s type %r message types %r", file_name, fit_file.type(), fit_file.message_types())
-            except Fit.exceptions.FitFileError as e:
-                logger.error("Failed to parse %s: %s", file_name, e)
+class GarminSettingsFitData(FitData):
+    """Class for importing settings FIT files into a database."""
+
+    def __init__(self, input_dir, debug):
+        """
+        Return an instance of GarminSettingsFitData.
+
+        Parameters:
+        input_dir (string): directory (full path) to check for settings data files
+        debug (Boolean): enable debug logging
+
+        """
+        super().__init__(input_dir, debug, fit_type=Fit.field_enums.FileType.settings)
 
 
 class SleepActivityLevels(enum.Enum):

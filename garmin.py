@@ -18,7 +18,8 @@ import datetime
 from version import print_version, python_version_check, log_version
 from download_garmin import Download
 from copy_garmin import Copy
-from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringExtraData, GarminMonitoringFitData, GarminSleepData, GarminRhrData
+from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringExtraData, GarminMonitoringFitData, GarminSleepData, \
+                          GarminRhrData, GarminSettingsFitData
 from import_garmin_activities import GarminJsonSummaryData, GarminJsonDetailsData, GarminActivitiesExtraData, GarminTcxData, GarminActivitiesFitData
 from analyze_garmin import Analyze
 from export_activities import ActivityExporter
@@ -67,6 +68,10 @@ def copy_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
     """Copy data from a mounted Garmin USB device to files."""
     copy = Copy(gc_gonfig.device_mount_dir())
 
+    settings_dir = GarminDBConfigManager.get_or_create_fit_files_dir()
+    root_logger.info("Copying settings to %s", settings_dir)
+    copy.copy_settings(settings_dir)
+
     if activities:
         activities_dir = GarminDBConfigManager.get_or_create_activities_dir()
         root_logger.info("Copying activities to %s", activities_dir)
@@ -76,6 +81,11 @@ def copy_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
         monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_dir(datetime.datetime.now().year)
         root_logger.info("Copying monitoring to %s", monitoring_dir)
         copy.copy_monitoring(monitoring_dir, latest)
+
+    if sleep:
+        monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_dir(datetime.datetime.now().year)
+        root_logger.info("Copying sleep to %s", monitoring_dir)
+        copy.copy_sleep(monitoring_dir, latest)
 
 
 def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
@@ -137,9 +147,15 @@ def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities)
     """Import previously downloaded Garmin data into the database."""
     db_params_dict = GarminDBConfigManager.get_db_params(test_db=test)
 
-    gp = GarminProfile(db_params_dict, GarminDBConfigManager.get_or_create_fit_files_dir(), debug)
+    # Import the user profile and/or settings FIT file first so that we can get the measurement system and some other things sorted out first.
+    fit_files_dir = GarminDBConfigManager.get_or_create_fit_files_dir()
+    gp = GarminProfile(db_params_dict, fit_files_dir, debug)
     if gp.file_count() > 0:
         gp.process()
+
+    gsfd = GarminSettingsFitData(fit_files_dir, debug)
+    if gsfd.file_count() > 0:
+        gsfd.process_files(db_params_dict)
 
     garmindb = GarminDB.GarminDB(db_params_dict)
     measurement_system = GarminDB.Attributes.measurements_type(garmindb)
