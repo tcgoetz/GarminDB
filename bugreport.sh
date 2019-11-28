@@ -5,6 +5,8 @@ BUGREPORT=bugreport.txt
 PYTHON=python
 PYTHON_PACKAGES="sqlalchemy requests python-dateutil enum34 progressbar2 PyInstaller matplotlib"
 
+zip -j -r bugreport_${EPOCH}.zip *.log
+
 uname -a > ${BUGREPORT}
 which ${PYTHON} >> ${BUGREPORT}
 ${PYTHON} --version >> ${BUGREPORT} 2>&1
@@ -25,4 +27,4 @@ if [ -f garmin.py ]; then
 fi
 
 echo Zipping up ${BUGREPORT} and logs
-zip -j -r bugreport_${EPOCH}.zip ${BUGREPORT} *.log
+zip -j -r bugreport_${EPOCH}.zip ${BUGREPORT}
