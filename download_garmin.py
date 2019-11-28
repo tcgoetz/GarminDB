@@ -178,10 +178,9 @@ class Download(object):
     def __get_stat(self, stat_function, directory, date, days, overwite):
         for day in progressbar.progressbar(range(0, days + 1)):
             download_date = date + datetime.timedelta(days=day)
-            # always overight for yesterday and today since the last download may have been a partial result
+            # always overwrite for yesterday and today since the last download may have been a partial result
             delta = datetime.datetime.now().date() - download_date
-            if not stat_function(directory, download_date, overwite or delta.days <= self.download_days_overlap):
-                break
+            stat_function(directory, download_date, overwite or delta.days <= self.download_days_overlap)
             # pause for a second between every page access
             time.sleep(1)
 
