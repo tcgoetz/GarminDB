@@ -14,6 +14,9 @@ from garmin_db_config import GarminDBConfig
 logger = logging.getLogger(__name__)
 
 
+temp_dir = tempfile.mkdtemp()
+
+
 def get_db_type():
     """Return the type (SQLite, MySQL, etc) of database that is configured."""
     return GarminDBConfig.db['type']
@@ -40,109 +43,111 @@ def _create_dir_if_needed(dir):
     return dir
 
 
-def get_base_dir():
+def get_base_dir(test_dir=False):
     """Return the configured directory of where the data files will be stored."""
     base = GarminDBConfig.directories['base_dir']
+    if test_dir:
+        return temp_dir + os.sep + base
     if GarminDBConfig.directories['relative_to_home']:
         homedir = os.path.expanduser('~')
         return homedir + os.sep + base
     return base
 
 
-def get_fit_files_dir():
+def get_fit_files_dir(test_dir=False):
     """Return the configured directory of where the FIT files will be stored."""
-    return get_base_dir() + os.sep + GarminDBConfig.directories['fit_file_dir']
+    return get_base_dir(test_dir) + os.sep + GarminDBConfig.directories['fit_file_dir']
 
 
-def get_or_create_fit_files_dir():
+def get_or_create_fit_files_dir(test_dir=False):
     """Return the configured directory of where the FIT files will be stored creating it if needed."""
-    return _create_dir_if_needed(get_fit_files_dir())
+    return _create_dir_if_needed(get_fit_files_dir(test_dir))
 
 
-def get_monitoring_base_dir():
+def get_monitoring_base_dir(test_dir=False):
     """Return the configured directory of where the all monitoring files will be stored."""
-    return get_fit_files_dir() + os.sep + GarminDBConfig.directories['monitoring_file_dir']
+    return get_fit_files_dir(test_dir) + os.sep + GarminDBConfig.directories['monitoring_file_dir']
 
 
-def get_or_create_monitoring_base_dir():
+def get_or_create_monitoring_base_dir(test_dir=False):
     """Return the configured directory of where the monitoring files will be stored creating it if needed."""
-    return _create_dir_if_needed(get_monitoring_base_dir())
+    return _create_dir_if_needed(get_monitoring_base_dir(test_dir))
 
 
-def get_monitoring_dir(year):
+def get_monitoring_dir(year, test_dir=False):
     """Return the configured directory of where the new monitoring files will be stored."""
-    return get_monitoring_base_dir() + os.sep + str(year)
+    return get_monitoring_base_dir(test_dir) + os.sep + str(year)
 
 
-def get_or_create_monitoring_dir(year):
+def get_or_create_monitoring_dir(year, test_dir=False):
     """Return the configured directory of where the monitoring files will be stored creating it if needed."""
-    return _create_dir_if_needed(get_monitoring_dir(year))
+    return _create_dir_if_needed(get_monitoring_dir(year, test_dir))
 
 
-def get_activities_dir():
+def get_activities_dir(test_dir=False):
     """Return the configured directory of where the activities files will be stored."""
-    return get_fit_files_dir() + os.sep + GarminDBConfig.directories['activities_file_dir']
+    return get_fit_files_dir(test_dir) + os.sep + GarminDBConfig.directories['activities_file_dir']
 
 
-def get_or_create_activities_dir():
+def get_or_create_activities_dir(test_dir=False):
     """Return the configured directory of where the activities files will be stored creating it if needed."""
-    return _create_dir_if_needed(get_activities_dir())
+    return _create_dir_if_needed(get_activities_dir(test_dir))
 
 
-def get_sleep_dir():
+def get_sleep_dir(test_dir=False):
     """Return the configured directory of where the sleep files will be stored."""
-    return get_base_dir() + os.sep + GarminDBConfig.directories['sleep_files_dir']
+    return get_base_dir(test_dir) + os.sep + GarminDBConfig.directories['sleep_files_dir']
 
 
-def get_or_create_sleep_dir():
+def get_or_create_sleep_dir(test_dir=False):
     """Return the configured directory of where the sleep files will be stored creating it if needed."""
-    return _create_dir_if_needed(get_sleep_dir())
+    return _create_dir_if_needed(get_sleep_dir(test_dir))
 
 
-def get_weight_dir():
+def get_weight_dir(test_dir=False):
     """Return the configured directory of where the weight files will be stored."""
     return get_base_dir() + os.sep + GarminDBConfig.directories['weight_files_dir']
 
 
-def get_or_create_weight_dir():
+def get_or_create_weight_dir(test_dir=False):
     """Return the configured directory of where the weight files will be stored creating it if needed."""
-    return _create_dir_if_needed(get_weight_dir())
+    return _create_dir_if_needed(get_weight_dir(test_dir))
 
 
-def get_rhr_dir():
+def get_rhr_dir(test_dir=False):
     """Return the configured directory of where the resting heart rate files will be stored."""
-    return get_base_dir() + os.sep + GarminDBConfig.directories['rhr_files_dir']
+    return get_base_dir(test_dir) + os.sep + GarminDBConfig.directories['rhr_files_dir']
 
 
-def get_or_create_rhr_dir():
+def get_or_create_rhr_dir(test_dir=False):
     """Return the configured directory of where the resting heart rate files will be stored creating it if needed."""
-    return _create_dir_if_needed(get_rhr_dir())
+    return _create_dir_if_needed(get_rhr_dir(test_dir))
 
 
-def get_fitbit_dir():
+def get_fitbit_dir(test_dir=False):
     """Return the configured directory of where the FitBit will be stored."""
-    return get_base_dir() + os.sep + GarminDBConfig.directories['fitbit_file_dir']
+    return get_base_dir(test_dir) + os.sep + GarminDBConfig.directories['fitbit_file_dir']
 
 
-def get_or_create_fitbit_dir():
+def get_or_create_fitbit_dir(test_dir=False):
     """Return the configured directory of where the FitBit files will be stored creating it if needed."""
-    return _create_dir_if_needed(get_fitbit_dir())
+    return _create_dir_if_needed(get_fitbit_dir(test_dir))
 
 
-def get_mshealth_dir():
+def get_mshealth_dir(test_dir=False):
     """Return the configured directory of where the Microsoft Health will be stored."""
-    return get_base_dir() + os.sep + GarminDBConfig.directories['mshealth_file_dir']
+    return get_base_dir(test_dir) + os.sep + GarminDBConfig.directories['mshealth_file_dir']
 
 
-def get_or_create_mshealth_dir():
+def get_or_create_mshealth_dir(test_dir=False):
     """Return the configured directory of where the Microsoft Health files will be stored creating it if needed."""
-    return _create_dir_if_needed(get_mshealth_dir())
+    return _create_dir_if_needed(get_mshealth_dir(test_dir))
 
 
 def get_db_dir(test_db=False):
     """Return the configured directory of where the database will be stored."""
     if test_db:
-        base = tempfile.mkdtemp()
+        base = temp_dir
     else:
         base = get_base_dir()
     return _create_dir_if_needed(base + os.sep + GarminDBConfig.directories['db_dir'])
@@ -182,6 +187,11 @@ def device_settings_dir(mount_dir):
 def device_monitoring_dir(mount_dir):
     """Return the full path to the monitoring files on a mounted device."""
     return mount_dir + os.sep + GarminDBConfig.device_directories['base'] + os.sep + GarminDBConfig.device_directories['monitoring']
+
+
+def device_sleep_dir(mount_dir):
+    """Return the full path to the sleep files on a mounted device."""
+    return mount_dir + os.sep + GarminDBConfig.device_directories['base'] + os.sep + GarminDBConfig.device_directories['sleep']
 
 
 def device_activities_dir(mount_dir):

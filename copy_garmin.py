@@ -37,15 +37,20 @@ class Copy(object):
         for file in progressbar.progressbar(file_names):
             shutil.copy(file, dest_dir)
 
-    def copy_activities(self, activities_dir, latest):
+    def copy_activities(self, activities_dir, latest=False):
         """Copy activites data FIT files from a USB mounted Garmin device to the given directory."""
         device_activities_dir = GarminDBConfigManager.device_activities_dir(self.device_mount_dir)
         self.__copy(device_activities_dir, activities_dir, latest)
 
-    def copy_monitoring(self, monitoring_dir, latest):
+    def copy_monitoring(self, monitoring_dir, latest=False):
         """Copy daily monitoring data FIT files from a USB mounted Garmin device to the given directory."""
         device_monitoring_dir = GarminDBConfigManager.device_monitoring_dir(self.device_mount_dir)
         self.__copy(device_monitoring_dir, monitoring_dir, latest)
+
+    def copy_sleep(self, monitoring_dir, latest=False):
+        """Copy daily sleep data FIT files from a USB mounted Garmin device to the given directory."""
+        device_sleep_dir = GarminDBConfigManager.device_sleep_dir(self.device_mount_dir)
+        self.__copy(device_sleep_dir, monitoring_dir, latest)
 
     def copy_settings(self, settings_dir):
         """Copy settings FIT files from a USB mounted Garmin device to the given directory."""

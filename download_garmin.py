@@ -61,8 +61,8 @@ class Download(object):
         self.modern_rest_client = RestClient(self.session, 'connect.garmin.com', 'modern')
         self.activity_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/activity-service/activity")
         self.download_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/download-service/files")
-        self.gc_gonfig = GarminConnectConfigManager()
-        self.download_days_overlap = self.gc_gonfig.download_days_overlap()
+        self.gc_config = GarminConnectConfigManager()
+        self.download_days_overlap = self.gc_config.download_days_overlap()
 
     def __get_json(self, page_html, key):
         found = re.search(key + r" = JSON.parse\(\"(.*)\"\);", page_html, re.M)
@@ -73,8 +73,8 @@ class Download(object):
     def login(self):
         """Login to Garmin Connect."""
         profile_dir = GarminDBConfigManager.get_or_create_fit_files_dir()
-        username = self.gc_gonfig.get_user()
-        password = self.gc_gonfig.get_password()
+        username = self.gc_config.get_user()
+        password = self.gc_config.get_password()
         if not username or not password:
             print("Missing config: need username and password. Edit GarminConnectConfig.json.")
             return

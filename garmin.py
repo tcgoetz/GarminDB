@@ -35,14 +35,14 @@ logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
-gc_gonfig = GarminConnectConfigManager()
+gc_config = GarminConnectConfigManager()
 
 
 def __get_date_and_days(db, latest, table, col, stat_name):
     if latest:
         last_ts = table.latest_time(db, col)
         if last_ts is None:
-            date, days = gc_gonfig.stat_start_date(stat_name)
+            date, days = gc_config.stat_start_date(stat_name)
             logger.info("Automatic date not found, using: %s : %s for %s", date, days, stat_name)
         else:
             # start from the day after the last day in the DB
@@ -54,7 +54,7 @@ def __get_date_and_days(db, latest, table, col, stat_name):
                 date = last_ts
                 days = (datetime.date.today() - last_ts).days
     else:
-        date, days = gc_gonfig.stat_start_date(stat_name)
+        date, days = gc_config.stat_start_date(stat_name)
         max_days = (datetime.date.today() - date).days
         if days > max_days:
             days = max_days
@@ -66,7 +66,7 @@ def __get_date_and_days(db, latest, table, col, stat_name):
 
 def copy_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
     """Copy data from a mounted Garmin USB device to files."""
-    copy = Copy(gc_gonfig.device_mount_dir())
+    copy = Copy(gc_config.device_mount_dir())
 
     settings_dir = GarminDBConfigManager.get_or_create_fit_files_dir()
     root_logger.info("Copying settings to %s", settings_dir)
@@ -99,9 +99,9 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
 
     if activities:
         if latest:
-            activity_count = gc_gonfig.latest_activity_count()
+            activity_count = gc_config.latest_activity_count()
         else:
-            activity_count = gc_gonfig.all_activity_count()
+            activity_count = gc_config.all_activity_count()
         activities_dir = GarminDBConfigManager.get_or_create_activities_dir()
         root_logger.info("Fetching %d activities to %s", activity_count, activities_dir)
         download.get_activity_types(activities_dir, overwite)
