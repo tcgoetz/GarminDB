@@ -22,15 +22,15 @@ class FitBitDB(utilities.DB):
     Base = declarative_base()
     db_name = 'fitbit'
 
-    def __init__(self, db_params_dict, debug=False):
+    def __init__(self, db_params, debug=False):
         """
         Return an instance of FitBitDB.
 
         Paramters:
-            db_params_dict (dict): Config data for accessing the database
+            db_params (dict): Config data for accessing the database
             debug (Boolean): enable debug logging
         """
-        super().__init__(db_params_dict, debug)
+        super().__init__(db_params, debug)
         FitBitDB.Base.metadata.create_all(self.engine)
 
 

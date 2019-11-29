@@ -58,24 +58,24 @@ def main(argv):
     else:
         root_logger.setLevel(logging.INFO)
 
-    db_params_dict = GarminDBConfigManager.get_db_params()
+    db_params = GarminDBConfigManager.get_db_params()
 
     if _delete_db:
-        MSHealthDB.MSHealthDB.delete_db(db_params_dict)
+        MSHealthDB.MSHealthDB.delete_db(db_params)
         sys.exit()
 
     mshealth_dir = GarminDBConfigManager.get_or_create_mshealth_dir()
     metric = GarminDBConfigManager.get_metric()
 
-    msd = MSHealthData(input_file, mshealth_dir, db_params_dict, metric, debug)
+    msd = MSHealthData(input_file, mshealth_dir, db_params, metric, debug)
     if msd.file_count() > 0:
         msd.process_files()
 
-    mshv = MSVaultData(input_file, mshealth_dir, db_params_dict, metric, debug)
+    mshv = MSVaultData(input_file, mshealth_dir, db_params, metric, debug)
     if mshv.file_count() > 0:
         mshv.process_files()
 
-    analyze = Analyze(db_params_dict)
+    analyze = Analyze(db_params)
     analyze.get_years()
     analyze.summary()
 

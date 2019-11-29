@@ -27,15 +27,15 @@ class MonitoringDB(utilities.DB):
     class _DbVersion(Base, utilities.DbVersionObject):
         pass
 
-    def __init__(self, db_params_dict, debug=False):
+    def __init__(self, db_params, debug=False):
         """
         Return an instance of MonitoringDB.
 
         Paramters:
-            db_params_dict (dict): Config data for accessing the database
+            db_params (dict): Config data for accessing the database
             debug (Boolean): enable debug logging
         """
-        super().__init__(db_params_dict, debug)
+        super().__init__(db_params, debug)
         MonitoringDB.Base.metadata.create_all(self.engine)
         self.version = MonitoringDB._DbVersion()
         self.version.version_check(self, self.db_version)
@@ -195,6 +195,8 @@ class MonitoringClimb(MonitoringDB.Base, utilities.DBObject):
 
 
 class Monitoring(MonitoringDB.Base, utilities.DBObject):
+    """A table containing monitoring data."""
+
     __tablename__ = 'monitoring'
     table_version = 1
 

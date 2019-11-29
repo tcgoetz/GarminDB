@@ -25,15 +25,15 @@ class GarminSummaryDB(utilities.DB):
     class _DbVersion(Base, utilities.DbVersionObject):
         pass
 
-    def __init__(self, db_params_dict, debug=False):
+    def __init__(self, db_params, debug=False):
         """
         Return an instance of GarminSummaryDB.
 
         Paramters:
-            db_params_dict (dict): Config data for accessing the database
+            db_params (dict): Config data for accessing the database
             debug (Boolean): enable debug logging
         """
-        super().__init__(db_params_dict, debug)
+        super().__init__(db_params, debug)
         GarminSummaryDB.Base.metadata.create_all(self.engine)
         self.version = GarminSummaryDB._DbVersion()
         self.version.version_check(self, self.db_version)
@@ -107,9 +107,8 @@ class IntensityHR(GarminSummaryDB.Base, utilities.DBObject):
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
-        stats = {
+        return {
             'inactive_hr_avg' : cls.s_get_col_avg_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
             'inactive_hr_min' : cls.s_get_col_min_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
             'inactive_hr_max' : cls.s_get_col_max_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
         }
-        return stats

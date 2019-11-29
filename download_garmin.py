@@ -51,6 +51,9 @@ class Download(object):
 
     garmin_connect_usersummary_url = "proxy/usersummary-service/usersummary"
     garmin_connect_daily_summary_url = garmin_connect_usersummary_url + "/daily"
+    garmin_connect_daily_hydration_url = garmin_connect_usersummary_url + "/hydration/allData"
+
+    # https://connect.garmin.com/modern/proxy/usersummary-service/usersummary/hydration/allData/2019-11-29
 
     def __init__(self):
         """Create a new Download class instance."""
@@ -118,7 +121,7 @@ class Download(object):
             response = self.sso_rest_client.get(self.garmin_connect_sso_login, get_headers, params)
         except RestResponseException as e:
             root_logger.error("Exception during login get: %s", e)
-            RestClient.save_binary_file('login_get.html', e.data['response'])
+            RestClient.save_binary_file('login_get.html', e.response)
             return False
         found = re.search(r"name=\"_csrf\" value=\"(\w*)", response.text, re.M)
         if not found:
@@ -171,9 +174,8 @@ class Download(object):
         for filename in os.listdir(self.temp_dir):
             match = re.search(r'.*\.zip', filename)
             if match:
-                files_zip = zipfile.ZipFile(f'{self.temp_dir}/{filename}', 'r')
-                files_zip.extractall(outdir)
-                files_zip.close()
+                with zipfile.ZipFile(f'{self.temp_dir}/{filename}', 'r') as files_zip:
+                    files_zip.extractall(outdir)
 
     def __get_stat(self, stat_function, directory, date, days, overwite):
         for day in progressbar.progressbar(range(0, days + 1)):
@@ -331,3 +333,17 @@ class Download(object):
         """Download the resting heart rate data from Garmin Connect and save to a JSON file."""
         root_logger.info("Geting rhr: %s (%d)", date, days)
         self.__get_stat(self.__get_rhr_day, directory, date, days, overwite)
+
+    def __get_hydration_day(self, directory, day, overwite=False):
+        date_str = day.strftime('%Y-%m-%d')
+        json_filename = f'{directory}/hydration_{date_str}'
+        url = f'{self.garmin_connect_daily_hydration_url}/{date_str}'
+        try:
+            self.modern_rest_client.download_json_file(url, json_filename, overwite)
+        except RestException as e:
+            root_logger.error("Exception geting hydration: %s", e)
+
+    def get_hydration(self, directory, date, days, overwite):
+        """Download the hydration data from Garmin Connect and save to a JSON file."""
+        root_logger.info("Geting hydration: %s (%d)", date, days)
+        self.__get_stat(self.__get_hydration_day, directory, date, days, overwite)

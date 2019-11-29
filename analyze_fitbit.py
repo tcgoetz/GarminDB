@@ -23,10 +23,10 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 class Analyze(object):
     """Object for analyzing FitBit data from FitBit CSV exported data."""
 
-    def __init__(self, db_params_dict):
+    def __init__(self, db_params):
         """Return an instance of the Analyze class."""
-        self.fitbitdb = FitBitDB.FitBitDB(db_params_dict)
-        self.sumdb = HealthDB.SummaryDB(db_params_dict)
+        self.fitbitdb = FitBitDB.FitBitDB(db_params)
+        self.sumdb = HealthDB.SummaryDB(db_params)
 
     def __get_days(self, year):
         year_int = int(year)

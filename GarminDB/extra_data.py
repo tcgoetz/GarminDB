@@ -9,7 +9,6 @@ import re
 import json
 from sqlalchemy import Column, String, Enum
 
-import HealthDB
 import utilities
 
 

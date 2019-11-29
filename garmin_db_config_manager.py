@@ -9,6 +9,7 @@ import logging
 import tempfile
 
 from garmin_db_config import GarminDBConfig
+from utilities import DbParams
 
 
 logger = logging.getLogger(__name__)
@@ -156,17 +157,17 @@ def get_db_dir(test_db=False):
 def get_db_params(test_db=False):
     """Return the database configuration."""
     db_type = get_db_type()
-    db_params_dict = {
+    db_params = {
         'db_type' : db_type
     }
     if db_type == 'sqlite':
-        db_params_dict['db_path'] = get_db_dir(test_db)
+        db_params['db_path'] = get_db_dir(test_db)
     elif db_type == "mysql":
-        db_params_dict['db_type'] = 'mysql'
-        db_params_dict['db_username'] = get_db_user()
-        db_params_dict['db_password'] = get_db_password()
-        db_params_dict['db_host'] = get_db_host()
-    return db_params_dict
+        db_params['db_type'] = 'mysql'
+        db_params['db_username'] = get_db_user()
+        db_params['db_password'] = get_db_password()
+        db_params['db_host'] = get_db_host()
+    return DbParams(**db_params)
 
 
 def get_metric():

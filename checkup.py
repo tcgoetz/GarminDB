@@ -27,9 +27,9 @@ class CheckUp(object):
 
     def __init__(self, debug):
         """Return an instance of the CheckUp class."""
-        self.db_params_dict = GarminDBConfigManager.get_db_params()
+        self.db_params = GarminDBConfigManager.get_db_params()
         self.debug = debug
-        self.garmin_db = GarminDB.GarminDB(self.db_params_dict)
+        self.garmin_db = GarminDB.GarminDB(self.db_params)
         self.measurement_system = GarminDB.Attributes.measurements_type(self.garmin_db)
         self.unit_strings = Fit.units.unit_strings[self.measurement_system]
 
@@ -74,7 +74,7 @@ class CheckUp(object):
 
     def activity_course(self, course_id):
         """Run a checkup on all activities matcing the course_id."""
-        activity_db = GarminDB.ActivitiesDB(self.db_params_dict, self.debug)
+        activity_db = GarminDB.ActivitiesDB(self.db_params, self.debug)
         activities = GarminDB.Activities.get_by_course_id(activity_db, course_id)
         activities_count = len(activities)
         fastest_activity = GarminDB.Activities.get_fastest_by_course_id(activity_db, course_id)

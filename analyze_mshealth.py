@@ -24,10 +24,10 @@ stat_logger.addHandler(logging.FileHandler('ms_stats.txt', 'w'))
 class Analyze(object):
     """Object for analyzing health data from Microsoft Health."""
 
-    def __init__(self, db_params_dict):
+    def __init__(self, db_params):
         """Return an instance of the Analyze class."""
-        self.mshealthdb = MSHealthDB.MSHealthDB(db_params_dict)
-        self.sumdb = HealthDB.SummaryDB(db_params_dict)
+        self.mshealthdb = MSHealthDB.MSHealthDB(db_params)
+        self.sumdb = HealthDB.SummaryDB(db_params)
 
     def __days_from_years(self, year):
         sum_days = MSHealthDB.DaysSummary.get_days(self.mshealthdb, year)

@@ -25,13 +25,13 @@ stat_logger.addHandler(logging.FileHandler('stats.txt', 'w'))
 class Analyze(object):
     """Object for analyzing health data from Garmin devices."""
 
-    def __init__(self, db_params_dict, debug):
+    def __init__(self, db_params, debug):
         """Return an instance of the Analyze class."""
-        self.garmin_db = GarminDB.GarminDB(db_params_dict, debug)
-        self.garmin_mon_db = GarminDB.MonitoringDB(db_params_dict, debug)
-        self.garmin_sum_db = GarminDB.GarminSummaryDB(db_params_dict, debug)
-        self.sum_db = HealthDB.SummaryDB(db_params_dict, debug)
-        self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, debug)
+        self.garmin_db = GarminDB.GarminDB(db_params, debug)
+        self.garmin_mon_db = GarminDB.MonitoringDB(db_params, debug)
+        self.garmin_sum_db = GarminDB.GarminSummaryDB(db_params, debug)
+        self.sum_db = HealthDB.SummaryDB(db_params, debug)
+        self.garmin_act_db = GarminDB.ActivitiesDB(db_params, debug)
         self.measurement_system = GarminDB.Attributes.measurements_type(self.garmin_db)
         self.unit_strings = Fit.units.unit_strings[self.measurement_system]
 

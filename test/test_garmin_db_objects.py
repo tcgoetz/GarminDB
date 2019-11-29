@@ -26,10 +26,10 @@ class TestGarminDbObjects(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
+        cls.db_params = GarminDBConfigManager.get_db_params(test_db=True)
 
     def check_file_obj(self, filename_with_path, file_type, file_serial_number):
-        garmindb = GarminDB.GarminDB(self.db_params_dict)
+        garmindb = GarminDB.GarminDB(self.db_params)
         (file_id, file_name) = GarminDB.File.name_and_id_from_path(filename_with_path)
         file_dict = {
             'id'            : file_id,

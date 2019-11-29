@@ -44,9 +44,9 @@ class FitData(object):
         """Return the number of files that will be processed."""
         return len(self.file_names)
 
-    def process_files(self, db_params_dict):
+    def process_files(self, db_params):
         """Import FIT files into the database."""
-        fp = FitFileProcessor(db_params_dict, self.debug)
+        fp = FitFileProcessor(db_params, self.debug)
         for file_name in progressbar.progressbar(self.file_names):
             try:
                 fit_file = Fit.file.File(file_name, self.measurement_system)

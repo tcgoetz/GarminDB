@@ -29,11 +29,11 @@ class TestProfileFile(unittest.TestCase):
         cls.file_path = 'test_files'
 
     def test_parse_uprofile(self):
-        db_params_dict = GarminDBConfigManager.get_db_params(test_db=True)
-        gp = GarminProfile(db_params_dict, self.file_path, debug=2)
+        db_params = GarminDBConfigManager.get_db_params(test_db=True)
+        gp = GarminProfile(db_params, self.file_path, debug=2)
         if gp.file_count() > 0:
             gp.process()
-        garmindb = GarminDB.GarminDB(db_params_dict)
+        garmindb = GarminDB.GarminDB(db_params)
         measurement_system = GarminDB.Attributes.measurements_type(garmindb)
         self.assertEqual(measurement_system, Fit.field_enums.DisplayMeasure.statute,
                          'DisplayMeasure expected %r found %r' % (Fit.field_enums.DisplayMeasure.statute, measurement_system))

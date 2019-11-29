@@ -48,10 +48,10 @@ class FitBitData(object):
         'sleep-awakeningsCount': ('awakenings_count', CsvImporter.map_integer),
     }
 
-    def __init__(self, input_file, input_dir, db_params_dict, metric, debug):
+    def __init__(self, input_file, input_dir, db_params, metric, debug):
         """Return a new instance of FitBitData given the location of the data files, paramters for accessing the database, and if the data should be stored in metric units."""
         self.metric = metric
-        self.fitbitdb = FitBitDB.FitBitDB(db_params_dict, debug)
+        self.fitbitdb = FitBitDB.FitBitDB(db_params, debug)
         if input_file:
             self.file_names = FileProcessor.match_file(input_file, r'.*\.csv')
         if input_dir:

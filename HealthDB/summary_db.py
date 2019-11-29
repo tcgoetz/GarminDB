@@ -27,15 +27,15 @@ class SummaryDB(db.DB):
     class _DbVersion(Base, dbv.DbVersionObject):
         pass
 
-    def __init__(self, db_params_dict, debug=False):
+    def __init__(self, db_params, debug=False):
         """
         Return an instance of SummaryDB.
 
         Paramters:
-            db_params_dict (dict): Config data for accessing the database
+            db_params (dict): Config data for accessing the database
             debug (Boolean): enable debug logging
         """
-        super().__init__(db_params_dict, debug)
+        super().__init__(db_params, debug)
         SummaryDB.Base.metadata.create_all(self.engine)
         version = SummaryDB._DbVersion()
         version.version_check(self, self.db_version)

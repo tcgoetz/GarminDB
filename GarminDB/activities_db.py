@@ -29,15 +29,15 @@ class ActivitiesDB(utilities.DB):
     class _DbVersion(Base, utilities.DbVersionObject):
         pass
 
-    def __init__(self, db_params_dict, debug=False):
+    def __init__(self, db_params, debug=False):
         """
         Return an instance of ActivitiesDB.
 
         Paramters:
-            db_params_dict (dict): Config data for accessing the database
+            db_params (dict): Config data for accessing the database
             debug (Boolean): enable debug logging
         """
-        super().__init__(db_params_dict, debug)
+        super().__init__(db_params, debug)
         ActivitiesDB.Base.metadata.create_all(self.engine)
         self.version = ActivitiesDB._DbVersion()
         self.version.version_check(self, self.db_version)

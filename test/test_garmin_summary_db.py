@@ -25,8 +25,8 @@ class TestGarminSummaryDB(TestSummaryDBBase, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        db_params_dict = GarminDBConfigManager.get_db_params()
-        db = GarminDB.GarminSummaryDB(db_params_dict)
+        db_params = GarminDBConfigManager.get_db_params()
+        db = GarminDB.GarminSummaryDB(db_params)
         table_dict = {
             'summary_table' : GarminDB.Summary,
             'months_table' : GarminDB.MonthsSummary,

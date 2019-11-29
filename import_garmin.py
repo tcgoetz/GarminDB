@@ -26,12 +26,12 @@ root_logger = logging.getLogger()
 class GarminWeightData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect weight data into a database."""
 
-    def __init__(self, db_params_dict, input_dir, latest, measurement_system, debug):
+    def __init__(self, db_params, input_dir, latest, measurement_system, debug):
         """
         Return an instance of GarminWeightData.
 
         Parameters:
-        db_params_dict (dict): configuration data for accessing the database
+        db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for weight data files
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
@@ -41,7 +41,7 @@ class GarminWeightData(JsonFileProcessor):
         logger.info("Processing weight data")
         super().__init__(None, input_dir, r'weight_\d{4}-\d{2}-\d{2}\.json', latest, debug)
         self.measurement_system = measurement_system
-        self.garmin_db = GarminDB.GarminDB(db_params_dict)
+        self.garmin_db = GarminDB.GarminDB(db_params)
         self.conversions = {'startDate' : dateutil.parser.parse}
 
     def _process_json(self, json_data):
@@ -110,12 +110,12 @@ class RemSleepActivityLevels(enum.Enum):
 class GarminSleepData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect sleep data into a database."""
 
-    def __init__(self, db_params_dict, input_dir, latest, debug):
+    def __init__(self, db_params, input_dir, latest, debug):
         """
         Return an instance of GarminSleepData.
 
         Parameters:
-        db_params_dict (dict): configuration data for accessing the database
+        db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for sleep data files
         latest (Boolean): check for latest files only
         debug (Boolean): enable debug logging
@@ -123,7 +123,7 @@ class GarminSleepData(JsonFileProcessor):
         """
         logger.info("Processing sleep data")
         super().__init__(None, input_dir, r'sleep_\d{4}-\d{2}-\d{2}\.json', latest, debug)
-        self.garmin_db = GarminDB.GarminDB(db_params_dict)
+        self.garmin_db = GarminDB.GarminDB(db_params)
         self.conversions = {
             'calendarDate'              : dateutil.parser.parse,
             'sleepTimeSeconds'          : Fit.conversions.secs_to_dt_time,
@@ -182,12 +182,12 @@ class GarminSleepData(JsonFileProcessor):
 class GarminRhrData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect resting heart rate data into a database."""
 
-    def __init__(self, db_params_dict, input_dir, latest, debug):
+    def __init__(self, db_params, input_dir, latest, debug):
         """
         Return an instance of GarminRhrData.
 
         Parameters:
-        db_params_dict (dict): configuration data for accessing the database
+        db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for resting heart rate data files
         latest (Boolean): check for latest files only
         debug (Boolean): enable debug logging
@@ -195,7 +195,7 @@ class GarminRhrData(JsonFileProcessor):
         """
         logger.info("Processing rhr data")
         super().__init__(None, input_dir, r'rhr_\d{4}-\d{2}-\d{2}\.json', latest, debug)
-        self.garmin_db = GarminDB.GarminDB(db_params_dict)
+        self.garmin_db = GarminDB.GarminDB(db_params)
         self.conversions = {'statisticsStartDate' : dateutil.parser.parse}
 
     def _process_json(self, json_data):
@@ -214,19 +214,19 @@ class GarminRhrData(JsonFileProcessor):
 class GarminProfile(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect profile data into a database."""
 
-    def __init__(self, db_params_dict, input_dir, debug):
+    def __init__(self, db_params, input_dir, debug):
         """
         Return an instance of GarminProfile.
 
         Parameters:
-        db_params_dict (dict): configuration data for accessing the database
+        db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for profile data files
         debug (Boolean): enable debug logging
 
         """
         logger.info("Processing profile data")
         super().__init__(None, input_dir, r'profile\.json', False, debug)
-        self.garmin_db = GarminDB.GarminDB(db_params_dict)
+        self.garmin_db = GarminDB.GarminDB(db_params)
         self.conversions = {'calendarDate' : dateutil.parser.parse}
 
     def _process_json(self, json_data):
@@ -245,12 +245,12 @@ class GarminProfile(JsonFileProcessor):
 class GarminSummaryData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect daily summary data into a database."""
 
-    def __init__(self, db_params_dict, input_dir, latest, measurement_system, debug):
+    def __init__(self, db_params, input_dir, latest, measurement_system, debug):
         """
         Return an instance of GarminSleepData.
 
         Parameters:
-        db_params_dict (dict): configuration data for accessing the database
+        db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
@@ -261,7 +261,7 @@ class GarminSummaryData(JsonFileProcessor):
         super().__init__(None, input_dir, r'daily_summary_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
         self.input_dir = input_dir
         self.measurement_system = measurement_system
-        self.garmin_db = GarminDB.GarminDB(db_params_dict)
+        self.garmin_db = GarminDB.GarminDB(db_params)
         self.conversions = {
             'calendarDate'              : dateutil.parser.parse,
             'moderateIntensityMinutes'  : Fit.conversions.min_to_dt_time,
@@ -309,12 +309,12 @@ class GarminSummaryData(JsonFileProcessor):
 class GarminMonitoringExtraData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect extra data into a database."""
 
-    def __init__(self, db_params_dict, input_dir, latest, debug):
+    def __init__(self, db_params, input_dir, latest, debug):
         """
         Return an instance of GarminMonitoringExtraData.
 
         Parameters:
-        db_params_dict (dict): configuration data for accessing the database
+        db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only
         debug (Boolean): enable debug logging
@@ -322,7 +322,7 @@ class GarminMonitoringExtraData(JsonFileProcessor):
         """
         logger.info("Processing daily extra data")
         super().__init__(None, input_dir, r'extra_data_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
-        self.garmin_db = GarminDB.GarminDB(db_params_dict)
+        self.garmin_db = GarminDB.GarminDB(db_params)
         self.conversions = {'day' : dateutil.parser.parse}
 
     def _process_json(self, json_data):

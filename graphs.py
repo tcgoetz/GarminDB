@@ -137,8 +137,8 @@ class Graph(object):
             period = GarminDBConfigManager.graphs_activity_config(activity, 'period')
         if days is None or days == 'default':
             days = GarminDBConfigManager.graphs_activity_config(activity, 'days')
-        db_params_dict = GarminDBConfigManager.get_db_params()
-        sum_db = HealthDB.SummaryDB(db_params_dict, self.debug)
+        db_params = GarminDBConfigManager.get_db_params()
+        sum_db = HealthDB.SummaryDB(db_params, self.debug)
         end_ts = datetime.datetime.now()
         start_ts = end_ts - datetime.timedelta(days=days)
         table = self.__table[period]

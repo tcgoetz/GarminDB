@@ -26,9 +26,9 @@ class Copy(object):
         """Create a Copy object given the directory where the Garmin USB device is mounted."""
         self.device_mount_dir = device_mount_dir
         if not os.path.exists(self.device_mount_dir):
-            raise RuntimeError('%s not found' % self.device_mount_dir)
+            raise RuntimeError(f'Device mount directory {self.device_mount_dir} not found')
         if not os.path.isdir(self.device_mount_dir):
-            raise RuntimeError('%s not a directory' % self.device_mount_dir)
+            raise RuntimeError(f'Device mount directory {self.device_mount_dir} not a directory')
 
     def __copy(self, src_dir, dest_dir, latest=False):
         """Copy FIT files from a USB mounted Garmin device to the given directory."""

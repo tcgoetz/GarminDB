@@ -32,7 +32,7 @@ class GarminActivitiesFitData(FitData):
         Return an instance of GarminActivitiesFitData.
 
         Parameters:
-        db_params_dict (dict): configuration data for accessing the database
+        db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
@@ -52,7 +52,7 @@ class GarminTcxData(object):
         Return an instance of GarminTcxData.
 
         Parameters:
-        db_params_dict (dict): configuration data for accessing the database
+        db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
@@ -116,10 +116,10 @@ class GarminTcxData(object):
         activity_not_zero = {key : value for (key, value) in activity.items() if value}
         GarminDB.Activities.s_create_or_update(self.garmin_act_db_session, activity_not_zero, ignore_none=True)
 
-    def process_files(self, db_params_dict):
+    def process_files(self, db_params):
         """Import data from TCX files into the database."""
-        garmin_db = GarminDB.GarminDB(db_params_dict, self.debug - 1)
-        garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
+        garmin_db = GarminDB.GarminDB(db_params, self.debug - 1)
+        garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
         with garmin_db.managed_session() as self.garmin_db_session:
             with garmin_act_db.managed_session() as self.garmin_act_db_session:
                 for file_name in progressbar.progressbar(self.file_names):
@@ -131,12 +131,12 @@ class GarminTcxData(object):
 class GarminJsonSummaryData(JsonFileProcessor):
     """Class for importing Garmin activity data from JSON formatted Garmin Connect summary downloads."""
 
-    def __init__(self, db_params_dict, input_dir, latest, measurement_system, debug):
+    def __init__(self, db_params, input_dir, latest, measurement_system, debug):
         """
         Return an instance of GarminTcxData.
 
         Parameters:
-        db_params_dict (dict): configuration data for accessing the database
+        db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
@@ -147,7 +147,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
         super().__init__(None, input_dir, r'activity_\d*\.json', latest, debug)
         self.input_dir = input_dir
         self.measurement_system = measurement_system
-        self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
+        self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
         self.conversions = {}
 
     def _commit(self):
@@ -309,12 +309,12 @@ class GarminJsonSummaryData(JsonFileProcessor):
 class GarminJsonDetailsData(JsonFileProcessor):
     """Class for importing Garmin activity data from JSON formatted Garmin Connect details downloads."""
 
-    def __init__(self, db_params_dict, input_dir, latest, measurement_system, debug):
+    def __init__(self, db_params, input_dir, latest, measurement_system, debug):
         """
         Return an instance of GarminJsonDetailsData.
 
         Parameters:
-        db_params_dict (dict): configuration data for accessing the database
+        db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
@@ -324,7 +324,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
         logger.info("Processing activities detail data")
         super().__init__(None, input_dir, r'activity_details_\d*\.json', latest, debug)
         self.measurement_system = measurement_system
-        self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
+        self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
         self.conversions = {}
 
     def _commit(self):
@@ -410,12 +410,12 @@ class GarminJsonDetailsData(JsonFileProcessor):
 class GarminActivitiesExtraData(JsonFileProcessor):
     """Class that manages extra JSON data stored in string fields."""
 
-    def __init__(self, db_params_dict, input_dir, latest, debug):
+    def __init__(self, db_params, input_dir, latest, debug):
         """
         Return an instance of GarminActivitiesExtraData.
 
         Parameters:
-        db_params_dict (dict): configuration data for accessing the database
+        db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
@@ -424,7 +424,7 @@ class GarminActivitiesExtraData(JsonFileProcessor):
         """
         logger.info("Processing activities extra data")
         super().__init__(None, input_dir, r'extra_data_\d*\.json', latest, debug)
-        self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
+        self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
         self.conversions = {}
 
     def _process_json(self, json_data):

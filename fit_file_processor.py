@@ -21,19 +21,19 @@ root_logger = logging.getLogger()
 class FitFileProcessor(object):
     """Class that takes a parsed FIT file object and imports it into a database."""
 
-    def __init__(self, db_params_dict, debug):
+    def __init__(self, db_params, debug):
         """
         Return a new FitFileProcessor instance.
 
         Paramters:
-        db_params_dict (dict): database access configuration
+        db_params (dict): database access configuration
         debug (Boolean): if True, debug logging is enabled
         """
         root_logger.info("Debug: %s", debug)
         self.debug = debug
-        self.garmin_db = GarminDB.GarminDB(db_params_dict, debug - 1)
-        self.garmin_mon_db = GarminDB.MonitoringDB(db_params_dict, self.debug - 1)
-        self.garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
+        self.garmin_db = GarminDB.GarminDB(db_params, debug - 1)
+        self.garmin_mon_db = GarminDB.MonitoringDB(db_params, self.debug - 1)
+        self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
 
     def __write_generic(self, fit_file, message_type, messages):
         """Write all messages of a given message type to the databse."""

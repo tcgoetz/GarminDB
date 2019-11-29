@@ -30,15 +30,15 @@ class GarminDB(utilities.DB):
     class _DbVersion(Base, utilities.DbVersionObject):
         pass
 
-    def __init__(self, db_params_dict, debug=False):
+    def __init__(self, db_params, debug=False):
         """
         Return an instance of GarminDB.
 
         Paramters:
-            db_params_dict (dict): Config data for accessing the database
+            db_params (dict): Config data for accessing the database
             debug (Boolean): enable debug logging
         """
-        super().__init__(db_params_dict, debug)
+        super().__init__(db_params, debug)
         GarminDB.Base.metadata.create_all(self.engine)
         self.version = GarminDB._DbVersion()
         self.version.version_check(self, self.db_version)
@@ -129,18 +129,17 @@ class DeviceInfo(GarminDB.Base, utilities.DBObject):
     @classmethod
     def create_view(cls, db):
         """Create a databse view that presents the device info data in a more user friendly way."""
-        cls.create_join_view(db, cls._get_default_view_name(),
-            [
-                cls.timestamp.label('timestamp'),
-                cls.file_id.label('file_id'),
-                cls.serial_number.label('serial_number'),
-                cls.device_type.label('device_type'),
-                cls.software_version.label('software_version'),
-                Device.manufacturer.label('manufacturer'),
-                Device.product.label('product'),
-                Device.hardware_version.label('hardware_version')
-            ],
-            Device, cls.timestamp.desc())
+        cols = [
+            cls.timestamp.label('timestamp'),
+            cls.file_id.label('file_id'),
+            cls.serial_number.label('serial_number'),
+            cls.device_type.label('device_type'),
+            cls.software_version.label('software_version'),
+            Device.manufacturer.label('manufacturer'),
+            Device.product.label('product'),
+            Device.hardware_version.label('hardware_version')
+        ]
+        cls.create_join_view(db, cls._get_default_view_name(), cols, Device, cls.timestamp.desc())
 
 
 class File(GarminDB.Base, utilities.DBObject):
@@ -178,18 +177,18 @@ class File(GarminDB.Base, utilities.DBObject):
     @classmethod
     def create_view(cls, db):
         """Create a databse view that presents the file data in a more user friendly way."""
-        cls.create_multi_join_view(db, cls._get_default_view_name(),
-            [
-                DeviceInfo.timestamp.label('timestamp'),
-                cls.id.label('activity_id'),
-                cls.name.label('name'),
-                cls.type.label('type'),
-                Device.manufacturer.label('manufacturer'),
-                Device.product.label('product'),
-                Device.serial_number.label('serial_number')
-            ],
-            [(Device, File.serial_number == Device.serial_number), (DeviceInfo, File.id == DeviceInfo.file_id)],
-            DeviceInfo.timestamp.desc())
+        cols = [
+            DeviceInfo.timestamp.label('timestamp'),
+            cls.id.label('activity_id'),
+            cls.name.label('name'),
+            cls.type.label('type'),
+            Device.manufacturer.label('manufacturer'),
+            Device.product.label('product'),
+            Device.serial_number.label('serial_number')
+        ]
+        cls.create_multi_join_view(db, cls._get_default_view_name(), cols,
+                                   [(Device, File.serial_number == Device.serial_number), (DeviceInfo, File.id == DeviceInfo.file_id)],
+                                   DeviceInfo.timestamp.desc())
 
     @classmethod
     def name_and_id_from_path(cls, pathname):
@@ -289,6 +288,7 @@ class SleepEvents(GarminDB.Base, utilities.DBObject):
 
     @classmethod
     def get_wake_time(cls, db, day_date):
+        """Return the wake time for a given date."""
         day_start_ts = datetime.datetime.combine(day_date, datetime.time.min)
         day_stop_ts = datetime.datetime.combine(day_date, datetime.time.max)
         values = cls.get_col_values(db, cls.timestamp, cls.event, 'wake_time', day_start_ts, day_stop_ts)

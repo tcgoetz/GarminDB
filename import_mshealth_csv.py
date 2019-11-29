@@ -61,10 +61,10 @@ class MSHealthData(object):
         'Guided_Workout_Total_Seconds': ('guided_workout_secs', CsvImporter.map_integer),
     }
 
-    def __init__(self, input_file, input_dir, db_params_dict, metric, debug):
+    def __init__(self, input_file, input_dir, db_params, metric, debug):
         """Return an instance of MSHealthData given an input file or files and information on the databse to put it in."""
         self.metric = metric
-        self.mshealth_db = MSHealthDB.MSHealthDB(db_params_dict, debug)
+        self.mshealth_db = MSHealthDB.MSHealthDB(db_params, debug)
         if input_file:
             self.file_names = FileProcessor.match_file(input_file, r'Daily_Summary_.*\.csv')
         if input_dir:
@@ -88,10 +88,10 @@ class MSHealthData(object):
 class MSVaultData(object):
     """A class for importing CSV formatted Microsoft Health Vault export data."""
 
-    def __init__(self, input_file, input_dir, db_params_dict, metric, debug):
+    def __init__(self, input_file, input_dir, db_params, metric, debug):
         """Return an instance of MSVaultData given an input file or files and information on the databse to put it in."""
         self.metric = metric
-        self.mshealth_db = MSHealthDB.MSHealthDB(db_params_dict, debug)
+        self.mshealth_db = MSHealthDB.MSHealthDB(db_params, debug)
         self.cols_map = {
             'Date': ('timestamp', CsvImporter.map_mdy_date),
             'Weight': ('weight', MSVaultData.__map_weight),

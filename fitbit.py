@@ -58,19 +58,19 @@ def main(argv):
     else:
         root_logger.setLevel(logging.INFO)
 
-    db_params_dict = GarminDBConfigManager.get_db_params()
+    db_params = GarminDBConfigManager.get_db_params()
 
     if _delete_db:
-        FitBitDB.FitBitDB.delete_db(db_params_dict)
+        FitBitDB.FitBitDB.delete_db(db_params)
         sys.exit()
 
     fitbit_dir = GarminDBConfigManager.get_or_create_fitbit_dir()
     metric = GarminDBConfigManager.get_metric()
-    fd = FitBitData(input_file, fitbit_dir, db_params_dict, metric, debug)
+    fd = FitBitData(input_file, fitbit_dir, db_params, metric, debug)
     if fd.file_count() > 0:
         fd.process_files()
 
-    analyze = Analyze(db_params_dict)
+    analyze = Analyze(db_params)
     analyze.get_years()
     analyze.summary()
 

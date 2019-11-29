@@ -19,9 +19,9 @@ class ActivityExporter(object):
         self.measurement_system = measurement_system
         self.debug = debug
 
-    def process(self, db_params_dict):
+    def process(self, db_params):
         """Process database data for an activity into a an XML tree in TCX format."""
-        garmin_act_db = GarminDB.ActivitiesDB(db_params_dict, self.debug - 1)
+        garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
         with garmin_act_db.managed_session() as garmin_act_db_session:
             activity = GarminDB.Activities.s_get(garmin_act_db_session, self.activity_id)
             self.tcx = Tcx(activity.sport, activity.start_time)
@@ -34,7 +34,7 @@ class ActivityExporter(object):
                     alititude = Distance.from_meters_or_feet(record.alititude, self.measurement_system)
                     speed = Speed.from_kph_or_mph(record.speed, self.measurement_system)
                     self.tcx.add_point(track, record.timestamp, record.position, alititude.to_meters(), record.hr, speed.to_mps())
-        garmindb = GarminDB.GarminDB(db_params_dict)
+        garmindb = GarminDB.GarminDB(db_params)
         with garmindb.managed_session() as garmin_db_session:
             file = GarminDB.File.s_get(garmin_db_session, self.activity_id)
             device = GarminDB.Device.s_get(garmin_db_session, file.serial_number)
