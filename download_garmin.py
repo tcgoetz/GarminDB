@@ -43,14 +43,14 @@ class Download(object):
 
     garmin_connect_user_profile_url = "proxy/userprofile-service/userprofile"
     garmin_connect_wellness_url = "proxy/wellness-service/wellness"
-    garmin_connect_sleep_daily_url = garmin_connect_wellness_url + "proxy/dailySleepData"
+    garmin_connect_sleep_daily_url = garmin_connect_wellness_url + "/dailySleepData"
     garmin_connect_rhr = "proxy/userstats-service/wellness/daily"
     garmin_connect_weight_url = "proxy/weight-service/weight/dateRange"
 
     garmin_connect_activity_search_url = "proxy/activitylist-service/activities/search/activities"
 
     garmin_connect_usersummary_url = "proxy/usersummary-service/usersummary"
-    garmin_connect_daily_summary_url = garmin_connect_usersummary_url + "/daily/"
+    garmin_connect_daily_summary_url = garmin_connect_usersummary_url + "/daily"
 
     def __init__(self):
         """Create a new Download class instance."""
@@ -158,7 +158,7 @@ class Download(object):
             return False
         self.user_prefs = self.__get_json(response.text, 'VIEWER_USERPREFERENCES')
         if profile_dir:
-            self.modern_rest_client.save_json_to_file(profile_dir + "/profile.json", self.user_prefs)
+            self.modern_rest_client.save_json_to_file(f'{profile_dir}/profile.json', self.user_prefs)
         self.display_name = self.user_prefs['displayName']
         self.social_profile = self.__get_json(response.text, 'VIEWER_SOCIAL_PROFILE')
         self.full_name = self.social_profile['fullName']
@@ -171,7 +171,7 @@ class Download(object):
         for filename in os.listdir(self.temp_dir):
             match = re.search(r'.*\.zip', filename)
             if match:
-                files_zip = zipfile.ZipFile(self.temp_dir + "/" + filename, 'r')
+                files_zip = zipfile.ZipFile(f'{self.temp_dir}/{filename}', 'r')
                 files_zip.extractall(outdir)
                 files_zip.close()
 
@@ -191,9 +191,10 @@ class Download(object):
             'calendarDate' : date_str,
             '_'         : str(conversions.dt_to_epoch_ms(conversions.date_to_dt(date)))
         }
-        url = self.garmin_connect_daily_summary_url + self.display_name
+        url = f'{self.garmin_connect_daily_summary_url}/{self.display_name}'
+        json_filename = f'{directory}/daily_summary_{date_str}'
         try:
-            self.modern_rest_client.download_json_file(url, directory + '/daily_summary_' + date_str, overwite, params)
+            self.modern_rest_client.download_json_file(url, json_filename, overwite, params)
         except RestException as e:
             root_logger.error("Exception geting daily summary: %s", e)
 
@@ -204,9 +205,10 @@ class Download(object):
 
     def __get_monitoring_day(self, date):
         root_logger.info("get_monitoring_day: %s", date)
-        zip_filename = self.temp_dir + '/' + str(date) + '.zip'
+        zip_filename = f'{self.temp_dir}/{date}.zip'
+        url = f'wellness/{date.strftime("%Y-%m-%d")}'
         try:
-            self.download_service_rest_client.download_binary_file('wellness/' + date.strftime("%Y-%m-%d"), zip_filename)
+            self.download_service_rest_client.download_binary_file(url, zip_filename)
         except RestException as e:
             root_logger.error("Exception geting daily summary: %s", e)
 
@@ -227,8 +229,9 @@ class Download(object):
             'endDate'   : date_str,
             '_'         : str(conversions.dt_to_epoch_ms(conversions.date_to_dt(day)))
         }
+        json_filename = f'{directory}/weight_{date_str}'
         try:
-            self.modern_rest_client.download_json_file(self.garmin_connect_weight_url, directory + '/weight_' + date_str, overwite, params)
+            self.modern_rest_client.download_json_file(self.garmin_connect_weight_url, json_filename, overwite, params)
         except RestException as e:
             root_logger.error("Exception geting daily summary: %s", e)
 
@@ -251,17 +254,18 @@ class Download(object):
 
     def __save_activity_details(self, directory, activity_id_str, overwite):
         root_logger.debug("save_activity_details")
-        json_filename = directory + '/activity_details_' + activity_id_str
+        json_filename = f'{directory}/activity_details_{activity_id_str}'
         try:
             self.activity_service_rest_client.download_json_file(activity_id_str, json_filename, overwite)
         except RestException as e:
-            root_logger.error("Exception geting daily summary: %s", e)
+            root_logger.error("Exception geting daily summary %s", e)
 
     def __save_activity_file(self, activity_id_str):
         root_logger.debug("save_activity_file: %s", activity_id_str)
-        zip_filename = self.temp_dir + '/activity_' + activity_id_str + '.zip'
+        zip_filename = f'{self.temp_dir}/activity_{activity_id_str}.zip'
+        url = f'activity/{ activity_id_str}'
         try:
-            self.download_service_rest_client.download_binary_file('activity/' + activity_id_str, zip_filename)
+            self.download_service_rest_client.download_binary_file(url, zip_filename)
         except RestException as e:
             root_logger.error("Exception downloading activity file: %s", e)
 
@@ -272,13 +276,13 @@ class Download(object):
         for activity in progressbar.progressbar(activities):
             activity_id_str = str(activity['activityId'])
             activity_name_str = conversions.printable(activity['activityName'])
-            root_logger.info("get_activities: %s (%s)" % (activity_name_str, activity_id_str))
-            json_filename = directory + '/activity_' + activity_id_str + '.json'
+            root_logger.info("get_activities: %s (%s)", activity_name_str, activity_id_str)
+            json_filename = f'{directory}/activity_{activity_id_str}.json'
             if not os.path.isfile(json_filename) or overwite:
-                root_logger.info("get_activities: %s <- %r" % (json_filename, activity))
+                root_logger.info("get_activities: %s <- %r", json_filename, activity)
                 self.__save_activity_details(directory, activity_id_str, overwite)
                 self.modern_rest_client.save_json_to_file(json_filename, activity)
-                if not os.path.isfile(directory + '/' + activity_id_str + '.fit') or overwite:
+                if not os.path.isfile(f'{directory}/{activity_id_str}.fit') or overwite:
                     self.__save_activity_file(activity_id_str)
                 # pause for a second between every page access
                 time.sleep(1)
@@ -286,21 +290,23 @@ class Download(object):
     def get_activity_types(self, directory, overwite):
         """Download the activity types from Garmin Connect and save to a JSON file."""
         root_logger.info("get_activity_types: '%s'", directory)
+        json_filename = f'{directory}/activity_types'
         try:
-            self.activity_service_rest_client.download_json_file('activityTypes', directory + '/activity_types', overwite)
+            self.activity_service_rest_client.download_json_file('activityTypes', json_filename, overwite)
         except RestException as e:
-            root_logger.error("Exception geting daily summary: %s", e)
+            root_logger.error("Exception geting activity types: %s", e)
 
     def __get_sleep_day(self, directory, date, overwite=False):
-        json_filename = directory + '/sleep_' + str(date)
+        json_filename = f'{directory}/sleep_{date}'
         params = {
-            'date' : date.strftime("%Y-%m-%d")
+            'date'                  : date.strftime("%Y-%m-%d"),
+            'nonSleepBufferMinutes' : 60
         }
-        url = self.garmin_connect_sleep_daily_url + '/' + self.display_name
+        url = f'{self.garmin_connect_sleep_daily_url}/{self.display_name}'
         try:
             self.modern_rest_client.download_json_file(url, json_filename, overwite, params)
         except RestException as e:
-            root_logger.error("Exception %s geting daily summary %s", e, url)
+            root_logger.error("Exception geting daily summary: %s", e)
 
     def get_sleep(self, directory, date, days, overwite):
         """Download the sleep data from Garmin Connect and save to a JSON file."""
@@ -309,16 +315,17 @@ class Download(object):
 
     def __get_rhr_day(self, directory, day, overwite=False):
         date_str = day.strftime('%Y-%m-%d')
-        json_filename = directory + '/rhr_' + date_str
+        json_filename = f'{directory}/rhr_{date_str}'
         params = {
             'fromDate'  : date_str,
             'untilDate' : date_str,
             'metricId'  : 60
         }
+        url = f'{self.garmin_connect_rhr}/{self.display_name}'
         try:
-            self.modern_rest_client.download_json_file(self.garmin_connect_rhr + '/' + self.display_name, json_filename, overwite, params)
+            self.modern_rest_client.download_json_file(url, json_filename, overwite, params)
         except RestException as e:
-            root_logger.error("Exception geting daily summary: %s", e)
+            root_logger.error("Exception geting daily summary %s", e)
 
     def get_rhr(self, directory, date, days, overwite):
         """Download the resting heart rate data from Garmin Connect and save to a JSON file."""
