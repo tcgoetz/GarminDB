@@ -296,10 +296,11 @@ class Download(object):
         params = {
             'date' : date.strftime("%Y-%m-%d")
         }
+        url = self.garmin_connect_sleep_daily_url + '/' + self.display_name
         try:
-            self.modern_rest_client.download_json_file(self.garmin_connect_sleep_daily_url + '/' + self.display_name, json_filename, overwite, params)
+            self.modern_rest_client.download_json_file(url, json_filename, overwite, params)
         except RestException as e:
-            root_logger.error("Exception geting daily summary: %s", e)
+            root_logger.error("Exception %s geting daily summary %s", e, url)
 
     def get_sleep(self, directory, date, days, overwite):
         """Download the sleep data from Garmin Connect and save to a JSON file."""

@@ -143,7 +143,7 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
             root_logger.info("Saved rhr files for %s (%d) to %s for processing", date, days, rhr_dir)
 
 
-def import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities):
+def import_data(debug, latest, weight, monitoring, sleep, rhr, activities, test=False):
     """Import previously downloaded Garmin data into the database."""
     db_params_dict = GarminDBConfigManager.get_db_params(test_db=test)
 
@@ -245,22 +245,26 @@ def print_usage(program, error=None):
     """Print usage information for the script."""
     if error is not None:
         print(error)
-        print
+        print()
     print('%s [--all | --activities | --monitoring | --rhr | --sleep | --weight] [--download | --copy | --import | --analyze] [--latest]' % program)
-    print('    --all        : Download and/or import data for all enabled stats.')
-    print('    --activities : Download and/or import activities data.')
-    print('    --monitoring : Download and/or import monitoring data.')
-    print('    --rhr        : Download and/or import resting heart rate data.')
-    print('    --sleep      : Download and/or import sleep data.')
-    print('    --weight     : Download and/or import weight data.')
-    print('    --download   : Download data from Garmin Connect for the chosen stats.')
-    print('    --copy       : Copy data from a USB mounted Garmin device for the chosen stats.')
-    print('    --import     : Import data for the chosen stats.')
-    print('    --analyze    : Analyze data in the db and create summary and derived tables.')
-    print('    --latest     : Only download and/or import the latest data.')
-    print('    --overwrite  : Overwite existing files when downloading. The default is to only download missing files.')
-    print('    --delete_db  : Delete Garmin DB db files.')
-    print('    --trace      : Turn on debug tracing. Extra logging will be written to log file.')
+    print('  Modes:')
+    print('    --download           : Download data from Garmin Connect for the chosen stats.')
+    print('    --copy               : Copy data from a USB mounted Garmin device for the chosen stats.')
+    print('    --import             : Import data for the chosen stats.')
+    print('    --analyze            : Analyze data in the db and create summary and derived tables.')
+    print('    --export-activity    : Export an activity toa TCX file based on the activity\'s id.')
+    print('    --delete_db          : Delete Garmin DB db files.')
+    print('  Types of data to work on:')
+    print('    --all                : Download and/or import data for all enabled stats.')
+    print('    --activities         : Download and/or import activities data.')
+    print('    --monitoring         : Download and/or import monitoring data.')
+    print('    --rhr                : Download and/or import resting heart rate data.')
+    print('    --sleep              : Download and/or import sleep data.')
+    print('    --weight             : Download and/or import weight data.')
+    print('  Modifiers:')
+    print('    --latest             : Only download and/or import the latest data.')
+    print('    --overwrite          : Overwite existing files when downloading. The default is to only download missing files.')
+    print('    --trace              : Turn on debug tracing. Extra logging will be written to log file.')
     print('    ')
     sys.exit()
 
@@ -364,7 +368,7 @@ def main(argv):
         download_data(overwite, latest, weight, monitoring, sleep, rhr, activities)
 
     if _import_data:
-        import_data(debug, test, latest, weight, monitoring, sleep, rhr, activities)
+        import_data(debug, latest, weight, monitoring, sleep, rhr, activities, test)
 
     if _analyze_data:
         analyze_data(debug)
