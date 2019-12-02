@@ -12,13 +12,6 @@ PIP3=/usr/local/bin/pip3
 PIP=${PIP3}
 export PYTHON PIP
 
-#
-# Directories where data is stored
-#
-HEALTH_DATA_DIR=$(HOME)/HealthData
-DB_DIR=$(HEALTH_DATA_DIR)/DBs
-BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
-
 
 #
 # File ID for test activities

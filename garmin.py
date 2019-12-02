@@ -291,7 +291,7 @@ def main(argv):
 
     try:
         opts, args = getopt.getopt(argv, "acAde:imolrstT:vw",
-                                   ["all", "activities", "analyze", "copy", "delete_db", "download", "export-activity=", "import", "trace=", "test",
+                                   ["all", "activities", "analyze", "copy", "data_dir", "delete_db", "download", "export-activity=", "import", "trace=", "test",
                                     "monitoring", "overwrite", "latest", "rhr", "sleep", "weight", "version"])
     except getopt.GetoptError as e:
         print_usage(sys.argv[0], str(e))
@@ -314,6 +314,8 @@ def main(argv):
         elif opt in ("-c", "--copy"):
             logging.debug("Copy")
             _copy_data = True
+        elif opt in ("--data_dir"):
+            print(GarminDBConfigManager.get_base_dir())
         elif opt in ("--delete_db"):
             logging.debug("Delete DB")
             _delete_db = True

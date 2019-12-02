@@ -28,20 +28,16 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
     def setUpClass(cls):
         db_params = GarminDBConfigManager.get_db_params()
         cls.garmin_act_db = GarminDB.ActivitiesDB(db_params)
-        super().setUpClass(cls.garmin_act_db,
-            {
-                'activities_table' : GarminDB.Activities,
-                'activity_laps_table' : GarminDB.ActivityLaps,
-                'activity_records_table' : GarminDB.ActivityRecords,
-                'run_activities_table' : GarminDB.StepsActivities,
-                'paddle_activities_table' : GarminDB.PaddleActivities,
-                'cycle_activities_table' : GarminDB.CycleActivities,
-                'elliptical_activities_table' : GarminDB.EllipticalActivities
-            },
-            {
-                GarminDB.Activities : [GarminDB.Activities.name]
-            }
-        )
+        table_dict = {
+            'activities_table' : GarminDB.Activities,
+            'activity_laps_table' : GarminDB.ActivityLaps,
+            'activity_records_table' : GarminDB.ActivityRecords,
+            'run_activities_table' : GarminDB.StepsActivities,
+            'paddle_activities_table' : GarminDB.PaddleActivities,
+            'cycle_activities_table' : GarminDB.CycleActivities,
+            'elliptical_activities_table' : GarminDB.EllipticalActivities
+        }
+        super().setUpClass(cls.garmin_act_db, table_dict, {GarminDB.Activities : [GarminDB.Activities.name]})
 
     def test_garmin_act_db_tables_exists(self):
         self.assertGreater(GarminDB.Activities.row_count(self.garmin_act_db), 0)
@@ -60,6 +56,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
 
     def test_fit_file_import(self):
         db_params = GarminDBConfigManager.get_db_params(test_db=True)
+        GarminDB.ActivitiesDB.delete_db(db_params)
         self.profile_function('fit_activities_import', self.fit_file_import, db_params)
         test_mon_db = GarminDB.GarminDB(db_params)
         self.check_db_tables_exists(test_mon_db, {'device_table' : GarminDB.Device})
@@ -69,6 +66,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
 
     def test_tcx_file_import(self):
         db_params = GarminDBConfigManager.get_db_params(test_db=True)
+        GarminDB.ActivitiesDB.delete_db(db_params)
         gtd = GarminTcxData('test_files/tcx', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
         if gtd.file_count() > 0:
             gtd.process_files(db_params)
@@ -76,6 +74,8 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
 
     def test_summary_json_file_import(self):
         db_params = GarminDBConfigManager.get_db_params(test_db=True)
+        GarminDB.ActivitiesDB.delete_db(db_params)
+        root_logger.info("test_summary_json_file_import: %r", db_params)
         gjsd = GarminJsonSummaryData(db_params, 'test_files/json/activity/summary', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
         if gjsd.file_count() > 0:
             gjsd.process()
@@ -84,6 +84,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
 
     def test_details_json_file_import(self):
         db_params = GarminDBConfigManager.get_db_params(test_db=True)
+        GarminDB.ActivitiesDB.delete_db(db_params)
         gjsd = GarminJsonDetailsData(db_params, 'test_files/json/activity/details', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
         if gjsd.file_count() > 0:
             gjsd.process()

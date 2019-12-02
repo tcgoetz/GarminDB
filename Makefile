@@ -89,6 +89,9 @@ tcxparser_clean:
 #
 # Fitness System independant targets
 #
+HEALTH_DATA_DIR=$(shell $(PYTHON) garmin.py --data_dir)
+DB_DIR=$(HEALTH_DATA_DIR)/DBs
+BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 $(BACKUP_DIR):
 	mkdir -p $(BACKUP_DIR)
 
