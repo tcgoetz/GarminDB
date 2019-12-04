@@ -322,7 +322,7 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
     """Class representing a Garmin daily summary."""
 
     __tablename__ = 'daily_summary'
-    table_version = 1
+    table_version = 2
 
     day = Column(Date, primary_key=True)
     hr_min = Column(Integer)
@@ -343,6 +343,8 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
     calories_bmr = Column(Integer)
     calories_active = Column(Integer)
     calories_consumed = Column(Integer)
+    hydration_goal = Column(Integer)
+    hydration_intake = Column(Integer)
     description = Column(String)
 
     time_col_name = 'day'
@@ -413,6 +415,9 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
             'calories_avg'              : cls.s_get_col_avg(session, cls.calories_total, start_ts, end_ts),
             'calories_bmr_avg'          : cls.s_get_col_avg(session, cls.calories_bmr, start_ts, end_ts),
             'calories_active_avg'       : cls.s_get_col_avg(session, cls.calories_active, start_ts, end_ts),
+            'hydration_goal'            : cls.s_get_col_sum(session, cls.hydration_goal, start_ts, end_ts),
+            'hydration_avg'             : cls.s_get_col_avg(session, cls.hydration_intake, start_ts, end_ts),
+            'hydration_intake'          : cls.s_get_col_sum(session, cls.hydration_intake, start_ts, end_ts),
         }
 
     @classmethod

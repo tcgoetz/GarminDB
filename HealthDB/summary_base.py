@@ -51,6 +51,9 @@ class SummaryBase(db.DBObject):
     activities = Column(Integer)
     activities_calories = Column(Integer)
     activities_distance = Column(Integer)
+    hydration_goal = Column(Integer)
+    hydration_avg = Column(Integer)
+    hydration_intake = Column(Integer)
 
     @hybrid_property
     def intensity_time_mins(self):
@@ -131,7 +134,10 @@ class SummaryBase(db.DBObject):
             cls.round_col(cls.__tablename__ + '.calories_active_avg', 'calories_active_avg'),
             cls.round_col(cls.__tablename__ + '.calories_goal', 'calories_goal'),
             cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
-            cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance')
+            cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
+            cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
+            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
+            cls.round_col(cls.__tablename__ + '.hydration_intake', 'hydration_intake')
         ]
         cls.create_summary_view(db, cols)
 
@@ -161,7 +167,10 @@ class SummaryBase(db.DBObject):
             cls.round_col(cls.__tablename__ + '.calories_active_avg', 'calories_active_avg'),
             cls.round_col(cls.__tablename__ + '.calories_goal', 'calories_goal'),
             cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
-            cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance')
+            cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
+            cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
+            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
+            cls.round_col(cls.__tablename__ + '.hydration_intake', 'hydration_intake')
         ]
         cls.create_summary_view(db, cols)
 
@@ -190,6 +199,9 @@ class SummaryBase(db.DBObject):
             cls.round_col(cls.__tablename__ + '.calories_active_avg', 'calories_active_avg'),
             cls.round_col(cls.__tablename__ + '.calories_goal', 'calories_goal'),
             cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
-            cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance')
+            cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
+            cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
+            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
+            cls.round_col(cls.__tablename__ + '.hydration_intake', 'hydration_intake')
         ]
         cls.create_summary_view(db, cols)

@@ -16,7 +16,9 @@ root_logger = logging.getLogger()
 
 
 class Tcx(object):
-    """Create TCX files form data."""
+    """Create TCX files from data."""
+
+    filename_regex = r'.*\.tcx'
 
     def __init__(self, sport, start_dt):
         """Return and instance of the Tcx class."""

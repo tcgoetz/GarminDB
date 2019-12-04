@@ -60,7 +60,7 @@ class MonthsSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     """A table holding summarizzed data with one row per month."""
 
     __tablename__ = 'months_summary'
-    table_version = 1
+    table_version = 2
     view_version = HealthDB.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
@@ -72,7 +72,7 @@ class WeeksSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     """A table holding summarizzed data with one row per week."""
 
     __tablename__ = 'weeks_summary'
-    table_version = 1
+    table_version = 2
     view_version = HealthDB.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
@@ -84,7 +84,7 @@ class DaysSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     """A table holding summarizzed data with one row per day."""
 
     __tablename__ = 'days_summary'
-    table_version = 1
+    table_version = 2
     view_version = HealthDB.SummaryBase.view_version
 
     day = Column(Date, primary_key=True)

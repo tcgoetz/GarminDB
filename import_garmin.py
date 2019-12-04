@@ -31,7 +31,7 @@ class GarminWeightData(JsonFileProcessor):
         Return an instance of GarminWeightData.
 
         Parameters:
-        db_params (dict): configuration data for accessing the database
+        db_params (object): configuration data for accessing the database
         input_dir (string): directory (full path) to check for weight data files
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
@@ -115,7 +115,7 @@ class GarminSleepData(JsonFileProcessor):
         Return an instance of GarminSleepData.
 
         Parameters:
-        db_params (dict): configuration data for accessing the database
+        db_params (object): configuration data for accessing the database
         input_dir (string): directory (full path) to check for sleep data files
         latest (Boolean): check for latest files only
         debug (Boolean): enable debug logging
@@ -187,7 +187,7 @@ class GarminRhrData(JsonFileProcessor):
         Return an instance of GarminRhrData.
 
         Parameters:
-        db_params (dict): configuration data for accessing the database
+        db_params (object): configuration data for accessing the database
         input_dir (string): directory (full path) to check for resting heart rate data files
         latest (Boolean): check for latest files only
         debug (Boolean): enable debug logging
@@ -219,7 +219,7 @@ class GarminProfile(JsonFileProcessor):
         Return an instance of GarminProfile.
 
         Parameters:
-        db_params (dict): configuration data for accessing the database
+        db_params (object): configuration data for accessing the database
         input_dir (string): directory (full path) to check for profile data files
         debug (Boolean): enable debug logging
 
@@ -247,7 +247,7 @@ class GarminSummaryData(JsonFileProcessor):
 
     def __init__(self, db_params, input_dir, latest, measurement_system, debug):
         """
-        Return an instance of GarminSleepData.
+        Return an instance of GarminSummaryData.
 
         Parameters:
         db_params (dict): configuration data for accessing the database
@@ -303,6 +303,43 @@ class GarminSummaryData(JsonFileProcessor):
             json_filename = self.input_dir + '/extra_data_' + day.strftime("%Y-%m-%d") + '.json'
             if not os.path.isfile(json_filename):
                 self._save_json_file(json_filename, extra_data)
+        return 1
+
+
+class GarminHydrationData(JsonFileProcessor):
+    """Class for importing JSON formatted Garmin Connect daily summary data into a database."""
+
+    def __init__(self, db_params, input_dir, latest, measurement_system, debug):
+        """
+        Return an instance of GarminHydrationData.
+
+        Parameters:
+        db_params (object): configuration data for accessing the database
+        input_dir (string): directory (full path) to check for data files
+        latest (Boolean): check for latest files only
+        measurement_system (enum): which measurement system to use when importing the files
+        debug (Boolean): enable debug logging
+
+        """
+        logger.info("Processing daily hydration data")
+        super().__init__(None, input_dir, r'hydration_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
+        self.input_dir = input_dir
+        self.measurement_system = measurement_system
+        self.garmin_db = GarminDB.GarminDB(db_params)
+        self.conversions = {
+            'calendarDate'              : dateutil.parser.parse
+        }
+
+    def _process_json(self, json_data):
+        hydration_intake = Fit.Volume.from_milliliters(json_data['valueInML'])
+        hydration_goal = Fit.Volume.from_milliliters(json_data['baseGoalInML'])
+        summary = {
+            'day'                       : json_data['calendarDate'].date(),
+            'hydration_intake'          : hydration_intake.ml_or_oz(self.measurement_system),
+            'hydration_goal'            : hydration_goal.ml_or_oz(self.measurement_system)
+        }
+        root_logger.info("Processing daily hydration data %r", summary)
+        GarminDB.DailySummary.create_or_update(self.garmin_db, summary, ignore_none=True)
         return 1
 
 

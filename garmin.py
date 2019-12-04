@@ -19,7 +19,7 @@ from version import print_version, python_version_check, log_version
 from download_garmin import Download
 from copy_garmin import Copy
 from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringExtraData, GarminMonitoringFitData, GarminSleepData, \
-                          GarminRhrData, GarminSettingsFitData
+                          GarminRhrData, GarminSettingsFitData, GarminHydrationData
 from import_garmin_activities import GarminJsonSummaryData, GarminJsonDetailsData, GarminActivitiesExtraData, GarminTcxData, GarminActivitiesFitData
 from analyze_garmin import Analyze
 from export_activities import ActivityExporter
@@ -114,6 +114,7 @@ def download_data(overwite, latest, weight, monitoring, sleep, rhr, activities):
             monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_dir(date.year)
             root_logger.info("Date range to update: %s (%d) to %s", date, days, monitoring_dir)
             download.get_daily_summaries(monitoring_dir, date, days, overwite)
+            download.get_hydration(monitoring_dir, date, days, overwite)
             download.get_monitoring(date, days)
             download.unzip_files(monitoring_dir)
             root_logger.info("Saved monitoring files for %s (%d) to %s for processing", date, days, monitoring_dir)
@@ -174,6 +175,9 @@ def import_data(debug, latest, weight, monitoring, sleep, rhr, activities, test=
         ged = GarminMonitoringExtraData(db_params_dict, monitoring_dir, latest, debug)
         if ged.file_count() > 0:
             ged.process()
+        ghd = GarminHydrationData(db_params_dict, monitoring_dir, latest, measurement_system, debug)
+        if ghd.file_count() > 0:
+            ghd.process()
         gfd = GarminMonitoringFitData(monitoring_dir, latest, measurement_system, debug)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)

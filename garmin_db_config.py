@@ -1,4 +1,4 @@
-"""Class that encapsilating config data for the application."""
+"""Class that encapsilates config data for the application."""
 
 __author__ = "Tom Goetz"
 __copyright__ = "Copyright Tom Goetz"
@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 
 class GarminDBConfig(object):
-    """Class that encapsilating config data for the application."""
+    """Class that encapsilates config data for the application."""
 
     db = {
         'type'                  : 'sqlite'
