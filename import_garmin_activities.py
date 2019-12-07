@@ -75,7 +75,6 @@ class GarminTcxData(object):
         end_time = tcx.get_date('completed_at')
         start_time = tcx.get_date('started_at')
         (manufacturer, product) = tcx.get_manufacturer_and_product()
-        serial_number = tcx.get_value('creator_version')
         serial_number = tcx.get_serial_number()
         device = {
             'serial_number'     : serial_number,

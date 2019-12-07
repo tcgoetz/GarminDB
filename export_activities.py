@@ -24,14 +24,15 @@ class ActivityExporter(object):
         garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
         with garmin_act_db.managed_session() as garmin_act_db_session:
             activity = GarminDB.Activities.s_get(garmin_act_db_session, self.activity_id)
-            self.tcx = Tcx(activity.sport, activity.start_time)
+            self.tcx = Tcx()
+            self.tcx.create(activity.sport, activity.start_time)
             laps = GarminDB.ActivityLaps.s_get(garmin_act_db_session, self.activity_id)
             for lap in laps:
                 distance = Distance.from_meters_or_feet(lap.distance, self.measurement_system)
-                track = self.tcx.add_lap(lap.start_time, lap.stop_time, distance.to_meters(), lap.calories)
+                track = self.tcx.add_lap(lap.start_time, lap.stop_time, distance, lap.calories)
                 records = GarminDB.ActivityRecords.s_get_for_period(garmin_act_db_session, lap.start_time, lap.stop_time)
                 for record in records:
-                    alititude = Distance.from_meters_or_feet(record.alititude, self.measurement_system)
+                    alititude = Distance.from_meters_or_feet(record.altitude, self.measurement_system)
                     speed = Speed.from_kph_or_mph(record.speed, self.measurement_system)
                     self.tcx.add_point(track, record.timestamp, record.position, alititude.to_meters(), record.hr, speed.to_mps())
         garmindb = GarminDB.GarminDB(db_params)
