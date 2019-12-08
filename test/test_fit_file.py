@@ -69,9 +69,11 @@ class TestFitFile(unittest.TestCase):
             value = message[key].value
             self.assertEqual(value, expected_value, 'file %s expected %r found %r' % (fit_file.filename, expected_value, value))
 
-    def check_value_range(self, fit_file, message, field_name, min_value, max_value):
+    def check_value_range(self, fit_file, message, field_name, min_value, max_value, round_value=False):
         if field_name in message:
             value = message[field_name].value
+            if round_value:
+                value = round(value)
             self.assertGreaterEqual(value, min_value, '%s %r %s expected greater than %r was %r' %
                                     (fit_file.filename, message.type(), field_name, min_value, value))
             self.assertLess(value, max_value, '%s %r %s expected less than %r was %r' %
@@ -116,9 +118,9 @@ class TestFitFile(unittest.TestCase):
         messages = fit_file[Fit.MessageType.monitoring]
         for message in messages:
             self.check_message_fields(fit_file, message.type(), message)
-            self.check_value_range(fit_file, message, 'distance', 0, 100 * 5280)
-            self.check_value_range(fit_file, message, 'cum_ascent', 0, 5280)
-            self.check_value_range(fit_file, message, 'cum_descent', 0, 5280)
+            self.check_value_range(fit_file, message, 'distance', 0, 100 * 5280, True)
+            self.check_value_range(fit_file, message, 'cum_ascent', 0, 5280, True)
+            self.check_value_range(fit_file, message, 'cum_descent', 0, 5280, True)
 
     def test_parse_monitoring(self):
         monitoring_path = self.file_path + '/monitoring'

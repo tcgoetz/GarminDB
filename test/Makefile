@@ -11,7 +11,7 @@ export PYTHONPATH
 
 DB_TEST_GROUPS=garmin_db activities_db monitoring_db garmin_summary_db summary_db
 DB_OBJECTS_TEST_GROUPS=garmin_db_objects
-FILE_PARSE_TEST_GROUPS=fit_file tcx_file profile_file tcx
+FILE_PARSE_TEST_GROUPS=fit_file tcx_loop tcx_file profile_file
 ALL_TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS)
 MANUAL_TEST_GROUPS=copy
 TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS) $(MANUAL_TEST_GROUPS)
@@ -41,4 +41,4 @@ clean:
 $(TEST_GROUPS):
 	$(PYTHON) test_$@.py
 
-.PHONY: all db file_parse db_objects clean file_parse
+.PHONY: all db file_parse db_objects clean

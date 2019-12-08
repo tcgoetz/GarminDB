@@ -32,7 +32,7 @@ class Event(enum.Enum):
         try:
             return cls(json_event['typeId'])
         except ValueError:
-            logger.info("Unknown event type: %r", json_event)
+            logger.error("Unknown event type: %r", json_event)
             raise
 
 
@@ -100,6 +100,14 @@ class Sport(enum.Enum):
     virtual_run                     = 153
     obstacle_run                    = 154
     indoor_running                  = 156
+    safety                          = 157
+    assistance                      = 158
+    incident_detected               = 159
+    ccr_diving                      = 161
+    auto_racing                     = 162
+    yoga_gym                        = 163
+    winter_sports                   = 165
+    snow_shoe_ws                    = 167
 
     @classmethod
     def from_json(cls, json_data):
@@ -108,7 +116,7 @@ class Sport(enum.Enum):
         try:
             return Sport(json_activity['parentTypeId'])
         except ValueError:
-            logger.info("Unknown sport type: %r", json_activity)
+            logger.error("Unknown sport type: %r", json_activity)
             raise
 
     @classmethod
@@ -118,7 +126,7 @@ class Sport(enum.Enum):
         try:
             return Sport(json_activity['parentTypeId'])
         except ValueError:
-            logger.info("Unknown sport type: %r", json_activity)
+            logger.error("Unknown sport type: %r", json_activity)
             raise
 
     @classmethod
@@ -128,7 +136,7 @@ class Sport(enum.Enum):
         try:
             return Sport(json_activity['typeId'])
         except ValueError:
-            logger.info("Unknown subsport type: %r", json_activity)
+            logger.error("Unknown subsport type: %r", json_activity)
             raise
 
     @classmethod
@@ -138,5 +146,5 @@ class Sport(enum.Enum):
         try:
             return Sport(json_activity['typeId'])
         except ValueError:
-            logger.info("Unknown subsport type: %r", json_activity)
+            logger.error("Unknown subsport type: %r", json_activity)
             raise

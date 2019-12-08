@@ -43,15 +43,10 @@ submodules_update:
 	git submodule init
 	git submodule update
 
-deps_tcxparser:
-	cd python-tcxparser && $(PYTHON) setup.py install --user --record files.txt
-
-clean_deps_tcxparser:
-	cd python-tcxparser && cat files.txt | xargs rm -rf
-
 install_deps: deps_tcxparser
 	$(MAKE) -C Fit deps
 	$(MAKE) -C utilities deps
+	$(MAKE) -C Tcx deps
 	$(PIP) install --user --upgrade --requirement requirements.txt
 
 deps:
@@ -61,13 +56,14 @@ remove_deps: clean_deps_tcxparser
 	$(PIP) uninstall --requirement requirements.txt
 	$(MAKE) -C Fit remove_deps
 	$(MAKE) -C utilities remove_deps
+	$(MAKE) -C Tcx remove_deps
 
-clean_deps:
-	$(DEPS_SUDO) $(MAKE) remove_deps
+clean_deps: remove_deps
 
 clean: test_clean tcxparser_clean
 	$(MAKE) -C Fit clean
 	$(MAKE) -C utilities clean
+	$(MAKE) -C Tcx clean
 	rm -f *.pyc
 	rm -f HealthDB/*.pyc
 	rm -f GarminDB/*.pyc
@@ -79,12 +75,6 @@ clean: test_clean tcxparser_clean
 	rm -f *.zip
 	rm -f *.png
 	rm -rf __pycache__
-
-tcxparser_clean:
-	rm -rf python-tcxparser/build
-	rm -rf python-tcxparser/dist
-	rm -rf python-tcxparser/python_tcxparser.egg-info
-	rm -rf python-tcxparser/files.txt
 
 #
 # Fitness System independant targets

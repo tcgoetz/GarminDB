@@ -7,7 +7,7 @@ __license__ = "GPL"
 
 from Fit import Distance, Speed
 import GarminDB
-from tcx import Tcx
+from garmin_db_tcx import GarminDbTcx
 
 
 class ActivityExporter(object):
@@ -24,7 +24,7 @@ class ActivityExporter(object):
         garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
         with garmin_act_db.managed_session() as garmin_act_db_session:
             activity = GarminDB.Activities.s_get(garmin_act_db_session, self.activity_id)
-            self.tcx = Tcx()
+            self.tcx = GarminDbTcx()
             self.tcx.create(activity.sport, activity.start_time)
             laps = GarminDB.ActivityLaps.s_get(garmin_act_db_session, self.activity_id)
             for lap in laps:
