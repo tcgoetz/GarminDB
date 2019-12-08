@@ -43,7 +43,7 @@ submodules_update:
 	git submodule init
 	git submodule update
 
-install_deps: deps_tcxparser
+install_deps:
 	$(MAKE) -C Fit deps
 	$(MAKE) -C utilities deps
 	$(MAKE) -C Tcx deps
@@ -52,7 +52,7 @@ install_deps: deps_tcxparser
 deps:
 	$(MAKE) install_deps
 
-remove_deps: clean_deps_tcxparser
+remove_deps:
 	$(PIP) uninstall --requirement requirements.txt
 	$(MAKE) -C Fit remove_deps
 	$(MAKE) -C utilities remove_deps
@@ -60,7 +60,7 @@ remove_deps: clean_deps_tcxparser
 
 clean_deps: remove_deps
 
-clean: test_clean tcxparser_clean
+clean: test_clean
 	$(MAKE) -C Fit clean
 	$(MAKE) -C utilities clean
 	$(MAKE) -C Tcx clean
