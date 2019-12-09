@@ -8,7 +8,7 @@ import re
 
 from Tcx import Tcx
 from utilities import Location
-from Fit import Distance, Speed
+from Fit import Distance, Speed, conversions
 import GarminDB
 
 
@@ -80,3 +80,23 @@ class GarminDbTcx(Tcx):
     def descent(self):
         """Return the total descent over the activity."""
         return Distance.from_meters(super().descent)
+
+    def get_lap_duration(self, lap):
+        """Return the recorded duration for the lap."""
+        return conversions.secs_to_dt_time(super().get_lap_duration(lap))
+
+    def get_lap_distance(self, lap):
+        """Return the recorded distance for the lap."""
+        return Distance.from_meters(super().get_lap_distance(lap))
+
+    def get_point_loc(self, point):
+        """Return the position of the trackpoint."""
+        return Location(location=super().get_point_loc(point))
+
+    def get_point_altitude(self, point):
+        """Return the altitude of the trackpoint."""
+        return Distance.from_meters(super().get_point_altitude(point))
+
+    def get_point_speed(self, point):
+        """Return the speed readings in the point."""
+        return Speed.from_mps(super().get_point_speed(point))

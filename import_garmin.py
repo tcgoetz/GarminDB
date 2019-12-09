@@ -326,8 +326,13 @@ class GarminHydrationData(JsonFileProcessor):
         self.input_dir = input_dir
         self.measurement_system = measurement_system
         self.garmin_db = GarminDB.GarminDB(db_params)
+
+        def rounded_float(number):
+            return round(float(number))
         self.conversions = {
-            'calendarDate'              : dateutil.parser.parse
+            'calendarDate'              : dateutil.parser.parse,
+            'hydration_intake'          : rounded_float,
+            'hydration_goal'            : rounded_float
         }
 
     def _process_json(self, json_data):

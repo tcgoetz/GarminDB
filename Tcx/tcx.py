@@ -13,6 +13,10 @@ import dateutil.parser
 logger = logging.getLogger(__file__)
 
 
+class TcxParseException(Exception):
+    """Error when parsing a Tcx file."""
+
+
 class Tcx(object):
     """Read and write TCX files."""
 
@@ -165,7 +169,7 @@ class Tcx(object):
             logger.debug(ET.dump(self.root))
         self.activity = self.__find(self.root, './/ns:Activity')
         self.creator = self.__find(self.activity, 'ns:Creator')
-        self.laps = self.__find(self.activity, 'ns:Lap')
+        self.laps = self.__findall(self.activity, 'ns:Lap')
         self.points = self.__findall(self.activity, './/ns:Trackpoint')
         self.points = self.__findall(self.activity, './/ns:Trackpoint')
         self.hr_values = self.__tag_values(int, './/ns:HeartRateBpm/ns:Value')
@@ -226,12 +230,20 @@ class Tcx(object):
         return (self.__find_type_none(float, point, 'ns:Position/ns:LatitudeDegrees'),
                 self.__find_type_none(float, point, 'ns:Position/ns:LongitudeDegrees'))
 
+    def get_point_altitude(self, point):
+        """Return the altitude of the trackpoint."""
+        return self.__find_type_none(float, point, 'ns:AltitudeMeters')
+
     def get_point_hr(self, point):
         """Return the position of the trackpoint."""
         try:
             return self.__find_type_none(int, point, 'ns:HeartRateBpm/ns:Value')
         except Exception:
             return None
+
+    def get_point_speed(self, point):
+        """Return the speed readings in the point."""
+        return self.__find_type_none(float, point, './/ns:Speed', self.__namespace('ae'))
 
     def get_lap_points(self, lap):
         """Return a list of the trackpoint of the lap."""
@@ -249,47 +261,51 @@ class Tcx(object):
         """Return the recorded duration for the lap."""
         return self.__find_type(float, lap, 'ns:TotalTimeSeconds')
 
-    @classmethod
-    def get_lap_start(cls, lap):
+    def get_lap_start(self, lap):
         """Return the start time of the lap as a datetime instance."""
-        return dateutil.parser.parse(lap.attrib['StartTime'])
+        return self.get_point_time(self.get_lap_points(lap)[0])
 
     def get_lap_end(self, lap):
         """Return the end time of the lap as a datetime instance."""
         return self.get_point_time(self.get_lap_points(lap)[-1])
 
-    @classmethod
-    def get_lap_start_loc(cls, lap):
+    def get_lap_start_loc(self, lap):
         """Return the end location of the lap as a Location instance."""
-        return cls.get_point_loc(cls.get_lap_points(lap)[0])
+        lap_points = self.get_lap_points(lap)
+        if len(lap_points):
+            return self.get_point_loc(lap_points[0])
 
     def get_lap_end_loc(self, lap):
         """Return the end location of the lap as a Location instance."""
-        return self.get_point_loc(self.get_lap_points(lap)[-1])
+        lap_points = self.get_lap_points(lap)
+        if len(lap_points):
+            return self.get_point_loc(lap_points[-1])
 
     @property
     def start_time(self):
         """Return the start time of the activity as a tuple of datetime instances."""
         if len(self.points) > 0:
-            return self.get_point_time(self.points[0])
+            return Tcx.get_point_time(self, self.points[0])
 
     @property
     def end_time(self):
         """Return the end time of the activity as a tuple of datetime instances."""
         if len(self.points) > 0:
-            return self.get_point_time(self.points[-1])
+            return Tcx.get_point_time(self, self.points[-1])
 
     @property
     def start_loc(self):
         """Return the start location of the activity as a tuple of floats."""
         if len(self.points) > 0:
-            return self.get_point_loc(self.points[0])
+            return Tcx.get_point_loc(self, self.points[0])
+        return (None, None)
 
     @property
     def end_loc(self):
         """Return the end location of the activity as a tuple of float."""
         if len(self.points) > 0:
-            return self.get_point_loc(self.points[-1])
+            return Tcx.get_point_loc(self, self.points[-1])
+        return (None, None)
 
     @property
     def calories(self):
