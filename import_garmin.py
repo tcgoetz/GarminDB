@@ -326,13 +326,8 @@ class GarminHydrationData(JsonFileProcessor):
         self.input_dir = input_dir
         self.measurement_system = measurement_system
         self.garmin_db = GarminDB.GarminDB(db_params)
-
-        def rounded_float(number):
-            return round(float(number))
         self.conversions = {
-            'calendarDate'              : dateutil.parser.parse,
-            'hydration_intake'          : rounded_float,
-            'hydration_goal'            : rounded_float
+            'calendarDate'              : dateutil.parser.parse
         }
 
     def _process_json(self, json_data):
@@ -340,8 +335,8 @@ class GarminHydrationData(JsonFileProcessor):
         hydration_goal = Fit.Volume.from_milliliters(json_data['baseGoalInML'])
         summary = {
             'day'                       : json_data['calendarDate'].date(),
-            'hydration_intake'          : hydration_intake.ml_or_oz(self.measurement_system),
-            'hydration_goal'            : hydration_goal.ml_or_oz(self.measurement_system)
+            'hydration_intake'          : hydration_intake.ml_or_oz(self.measurement_system, rounded=True),
+            'hydration_goal'            : hydration_goal.ml_or_oz(self.measurement_system, rounded=True)
         }
         root_logger.info("Processing daily hydration data %r", summary)
         GarminDB.DailySummary.create_or_update(self.garmin_db, summary, ignore_none=True)
