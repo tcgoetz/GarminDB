@@ -43,14 +43,11 @@ submodules_update:
 	git submodule init
 	git submodule update
 
-install_deps:
+deps:
 	$(MAKE) -C Fit deps
 	$(MAKE) -C utilities deps
 	$(MAKE) -C Tcx deps
 	$(PIP) install --user --upgrade --requirement requirements.txt
-
-deps:
-	$(MAKE) install_deps
 
 remove_deps:
 	$(PIP) uninstall --requirement requirements.txt
@@ -180,4 +177,4 @@ test_clean:
 bugreport:
 	./bugreport.sh
 
-.PHONY: all setup create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release clean test test_clean
+.PHONY: all setup update deps create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release clean test test_clean
