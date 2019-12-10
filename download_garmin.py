@@ -174,8 +174,12 @@ class Download(object):
         for filename in os.listdir(self.temp_dir):
             match = re.search(r'.*\.zip', filename)
             if match:
-                with zipfile.ZipFile(f'{self.temp_dir}/{filename}', 'r') as files_zip:
-                    files_zip.extractall(outdir)
+                full_pathname = f'{self.temp_dir}/{filename}'
+                with zipfile.ZipFile(full_pathname, 'r') as files_zip:
+                    try:
+                        files_zip.extractall(outdir)
+                    except Exception as e:
+                        logger.error('Failed to unzip %s to %s: %s', full_pathname, outdir, e)
 
     def __get_stat(self, stat_function, directory, date, days, overwite):
         for day in progressbar.progressbar(range(0, days + 1)):
