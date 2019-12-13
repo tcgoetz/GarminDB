@@ -10,7 +10,7 @@ import utilities.version as uv
 python_required = (3, 0, 0)
 python_tested = (3, 7, 5)
 
-version_info = (1, 1, 0)
+version_info = (1, 1, 1)
 version_string = uv.to_string(version_info)
 
 
