@@ -33,8 +33,7 @@ Once you have your data in the DB, I recommend using a SQLite browser like [SQLi
 I have just started offering a binary release for MacOS. Binary release for other platforms may be added. You can download releases from the [release page](https://github.com/tcgoetz/GarminDB/releases).
 For the MacOS binary release:
 * Download the zip file and unzip it into a directory.
-* Copy GarminConnectConfig.json.example to GarminConnectConfig.json, edit it, and add your Garmin Connect username and password.
-* Then run `download_create_dbs.sh` or `download_update_dbs.sh` from a Terminal window to download from Garmin Connect (or copy_create_dbs.sh and copy_update_dbs.sh to copy files from a plugged in device).
+* Follow the directions in the `Readme_MacOS.txt` in the zip file.
 
 ## From Source
 
