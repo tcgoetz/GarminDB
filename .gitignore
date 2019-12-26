@@ -102,3 +102,4 @@ stats.txt
 ms_stats.txt
 *.png
 test/*.txt
+my-defines.mk
