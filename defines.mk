@@ -41,4 +41,4 @@ $(error pip not found)
 endif
 
 
-export PYTHON PIP
+export PLATFORM PYTHON PIP

@@ -5,12 +5,9 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 import utilities.version as uv
+from version_info import python_required, python_tested, version_info
 
 
-python_required = (3, 0, 0)
-python_tested = (3, 7, 5)
-
-version_info = (1, 1, 1)
 version_string = uv.to_string(version_info)
 
 

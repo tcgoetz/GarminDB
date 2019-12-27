@@ -75,7 +75,7 @@ clean: test_clean
 #
 # Fitness System independant targets
 #
-HEALTH_DATA_DIR=$(shell $(PYTHON) garmin.py --data_dir)
+HEALTH_DATA_DIR=$(shell $(PYTHON) -c 'from garmin_db_config_manager import get_base_dir; print(get_base_dir())')
 DB_DIR=$(HEALTH_DATA_DIR)/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 $(BACKUP_DIR):
@@ -85,8 +85,7 @@ EPOCH=$(shell date +'%s')
 backup: $(BACKUP_DIR)
 	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
 
-PLATFORM=$(shell uname)
-VERSION=$(shell $(PYTHON) garmin.py --version | cut -d' ' -f2)
+VERSION=$(shell $(PYTHON) -c 'from version_info import version_string; print(version_string())')
 BIN_FILES=dist/garmin dist/graphs dist/checkup dist/fitbit dist/mshealth
 ZIP_FILES=dist_files/Readme_MacOS.txt dist_files/download_create_dbs.sh dist_files/download_update_dbs.sh dist_files/copy_create_dbs.sh \
 	dist_files/copy_update_dbs.sh bugreport.sh
