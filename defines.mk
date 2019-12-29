@@ -9,18 +9,21 @@ PLATFORM=$(shell uname)
 
 ifeq ($(PLATFORM), Linux)
 
+TIME ?= $(shell which time)
 PYTHON2=$(shell which python)
 PIP3=$(shell which pip3)
 PYTHON3=$(shell which python3)
 
 else ifeq ($(PLATFORM), Darwin) # MacOS
 
+TIME ?= time
 PYTHON2=$(shell which python)
 PIP3=$(shell which pip3)
 PYTHON3=$(shell which python3)
 
 else
 
+TIME ?= $(shell which time)
 PYTHON2=$(shell which python)
 PIP3=$(shell which pip3)
 PYTHON3=$(shell which python3)

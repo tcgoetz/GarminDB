@@ -102,22 +102,22 @@ checkup:
 # Garmin targets
 #
 garmin:
-	time $(PYTHON) garmin.py --all --download --import --analyze
+	$(TIME) $(PYTHON) garmin.py --all --download --import --analyze
 
 build_garmin:
-	time $(PYTHON) garmin.py --all --import --analyze
+	$(TIME) $(PYTHON) garmin.py --all --import --analyze
 
 copy_garmin_settings:
-	time $(PYTHON) garmin.py --copy
+	$(TIME) $(PYTHON) garmin.py --copy
 
 copy_garmin:
-	time $(PYTHON) garmin.py --all --copy --import --analyze
+	$(TIME) $(PYTHON) garmin.py --all --copy --import --analyze
 
 update_garmin:
-	time $(PYTHON) garmin.py --all --download --import --analyze --latest
+	$(TIME) $(PYTHON) garmin.py --all --download --import --analyze --latest
 
 copy_garmin_latest:
-	time $(PYTHON) garmin.py --all --copy --import --analyze --latest
+	$(TIME) $(PYTHON) garmin.py --all --copy --import --analyze --latest
 
 export_activity:
 	$(PYTHON) garmin.py --export-activity ${EXPORT_ACTIVITY_ID}
