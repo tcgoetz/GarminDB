@@ -41,7 +41,7 @@ The scripts are automated with [Make](https://www.gnu.org/software/make/manual/m
 
 * Git clone GarminDB repo using the SSH clone method. The submodules require you to use SSH and not HTTPS. Get the command from the green button on the project home page.
 * Run `make setup` get the scripts ready to process data.
-* Copy `GarminConnectConfig.json.example` to `GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password.
+* Copy `GarminConnectConfig.json.example` to `GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password and adjust the start dates to when your data starts from.
 * Run `make create_dbs` for your first run.
 * Keep all of your local data up to date by running only one command: `make`.
 * Run `make backup` to backup your DBs.
