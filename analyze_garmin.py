@@ -14,6 +14,7 @@ import Fit
 import Fit.conversions
 import HealthDB
 import GarminDB
+from garmin_connect_config_manager import GarminConnectConfigManager
 
 
 logger = logging.getLogger(__file__)
@@ -295,3 +296,9 @@ class Analyze(object):
         for year in years:
             logger.info("Generating %s", year)
             self.__calculate_year(year)
+
+    def create_dynamic_views(self):
+        gc_config = GarminConnectConfigManager()
+        course_ids = gc_config.course_views('steps')
+        for course_id in course_ids:
+            GarminDB.StepsActivities.create_course_view(self.garmin_act_db, course_id)

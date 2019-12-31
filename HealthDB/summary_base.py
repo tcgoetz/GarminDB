@@ -15,7 +15,7 @@ from utilities import db
 class SummaryBase(db.DBObject):
     """Base class for implementing summary databse objects."""
 
-    view_version = 6
+    view_version = 8
 
     hr_avg = Column(Float)
     hr_min = Column(Float)
@@ -117,13 +117,9 @@ class SummaryBase(db.DBObject):
         """Create a monthly summary view in the database."""
         cols = [
             cls.time_col.label('first_day'),
-            cls.round_col(cls.__tablename__ + '.rhr_avg', 'rhr_avg'),
-            cls.round_col(cls.__tablename__ + '.rhr_min', 'rhr_min'),
-            cls.round_col(cls.__tablename__ + '.rhr_max', 'rhr_max'),
-            cls.round_col(cls.__tablename__ + '.inactive_hr_avg', 'inactive_hr_avg'),
-            cls.round_col(cls.__tablename__ + '.weight_avg', 'weight_avg'),
-            cls.round_col(cls.__tablename__ + '.weight_min', 'weight_min'),
-            cls.round_col(cls.__tablename__ + '.weight_max', 'weight_max'),
+            cls.round_col(cls.__tablename__ + '.rhr_avg', 'rhr'),
+            cls.round_col(cls.__tablename__ + '.inactive_hr_avg', 'inactive_hr'),
+            cls.round_col(cls.__tablename__ + '.weight_avg', 'weight'),
             cls.intensity_time.label('intensity_time'), cls.moderate_activity_time.label('moderate_activity_time'), cls.vigorous_activity_time.label('vigorous_activity_time'),
             cls.steps.label('steps'),
             # cls.steps_goal_percent,
@@ -140,8 +136,7 @@ class SummaryBase(db.DBObject):
             cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
             cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
             cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
-            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
-            cls.round_col(cls.__tablename__ + '.hydration_intake', 'hydration_intake')
+            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg')
         ]
         cls.create_summary_view(db, cols)
 
@@ -150,13 +145,9 @@ class SummaryBase(db.DBObject):
         """Create a weekly summary view in the database."""
         cols = [
             cls.time_col.label('first_day'),
-            cls.round_col(cls.__tablename__ + '.rhr_avg', 'rhr_avg'),
-            cls.round_col(cls.__tablename__ + '.rhr_min', 'rhr_min'),
-            cls.round_col(cls.__tablename__ + '.rhr_max', 'rhr_max'),
-            cls.round_col(cls.__tablename__ + '.inactive_hr_avg', 'inactive_hr_avg'),
-            cls.round_col(cls.__tablename__ + '.weight_avg', 'weight_avg'),
-            cls.round_col(cls.__tablename__ + '.weight_min', 'weight_min'),
-            cls.round_col(cls.__tablename__ + '.weight_max', 'weight_max'),
+            cls.round_col(cls.__tablename__ + '.rhr_avg', 'rhr'),
+            cls.round_col(cls.__tablename__ + '.inactive_hr_avg', 'inactive_hr'),
+            cls.round_col(cls.__tablename__ + '.weight_avg', 'weight'),
             cls.intensity_time.label('intensity_time'), cls.moderate_activity_time.label('moderate_activity_time'), cls.vigorous_activity_time.label('vigorous_activity_time'),
             cls.steps.label('steps'),
             # cls.steps_goal_percent,
@@ -173,8 +164,7 @@ class SummaryBase(db.DBObject):
             cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
             cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
             cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
-            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
-            cls.round_col(cls.__tablename__ + '.hydration_intake', 'hydration_intake')
+            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg')
         ]
         cls.create_summary_view(db, cols)
 
@@ -186,9 +176,9 @@ class SummaryBase(db.DBObject):
             cls.round_col(cls.__tablename__ + '.hr_avg', 'hr_avg'),
             cls.round_col(cls.__tablename__ + '.hr_min', 'hr_min'),
             cls.round_col(cls.__tablename__ + '.hr_max', 'hr_max'),
-            cls.round_col(cls.__tablename__ + '.rhr_avg', 'rhr_avg'),
-            cls.round_col(cls.__tablename__ + '.inactive_hr_avg', 'inactive_hr_avg'),
-            cls.round_col(cls.__tablename__ + '.weight_avg', 'weight_avg'),
+            cls.round_col(cls.__tablename__ + '.rhr_avg', 'rhr'),
+            cls.round_col(cls.__tablename__ + '.inactive_hr_avg', 'inactive_hr'),
+            cls.round_col(cls.__tablename__ + '.weight_avg', 'weight'),
             cls.intensity_time.label('intensity_time'), cls.moderate_activity_time.label('moderate_activity_time'), cls.vigorous_activity_time.label('vigorous_activity_time'),
             cls.steps.label('steps'),
             # cls.steps_goal_percent,
@@ -205,7 +195,6 @@ class SummaryBase(db.DBObject):
             cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
             cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
             cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
-            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
-            cls.round_col(cls.__tablename__ + '.hydration_intake', 'hydration_intake')
+            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg')
         ]
         cls.create_summary_view(db, cols)

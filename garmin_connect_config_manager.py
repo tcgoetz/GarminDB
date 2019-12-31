@@ -65,3 +65,7 @@ class GarminConnectConfigManager(JsonConfig):
     def download_days_overlap(self):
         """Return the number of days to overlap previously downloaded data when downloading."""
         return self.config['data']['download_days_overlap']
+
+    def course_views(self, type):
+        """Return a list of course ids to create views for for the given activitiy type."""
+        return self.config['course_views'][type]

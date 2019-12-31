@@ -95,7 +95,7 @@ zip_packages: package_garmin package_fitbit package_mshealth
 graphs:
 	$(PYTHON) graphs.py --all
 
-checkup:
+checkup: update_garmin
 	$(PYTHON) checkup.py --goals
 
 # define CHECKUP_COURSE_ID in my-defines.mk

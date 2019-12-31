@@ -15,5 +15,8 @@
     },
     "copy" : {
         "mount_dir"                     : "/Volumes/GARMIN"
+    },
+    "course_views" : {
+        "steps"                         : []
     }
 }

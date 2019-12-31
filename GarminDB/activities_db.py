@@ -312,8 +312,13 @@ class SportActivities(utilities.DBObject):
         return relationship("Activities")
 
     @classmethod
-    def create_activity_view(cls, db, selectable):
+    def _create_activity_view(cls, db, selectable):
         cls.create_join_view(db, cls._get_default_view_name(), selectable, Activities, Activities.start_time.desc())
+
+    @classmethod
+    def _create_course_view(cls, db, selectable, course_id):
+        filter = literal_column(f'{Activities.course_id} == {course_id}')
+        cls.create_filtered_join_view(db, f'course_{course_id}_view', selectable, Activities, filter, Activities.start_time.desc())
 
     @classmethod
     def get(cls, db, activity_id):
@@ -354,50 +359,78 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
     @classmethod
     def create_view(cls, db):
         # The query fails to genarate sql when using the func.round clause.
-        cls.create_activity_view(db,
-            [
-                Activities.activity_id.label('activity_id'),
-                Activities.name.label('name'),
-                Activities.description.label('description'),
-                Activities.sub_sport.label('sport'),
-                Activities.type.label('type'),
-                Activities.course_id.label('course_id'),
-                Activities.start_time.label('start_time'),
-                Activities.stop_time.label('stop_time'),
-                Activities.elapsed_time.label('elapsed_time'),
-                # func.round(Activities.distance).label('distance'),
-                cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
-                cls.steps.label('steps'),
-                cls.avg_pace .label('avg_pace'),
-                cls.avg_moving_pace.label('avg_moving_pace'),
-                cls.max_pace.label('max_pace'),
-                cls.avg_steps_per_min.label('avg_steps_per_min'),
-                cls.max_steps_per_min.label('max_steps_per_min'),
-                Activities.avg_hr.label('avg_hr'),
-                Activities.max_hr.label('max_hr'),
-                Activities.calories.label('calories'),
-                # func.round(Activities.avg_temperature).label('avg_temperature'),
-                # func.round(Activities.avg_speed).label('avg_speed'),
-                # func.round(Activities.max_speed).label('max_speed'),
-                # func.round(cls.avg_step_length).label('avg_step_length'),
-                # func.round(cls.avg_vertical_ratio).label('avg_vertical_ratio'),
-                # func.round(cls.avg_vertical_oscillation).label('avg_vertical_oscillation'),
-                cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
-                cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
-                cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
-                cls.round_col(cls.__tablename__ + '.avg_step_length', 'avg_step_length'),
-                cls.round_col(cls.__tablename__ + '.avg_vertical_ratio', 'avg_vertical_ratio'),
-                cls.avg_gct_balance.label('avg_gct_balance'),
-                cls.round_col(cls.__tablename__ + '.avg_vertical_oscillation', 'avg_vertical_oscillation'),
-                cls.avg_ground_contact_time.label('avg_ground_contact_time'),
-                cls.avg_stance_time_percent.label('avg_stance_time_percent'),
-                cls.vo2_max.label('vo2_max'),
-                Activities.training_effect.label('training_effect'),
-                Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
-                cls.google_map_loc('start'),
-                cls.google_map_loc('stop'),
-            ]
-        )
+        selectable = [
+            Activities.activity_id.label('activity_id'),
+            Activities.name.label('name'),
+            Activities.description.label('description'),
+            Activities.sub_sport.label('sport'),
+            Activities.type.label('type'),
+            Activities.course_id.label('course_id'),
+            Activities.start_time.label('start_time'),
+            Activities.stop_time.label('stop_time'),
+            Activities.elapsed_time.label('elapsed_time'),
+            cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
+            cls.steps.label('steps'),
+            cls.avg_pace .label('avg_pace'),
+            cls.avg_moving_pace.label('avg_moving_pace'),
+            cls.max_pace.label('max_pace'),
+            cls.round_col(cls.__tablename__ + '.avg_steps_per_min', 'avg_steps_per_min'),
+            cls.round_col(cls.__tablename__ + '.max_steps_per_min', 'max_steps_per_min'),
+            Activities.avg_hr.label('avg_hr'),
+            Activities.max_hr.label('max_hr'),
+            Activities.calories.label('calories'),
+            cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
+            cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
+            cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
+            cls.round_col(cls.__tablename__ + '.avg_step_length', 'avg_step_length'),
+            cls.round_col(cls.__tablename__ + '.avg_vertical_ratio', 'avg_vertical_ratio'),
+            cls.avg_gct_balance.label('avg_gct_balance'),
+            cls.round_col(cls.__tablename__ + '.avg_vertical_oscillation', 'avg_vertical_oscillation'),
+            cls.avg_ground_contact_time.label('avg_ground_contact_time'),
+            cls.avg_stance_time_percent.label('avg_stance_time_percent'),
+            cls.vo2_max.label('vo2_max'),
+            Activities.training_effect.label('training_effect'),
+            Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
+            cls.google_map_loc('start'),
+            cls.google_map_loc('stop')
+        ]
+        cls._create_activity_view(db, selectable)
+
+    @classmethod
+    def create_course_view(cls, db, course_id):
+        # The query fails to genarate sql when using the func.round clause.
+        selectable = [
+            Activities.activity_id.label('activity_id'),
+            Activities.name.label('name'),
+            Activities.description.label('description'),
+            Activities.sub_sport.label('sport'),
+            Activities.start_time.label('start_time'),
+            Activities.stop_time.label('stop_time'),
+            Activities.elapsed_time.label('elapsed_time'),
+            cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
+            cls.steps.label('steps'),
+            cls.avg_pace .label('avg_pace'),
+            cls.avg_moving_pace.label('avg_moving_pace'),
+            cls.max_pace.label('max_pace'),
+            cls.round_col(cls.__tablename__ + '.avg_steps_per_min', 'avg_steps_per_min'),
+            cls.round_col(cls.__tablename__ + '.max_steps_per_min', 'max_steps_per_min'),
+            Activities.avg_hr.label('avg_hr'),
+            Activities.max_hr.label('max_hr'),
+            Activities.calories.label('calories'),
+            cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
+            cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
+            cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
+            cls.round_col(cls.__tablename__ + '.avg_step_length', 'avg_step_length'),
+            cls.round_col(cls.__tablename__ + '.avg_vertical_ratio', 'avg_vertical_ratio'),
+            cls.avg_gct_balance.label('avg_gct_balance'),
+            cls.round_col(cls.__tablename__ + '.avg_vertical_oscillation', 'avg_vertical_oscillation'),
+            cls.avg_ground_contact_time.label('avg_ground_contact_time'),
+            cls.avg_stance_time_percent.label('avg_stance_time_percent'),
+            cls.vo2_max.label('vo2_max'),
+            Activities.training_effect.label('training_effect'),
+            Activities.anaerobic_training_effect.label('anaerobic_training_effect')
+        ]
+        cls._create_course_view(db, selectable, course_id)
 
 
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
@@ -411,32 +444,31 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        cls.create_activity_view(db,
-            [
-                Activities.activity_id.label('activity_id'),
-                Activities.name.label('name'),
-                Activities.description.label('description'),
-                Activities.sub_sport.label('sport'),
-                Activities.start_time.label('start_time'),
-                Activities.stop_time.label('stop_time'),
-                Activities.elapsed_time.label('elapsed_time'),
-                cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
-                cls.strokes.label('strokes'),
-                cls.round_col(cls.__tablename__ + '.avg_stroke_distance', 'avg_stroke_distance'),
-                Activities.avg_cadence.label('avg_cadence'),
-                Activities.max_cadence.label('max_cadence'),
-                Activities.avg_hr.label('avg_hr'),
-                Activities.max_hr.label('max_hr'),
-                Activities.calories.label('calories'),
-                cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
-                cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
-                cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
-                Activities.training_effect.label('training_effect'),
-                Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
-                cls.google_map_loc('start'),
-                cls.google_map_loc('stop'),
-            ]
-        )
+        selectable = [
+            Activities.activity_id.label('activity_id'),
+            Activities.name.label('name'),
+            Activities.description.label('description'),
+            Activities.sub_sport.label('sport'),
+            Activities.start_time.label('start_time'),
+            Activities.stop_time.label('stop_time'),
+            Activities.elapsed_time.label('elapsed_time'),
+            cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
+            cls.strokes.label('strokes'),
+            cls.round_col(cls.__tablename__ + '.avg_stroke_distance', 'avg_stroke_distance'),
+            Activities.avg_cadence.label('avg_cadence'),
+            Activities.max_cadence.label('max_cadence'),
+            Activities.avg_hr.label('avg_hr'),
+            Activities.max_hr.label('max_hr'),
+            Activities.calories.label('calories'),
+            cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
+            cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
+            cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
+            Activities.training_effect.label('training_effect'),
+            Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
+            cls.google_map_loc('start'),
+            cls.google_map_loc('stop'),
+        ]
+        cls._create_activity_view(db, selectable)
 
 
 class CycleActivities(ActivitiesDB.Base, SportActivities):
@@ -449,32 +481,31 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        cls.create_activity_view(db,
-            [
-                Activities.activity_id.label('activity_id'),
-                Activities.name.label('name'),
-                Activities.description.label('description'),
-                Activities.sub_sport.label('sport'),
-                Activities.start_time.label('start_time'),
-                Activities.stop_time.label('stop_time'),
-                Activities.elapsed_time.label('elapsed_time'),
-                cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
-                cls.strokes.label('strokes'),
-                Activities.avg_hr.label('avg_hr'),
-                Activities.max_hr.label('max_hr'),
-                Activities.calories.label('calories'),
-                cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
-                Activities.avg_cadence.label('avg_rpms'),
-                Activities.max_cadence.label('max_rpms'),
-                cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
-                cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
-                cls.vo2_max.label('vo2_max'),
-                Activities.training_effect.label('training_effect'),
-                Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
-                cls.google_map_loc('start'),
-                cls.google_map_loc('stop'),
-            ]
-        )
+        selectable = [
+            Activities.activity_id.label('activity_id'),
+            Activities.name.label('name'),
+            Activities.description.label('description'),
+            Activities.sub_sport.label('sport'),
+            Activities.start_time.label('start_time'),
+            Activities.stop_time.label('stop_time'),
+            Activities.elapsed_time.label('elapsed_time'),
+            cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
+            cls.strokes.label('strokes'),
+            Activities.avg_hr.label('avg_hr'),
+            Activities.max_hr.label('max_hr'),
+            Activities.calories.label('calories'),
+            cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
+            Activities.avg_cadence.label('avg_rpms'),
+            Activities.max_cadence.label('max_rpms'),
+            cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
+            cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
+            cls.vo2_max.label('vo2_max'),
+            Activities.training_effect.label('training_effect'),
+            Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
+            cls.google_map_loc('start'),
+            cls.google_map_loc('stop'),
+        ]
+        cls._create_activity_view(db, selectable)
 
 
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
@@ -488,27 +519,26 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        cls.create_activity_view(db,
-            [
-                Activities.activity_id.label('activity_id'),
-                Activities.name.label('name'),
-                Activities.description.label('description'),
-                Activities.type.label('type'),
-                Activities.start_time.label('start_time'),
-                Activities.stop_time.label('stop_time'),
-                Activities.elapsed_time.label('elapsed_time'),
-                cls.steps.label('steps'),
-                cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
-                Activities.avg_hr.label('avg_hr'),
-                Activities.max_hr.label('max_hr'),
-                Activities.calories.label('calories'),
-                cls.round_col(Activities.__tablename__ + '.avg_cadence', 'avg_rpms'),
-                cls.round_col(Activities.__tablename__ + '.max_cadence', 'max_rpms'),
-                cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
-                Activities.training_effect.label('training_effect'),
-                Activities.anaerobic_training_effect.label('anaerobic_training_effect')
-            ]
-        )
+        selectable = [
+            Activities.activity_id.label('activity_id'),
+            Activities.name.label('name'),
+            Activities.description.label('description'),
+            Activities.type.label('type'),
+            Activities.start_time.label('start_time'),
+            Activities.stop_time.label('stop_time'),
+            Activities.elapsed_time.label('elapsed_time'),
+            cls.steps.label('steps'),
+            cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
+            Activities.avg_hr.label('avg_hr'),
+            Activities.max_hr.label('max_hr'),
+            Activities.calories.label('calories'),
+            cls.round_col(Activities.__tablename__ + '.avg_cadence', 'avg_rpms'),
+            cls.round_col(Activities.__tablename__ + '.max_cadence', 'max_rpms'),
+            cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
+            Activities.training_effect.label('training_effect'),
+            Activities.anaerobic_training_effect.label('anaerobic_training_effect')
+        ]
+        cls._create_activity_view(db, selectable)
 
 
 class ActivitiesExtraData(ActivitiesDB.Base, ExtraData):
