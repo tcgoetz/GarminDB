@@ -98,6 +98,10 @@ graphs:
 checkup:
 	$(PYTHON) checkup.py --goals
 
+# define CHECKUP_COURSE_ID in my-defines.mk
+checkup_course:
+	$(PYTHON) checkup.py --course $(CHECKUP_COURSE_ID)
+
 #
 # Garmin targets
 #
@@ -119,8 +123,9 @@ update_garmin:
 copy_garmin_latest:
 	$(TIME) $(PYTHON) garmin.py --all --copy --import --analyze --latest
 
+# define EXPORT_ACTIVITY_ID in my-defines.mk
 export_activity:
-	$(PYTHON) garmin.py --export-activity ${EXPORT_ACTIVITY_ID}
+	$(PYTHON) garmin.py --export-activity $(EXPORT_ACTIVITY_ID)
 
 clean_garmin_dbs:
 	$(PYTHON) garmin.py --delete_db

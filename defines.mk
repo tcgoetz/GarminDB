@@ -44,4 +44,4 @@ $(error pip not found)
 endif
 
 
-export PLATFORM PYTHON PIP
+export TIME PLATFORM PYTHON PIP

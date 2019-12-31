@@ -11,9 +11,12 @@ import sys
 import getopt
 import datetime
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import enum
+import dateutil.parser
 
 import HealthDB
+import GarminDB
 import garmin_db_config_manager as GarminDBConfigManager
 from version import print_version
 
@@ -70,7 +73,7 @@ class Graph(object):
 
     @classmethod
     def __graph_mulitple_single_axes(cls, time, data_list, stat_name, ylabel, save):
-        title = '%s Over Time' % stat_name
+        title = f'{stat_name} Over Time'
         figure = plt.figure()
         for index, data in enumerate(data_list):
             color = Colors.from_integer(index).name
@@ -85,13 +88,13 @@ class Graph(object):
         plt.show()
 
     @classmethod
-    def __graph_mulitple(cls, time, data_list, stat_name, period, ylabel_list, save):
+    def __graph_mulitple(cls, time, data_list, stat_name, period, ylabel_list, yrange_list, save):
         units = {
             'days'      : 'Day',
             'weeks'     : 'Week',
             'months'    : 'Month'
         }
-        title = '%s per %s' % (stat_name, units[period])
+        title = f'{stat_name} per {units[period]}'
         figure = plt.figure()
         for index, data in enumerate(data_list):
             color = Colors.from_integer(index).name
@@ -104,7 +107,10 @@ class Graph(object):
             else:
                 axes.yaxis.tick_left()
             axes.tick_params(axis='y', colors=color)
-            axes.set_ylim([min(data), max(data)])
+            if yrange_list is None:
+                axes.set_ylim([min(data), max(data)])
+            else:
+                axes.set_ylim(yrange_list[index])
             axes.grid()
         axes.set_title(title)
         axes.set_xlabel('Time')
@@ -112,20 +118,45 @@ class Graph(object):
             figure.savefig(stat_name + ".png")
         plt.show()
 
+    @classmethod
+    def __graph_over(cls, date, over_data_dict, under_data_dict, title, xlabel, ylabel, save_name=None):
+        figure = plt.figure()
+        axes = figure.add_subplot(111, frame_on=True)
+        axes.fill_between(under_data_dict['time'], under_data_dict['data'], 0, color=Colors.c.name)
+        axes.set_ylim(under_data_dict['limits'])
+        axes.set_xticks([])
+        axes.set_yticks([])
+        axes = figure.add_subplot(111, frame_on=False)
+        axes.plot(over_data_dict['time'], over_data_dict['data'], color=Colors.b.name)
+        axes.set_ylim(over_data_dict['limits'])
+        axes.grid()
+        axes.set_title(title)
+        axes.set_xlabel(xlabel)
+        x_format = mdates.DateFormatter('%H:%M')
+        axes.xaxis.set_major_formatter(x_format)
+        axes.set_ylabel(ylabel)
+        if save_name:
+            figure.savefig(save_name)
+        plt.show()
+
     def _graph_steps(self, time, data, period):
         steps = [entry.steps for entry in data]
         steps_goal_percent = [entry.steps_goal_percent for entry in data]
-        self.__graph_mulitple(time, [steps, steps_goal_percent], 'Steps', period, ['Steps', 'Step Goal Percent'], self.save)
+        yrange_list = [(0, max(steps) * 1.1), (0, max(steps_goal_percent) * 2)]
+        self.__graph_mulitple(time, [steps, steps_goal_percent], 'Steps', period, ['Steps', 'Step Goal Percent'], yrange_list, self.save)
 
     def _graph_hr(self, time, data, period):
         rhr = [entry.rhr_avg for entry in data]
         inactive_hr = [entry.inactive_hr_avg for entry in data]
-        self.__graph_mulitple(time, [rhr, inactive_hr], 'Heart Rate', period, ['RHR', 'Inactive hr'], self.save)
+        self.__graph_mulitple(time, [rhr, inactive_hr], 'Heart Rate', period, ['RHR', 'Inactive hr'], [(30, 100), (30, 100)], self.save)
 
     def _graph_itime(self, time, data, period):
         itime = [entry.intensity_time_mins for entry in data]
         itime_goal_percent = [entry.intensity_time_goal_percent for entry in data]
-        self.__graph_mulitple(time, [itime, itime_goal_percent], 'Intensity Minutes', period, ['Intensity Minutes', 'Intensity Minutes Goal Percent'], self.save)
+        itime_goal_max = max([entry.intensity_time_goal_mins for entry in data])
+        yrange_list = [(0, itime_goal_max * 5), (0, max(itime_goal_percent) * 1.1)]
+        self.__graph_mulitple(time, [itime, itime_goal_percent], 'Intensity Minutes', period, ['Intensity Minutes', 'Intensity Minutes Goal Percent'],
+                              yrange_list, self.save)
 
     def _graph_weight(self, time, data, period):
         weight = [entry.weight_avg for entry in data]
@@ -133,9 +164,9 @@ class Graph(object):
 
     def graph_activity(self, activity, period, days):
         """Generate a graph for the given activity with points every period spanning days."""
-        if period is None or period == 'default':
+        if period is None:
             period = GarminDBConfigManager.graphs_activity_config(activity, 'period')
-        if days is None or days == 'default':
+        if days is None:
             days = GarminDBConfigManager.graphs_activity_config(activity, 'days')
         db_params = GarminDBConfigManager.get_db_params()
         sum_db = HealthDB.SummaryDB(db_params, self.debug)
@@ -151,6 +182,28 @@ class Graph(object):
         graph_func = getattr(self, graph_func_name, None)
         graph_func(time, data, period)
 
+    def graph_date(self, date):
+        """Generate a graph for the given date."""
+        db_params = GarminDBConfigManager.get_db_params()
+        mon_db = GarminDB.MonitoringDB(db_params, self.debug)
+        start_ts = datetime.datetime.combine(date, datetime.datetime.min.time())
+        end_ts = datetime.datetime.combine(date, datetime.datetime.max.time())
+        data = GarminDB.MonitoringHeartRate.get_for_period(mon_db, start_ts, end_ts, GarminDB.MonitoringHeartRate)
+        over_data_dict = {
+            'time'      : [entry.timestamp for entry in data],
+            'data'      : [entry.heart_rate for entry in data],
+            'limits'    : (30, 220)
+        }
+        data = GarminDB.Monitoring.get_for_period(mon_db, start_ts, end_ts, GarminDB.Monitoring)
+        under_data_dict = {
+            'time'      : [entry.timestamp for entry in data],
+            'data'      : [entry.intensity if entry.intensity is not None else 0 for entry in data],
+            'limits'    : (0, 10)
+        }
+        # self.__graph_day(date, (hr_time, hr), (mon_time, activity), self.save)
+        save_name = f"{date}_daily.png" if self.save else None
+        self.__graph_over(date, over_data_dict, under_data_dict, f'Daily Summary for {date}', 'Time of Day', 'hr over activity', save_name=save_name)
+
 
 def __print_usage(program, error=None):
     if error is not None:
@@ -162,6 +215,7 @@ def __print_usage(program, error=None):
     print('    --itime      : Graph intensity time data.')
     print('    --weight     : Graph weight data.')
     print('    --steps      : Graph steps data.')
+    print('    --day        : Graph metric for the given date.')
     print('    --latest     : Graph x most recent days.')
     print('    --period     : days, weeks, or months.')
     print('    --trace      : Turn on debug tracing. Extra logging will be written to log file.')
@@ -182,9 +236,10 @@ def main(argv):
     weight = False
     weight_period = None
     days = None
+    day = None
 
     try:
-        opts, args = getopt.getopt(argv, "adhHl:p:rsSt:wv", ["all", "latest=", "hr=", "itime", "save", "steps=", "trace=", "weight=", "version"])
+        opts, args = getopt.getopt(argv, "adhHl:p:rsSt:wv", ["all", "day=", "latest=", "hr=", "itime", "save", "steps=", "trace=", "weight=", "version"])
     except getopt.GetoptError as e:
         __print_usage(sys.argv[0], str(e))
 
@@ -199,6 +254,10 @@ def main(argv):
             steps = GarminDBConfigManager.is_stat_enabled('steps')
             itime = GarminDBConfigManager.is_stat_enabled('itime')
             weight = GarminDBConfigManager.is_stat_enabled('weight')
+            day = (datetime.datetime.now() - datetime.timedelta(days=1)).date()
+        elif opt in ("--day"):
+            day = dateutil.parser.parse(arg).date()
+            logging.debug("Day: %s", day)
         elif opt in ("-l", "--latest"):
             days = int(arg)
         elif opt in ("-S", "--save"):
@@ -240,6 +299,9 @@ def main(argv):
 
     if weight:
         graph.graph_activity('weight', weight_period, days)
+
+    if day:
+        graph.graph_date(day)
 
 
 if __name__ == "__main__":

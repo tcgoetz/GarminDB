@@ -221,9 +221,7 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
     @classmethod
     def get_active_calories(cls, session, activity_type, start_ts, end_ts):
         active_calories = cls.s_get_col_avg_of_max_per_day_for_value(session, cls.active_calories, cls.activity_type, activity_type, start_ts, end_ts)
-        if active_calories is not None:
-            return active_calories
-        return 0
+        return active_calories if active_calories is not None else 0
 
     @classmethod
     def get_stats(cls, session, func, start_ts, end_ts):

@@ -58,14 +58,22 @@ class SummaryBase(db.DBObject):
     @hybrid_property
     def intensity_time_mins(self):
         """Return intensity time as minutes."""
-        if self.intensity_time is not None:
-            return (conversions.time_to_secs(self.intensity_time) / 60)
-        return 0
+        return (conversions.time_to_secs(self.intensity_time) / 60) if self.intensity_time is not None else 0
 
     @intensity_time_mins.expression
     def intensity_time_mins(cls):
         """Return intensity time as minutes."""
         return (cls._secs_from_time(cls.intensity_time) / 60)
+
+    @hybrid_property
+    def intensity_time_goal_mins(self):
+        """Return intensity time as minutes."""
+        return (conversions.time_to_secs(self.intensity_time_goal) / 60) if self.intensity_time_goal is not None else 0
+
+    @intensity_time_goal_mins.expression
+    def intensity_time_goal_mins(cls):
+        """Return intensity time as minutes."""
+        return (cls._secs_from_time(cls.intensity_time_goal) / 60)
 
     @hybrid_property
     def intensity_time_goal_percent(self):
@@ -82,9 +90,7 @@ class SummaryBase(db.DBObject):
     @hybrid_property
     def steps_goal_percent(self):
         """Return the percentage of steps goal achieved."""
-        if self.steps is not None and self.steps_goal is not None:
-            return (self.steps * 100) / self.steps_goal
-        return 0.0
+        return (self.steps * 100) / self.steps_goal if self.steps is not None and self.steps_goal is not None else 0.0
 
     @steps_goal_percent.expression
     def steps_goal_percent(cls):
@@ -94,9 +100,7 @@ class SummaryBase(db.DBObject):
     @hybrid_property
     def floors_goal_percent(self):
         """Return the percentage of floors goal achieved."""
-        if self.floors is not None and self.floors_goal is not None:
-            return (self.floors * 100) / self.floors_goal
-        return 0.0
+        return (self.floors * 100) / self.floors_goal if self.floors is not None and self.floors_goal is not None else 0.0
 
     @floors_goal_percent.expression
     def floors_goal_percent(cls):
