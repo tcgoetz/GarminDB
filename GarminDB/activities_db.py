@@ -313,12 +313,12 @@ class SportActivities(utilities.DBObject):
 
     @classmethod
     def _create_activity_view(cls, db, selectable):
-        cls.create_join_view(db, cls._get_default_view_name(), selectable, Activities, Activities.start_time.desc())
+        cls.create_join_view(db, cls._get_default_view_name(), selectable, Activities, order_by=Activities.start_time.desc())
 
     @classmethod
     def _create_course_view(cls, db, selectable, course_id):
         filter = literal_column(f'{Activities.course_id} == {course_id}')
-        cls.create_filtered_join_view(db, f'course_{course_id}_view', selectable, Activities, filter, Activities.start_time.desc())
+        cls.create_join_view(db, f'course_{course_id}_view', selectable, Activities, filter, Activities.start_time.desc())
 
     @classmethod
     def get(cls, db, activity_id):
