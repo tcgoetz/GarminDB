@@ -1,8 +1,8 @@
 [![Screen shot of browsing the DB](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/ScreenShot_browsing_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
-[![Screen shot of a daily graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_daily_graph.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+[![Screen shot of a daily graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_daily_graph_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
-[![Screen shot of a steps graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_steps_graph.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+[![Screen shot of a steps graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_steps_graph_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
 # GarminDB
 
