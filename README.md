@@ -1,12 +1,8 @@
 [![Screen shot of browsing the DB](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/ScreenShot_browsing_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
+[![Screen shot of a daily graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_daily_graph.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+
 [![Screen shot of a steps graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_steps_graph.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
-
-[![Screen shot of the scripts running](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_running.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
-
-[![Screen shot of checkup course](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_checkup_course_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
-
-[![Screen shot of checkup goals](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_checkup_goals.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
 # GarminDB
 
