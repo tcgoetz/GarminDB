@@ -68,7 +68,7 @@ class GarminTcxData(object):
         return len(self.file_names)
 
     def __process_record(self, tcx, activity_id, record_number, point):
-        root_logger.info("Processing record: %r (%d)", point, record_number)
+        root_logger.debug("Processing record: %r (%d)", point, record_number)
         if not GarminDB.ActivityRecords.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'record' : record_number}):
             loc = tcx.get_point_loc(point)
             record = {

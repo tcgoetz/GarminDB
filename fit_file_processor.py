@@ -145,12 +145,11 @@ class FitFileProcessor(object):
         root_logger.debug("source message: %r", source_message_dict)
 
     def __get_field_value(self, message_dict, field_name):
-        prefixes = ['dev_', 'enhanced_']
+        prefixes = ['dev_', 'enhanced_', '']
         for prefix in prefixes:
             value = message_dict.get(prefix + field_name)
             if value is not None:
                 return value
-        return message_dict.get(field_name)
 
     def __get_field_list_value(self, message_dict, field_name_list):
         for field_name in field_name_list:
@@ -162,11 +161,11 @@ class FitFileProcessor(object):
         root_logger.debug("Training file entry: %r", message_dict)
 
     def _write_steps_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("run entry: %r", message_dict)
+        root_logger.debug("steps dict: %r", message_dict)
         def spm_from_cadence(cad): cad * 2 if cad is not None else None
         steps = {
             'activity_id'                       : activity_id,
-            'steps'                             : self.__get_field_value(message_dict, 'total_steps'),
+            'steps'                             : self.__get_field_list_value(message_dict, ['ts', 'total_steps']),
             'avg_pace'                          : Fit.conversions.speed_to_pace(message_dict.get('avg_speed')),
             'max_pace'                          : Fit.conversions.speed_to_pace(message_dict.get('max_speed')),
             'avg_steps_per_min'                 : spm_from_cadence(message_dict.get('avg_cadence')),
@@ -216,8 +215,8 @@ class FitFileProcessor(object):
         root_logger.debug("elliptical entry: %r", message_dict)
         workout = {
             'activity_id'                       : activity_id,
-            'steps'                             : message_dict.get('dev_steps', message_dict.get('total_steps')),
-            'elliptical_distance'               : message_dict.get('dev_user_distance', message_dict.get('dev_distance', message_dict.get('distance'))),
+            'steps'                             : self.__get_field_list_value(message_dict, ['ts', 'total_steps']),
+            'elliptical_distance'               : self.__get_field_list_value(message_dict, ['user_distance', 'distance']),
         }
         GarminDB.EllipticalActivities.s_create_or_update(self.garmin_act_db_session, workout, ignore_none=True)
 
@@ -242,6 +241,16 @@ class FitFileProcessor(object):
 
     def _write_generic_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("Generic sport entry: %r", message_dict)
+
+    def __choose_sport(self, current_sport, current_sub_sport, new_sport, new_sub_sport):
+        sport = Fit.field_enums.Sport.from_string(current_sport)
+        sub_sport = Fit.field_enums.SubSport.from_string(current_sub_sport)
+        new_sport = Fit.field_enums.Sport.from_string(new_sport)
+        new_sub_sport = Fit.field_enums.SubSport.from_string(new_sub_sport)
+        if isinstance(sport, Fit.field_enums.UnknownEnumValue) or (not sport.preferred() and new_sport.preferred()):
+            sport = new_sport
+            sub_sport = new_sub_sport
+        return {'sport' : sport.name, 'sub_sport' : sub_sport.name}
 
     def _write_session_entry(self, fit_file, message_dict):
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
@@ -277,14 +286,10 @@ class FitFileProcessor(object):
         # json metadata gives better values for sport and subsport, so use existing value if set
         current = GarminDB.Activities.s_get(self.garmin_act_db_session, activity_id)
         if current:
-            if current.sport is None:
-                if sport != Fit.field_enums.Sport.invalid:
-                    current.sport = sport.name
-            if current.sub_sport is None:
-                if sub_sport != Fit.field_enums.SubSport.invalid:
-                    current.sub_sport = sub_sport.name
+            activity.update(self.__choose_sport(current.sport, current.sub_sport, sport, sub_sport))
             current.update_from_dict(activity, ignore_none=True)
         else:
+            activity.update({'sport' : sport.name, 'sub_sport' : sub_sport.name})
             self.garmin_act_db_session.add(GarminDB.Activities(**activity))
         function_name = '_write_' + sport.name + '_entry'
         try:

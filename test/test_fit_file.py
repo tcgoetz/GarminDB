@@ -151,6 +151,8 @@ class TestFitFile(unittest.TestCase):
         for message in fit_file[Fit.MessageType.lap]:
             self.check_lap_or_record(fit_file, sport, message)
         for message in fit_file[Fit.MessageType.session]:
+            message_dict = message.to_lower_dict()
+            sport = message_dict['sport']
             self.check_lap_or_record(fit_file, sport, message)
 
     def test_parse_activity(self):
