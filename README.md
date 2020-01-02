@@ -26,9 +26,9 @@ Once you have your data in the DB, I recommend using a SQLite browser like [SQLi
 
 ## Binary Release
 
-I have just started offering a binary release for MacOS. Binary release for other platforms may be added. You can download releases from the [release page](https://github.com/tcgoetz/GarminDB/releases).
+Binary releases are available for MacOS. Binary release for other platforms may be added. You can download releases from the [release page](https://github.com/tcgoetz/GarminDB/releases).
 For the MacOS binary release:
-* Download the zip file and unzip it into a directory.
+* Download the zip file and unzip it into a directory where you want to keep it and run it from.
 * Follow the directions in the `Readme_MacOS.txt` in the zip file.
 
 ## From Source
