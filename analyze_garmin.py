@@ -15,6 +15,7 @@ import Fit.conversions
 import HealthDB
 import GarminDB
 from garmin_connect_config_manager import GarminConnectConfigManager
+from utilities.list_and_dict import list_not_none
 
 
 logger = logging.getLogger(__file__)
@@ -90,10 +91,10 @@ class Analyze(object):
         recreation_activities = GarminDB.Activities.row_count(self.garmin_act_db, GarminDB.Activities.type, 'recreation')
         stat_logger.info("Recreation activities: %d", recreation_activities)
         self.__save_summary_stat('Recreation_activities', recreation_activities)
-        sports = GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sport)
-        stat_logger.info("Sports: %s", ', '.join(sports) if sports is not None else '')
-        sub_sports = GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sub_sport)
-        stat_logger.info("SubSports: %s", ', '.join(sub_sports) if sub_sports is not None else '')
+        sports = list_not_none(GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sport))
+        stat_logger.info("Sports: %s", ', '.join(sports))
+        sub_sports = list_not_none(GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sub_sport))
+        stat_logger.info("SubSports: %s", ', '.join(sub_sports))
         for sport_name in [sport.name for sport in Fit.field_enums.Sport]:
             self.__report_sport(GarminDB.Activities.sport, sport_name)
 
@@ -298,6 +299,7 @@ class Analyze(object):
             self.__calculate_year(year)
 
     def create_dynamic_views(self):
+        """Create database views specific to the data in this database."""
         gc_config = GarminConnectConfigManager()
         course_ids = gc_config.course_views('steps')
         for course_id in course_ids:
