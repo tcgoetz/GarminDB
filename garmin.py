@@ -196,6 +196,11 @@ def import_data(debug, latest, weight, monitoring, sleep, rhr, activities, test=
 
     if activities:
         activities_dir = GarminDBConfigManager.get_or_create_activities_dir()
+        # Tcx fields are less precise than the JSON files, so load Tcx first and overwrite with better JSON values.
+        gtd = GarminTcxData(activities_dir, latest, measurement_system, debug)
+        if gtd.file_count() > 0:
+            gtd.process_files(db_params_dict)
+
         gjsd = GarminJsonSummaryData(db_params_dict, activities_dir, latest, measurement_system, debug)
         if gjsd.file_count() > 0:
             gjsd.process()
@@ -207,10 +212,6 @@ def import_data(debug, latest, weight, monitoring, sleep, rhr, activities, test=
         ged = GarminActivitiesExtraData(db_params_dict, activities_dir, latest, debug)
         if ged.file_count() > 0:
             ged.process()
-
-        gtd = GarminTcxData(activities_dir, latest, measurement_system, debug)
-        if gtd.file_count() > 0:
-            gtd.process_files(db_params_dict)
 
         gfd = GarminActivitiesFitData(activities_dir, latest, measurement_system, debug)
         if gfd.file_count() > 0:
