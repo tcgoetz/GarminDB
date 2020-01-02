@@ -302,5 +302,6 @@ class Analyze(object):
         """Create database views specific to the data in this database."""
         gc_config = GarminConnectConfigManager()
         course_ids = gc_config.course_views('steps')
-        for course_id in course_ids:
-            GarminDB.StepsActivities.create_course_view(self.garmin_act_db, course_id)
+        if course_ids:
+            for course_id in course_ids:
+                GarminDB.StepsActivities.create_course_view(self.garmin_act_db, course_id)
