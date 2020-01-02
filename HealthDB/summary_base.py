@@ -78,7 +78,7 @@ class SummaryBase(db.DBObject):
     @hybrid_property
     def intensity_time_goal_percent(self):
         """Return the percentage of intensity time goal achieved."""
-        if self.intensity_time is not None and self.intensity_time_goal is not None:
+        if self.intensity_time is not None and self.intensity_time_goal:
             return (conversions.time_to_secs(self.intensity_time) * 100) / conversions.time_to_secs(self.intensity_time_goal)
         return 0.0
 
