@@ -91,9 +91,9 @@ class Analyze(object):
         stat_logger.info("Recreation activities: %d", recreation_activities)
         self.__save_summary_stat('Recreation_activities', recreation_activities)
         sports = GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sport)
-        stat_logger.info("Sports: %s", ', '.join(sports))
+        stat_logger.info("Sports: %s", ', '.join(sports) if sports is not None else None)
         sub_sports = GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sub_sport)
-        stat_logger.info("SubSports: %s", ', '.join(sub_sports))
+        stat_logger.info("SubSports: %s", ', '.join(sub_sports) if sub_sports is not None else None)
         for sport_name in [sport.name for sport in Fit.field_enums.Sport]:
             self.__report_sport(GarminDB.Activities.sport, sport_name)
 
