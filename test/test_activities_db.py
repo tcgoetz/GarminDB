@@ -56,6 +56,18 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
     def check_activities_fields(self, fields_list):
         self.check_not_none_cols(self.test_act_db, {GarminDB.Activities : fields_list})
 
+    def check_sport(self, activity):
+        sport = Fit.field_enums.Sport.from_string(activity.sport)
+        self.assertIsInstance(sport, Fit.field_enums.Sport, f'sport ({type(sport)}) from {repr(activity)}')
+        self.assertEqual(activity.sport, sport.name)
+        sub_sport = Fit.field_enums.SubSport.from_string(activity.sub_sport)
+        self.assertIsInstance(sub_sport, Fit.field_enums.SubSport, f'sub_sport ({type(sub_sport)}) from {repr(activity)}')
+        self.assertEqual(activity.sub_sport, sub_sport.name)
+
+    def check_activities(self):
+        for activity in GarminDB.Activities.get_all(self.test_act_db):
+            self.check_sport(activity)
+
     def __fit_file_import(self):
         gfd = GarminActivitiesFitData('test_files/fit/activity', latest=False, measurement_system=self.measurement_system, debug=2)
         self.gfd_file_count = gfd.file_count()
@@ -69,8 +81,10 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
 
     @unittest.skipIf(not do_single_import_tests, "Skipping single import test")
     def test_fit_file_import(self):
+        GarminDB.ActivitiesDB.delete_db(self.test_db_params)
         self.fit_file_import()
         self.check_activities_fields([GarminDB.Activities.start_time, GarminDB.Activities.stop_time, GarminDB.Activities.elapsed_time])
+        self.check_activities()
 
     def tcx_file_import(self):
         GarminDB.ActivitiesDB.delete_db(self.test_db_params)
@@ -111,6 +125,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         self.details_json_file_import()
         self.tcx_file_import()
         self.fit_file_import()
+        self.check_activities_fields([GarminDB.Activities.start_time, GarminDB.Activities.stop_time, GarminDB.Activities.elapsed_time])
 
 
 if __name__ == '__main__':

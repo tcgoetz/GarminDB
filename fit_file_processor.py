@@ -243,12 +243,13 @@ class FitFileProcessor(object):
         root_logger.debug("Generic sport entry: %r", message_dict)
 
     def __choose_sport(self, current_sport, current_sub_sport, new_sport, new_sub_sport):
-        sport = Fit.field_enums.Sport.from_string(current_sport)
-        sub_sport = Fit.field_enums.SubSport.from_string(current_sub_sport)
-        new_sport = Fit.field_enums.Sport.from_string(new_sport)
-        new_sub_sport = Fit.field_enums.SubSport.from_string(new_sub_sport)
-        if isinstance(sport, Fit.field_enums.UnknownEnumValue) or (not sport.preferred() and new_sport.preferred()):
+        sport = Fit.field_enums.Sport.strict_from_string(current_sport)
+        sub_sport = Fit.field_enums.SubSport.strict_from_string(current_sub_sport)
+        # new_sport = Fit.field_enums.Sport.strict_from_string(new_sport)
+        # new_sub_sport = Fit.field_enums.SubSport.strict_from_string(new_sub_sport)
+        if (sport is None and new_sport is not None) or (not sport.preferred() and new_sport.preferred()):
             sport = new_sport
+        if (sub_sport is None and new_sub_sport is not None) or (not sub_sport.preferred() and new_sub_sport.preferred()):
             sub_sport = new_sub_sport
         return {'sport' : sport.name, 'sub_sport' : sub_sport.name}
 
@@ -287,9 +288,11 @@ class FitFileProcessor(object):
         current = GarminDB.Activities.s_get(self.garmin_act_db_session, activity_id)
         if current:
             activity.update(self.__choose_sport(current.sport, current.sub_sport, sport, sub_sport))
+            root_logger.debug("Updating with %r", activity)
             current.update_from_dict(activity, ignore_none=True)
         else:
             activity.update({'sport' : sport.name, 'sub_sport' : sub_sport.name})
+            root_logger.debug("Adding %r", activity)
             self.garmin_act_db_session.add(GarminDB.Activities(**activity))
         function_name = '_write_' + sport.name + '_entry'
         try:
