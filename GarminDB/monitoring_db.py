@@ -183,12 +183,14 @@ class MonitoringClimb(MonitoringDB.Base, utilities.DBObject):
 
     @classmethod
     def get_weekly_stats(cls, session, first_day_ts, measurement_system):
+        """Return a dict of stats for table entries for the week day."""
         stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7), measurement_system)
         stats['first_day'] = first_day_ts
         return stats
 
     @classmethod
     def get_monthly_stats(cls, session, first_day_ts, last_day_ts, measurement_system):
+        """Return a dict of stats for table entries for the month day."""
         stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, last_day_ts, measurement_system)
         stats['first_day'] = first_day_ts
         return stats
@@ -229,9 +231,9 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
         return {
             'steps'                 : func(session, cls.steps, start_ts, end_ts),
             'calories_active_avg'   : (
-                cls.get_active_calories(session, Fit.field_enums.ActivityType.running, start_ts, end_ts) +
-                cls.get_active_calories(session, Fit.field_enums.ActivityType.cycling, start_ts, end_ts) +
-                cls.get_active_calories(session, Fit.field_enums.ActivityType.walking, start_ts, end_ts)
+                cls.get_active_calories(session, Fit.field_enums.ActivityType.running, start_ts, end_ts)
+                + cls.get_active_calories(session, Fit.field_enums.ActivityType.cycling, start_ts, end_ts)
+                + cls.get_active_calories(session, Fit.field_enums.ActivityType.walking, start_ts, end_ts)
             )
         }
 
@@ -244,12 +246,14 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
 
     @classmethod
     def get_weekly_stats(cls, session, first_day_ts):
+        """Return a dict of stats for table entries for the given week."""
         stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(7))
         stats['first_day'] = first_day_ts
         return stats
 
     @classmethod
     def get_monthly_stats(cls, session, first_day_ts, last_day_ts):
+        """Return a dict of stats for table entries for the given week."""
         stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
         stats['first_day'] = first_day_ts
         return stats

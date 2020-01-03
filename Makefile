@@ -35,6 +35,9 @@ release: zip_packages
 #
 # Project maintainance targets
 #
+SUBMODULES=Fit Tcx utilities
+SUBDIRS=FitBitDB GarminDB HealthDB MSHealthDB
+
 update: submodules_update
 	git pull --rebase
 
@@ -42,28 +45,31 @@ submodules_update:
 	git submodule init
 	git submodule update
 
-deps:
-	$(MAKE) -C Fit deps
-	$(MAKE) -C utilities deps
-	$(MAKE) -C Tcx deps
-	$(PIP) install --user --upgrade --requirement requirements.txt
+$(SUBMODULES:%=%-deps):
+	$(MAKE) -C $(subst -deps,,$@) deps
 
-remove_deps:
-	$(PIP) uninstall --requirement requirements.txt
-	$(MAKE) -C Fit remove_deps
-	$(MAKE) -C utilities remove_deps
-	$(MAKE) -C Tcx remove_deps
+deps: $(SUBMODULES:%=%-deps)
+	$(PIP) install --user --upgrade --requirement requirements.txt
+	$(PIP) install --user --upgrade --requirement dev-requirements.txt
+
+$(SUBMODULES:%=%-remove_deps):
+	$(MAKE) -C $(subst -remove_deps,,$@) remove_deps
+
+remove_deps: $(SUBMODULES:%=%-remove_deps)
+	$(PIP) uninstall -y --requirement requirements.txt
+	$(PIP) uninstall -y --requirement dev-requirements.txt
 
 clean_deps: remove_deps
 
-clean: test_clean
-	$(MAKE) -C Fit clean
-	$(MAKE) -C utilities clean
-	$(MAKE) -C Tcx clean
+$(SUBMODULES:%=%-clean):
+	$(MAKE) -C $(subst -clean,,$@) clean
+
+$(SUBDIRS:%=%-clean):
+	rm -f $(subst -clean,,$@)/*.pyc
+	rm -rf $(subst -clean,,$@)/__pycache__
+
+clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -f *.pyc
-	rm -f HealthDB/*.pyc
-	rm -f GarminDB/*.pyc
-	rm -f FitBitDB/*.pyc
 	rm -f *.log
 	rm -rf dist
 	rm -rf build
@@ -71,6 +77,7 @@ clean: test_clean
 	rm -f *.zip
 	rm -f *.png
 	rm -rf __pycache__
+
 
 #
 # Fitness System independant targets
@@ -166,14 +173,23 @@ package_mshealth:
 #
 # test targets
 #
-test:
-	$(MAKE) -C Fit test
+$(SUBMODULES:%=%-test):
+	$(MAKE) -C $(subst -test,,$@) test
+
+test: $(SUBMODULES:%=%-test) flake8
 	$(MAKE) -C test all
 
+$(SUBMODULES:%=%-test_clean):
+	$(MAKE) -C $(subst -test_clean,,$@) clean
+
 test_clean:
-	$(MAKE) -C Fit clean
 	$(MAKE) -C test clean
 
+$(SUBMODULES:%=%-flake8):
+	$(MAKE) -C $(subst -flake8,,$@) flake8
+
+flake8: $(SUBMODULES:%=%-flake8)
+	flake8 *.py GarminDB/*.py HealthDB/*.py FitBitDB/*.py MSHealthDB/*.py --max-line-length=180 --ignore=E203,E221,E241,W503
 
 #
 # bugreport target

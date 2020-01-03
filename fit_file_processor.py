@@ -162,14 +162,13 @@ class FitFileProcessor(object):
 
     def _write_steps_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("steps dict: %r", message_dict)
-        def spm_from_cadence(cad): cad * 2 if cad is not None else None
         steps = {
             'activity_id'                       : activity_id,
             'steps'                             : self.__get_field_list_value(message_dict, ['ts', 'total_steps']),
             'avg_pace'                          : Fit.conversions.speed_to_pace(message_dict.get('avg_speed')),
             'max_pace'                          : Fit.conversions.speed_to_pace(message_dict.get('max_speed')),
-            'avg_steps_per_min'                 : spm_from_cadence(message_dict.get('avg_cadence')),
-            'max_steps_per_min'                 : spm_from_cadence(message_dict.get('max_cadence')),
+            'avg_steps_per_min'                 : Fit.Cadence.from_cycles(message_dict.get('avg_cadence')).to_spm(),
+            'max_steps_per_min'                 : Fit.Cadence.from_cycles(message_dict.get('max_cadence')).to_spm(),
             'avg_step_length'                   : self.__get_field_value(message_dict, 'avg_step_length'),
             'avg_vertical_ratio'                : self.__get_field_value(message_dict, 'avg_vertical_ratio'),
             'avg_vertical_oscillation'          : self.__get_field_value(message_dict, 'avg_vertical_oscillation'),
@@ -319,7 +318,7 @@ class FitFileProcessor(object):
         root_logger.debug("device settings message: %r", device_settings_message_dict)
         timestamp = fit_file.time_created()
         attribute_names = [
-                'active_time_zone', 'date_mode'
+            'active_time_zone', 'date_mode'
         ]
         self._write_attributes(timestamp, device_settings_message_dict, attribute_names)
         self._write_attribute(timestamp, device_settings_message_dict, 'active_time_zone', 'time_zone')
@@ -365,8 +364,8 @@ class FitFileProcessor(object):
         root_logger.debug("user profile message: %r", message_dict)
         timestamp = fit_file.time_created()
         attribute_names = [
-                'gender', 'height', 'weight', 'language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time',
-                'speed_setting'
+            'gender', 'height', 'weight', 'language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time',
+            'speed_setting'
         ]
         self._write_attributes(timestamp, message_dict, attribute_names)
         self._write_attribute(timestamp, message_dict, 'dist_setting', 'measurement_system')

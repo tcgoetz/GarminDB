@@ -19,7 +19,7 @@ from version import print_version, python_version_check, log_version
 from download_garmin import Download
 from copy_garmin import Copy
 from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringExtraData, GarminMonitoringFitData, GarminSleepData, \
-                          GarminRhrData, GarminSettingsFitData, GarminHydrationData
+    GarminRhrData, GarminSettingsFitData, GarminHydrationData
 from import_garmin_activities import GarminJsonSummaryData, GarminJsonDetailsData, GarminActivitiesExtraData, GarminTcxData, GarminActivitiesFitData
 from analyze_garmin import Analyze
 from export_activities import ActivityExporter
