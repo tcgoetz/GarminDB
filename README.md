@@ -6,7 +6,7 @@
 
 # GarminDB
 
-[Python scripts](https://www.python.org/) for parsing health data into and manipulating data in a [SQLite](http://sqlite.org/) DB. SQLite is a light weight DB that requires no server.
+[Python](https://www.python.org/) scripts for parsing health data into and manipulating data in a [SQLite](http://sqlite.org/) DB. SQLite is a light weight DB that requires no server.
 
 What they can do:
 * Automatically download and import Garmin daily monitoring files (all day heart rate, activity, climb/descend, stress, and intensity minutes) from the user's Garmin Connect "Daily Summary" page.
@@ -52,3 +52,4 @@ More [usage](https://github.com/tcgoetz/GarminDB/wiki/Usage)
 * There are two ways to use this project on Windows. Installing the [Ubuntu subsystem](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) on Windows 10 is one way. Using a Linux container or VM is also possible.
 * If you have issues, file a bug here on the project. See the Issues tab at the top of the project page. Run `make bugreport`and include bugreport.txt in your bug report.
 * When a database update finishes, a summary of the data in the DB will be saved to stats.txt. The output includes the date ranges included in the downloaded daily monitoring files and activities. It includes the number of records for daily monitoring, activities, sleep, resting heart rate, weight, etc. Use the summary information to determine if all of your data has been downloaded from Garmin Connect. If not, adjust the dates in GarminConnectConfig.json and runt he download again.
+* In `GarminConnectConfig.json` the "steps" element of the "course_views" is list of course ids that per course database views will be generated for. The database view allows you to compare all activities from that course.
