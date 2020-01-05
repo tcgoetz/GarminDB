@@ -90,7 +90,7 @@ class SummaryBase(db.DBObject):
     @hybrid_property
     def steps_goal_percent(self):
         """Return the percentage of steps goal achieved."""
-        return (self.steps * 100) / self.steps_goal if self.steps is not None and self.steps_goal is not None else 0.0
+        return (self.steps * 100) / self.steps_goal if self.steps and self.steps_goal else 0.0
 
     @steps_goal_percent.expression
     def steps_goal_percent(cls):
@@ -100,7 +100,7 @@ class SummaryBase(db.DBObject):
     @hybrid_property
     def floors_goal_percent(self):
         """Return the percentage of floors goal achieved."""
-        return (self.floors * 100) / self.floors_goal if self.floors is not None and self.floors_goal is not None else 0.0
+        return (self.floors * 100) / self.floors_goal if self.floors and self.floors_goal else 0.0
 
     @floors_goal_percent.expression
     def floors_goal_percent(cls):
