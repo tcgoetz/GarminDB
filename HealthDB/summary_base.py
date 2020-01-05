@@ -79,7 +79,10 @@ class SummaryBase(db.DBObject):
     def intensity_time_goal_percent(self):
         """Return the percentage of intensity time goal achieved."""
         if self.intensity_time and self.intensity_time_goal:
-            return (conversions.time_to_secs(self.intensity_time) * 100) / conversions.time_to_secs(self.intensity_time_goal)
+            intensity_time = conversions.time_to_secs(self.intensity_time)
+            intensity_time_goal = conversions.time_to_secs(self.intensity_time_goal)
+            if intensity_time and intensity_time_goal:
+                return (intensity_time * 100) / intensity_time_goal
         return 0.0
 
     @intensity_time_goal_percent.expression

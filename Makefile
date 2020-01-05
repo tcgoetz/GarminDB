@@ -29,7 +29,7 @@ rebuild_dbs: clean_dbs build_dbs
 update_dbs: update_garmin
 update_copy_dbs: copy_garmin_latest
 
-release: zip_packages
+release: flake8 zip_packages
 
 
 #
