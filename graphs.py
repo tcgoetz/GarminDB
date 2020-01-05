@@ -72,6 +72,16 @@ class Graph(object):
         self.save = save
 
     @classmethod
+    def __remove_discontinuities(cls, data):
+        last = 0
+        for index, entry in enumerate(data):
+            if not entry:
+                data[index] = last
+            else:
+                last = data[index]
+        return data
+
+    @classmethod
     def __graph_mulitple_single_axes(cls, time, data_list, stat_name, ylabel, save):
         title = f'{stat_name} Over Time'
         figure = plt.figure()
@@ -119,22 +129,37 @@ class Graph(object):
         plt.show()
 
     @classmethod
-    def __graph_over(cls, date, over_data_dict, under_data_dict, title, xlabel, ylabel, save_name=None):
+    def __graph_over(cls, date, over_data_dicts, under_data_dict, title, xlabel, ylabel, save_name=None):
         figure = plt.figure()
+        # First graph the data that appears under
         axes = figure.add_subplot(111, frame_on=True)
         axes.fill_between(under_data_dict['time'], under_data_dict['data'], 0, color=Colors.c.name)
         axes.set_ylim(under_data_dict['limits'])
         axes.set_xticks([])
         axes.set_yticks([])
-        axes = figure.add_subplot(111, frame_on=False)
-        axes.plot(over_data_dict['time'], over_data_dict['data'], color=Colors.b.name)
-        axes.set_ylim(over_data_dict['limits'])
-        axes.grid()
+        # then graph the data that appears over the under data
+        colors = [Colors.r.name, Colors.b.name]
+        for index, data in enumerate(over_data_dicts):
+            over_data_dict = over_data_dicts[index]
+            color = colors[index]
+            label = over_data_dict['label']
+            axes = figure.add_subplot(111, frame_on=False, label=label)
+            axes.plot(over_data_dict['time'], over_data_dict['data'], color=color)
+            axes.set_ylabel(label, color=color)
+            axes.yaxis.set_label_position(YAxisLabelPostion.from_integer(index).name)
+            if (index % 2) == 0:
+                axes.yaxis.tick_right()
+                axes.set_xticks([])
+            else:
+                axes.yaxis.tick_left()
+            limits = over_data_dicts[index].get('limits')
+            if limits is not None:
+                axes.set_ylim(limits)
+            axes.grid()
         axes.set_title(title)
         axes.set_xlabel(xlabel)
         x_format = mdates.DateFormatter('%H:%M')
         axes.xaxis.set_major_formatter(x_format)
-        axes.set_ylabel(ylabel)
         if save_name:
             figure.savefig(save_name)
         plt.show()
@@ -188,21 +213,30 @@ class Graph(object):
         mon_db = GarminDB.MonitoringDB(db_params, self.debug)
         start_ts = datetime.datetime.combine(date, datetime.datetime.min.time())
         end_ts = datetime.datetime.combine(date, datetime.datetime.max.time())
-        data = GarminDB.MonitoringHeartRate.get_for_period(mon_db, start_ts, end_ts, GarminDB.MonitoringHeartRate)
-        over_data_dict = {
-            'time'      : [entry.timestamp for entry in data],
-            'data'      : [entry.heart_rate for entry in data],
-            'limits'    : (30, 220)
-        }
+        hr_data = GarminDB.MonitoringHeartRate.get_for_period(mon_db, start_ts, end_ts, GarminDB.MonitoringHeartRate)
         data = GarminDB.Monitoring.get_for_period(mon_db, start_ts, end_ts, GarminDB.Monitoring)
+        over_data_dict = [
+            {
+                'label'     : 'Cumulative Steps',
+                'time'      : [entry.timestamp for entry in data],
+                'data'      : self.__remove_discontinuities([entry.steps for entry in data]),
+            },
+            {
+                'label'     : 'Heart Rate',
+                'time'      : [entry.timestamp for entry in hr_data],
+                'data'      : [entry.heart_rate for entry in hr_data],
+                'limits'    : (30, 220)
+            }
+        ]
         under_data_dict = {
             'time'      : [entry.timestamp for entry in data],
-            'data'      : [entry.intensity if entry.intensity is not None else 0 for entry in data],
+            'data'      : self.__remove_discontinuities([entry.intensity for entry in data]),
             'limits'    : (0, 10)
         }
         # self.__graph_day(date, (hr_time, hr), (mon_time, activity), self.save)
         save_name = f"{date}_daily.png" if self.save else None
-        self.__graph_over(date, over_data_dict, under_data_dict, f'Daily Summary for {date}', 'Time of Day', 'hr over activity', save_name=save_name)
+        self.__graph_over(date, over_data_dict, under_data_dict, f'Daily Summary for {date}: Heart Rate and Steps over Activity',
+                          'Time of Day', 'heart rate', save_name=save_name)
 
 
 def __print_usage(program, error=None):
