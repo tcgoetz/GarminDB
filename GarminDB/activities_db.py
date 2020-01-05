@@ -313,12 +313,22 @@ class SportActivities(utilities.DBObject):
 
     @classmethod
     def _create_activity_view(cls, db, selectable):
+        logger.info("Creating activity view with %r", selectable)
         cls.create_join_view(db, cls._get_default_view_name(), selectable, Activities, order_by=Activities.start_time.desc())
+
+    @classmethod
+    def _create_sport_view(cls, db, selectable, sport):
+        filter = literal_column(f'{Activities.sport} == "{sport}"')
+        cls.create_join_view(db, f'{sport}_activities_view', selectable, Activities, filter, Activities.start_time.desc())
 
     @classmethod
     def _create_course_view(cls, db, selectable, course_id):
         filter = literal_column(f'{Activities.course_id} == {course_id}')
         cls.create_join_view(db, f'course_{course_id}_view', selectable, Activities, filter, Activities.start_time.desc())
+
+    @classmethod
+    def create_view(cls, db):
+        cls._create_activity_view(db, cls._view_selectable())
 
     @classmethod
     def get(cls, db, activity_id):
@@ -333,7 +343,7 @@ class SportActivities(utilities.DBObject):
 class StepsActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'steps_activities'
     table_version = 3
-    view_version = 3
+    view_version = 4
 
     steps = Column(Integer)
     # pace in mins/mile
@@ -357,15 +367,22 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
     vo2_max = Column(Float)
 
     @classmethod
-    def create_view(cls, db):
+    def _view_selectable(cls, include_sport=False, include_subsport=False, include_type=False, include_course=False):
         # The query fails to genarate sql when using the func.round clause.
         selectable = [
             Activities.activity_id.label('activity_id'),
             Activities.name.label('name'),
-            Activities.description.label('description'),
-            Activities.sub_sport.label('sport'),
-            Activities.type.label('type'),
-            Activities.course_id.label('course_id'),
+            Activities.description.label('description')
+        ]
+        if include_sport:
+            selectable.append(Activities.sport.label('sport'))
+        if include_subsport:
+            selectable.append(Activities.sub_sport.label('sub_sport'))
+        if include_type:
+            selectable.append(Activities.type.label('type'))
+        if include_course:
+            Activities.course_id.label('course_id')
+        selectable += [
             Activities.start_time.label('start_time'),
             Activities.stop_time.label('stop_time'),
             Activities.elapsed_time.label('elapsed_time'),
@@ -394,7 +411,14 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
             cls.google_map_loc('start'),
             cls.google_map_loc('stop')
         ]
-        cls._create_activity_view(db, selectable)
+        return selectable
+
+    @classmethod
+    def create_view(cls, db):
+        cls._create_activity_view(db, cls._view_selectable(include_sport=True, include_subsport=True, include_type=True, include_course=True))
+        cls._create_sport_view(db, cls._view_selectable(include_type=True), "walking")
+        cls._create_sport_view(db, cls._view_selectable(include_course=True), "running")
+        cls._create_sport_view(db, cls._view_selectable(), "hiking")
 
     @classmethod
     def create_course_view(cls, db, course_id):
@@ -404,6 +428,7 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
             Activities.name.label('name'),
             Activities.description.label('description'),
             Activities.sub_sport.label('sport'),
+            Activities.sub_sport.label('sub_sport'),
             Activities.start_time.label('start_time'),
             Activities.stop_time.label('stop_time'),
             Activities.elapsed_time.label('elapsed_time'),
@@ -436,19 +461,20 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'paddle_activities'
     table_version = 2
-    view_version = 3
+    view_version = 4
 
     strokes = Column(Integer)
     # m or ft
     avg_stroke_distance = Column(Float)
 
     @classmethod
-    def create_view(cls, db):
-        selectable = [
+    def _view_selectable(cls):
+        return [
             Activities.activity_id.label('activity_id'),
             Activities.name.label('name'),
             Activities.description.label('description'),
             Activities.sub_sport.label('sport'),
+            Activities.sub_sport.label('sub_sport'),
             Activities.start_time.label('start_time'),
             Activities.stop_time.label('stop_time'),
             Activities.elapsed_time.label('elapsed_time'),
@@ -468,24 +494,24 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
             cls.google_map_loc('start'),
             cls.google_map_loc('stop'),
         ]
-        cls._create_activity_view(db, selectable)
 
 
 class CycleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'cycle_activities'
     table_version = 2
-    view_version = 3
+    view_version = 4
 
     strokes = Column(Integer)
     vo2_max = Column(Float)
 
     @classmethod
-    def create_view(cls, db):
-        selectable = [
+    def _view_selectable(cls):
+        return [
             Activities.activity_id.label('activity_id'),
             Activities.name.label('name'),
             Activities.description.label('description'),
             Activities.sub_sport.label('sport'),
+            Activities.sub_sport.label('sub_sport'),
             Activities.start_time.label('start_time'),
             Activities.stop_time.label('stop_time'),
             Activities.elapsed_time.label('elapsed_time'),
@@ -505,25 +531,23 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
             cls.google_map_loc('start'),
             cls.google_map_loc('stop'),
         ]
-        cls._create_activity_view(db, selectable)
 
 
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'elliptical_activities'
     table_version = 2
-    view_version = 3
+    view_version = 4
 
     steps = Column(Integer)
     # kms or miles
     elliptical_distance = Column(Float)
 
     @classmethod
-    def create_view(cls, db):
-        selectable = [
+    def _view_selectable(cls):
+        return [
             Activities.activity_id.label('activity_id'),
             Activities.name.label('name'),
             Activities.description.label('description'),
-            Activities.type.label('type'),
             Activities.start_time.label('start_time'),
             Activities.stop_time.label('stop_time'),
             Activities.elapsed_time.label('elapsed_time'),
@@ -538,7 +562,6 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
             Activities.training_effect.label('training_effect'),
             Activities.anaerobic_training_effect.label('anaerobic_training_effect')
         ]
-        cls._create_activity_view(db, selectable)
 
 
 class ActivitiesExtraData(ActivitiesDB.Base, ExtraData):

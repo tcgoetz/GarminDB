@@ -176,7 +176,7 @@ class FitFileProcessor(object):
             'avg_ground_contact_time'           : self.__get_field_value(message_dict, 'avg_stance_time'),
             'avg_stance_time_percent'           : self.__get_field_value(message_dict, 'avg_stance_time_percent'),
         }
-        GarminDB.StepsActivities.s_create_or_update(self.garmin_act_db_session, steps, ignore_none=True)
+        GarminDB.StepsActivities.s_create_or_update(self.garmin_act_db_session, steps, ignore_none=True, ignore_zero=True)
 
     def _write_running_entry(self, fit_file, activity_id, sub_sport, message_dict):
         return self._write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
@@ -192,7 +192,7 @@ class FitFileProcessor(object):
             'activity_id'                        : activity_id,
             'strokes'                            : self.__get_field_value(message_dict, 'total_strokes'),
         }
-        GarminDB.CycleActivities.s_create_or_update(self.garmin_act_db_session, ride, ignore_none=True)
+        GarminDB.CycleActivities.s_create_or_update(self.garmin_act_db_session, ride, ignore_none=True, ignore_zero=True)
 
     def _write_stand_up_paddleboarding_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("sup sport entry: %r", message_dict)
@@ -201,7 +201,7 @@ class FitFileProcessor(object):
             'strokes'                           : self.__get_field_value(message_dict, 'total_strokes'),
             'avg_stroke_distance'               : self.__get_field_value(message_dict, 'avg_stroke_distance'),
         }
-        GarminDB.PaddleActivities.s_create_or_update(self.garmin_act_db_session, paddle, ignore_none=True)
+        GarminDB.PaddleActivities.s_create_or_update(self.garmin_act_db_session, paddle, ignore_none=True, ignore_zero=True)
 
     def _write_rowing_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("row sport entry: %r", message_dict)
@@ -217,7 +217,7 @@ class FitFileProcessor(object):
             'steps'                             : self.__get_field_list_value(message_dict, ['ts', 'total_steps']),
             'elliptical_distance'               : self.__get_field_list_value(message_dict, ['user_distance', 'distance']),
         }
-        GarminDB.EllipticalActivities.s_create_or_update(self.garmin_act_db_session, workout, ignore_none=True)
+        GarminDB.EllipticalActivities.s_create_or_update(self.garmin_act_db_session, workout, ignore_none=True, ignore_zero=True)
 
     def _write_fitness_equipment_entry(self, fit_file, activity_id, sub_sport, message_dict):
         try:
@@ -244,8 +244,6 @@ class FitFileProcessor(object):
     def __choose_sport(self, current_sport, current_sub_sport, new_sport, new_sub_sport):
         sport = Fit.field_enums.Sport.strict_from_string(current_sport)
         sub_sport = Fit.field_enums.SubSport.strict_from_string(current_sub_sport)
-        # new_sport = Fit.field_enums.Sport.strict_from_string(new_sport)
-        # new_sub_sport = Fit.field_enums.SubSport.strict_from_string(new_sub_sport)
         if (sport is None and new_sport is not None) or (not sport.preferred() and new_sport.preferred()):
             sport = new_sport
         if (sub_sport is None and new_sub_sport is not None) or (not sub_sport.preferred() and new_sub_sport.preferred()):
@@ -288,7 +286,7 @@ class FitFileProcessor(object):
         if current:
             activity.update(self.__choose_sport(current.sport, current.sub_sport, sport, sub_sport))
             root_logger.debug("Updating with %r", activity)
-            current.update_from_dict(activity, ignore_none=True)
+            current.update_from_dict(activity, ignore_none=True, ignore_zero=True)
         else:
             activity.update({'sport' : sport.name, 'sub_sport' : sub_sport.name})
             root_logger.debug("Adding %r", activity)
