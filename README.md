@@ -55,6 +55,6 @@ More [usage](https://github.com/tcgoetz/GarminDB/wiki/Usage)
 
 # Bugs and Debugging
 
-* If you have issues, file a bug here on the project. See the Issues tab at the top of the project page. Run `make bugreport`and include bugreport.txt in your bug report.
+* If you have issues, file a bug here on the project. See the Issues tab at the top of the project page. Run `make bugreport` or `bugreport.sh` and include bugreport.txt in your bug report.
 * Besdies errors that appear on the screen, one of the first places to look for more information is the log files (garmin.log, graphs.log).
 * If your having issues with a particular data files, please considering sharing so I can debug it.
