@@ -62,7 +62,7 @@ class TestFitFile(unittest.TestCase):
         if key in message:
             value = message[key].value
             self.assertIsInstance(value, expected_type, 'file %s expected %r found %r' % (fit_file.filename, expected_type, value))
-            logger.info("%s %r: %r", fit_file.filename, message.type, value)
+            logger.info("%s %r: %r", fit_file.filename, message.type(), value)
 
     def check_value(self, fit_file, message, key, expected_value):
         if key in message:
