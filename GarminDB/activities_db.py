@@ -417,7 +417,7 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
     def create_view(cls, db):
         cls._create_activity_view(db, cls._view_selectable(include_sport=True, include_subsport=True, include_type=True, include_course=True))
         cls._create_sport_view(db, cls._view_selectable(include_type=True), "walking")
-        cls._create_sport_view(db, cls._view_selectable(include_course=True), "running")
+        cls._create_sport_view(db, cls._view_selectable(include_course=True, include_subsport=True), "running")
         cls._create_sport_view(db, cls._view_selectable(), "hiking")
 
     @classmethod
@@ -427,7 +427,7 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
             Activities.activity_id.label('activity_id'),
             Activities.name.label('name'),
             Activities.description.label('description'),
-            Activities.sub_sport.label('sport'),
+            Activities.sport.label('sport'),
             Activities.sub_sport.label('sub_sport'),
             Activities.start_time.label('start_time'),
             Activities.stop_time.label('stop_time'),
@@ -473,7 +473,7 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
             Activities.activity_id.label('activity_id'),
             Activities.name.label('name'),
             Activities.description.label('description'),
-            Activities.sub_sport.label('sport'),
+            Activities.sport.label('sport'),
             Activities.sub_sport.label('sub_sport'),
             Activities.start_time.label('start_time'),
             Activities.stop_time.label('stop_time'),
@@ -499,7 +499,7 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
 class CycleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'cycle_activities'
     table_version = 2
-    view_version = 4
+    view_version = 5
 
     strokes = Column(Integer)
     vo2_max = Column(Float)
@@ -510,7 +510,6 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
             Activities.activity_id.label('activity_id'),
             Activities.name.label('name'),
             Activities.description.label('description'),
-            Activities.sub_sport.label('sport'),
             Activities.sub_sport.label('sub_sport'),
             Activities.start_time.label('start_time'),
             Activities.stop_time.label('stop_time'),
