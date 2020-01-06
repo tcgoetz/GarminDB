@@ -86,6 +86,29 @@ class FitFileProcessor(object):
                 self.garmin_mon_db_session.commit()
             self.garmin_db_session.commit()
 
+    def __get_field_value(self, message_dict, field_name):
+        prefixes = ['dev_', 'enhanced_', '']
+        for prefix in prefixes:
+            value = message_dict.get(prefix + field_name)
+            if value is not None:
+                return value
+
+    def __get_field_list_value(self, message_dict, dev_field_name_list, field_name_list):
+        for field_name in dev_field_name_list:
+            value = message_dict.get('dev_' + field_name)
+            if value is not None:
+                return value
+        for field_name in field_name_list:
+            value = self.__get_field_value(message_dict, field_name)
+            if value is not None:
+                return value
+
+    def __get_total_steps(self, message_dict):
+        return self.__get_field_list_value(message_dict, ['tStps', 'Stps', 'ts'], ['total_steps'])
+
+    def __get_total_distance(self, message_dict):
+        return self.__get_field_list_value(message_dict, ['user_distance'], ['total_distance'])
+
     #
     # Message type handlers
     #
@@ -144,31 +167,17 @@ class FitFileProcessor(object):
     def _write_source_entry(self, fit_file, source_message_dict):
         root_logger.debug("source message: %r", source_message_dict)
 
-    def __get_field_value(self, message_dict, field_name):
-        prefixes = ['dev_', 'enhanced_', '']
-        for prefix in prefixes:
-            value = message_dict.get(prefix + field_name)
-            if value is not None:
-                return value
-
-    def __get_field_list_value(self, message_dict, field_name_list):
-        for field_name in field_name_list:
-            value = self.__get_field_value(message_dict, field_name)
-            if value is not None:
-                return value
-
     def _write_training_file_entry(self, fit_file, message_dict):
         root_logger.debug("Training file entry: %r", message_dict)
 
     def _write_steps_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("steps dict: %r", message_dict)
         steps = {
             'activity_id'                       : activity_id,
-            'steps'                             : self.__get_field_list_value(message_dict, ['ts', 'total_steps']),
+            'steps'                             : self.__get_total_steps(message_dict),
             'avg_pace'                          : Fit.conversions.speed_to_pace(message_dict.get('avg_speed')),
             'max_pace'                          : Fit.conversions.speed_to_pace(message_dict.get('max_speed')),
-            'avg_steps_per_min'                 : Fit.Cadence.from_cycles(message_dict.get('avg_cadence')).to_spm(),
-            'max_steps_per_min'                 : Fit.Cadence.from_cycles(message_dict.get('max_cadence')).to_spm(),
+            'avg_steps_per_min'                 : Fit.Cadence.from_cycles(self.__get_field_value(message_dict, 'avg_cadence')).to_spm(),
+            'max_steps_per_min'                 : Fit.Cadence.from_cycles(self.__get_field_value(message_dict, 'max_cadence')).to_spm(),
             'avg_step_length'                   : self.__get_field_value(message_dict, 'avg_step_length'),
             'avg_vertical_ratio'                : self.__get_field_value(message_dict, 'avg_vertical_ratio'),
             'avg_vertical_oscillation'          : self.__get_field_value(message_dict, 'avg_vertical_oscillation'),
@@ -176,6 +185,7 @@ class FitFileProcessor(object):
             'avg_ground_contact_time'           : self.__get_field_value(message_dict, 'avg_stance_time'),
             'avg_stance_time_percent'           : self.__get_field_value(message_dict, 'avg_stance_time_percent'),
         }
+        root_logger.info("steps: %r", steps)
         GarminDB.StepsActivities.s_create_or_update(self.garmin_act_db_session, steps, ignore_none=True, ignore_zero=True)
 
     def _write_running_entry(self, fit_file, activity_id, sub_sport, message_dict):
@@ -214,8 +224,8 @@ class FitFileProcessor(object):
         root_logger.debug("elliptical entry: %r", message_dict)
         workout = {
             'activity_id'                       : activity_id,
-            'steps'                             : self.__get_field_list_value(message_dict, ['ts', 'total_steps']),
-            'elliptical_distance'               : self.__get_field_list_value(message_dict, ['user_distance', 'distance']),
+            'steps'                             : self.__get_total_steps(message_dict),
+            'elliptical_distance'               : self.__get_total_distance(message_dict),
         }
         GarminDB.EllipticalActivities.s_create_or_update(self.garmin_act_db_session, workout, ignore_none=True, ignore_zero=True)
 
@@ -264,7 +274,7 @@ class FitFileProcessor(object):
             'start_long'                        : self.__get_field_value(message_dict, 'start_position_long'),
             'stop_lat'                          : self.__get_field_value(message_dict, 'end_position_lat'),
             'stop_long'                         : self.__get_field_value(message_dict, 'end_position_long'),
-            'distance'                          : self.__get_field_list_value(message_dict, ['user_distance', 'total_distance']),
+            'distance'                          : self.__get_total_distance(message_dict),
             'cycles'                            : self.__get_field_value(message_dict, 'total_cycles'),
             'laps'                              : self.__get_field_value(message_dict, 'num_laps'),
             'avg_hr'                            : self.__get_field_value(message_dict, 'avg_heart_rate'),
@@ -338,7 +348,7 @@ class FitFileProcessor(object):
                 'start_long'                        : self.__get_field_value(message_dict, 'start_position_long'),
                 'stop_lat'                          : self.__get_field_value(message_dict, 'end_position_lat'),
                 'stop_long'                         : self.__get_field_value(message_dict, 'end_position_long'),
-                'distance'                          : self.__get_field_list_value(message_dict, ['user_distance', 'total_distance']),
+                'distance'                          : self.__get_total_distance(message_dict),
                 'cycles'                            : self.__get_field_value(message_dict, 'total_cycles'),
                 'avg_hr'                            : self.__get_field_value(message_dict, 'avg_heart_rate'),
                 'max_hr'                            : self.__get_field_value(message_dict, 'max_heart_rate'),
