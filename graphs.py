@@ -165,19 +165,19 @@ class Graph(object):
         plt.show()
 
     def _graph_steps(self, time, data, period):
-        steps = [entry.steps for entry in data]
-        steps_goal_percent = [entry.steps_goal_percent for entry in data]
+        steps = self.__remove_discontinuities([entry.steps for entry in data])
+        steps_goal_percent = self.__remove_discontinuities([entry.steps_goal_percent for entry in data])
         yrange_list = [(0, max(steps) * 1.1), (0, max(steps_goal_percent) * 2)]
         self.__graph_mulitple(time, [steps, steps_goal_percent], 'Steps', period, ['Steps', 'Step Goal Percent'], yrange_list, self.save)
 
     def _graph_hr(self, time, data, period):
         rhr = [entry.rhr_avg for entry in data]
-        inactive_hr = [entry.inactive_hr_avg for entry in data]
+        inactive_hr = self.__remove_discontinuities([entry.inactive_hr_avg for entry in data])
         self.__graph_mulitple(time, [rhr, inactive_hr], 'Heart Rate', period, ['RHR', 'Inactive hr'], [(30, 100), (30, 100)], self.save)
 
     def _graph_itime(self, time, data, period):
         itime = [entry.intensity_time_mins for entry in data]
-        itime_goal_percent = [entry.intensity_time_goal_percent for entry in data]
+        itime_goal_percent = self.__remove_discontinuities([entry.intensity_time_goal_percent for entry in data])
         itime_goal_max = max([entry.intensity_time_goal_mins for entry in data])
         yrange_list = [(0, itime_goal_max * 5), (0, max(itime_goal_percent) * 1.1)]
         self.__graph_mulitple(time, [itime, itime_goal_percent], 'Intensity Minutes', period, ['Intensity Minutes', 'Intensity Minutes Goal Percent'],
