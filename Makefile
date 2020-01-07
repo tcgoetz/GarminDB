@@ -176,8 +176,14 @@ package_mshealth:
 $(SUBMODULES:%=%-test):
 	$(MAKE) -C $(subst -test,,$@) test
 
-test: $(SUBMODULES:%=%-test) flake8
+test: $(SUBMODULES:%=%-test)
 	$(MAKE) -C test all
+
+$(SUBMODULES:%=%-test_commit):
+	$(MAKE) -C $(subst -test_commit,,$@) test_commit
+
+test_commit: $(SUBMODULES:%=%-test)
+	$(MAKE) -C test test_commit
 
 $(SUBMODULES:%=%-test_clean):
 	$(MAKE) -C $(subst -test_clean,,$@) clean
