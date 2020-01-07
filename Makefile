@@ -39,7 +39,7 @@ SUBMODULES=Fit Tcx utilities
 SUBDIRS=FitBitDB GarminDB HealthDB MSHealthDB
 
 update: submodules_update
-	git pull
+	git pull --rebase
 
 submodules_update:
 	git submodule init
