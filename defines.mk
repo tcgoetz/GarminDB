@@ -35,6 +35,7 @@ endif
 PYTHON ?= $(PYTHON3)
 PIP ?= $(PIP3)
 
+
 #
 # Install pip packages as user for devs and to system for pipeline runner
 #
@@ -48,6 +49,7 @@ PIP_INSTALL_OPT ?= --user
 
 endif
 
+
 ifeq ($(PYTHON),)
 $(error Python not found)
 endif
@@ -56,4 +58,4 @@ $(error pip not found)
 endif
 
 
-export TIME PLATFORM PYTHON PIP
+export TIME PLATFORM PYTHON PIP PIP_INSTALL_OPT
