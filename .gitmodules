@@ -3,7 +3,7 @@
 	url = ../Fit.git
 [submodule "utilities"]
 	path = utilities
-	url = git@github.com:tcgoetz/utilities.git
+	url = ../utilities.git
 [submodule "Tcx"]
 	path = Tcx
-	url = git@github.com:tcgoetz/Tcx.git
+	url = ../Tcx.git
