@@ -49,8 +49,8 @@ $(SUBMODULES:%=%-deps):
 	$(MAKE) -C $(subst -deps,,$@) deps
 
 deps: $(SUBMODULES:%=%-deps)
-	$(PIP) install --user --upgrade --requirement requirements.txt
-	$(PIP) install --user --upgrade --requirement dev-requirements.txt
+	$(PIP) install $(PIP_INSTALL_OPT) --upgrade --requirement requirements.txt
+	$(PIP) install $(PIP_INSTALL_OPT) --upgrade --requirement dev-requirements.txt
 
 $(SUBMODULES:%=%-remove_deps):
 	$(MAKE) -C $(subst -remove_deps,,$@) remove_deps

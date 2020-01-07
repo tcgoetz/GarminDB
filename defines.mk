@@ -35,6 +35,18 @@ endif
 PYTHON ?= $(PYTHON3)
 PIP ?= $(PIP3)
 
+#
+# Install pip packages as user for devs and to system for pipeline runner
+#
+ifeq ($(USER), runner)
+
+PIP_INSTALL_OPT ?=
+
+else
+
+PIP_INSTALL_OPT ?= --user
+
+endif
 
 ifeq ($(PYTHON),)
 $(error Python not found)
