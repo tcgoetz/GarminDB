@@ -122,7 +122,7 @@ class FitFileProcessor(object):
         if self.serial_number:
             device = {
                 'serial_number' : self.serial_number,
-                'timestamp'     : message_dict['time_created'],
+                'timestamp'     : fit_file.utc_datetime_to_local(message_dict['time_created']),
                 'manufacturer'  : self.manufacturer,
                 'product'       : Fit.field_enums.name_for_enum(self.product),
             }
@@ -431,6 +431,7 @@ class FitFileProcessor(object):
     def _write_monitoring_entry(self, fit_file, message_dict):
         # Only include not None values so that we match and update only if a table's columns if it has values.
         entry = utilities.list_and_dict.dict_filter_none_values(message_dict)
+        entry['timestamp'] = fit_file.utc_datetime_to_local(message_dict['timestamp'])
         try:
             intersection = GarminDB.MonitoringHeartRate.intersection(entry)
             if len(intersection) > 1 and intersection['heart_rate'] > 0:
@@ -453,6 +454,7 @@ class FitFileProcessor(object):
         root_logger.debug("set message: %r", set_message_dict)
 
     def _write_device_info_entry(self, fit_file, message_dict):
+        timestamp = fit_file.utc_datetime_to_local(message_dict['timestamp'])
         try:
             device_type = message_dict.get('device_type')
             serial_number = message_dict.get('serial_number')
@@ -473,7 +475,7 @@ class FitFileProcessor(object):
         if serial_number is not None:
             device = {
                 'serial_number'     : serial_number,
-                'timestamp'         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
+                'timestamp'         : timestamp,
                 'manufacturer'      : manufacturer,
                 'product'           : Fit.field_enums.name_for_enum(product),
                 'hardware_version'  : message_dict.get('hardware_version'),
@@ -486,7 +488,7 @@ class FitFileProcessor(object):
                 'file_id'               : GarminDB.File.s_get_id(self.garmin_db_session, fit_file.filename),
                 'serial_number'         : serial_number,
                 'device_type'           : Fit.field_enums.name_for_enum(device_type),
-                'timestamp'             : message_dict['timestamp'],
+                'timestamp'             : timestamp,
                 'cum_operating_time'    : message_dict.get('cum_operating_time'),
                 'battery_voltage'       : message_dict.get('battery_voltage'),
                 'software_version'      : message_dict['software_version'],
