@@ -44,6 +44,10 @@ The scripts are automated with [Make](https://www.gnu.org/software/make/manual/m
 
 More [usage](https://github.com/tcgoetz/GarminDB/wiki/Usage)
 
+# Success Stories
+
+Find out who's using GarminDb on what platforms, OSes, and python versions [here](https://github.com/tcgoetz/GarminDB/wiki/Success-Stories). If you're using GarminDB and your scenario isn't listed send me a message or file an issue with your success case.
+
 # Notes
 
 * You may get a DB version exception after updating the code, this means that the DB schema was updated and you need to rebuild your DBs by running `make rebuild_dbs`. Your DBs will be regenerated from the previously downloaded data files. All of your data will not be redownloaded from Garmin.
