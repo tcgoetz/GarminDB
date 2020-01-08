@@ -59,7 +59,7 @@ class FitFileProcessor(object):
 
     def __write_message_types(self, fit_file, message_types):
         """Write all messages from the FIT file to the database ordered by message type."""
-        root_logger.debug("Importing %s (%s) [%s] with message types: %s", fit_file.filename, fit_file.time_created(), fit_file.type(), message_types)
+        root_logger.debug("Importing %s (%s) [%s] with message types: %s", fit_file.filename, fit_file.time_created, fit_file.type, message_types)
         #
         # Some ordering is important: 1. create new file entries 2. create new device entries
         #
@@ -266,8 +266,8 @@ class FitFileProcessor(object):
         sub_sport = message_dict['sub_sport']
         activity = {
             'activity_id'                       : activity_id,
-            'start_time'                        : message_dict['start_time'],
-            'stop_time'                         : message_dict['timestamp'],
+            'start_time'                        : fit_file.utc_datetime_to_local(message_dict['start_time']),
+            'stop_time'                         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
             'elapsed_time'                      : message_dict['total_elapsed_time'],
             'moving_time'                       : self.__get_field_value(message_dict, 'total_timer_time'),
             'start_lat'                         : self.__get_field_value(message_dict, 'start_position_lat'),
@@ -324,7 +324,7 @@ class FitFileProcessor(object):
 
     def _write_device_settings_entry(self, fit_file, device_settings_message_dict):
         root_logger.debug("device settings message: %r", device_settings_message_dict)
-        timestamp = fit_file.time_created()
+        timestamp = fit_file.time_created
         attribute_names = [
             'active_time_zone', 'date_mode'
         ]
@@ -340,8 +340,8 @@ class FitFileProcessor(object):
             lap = {
                 'activity_id'                       : GarminDB.File.id_from_path(fit_file.filename),
                 'lap'                               : self.lap,
-                'start_time'                        : self.__get_field_value(message_dict, 'start_time'),
-                'stop_time'                         : self.__get_field_value(message_dict, 'timestamp'),
+                'start_time'                        : fit_file.utc_datetime_to_local(message_dict['start_time']),
+                'stop_time'                         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
                 'elapsed_time'                      : self.__get_field_value(message_dict, 'total_elapsed_time'),
                 'moving_time'                       : self.__get_field_value(message_dict, 'total_timer_time'),
                 'start_lat'                         : self.__get_field_value(message_dict, 'start_position_lat'),
@@ -370,7 +370,7 @@ class FitFileProcessor(object):
 
     def _write_user_profile_entry(self, fit_file, message_dict):
         root_logger.debug("user profile message: %r", message_dict)
-        timestamp = fit_file.time_created()
+        timestamp = fit_file.time_created
         attribute_names = [
             'gender', 'height', 'weight', 'language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time',
             'speed_setting'
@@ -392,7 +392,7 @@ class FitFileProcessor(object):
             record = {
                 'activity_id'                       : activity_id,
                 'record'                            : self.record,
-                'timestamp'                         : self.__get_field_value(message_dict, 'timestamp'),
+                'timestamp'                         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
                 'position_lat'                      : self.__get_field_value(message_dict, 'position_lat'),
                 'position_long'                     : self.__get_field_value(message_dict, 'position_long'),
                 'distance'                          : self.__get_field_value(message_dict, 'distance'),
@@ -452,13 +452,13 @@ class FitFileProcessor(object):
     def _write_set_entry(self, fit_file, set_message_dict):
         root_logger.debug("set message: %r", set_message_dict)
 
-    def _write_device_info_entry(self, fit_file, device_info_message_dict):
+    def _write_device_info_entry(self, fit_file, message_dict):
         try:
-            device_type = device_info_message_dict.get('device_type')
-            serial_number = device_info_message_dict.get('serial_number')
-            manufacturer = GarminDB.Device.Manufacturer.convert(device_info_message_dict.get('manufacturer'))
-            product = device_info_message_dict.get('product')
-            source_type = device_info_message_dict.get('source_type')
+            device_type = message_dict.get('device_type')
+            serial_number = message_dict.get('serial_number')
+            manufacturer = GarminDB.Device.Manufacturer.convert(message_dict.get('manufacturer'))
+            product = message_dict.get('product')
+            source_type = message_dict.get('source_type')
             # local devices are part of the main device. Base missing fields off of the main device.
             if source_type is Fit.field_enums.SourceType.local:
                 if serial_number is None and self.serial_number is not None and device_type is not None:
@@ -468,30 +468,30 @@ class FitFileProcessor(object):
                 if product is None and self.product is not None:
                     product = self.product
         except Exception as e:
-            logger.warning("Unrecognized device in %s: %r - %s", fit_file.filename, device_info_message_dict, e)
+            logger.warning("Unrecognized device in %s: %r - %s", fit_file.filename, message_dict, e)
 
         if serial_number is not None:
             device = {
                 'serial_number'     : serial_number,
-                'timestamp'         : device_info_message_dict['timestamp'],
+                'timestamp'         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
                 'manufacturer'      : manufacturer,
                 'product'           : Fit.field_enums.name_for_enum(product),
-                'hardware_version'  : device_info_message_dict.get('hardware_version'),
+                'hardware_version'  : message_dict.get('hardware_version'),
             }
             try:
                 GarminDB.Device.s_create_or_update(self.garmin_db_session, device, ignore_none=True)
             except Exception as e:
-                logger.error("Device not written: %r - %s", device_info_message_dict, e)
+                logger.error("Device not written: %r - %s", message_dict, e)
             device_info = {
                 'file_id'               : GarminDB.File.s_get_id(self.garmin_db_session, fit_file.filename),
                 'serial_number'         : serial_number,
                 'device_type'           : Fit.field_enums.name_for_enum(device_type),
-                'timestamp'             : device_info_message_dict['timestamp'],
-                'cum_operating_time'    : device_info_message_dict.get('cum_operating_time'),
-                'battery_voltage'       : device_info_message_dict.get('battery_voltage'),
-                'software_version'      : device_info_message_dict['software_version'],
+                'timestamp'             : message_dict['timestamp'],
+                'cum_operating_time'    : message_dict.get('cum_operating_time'),
+                'battery_voltage'       : message_dict.get('battery_voltage'),
+                'software_version'      : message_dict['software_version'],
             }
             try:
                 GarminDB.DeviceInfo.s_create_or_update(self.garmin_db_session, device_info, ignore_none=True)
             except Exception as e:
-                logger.warning("device_info not written: %r - %s", device_info_message_dict, e)
+                logger.warning("device_info not written: %r - %s", message_dict, e)

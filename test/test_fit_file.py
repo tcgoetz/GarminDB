@@ -35,7 +35,7 @@ class TestFitFile(unittest.TestCase):
         for message_type in message_types:
             if message_type.name.startswith('unknown'):
                 if message_type.name not in unknown_messages:
-                    logger.info("Unknown message type: %s in %s", message_type.name, fit_file.type())
+                    logger.info("Unknown message type: %s in %s", message_type.name, fit_file.type)
                     unknown_messages.append(message_type.name)
             messages = fit_file[message_type]
             for message in messages:
@@ -82,7 +82,9 @@ class TestFitFile(unittest.TestCase):
     def check_timestamp(self, fit_file, message):
         # Garmin Connect generated files can have device dates far in the future
         if message.type() != Fit.MessageType.device_info and message.get('product') != Fit.field_enums.GarminProduct.connect:
-            self.check_value_range(fit_file, message, 'timestamp', datetime.datetime(2000, 1, 1), datetime.datetime.now())
+            self.check_value_range(fit_file, message, 'timestamp',
+                                   datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc),
+                                   datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc))
 
     def check_temperature(self, message):
         for field_name in message:
