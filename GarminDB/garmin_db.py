@@ -276,6 +276,8 @@ class Sleep(GarminDB.Base, utilities.DBObject):
 
 
 class SleepEvents(GarminDB.Base, utilities.DBObject):
+    """Table that stores events recorded druing sleep."""
+
     __tablename__ = 'sleep_events'
     table_version = 1
 

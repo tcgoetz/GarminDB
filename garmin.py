@@ -45,11 +45,11 @@ def __get_date_and_days(db, latest, table, col, stat_name):
             date, days = gc_config.stat_start_date(stat_name)
             logger.info("Automatic date not found, using: %s : %s for %s", date, days, stat_name)
         else:
-            # start from the day after the last day in the DB
+            # start from the day before the last day in the DB
             logger.info("Automatically downloading %s data from: %s", stat_name, last_ts)
             if stat_name == 'monitoring':
                 date = last_ts.date()
-                days = (datetime.datetime.now() - last_ts).days
+                days = max((datetime.datetime.now() - last_ts).days, 1)
             else:
                 date = last_ts
                 days = (datetime.date.today() - last_ts).days

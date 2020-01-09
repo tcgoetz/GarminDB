@@ -313,7 +313,7 @@ class SportActivities(utilities.DBObject):
 
     @classmethod
     def _create_activity_view(cls, db, selectable):
-        logger.info("Creating activity view with %r", selectable)
+        logger.info("Creating activity view with %s", selectable)
         cls.create_join_view(db, cls._get_default_view_name(), selectable, Activities, order_by=Activities.start_time.desc())
 
     @classmethod

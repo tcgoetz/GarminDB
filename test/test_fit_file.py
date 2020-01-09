@@ -114,8 +114,8 @@ class TestFitFile(unittest.TestCase):
 
     def check_monitoring_file(self, filename):
         fit_file = Fit.file.File(filename, self.measurement_system)
-        self.check_message_types(fit_file)
-        logger.info(filename + ' message types: %s', fit_file.message_types())
+        self.check_message_types(fit_file, dump_message=True)
+        logger.info(filename + ' monitoring file message types: %s', fit_file.message_types())
         self.check_file_id(fit_file, Fit.field_enums.FileType.monitoring_b)
         messages = fit_file[Fit.MessageType.monitoring]
         for message in messages:
@@ -144,7 +144,7 @@ class TestFitFile(unittest.TestCase):
 
     def check_activity_file(self, filename):
         fit_file = Fit.file.File(filename, self.measurement_system)
-        logger.info(filename + ' message types: %s', fit_file.message_types())
+        logger.info(filename + ' activity file message types: %s', fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
         self.check_file_id(fit_file, Fit.field_enums.FileType.activity)
         sport = self.check_sport(fit_file)
@@ -165,7 +165,7 @@ class TestFitFile(unittest.TestCase):
 
     def check_sleep_file(self, filename):
         fit_file = Fit.file.File(filename, self.measurement_system)
-        logger.info(filename + ' message types: %s', fit_file.message_types())
+        logger.info(filename + ' sleep file message types: %s', fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
         self.check_file_id(fit_file, Fit.field_enums.FileType.sleep)
 
@@ -178,7 +178,7 @@ class TestFitFile(unittest.TestCase):
     def check_unknown_file(self, filename):
         logger.info('Parsing ' + filename)
         fit_file = Fit.file.File(filename, self.measurement_system)
-        logger.info(filename + ' message types: %s', fit_file.message_types())
+        logger.info(filename + ' unknown file message types: %s', fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
 
     def test_parse_unknown(self):
