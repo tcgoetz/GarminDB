@@ -288,8 +288,6 @@ class GarminJsonSummaryData(JsonFileProcessor):
 
     def _process_json(self, json_data):
         activity_id = json_data['activityId']
-        description_str = self._get_field(json_data, 'description')
-        (description, extra_data) = GarminDB.ActivitiesExtraData.from_string(description_str)
         distance = self._get_field_obj(json_data, 'distance', Fit.Distance.from_meters)
         ascent = self._get_field_obj(json_data, 'elevationGain', Fit.Distance.from_meters)
         descent = self._get_field_obj(json_data, 'elevationLoss', Fit.Distance.from_meters)
@@ -305,7 +303,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
         activity = {
             'activity_id'               : activity_id,
             'name'                      : json_data['activityName'],
-            'description'               : description,
+            'description'               : self._get_field(json_data, 'description'),
             'type'                      : event.name,
             'sport'                     : sport.name,
             'sub_sport'                 : sub_sport.name,
@@ -331,11 +329,6 @@ class GarminJsonSummaryData(JsonFileProcessor):
             'anaerobic_training_effect' : self._get_field(json_data, 'anaerobicTrainingEffect', float),
         }
         GarminDB.Activities.s_create_or_update(self.garmin_act_db_session, activity, ignore_none=True)
-        if extra_data:
-            extra_data['activity_id'] = activity_id
-            json_filename = '%s/extra_data_%s.json' % (self.input_dir, activity_id)
-            if not os.path.isfile(json_filename):
-                self._save_json_file(json_filename, extra_data)
         self.call_process_func(sub_sport.name, activity_id, json_data)
         return 1
 
@@ -444,29 +437,3 @@ class GarminJsonDetailsData(JsonFileProcessor):
         """Import data from files into the databse."""
         with self.garmin_act_db.managed_session() as self.garmin_act_db_session:
             self._process_files()
-
-
-class GarminActivitiesExtraData(JsonFileProcessor):
-    """Class that manages extra JSON data stored in string fields."""
-
-    def __init__(self, db_params, input_dir, latest, debug):
-        """
-        Return an instance of GarminActivitiesExtraData.
-
-        Parameters:
-        db_params (dict): configuration data for accessing the database
-        input_dir (string): directory (full path) to check for data files
-        latest (Boolean): check for latest files only
-        measurement_system (enum): which measurement system to use when importing the files
-        debug (Boolean): enable debug logging
-
-        """
-        logger.info("Processing activities extra data")
-        super().__init__(None, input_dir, r'extra_data_\d*\.json', latest, debug)
-        self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
-        self.conversions = {}
-
-    def _process_json(self, json_data):
-        root_logger.info("Extra data: %r", json_data)
-        GarminDB.ActivitiesExtraData.create_or_update(self.garmin_act_db, GarminDB.DailyExtraData.convert_eums(json_data), ignore_none=True)
-        return 1

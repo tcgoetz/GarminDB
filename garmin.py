@@ -18,9 +18,9 @@ import datetime
 from version import print_version, python_version_check, log_version
 from download_garmin import Download
 from copy_garmin import Copy
-from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringExtraData, GarminMonitoringFitData, GarminSleepData, \
+from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepData, \
     GarminRhrData, GarminSettingsFitData, GarminHydrationData
-from import_garmin_activities import GarminJsonSummaryData, GarminJsonDetailsData, GarminActivitiesExtraData, GarminTcxData, GarminActivitiesFitData
+from import_garmin_activities import GarminJsonSummaryData, GarminJsonDetailsData, GarminTcxData, GarminActivitiesFitData
 from analyze_garmin import Analyze
 from export_activities import ActivityExporter
 
@@ -172,12 +172,11 @@ def import_data(debug, latest, weight, monitoring, sleep, rhr, activities, test=
         gsd = GarminSummaryData(db_params_dict, monitoring_dir, latest, measurement_system, debug)
         if gsd.file_count() > 0:
             gsd.process()
-        ged = GarminMonitoringExtraData(db_params_dict, monitoring_dir, latest, debug)
-        if ged.file_count() > 0:
-            ged.process()
+
         ghd = GarminHydrationData(db_params_dict, monitoring_dir, latest, measurement_system, debug)
         if ghd.file_count() > 0:
             ghd.process()
+
         gfd = GarminMonitoringFitData(monitoring_dir, latest, measurement_system, debug)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
@@ -208,10 +207,6 @@ def import_data(debug, latest, weight, monitoring, sleep, rhr, activities, test=
         gdjd = GarminJsonDetailsData(db_params_dict, activities_dir, latest, measurement_system, debug)
         if gdjd.file_count() > 0:
             gdjd.process()
-
-        ged = GarminActivitiesExtraData(db_params_dict, activities_dir, latest, debug)
-        if ged.file_count() > 0:
-            ged.process()
 
         gfd = GarminActivitiesFitData(activities_dir, latest, measurement_system, debug)
         if gfd.file_count() > 0:

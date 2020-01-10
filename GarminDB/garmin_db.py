@@ -13,7 +13,6 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 import Fit
 import Fit.conversions as conversions
-from GarminDB.extra_data import ExtraData
 import utilities
 
 
@@ -42,7 +41,7 @@ class GarminDB(utilities.DB):
         GarminDB.Base.metadata.create_all(self.engine)
         self.version = GarminDB._DbVersion()
         self.version.version_check(self, self.db_version)
-        self.tables = [Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate, DailySummary, DailyExtraData]
+        self.tables = [Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate, DailySummary]
         for table in self.tables:
             self.version.table_version_check(self, table)
             if not self.version.view_version_check(self, table):
@@ -219,8 +218,8 @@ class Weight(GarminDB.Base, utilities.DBObject):
         """Return a dictionary of aggregate statistics for the given time period."""
         stats = {
             'weight_avg' : cls.s_get_col_avg(session, cls.weight, start_ts, end_ts, True),
-            'weight_min' : cls._get_col_min(session, cls.weight, start_ts, end_ts, True),
-            'weight_max' : cls._get_col_max(session, cls.weight, start_ts, end_ts),
+            'weight_min' : cls.s_get_col_min(session, cls.weight, start_ts, end_ts, True),
+            'weight_max' : cls.s_get_col_max(session, cls.weight, start_ts, end_ts),
         }
         return stats
 
@@ -314,8 +313,8 @@ class RestingHeartRate(GarminDB.Base, utilities.DBObject):
         """Return a dictionary of aggregate statistics for the given time period."""
         stats = {
             'rhr_avg' : cls.s_get_col_avg(session, cls.resting_heart_rate, start_ts, end_ts, True),
-            'rhr_min' : cls._get_col_min(session, cls.resting_heart_rate, start_ts, end_ts, True),
-            'rhr_max' : cls._get_col_max(session, cls.resting_heart_rate, start_ts, end_ts),
+            'rhr_min' : cls.s_get_col_min(session, cls.resting_heart_rate, start_ts, end_ts, True),
+            'rhr_max' : cls.s_get_col_max(session, cls.resting_heart_rate, start_ts, end_ts),
         }
         return stats
 
@@ -324,7 +323,7 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
     """Class representing a Garmin daily summary."""
 
     __tablename__ = 'daily_summary'
-    table_version = 2
+    table_version = 3
 
     day = Column(Date, primary_key=True)
     hr_min = Column(Integer)
@@ -347,6 +346,11 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
     calories_consumed = Column(Integer)
     hydration_goal = Column(Integer)
     hydration_intake = Column(Integer)
+    spo2_avg = Column(Float)
+    spo2_min = Column(Float)
+    rr_waking_avg = Column(Float)
+    rr_max = Column(Float)
+    rr_min = Column(Float)
     description = Column(String)
 
     time_col_name = 'day'
@@ -402,8 +406,8 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
         """Return a dictionary of aggregate statistics for the given time period."""
         return {
             'rhr_avg'                   : cls.s_get_col_avg(session, cls.rhr, start_ts, end_ts),
-            'rhr_min'                   : cls._get_col_min(session, cls.rhr, start_ts, end_ts),
-            'rhr_max'                   : cls._get_col_max(session, cls.rhr, start_ts, end_ts),
+            'rhr_min'                   : cls.s_get_col_min(session, cls.rhr, start_ts, end_ts),
+            'rhr_max'                   : cls.s_get_col_max(session, cls.rhr, start_ts, end_ts),
             'stress_avg'                : cls.s_get_col_avg(session, cls.stress_avg, start_ts, end_ts),
             'steps'                     : cls.s_get_col_sum(session, cls.steps, start_ts, end_ts),
             'steps_goal'                : cls.s_get_col_sum(session, cls.step_goal, start_ts, end_ts),
@@ -420,6 +424,11 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
             'hydration_goal'            : cls.s_get_col_sum(session, cls.hydration_goal, start_ts, end_ts),
             'hydration_avg'             : cls.s_get_col_avg(session, cls.hydration_intake, start_ts, end_ts),
             'hydration_intake'          : cls.s_get_col_sum(session, cls.hydration_intake, start_ts, end_ts),
+            'spo2_avg'                  : cls.s_get_col_avg(session, cls.spo2_avg, start_ts, end_ts),
+            'spo2_min'                  : cls.s_get_col_min(session, cls.spo2_min, start_ts, end_ts),
+            'rr_waking_avg'             : cls.s_get_col_avg(session, cls.rr_waking_avg, start_ts, end_ts),
+            'rr_max'                    : cls.s_get_col_max(session, cls.rr_max, start_ts, end_ts),
+            'rr_min'                    : cls.s_get_col_min(session, cls.rr_min, start_ts, end_ts),
         }
 
     @classmethod
@@ -452,14 +461,3 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
         )
         stats['first_day'] = first_day_ts
         return stats
-
-
-class DailyExtraData(GarminDB.Base, ExtraData):
-    """This table holds data extracted form comments in daily summaries."""
-
-    __tablename__ = 'daily_extra_data'
-    table_version = 1
-
-    day = Column(Date, primary_key=True)
-
-    time_col_name = 'day'

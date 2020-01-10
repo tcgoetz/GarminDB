@@ -54,6 +54,11 @@ class SummaryBase(db.DBObject):
     hydration_goal = Column(Integer)
     hydration_avg = Column(Integer)
     hydration_intake = Column(Integer)
+    spo2_avg = Column(Float)
+    spo2_min = Column(Float)
+    rr_waking_avg = Column(Float)
+    rr_max = Column(Float)
+    rr_min = Column(Float)
 
     @hybrid_property
     def intensity_time_mins(self):

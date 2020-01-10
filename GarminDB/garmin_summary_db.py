@@ -60,7 +60,7 @@ class MonthsSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     """A table holding summarizzed data with one row per month."""
 
     __tablename__ = 'months_summary'
-    table_version = 2
+    table_version = 3
     view_version = HealthDB.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
@@ -72,7 +72,7 @@ class WeeksSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     """A table holding summarizzed data with one row per week."""
 
     __tablename__ = 'weeks_summary'
-    table_version = 2
+    table_version = 3
     view_version = HealthDB.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
@@ -84,7 +84,7 @@ class DaysSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     """A table holding summarizzed data with one row per day."""
 
     __tablename__ = 'days_summary'
-    table_version = 2
+    table_version = 3
     view_version = HealthDB.SummaryBase.view_version
 
     day = Column(Date, primary_key=True)
@@ -109,6 +109,6 @@ class IntensityHR(GarminSummaryDB.Base, utilities.DBObject):
         """Return a dictionary of aggregate statistics for the given time period."""
         return {
             'inactive_hr_avg' : cls.s_get_col_avg_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
-            'inactive_hr_min' : cls.s_get_col_min_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
-            'inactive_hr_max' : cls.s_get_col_max_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
+            'inactive_hr_min' : cls.ss_get_col_min_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
+            'inactive_hr_max' : cls.ss_get_col_max_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
         }

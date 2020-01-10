@@ -13,7 +13,6 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 import HealthDB
 import utilities
-from GarminDB.extra_data import ExtraData
 
 
 logger = logging.getLogger(__name__)
@@ -42,7 +41,7 @@ class ActivitiesDB(utilities.DB):
         self.version = ActivitiesDB._DbVersion()
         self.version.version_check(self, self.db_version)
         #
-        self.tables = [Activities, ActivityLaps, ActivityRecords, ActivityRecords, StepsActivities, PaddleActivities, EllipticalActivities, ActivitiesExtraData]
+        self.tables = [Activities, ActivityLaps, ActivityRecords, ActivityRecords, StepsActivities, PaddleActivities, EllipticalActivities]
         for table in self.tables:
             self.version.table_version_check(self, table)
             if not self.version.view_version_check(self, table):
@@ -561,12 +560,3 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
             Activities.training_effect.label('training_effect'),
             Activities.anaerobic_training_effect.label('anaerobic_training_effect')
         ]
-
-
-class ActivitiesExtraData(ActivitiesDB.Base, ExtraData):
-    __tablename__ = 'activities_extra_data'
-    table_version = 2
-
-    activity_id = Column(String, ForeignKey(Activities.activity_id), primary_key=True)
-
-    match_col_names = ['activity_id']

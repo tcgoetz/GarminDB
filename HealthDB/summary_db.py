@@ -62,7 +62,7 @@ class MonthsSummary(SummaryDB.Base, sb.SummaryBase):
     """Object representing summarized monthly health data."""
 
     __tablename__ = 'months_summary'
-    table_version = 1
+    table_version = 2
     view_version = sb.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
@@ -73,7 +73,7 @@ class WeeksSummary(SummaryDB.Base, sb.SummaryBase):
     """Object representing summarized weekly health data."""
 
     __tablename__ = 'weeks_summary'
-    table_version = 1
+    table_version = 2
     view_version = sb.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
@@ -84,7 +84,7 @@ class DaysSummary(SummaryDB.Base, sb.SummaryBase):
     """Object representing summarized daily health data."""
 
     __tablename__ = 'days_summary'
-    table_version = 1
+    table_version = 2
     view_version = sb.SummaryBase.view_version
 
     day = Column(Date, primary_key=True)

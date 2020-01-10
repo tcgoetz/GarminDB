@@ -271,8 +271,6 @@ class GarminSummaryData(JsonFileProcessor):
 
     def _process_json(self, json_data):
         day = json_data['calendarDate'].date()
-        description_str = json_data['wellnessDescription']
-        (description, extra_data) = GarminDB.DailyExtraData.from_string(description_str)
         distance = Fit.Distance.from_meters(json_data['totalDistanceMeters'])
         summary = {
             'day'                       : day,
@@ -294,15 +292,14 @@ class GarminSummaryData(JsonFileProcessor):
             'calories_bmr'              : json_data['bmrKilocalories'],
             'calories_active'           : json_data['activeKilocalories'],
             'calories_consumed'         : json_data['consumedKilocalories'],
-            'description'               : description,
+            'spo2_avg'                  : json_data['averageSpo2'],
+            'spo2_min'                  : json_data['lowestSpo2'],
+            'rr_waking_avg'             : json_data['avgWakingRespirationValue'],
+            'rr_max'                    : json_data['highestRespirationValue'],
+            'rr_min'                    : json_data['lowestRespirationValue'],
+            'description'               : json_data['wellnessDescription'],
         }
         GarminDB.DailySummary.create_or_update(self.garmin_db, summary, ignore_none=True)
-        if extra_data:
-            extra_data['day'] = day
-            logger.info("Extra data: %r", extra_data)
-            json_filename = self.input_dir + '/extra_data_' + day.strftime("%Y-%m-%d") + '.json'
-            if not os.path.isfile(json_filename):
-                self._save_json_file(json_filename, extra_data)
         return 1
 
 
@@ -340,30 +337,4 @@ class GarminHydrationData(JsonFileProcessor):
         }
         root_logger.info("Processing daily hydration data %r", summary)
         GarminDB.DailySummary.create_or_update(self.garmin_db, summary, ignore_none=True)
-        return 1
-
-
-class GarminMonitoringExtraData(JsonFileProcessor):
-    """Class for importing JSON formatted Garmin Connect extra data into a database."""
-
-    def __init__(self, db_params, input_dir, latest, debug):
-        """
-        Return an instance of GarminMonitoringExtraData.
-
-        Parameters:
-        db_params (dict): configuration data for accessing the database
-        input_dir (string): directory (full path) to check for data files
-        latest (Boolean): check for latest files only
-        debug (Boolean): enable debug logging
-
-        """
-        logger.info("Processing daily extra data")
-        super().__init__(None, input_dir, r'extra_data_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
-        self.garmin_db = GarminDB.GarminDB(db_params)
-        self.conversions = {'day' : dateutil.parser.parse}
-
-    def _process_json(self, json_data):
-        root_logger.info("Extra data: %r", json_data)
-        json_data['day'] = json_data['day'].date()
-        GarminDB.DailyExtraData.create_or_update(self.garmin_db, GarminDB.DailyExtraData.convert_eums(json_data), ignore_none=True)
         return 1

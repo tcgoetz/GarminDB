@@ -40,7 +40,7 @@ class MonitoringDB(utilities.DB):
         self.version = MonitoringDB._DbVersion()
         self.version.version_check(self, self.db_version)
         #
-        self.tables = [MonitoringInfo, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb, Monitoring]
+        self.tables = [MonitoringInfo, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb, Monitoring, MonitoringRespirationRate, MonitoringPulseOx]
         for table in self.tables:
             self.version.table_version_check(self, table)
             if not self.version.view_version_check(self, table):
@@ -92,8 +92,8 @@ class MonitoringHeartRate(MonitoringDB.Base, utilities.DBObject):
         """Return a dict of stats for table entries within the time span."""
         return {
             'hr_avg' : cls.s_get_col_avg(session, cls.heart_rate, start_ts, end_ts, True),
-            'hr_min' : cls._get_col_min(session, cls.heart_rate, start_ts, end_ts, True),
-            'hr_max' : cls._get_col_max(session, cls.heart_rate, start_ts, end_ts),
+            'hr_min' : cls.s_get_col_min(session, cls.heart_rate, start_ts, end_ts, True),
+            'hr_max' : cls.s_get_col_max(session, cls.heart_rate, start_ts, end_ts),
         }
 
     @classmethod
@@ -177,7 +177,7 @@ class MonitoringClimb(MonitoringDB.Base, utilities.DBObject):
     @classmethod
     def get_daily_stats(cls, session, day_ts, measurement_system):
         """Return a dict of stats for table entries for the given day."""
-        stats = cls.get_stats(session, cls._get_col_max, day_ts, day_ts + datetime.timedelta(1), measurement_system)
+        stats = cls.get_stats(session, cls.s_get_col_max, day_ts, day_ts + datetime.timedelta(1), measurement_system)
         stats['day'] = day_ts
         return stats
 
@@ -241,7 +241,7 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
     @classmethod
     def get_daily_stats(cls, session, day_ts):
         """Return a dict of stats for table entries for the given day."""
-        stats = cls.get_stats(session, cls._get_col_max, day_ts, day_ts + datetime.timedelta(1))
+        stats = cls.get_stats(session, cls.s_get_col_max, day_ts, day_ts + datetime.timedelta(1))
         stats['day'] = day_ts
         return stats
 
@@ -258,3 +258,45 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
         stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
         stats['first_day'] = first_day_ts
         return stats
+
+
+class MonitoringRespirationRate(MonitoringDB.Base, utilities.DBObject):
+    """Class that represents a database table holding respiration rate measured in breaths per minute."""
+
+    __tablename__ = 'monitoring_rr'
+    table_version = 1
+
+    timestamp = Column(DateTime, primary_key=True)
+    respiration_rate = Column(Float, nullable=False)
+
+    time_col_name = 'timestamp'
+
+    @classmethod
+    def get_stats(cls, session, start_ts, end_ts):
+        """Return a dict of stats for table entries within the time span."""
+        return {
+            'rr_avg' : cls.s_get_col_avg(session, cls.respiration_rate, start_ts, end_ts, True),
+            'rr_min' : cls.s_get_col_min(session, cls.respiration_rate, start_ts, end_ts, True),
+            'rr_max' : cls.s_get_col_max(session, cls.respiration_rate, start_ts, end_ts),
+        }
+
+
+class MonitoringPulseOx(MonitoringDB.Base, utilities.DBObject):
+    """Class that represents a database table holding pulse ox measurements in percent."""
+
+    __tablename__ = 'monitoring_pulse_ox'
+    table_version = 1
+
+    timestamp = Column(DateTime, primary_key=True)
+    pulse_ox = Column(Float, nullable=False)
+
+    time_col_name = 'timestamp'
+
+    @classmethod
+    def get_stats(cls, session, start_ts, end_ts):
+        """Return a dict of stats for table entries within the time span."""
+        return {
+            'pulse_ox_avg' : cls.s_get_col_avg(session, cls.pulse_ox, start_ts, end_ts, True),
+            'pulse_ox_min' : cls.s_get_col_min(session, cls.pulse_ox, start_ts, end_ts, True),
+            'pulse_ox_max' : cls.s_get_col_max(session, cls.pulse_ox, start_ts, end_ts),
+        }
