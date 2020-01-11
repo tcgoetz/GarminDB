@@ -21,10 +21,10 @@ root_logger.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-test_activity_files     = False
+test_activity_files     = True
 test_monitoring_files   = True
-test_sleep_files        = False
-test_unknown_files      = False
+test_sleep_files        = True
+test_unknown_files      = True
 
 
 class TestFitFile(unittest.TestCase):
@@ -130,21 +130,31 @@ class TestFitFile(unittest.TestCase):
             if sport == Fit.field_enums.Sport.running or sport == Fit.field_enums.Sport.walking:
                 self.check_step_lap_or_record(message)
 
-    def check_monitoring_file(self, filename):
-        fit_file = Fit.file.File(filename, self.measurement_system)
-        self.check_message_types(fit_file, dump_message=True)
-        logger.info('%s (%s) monitoring file message types: %s', filename, fit_file.local_time_created, fit_file.message_types())
-        self.check_file_id(fit_file, Fit.field_enums.FileType.monitoring_b)
-        messages = fit_file[Fit.MessageType.monitoring]
-        for message in messages:
+    def check_monitoring_messages(self, fit_file):
+        last_steps = {}
+        for message in fit_file[Fit.MessageType.monitoring]:
+            if 'steps' in message:
+                steps = message['steps'].value
+                activity_type = message['activity_type'].value
+                if activity_type in last_steps:
+                    activity_last_steps = last_steps[activity_type]
+                    self.assertGreaterEqual(steps, activity_last_steps, f'{fit_file.filename}: {repr(message)} - steps not greater than last steps')
+                last_steps[activity_type] = steps
             self.check_message_fields(fit_file, message.type(), message)
             self.check_value_range(fit_file, message, 'distance', 0, 100 * 5280, True)
             self.check_value_range(fit_file, message, 'cum_ascent', 0, 5280, True)
             self.check_value_range(fit_file, message, 'cum_descent', 0, 5280, True)
 
+    def check_monitoring_file(self, filename):
+        fit_file = Fit.file.File(filename, self.measurement_system)
+        self.check_message_types(fit_file, dump_message=True)
+        logger.info('%s (%s) monitoring file message types: %s', filename, fit_file.time_created_local, fit_file.message_types())
+        self.check_file_id(fit_file, Fit.field_enums.FileType.monitoring_b)
+        self.check_monitoring_messages(fit_file)
+
     def check_activity_file(self, filename):
         fit_file = Fit.file.File(filename, self.measurement_system)
-        logger.info('%s (%s) activity file message types: %s', filename, fit_file.local_time_created, fit_file.message_types())
+        logger.info('%s (%s) activity file message types: %s', filename, fit_file.time_created_local, fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
         self.check_file_id(fit_file, Fit.field_enums.FileType.activity)
         sport = self.check_sport(fit_file)
@@ -159,14 +169,14 @@ class TestFitFile(unittest.TestCase):
 
     def check_sleep_file(self, filename):
         fit_file = Fit.file.File(filename, self.measurement_system)
-        logger.info('%s (%s) sleep file message types: %s', filename, fit_file.local_time_created, fit_file.message_types())
+        logger.info('%s (%s) sleep file message types: %s', filename, fit_file.time_created_local, fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
         self.check_file_id(fit_file, Fit.field_enums.FileType.sleep)
 
     def check_unknown_file(self, filename):
         logger.info('Parsing ' + filename)
         fit_file = Fit.file.File(filename, self.measurement_system)
-        logger.info('%s (%s) unknown file message types: %s', filename, fit_file.local_time_created, fit_file.message_types())
+        logger.info('%s (%s) unknown file message types: %s', filename, fit_file.time_created_local, fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
 
     #

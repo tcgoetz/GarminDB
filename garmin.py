@@ -222,14 +222,13 @@ def analyze_data(debug):
     analyze.create_dynamic_views()
 
 
-def delete_dbs(debug):
-    """Delete all GarminDB database files."""
+def delete_dbs(delete_db_list=[]):
+    """Delete selected, or all if none selected GarminDB, database files."""
     db_params_dict = GarminDBConfigManager.get_db_params()
-    GarminDB.GarminDB.delete_db(db_params_dict)
-    GarminDB.MonitoringDB.delete_db(db_params_dict)
-    GarminDB.ActivitiesDB.delete_db(db_params_dict)
-    GarminDB.GarminSummaryDB.delete_db(db_params_dict)
-    HealthDB.SummaryDB.delete_db(db_params_dict)
+    if len(delete_db_list) == 0:
+        delete_db_list = [GarminDB.GarminDB, GarminDB.MonitoringDB, GarminDB.ActivitiesDB, GarminDB.GarminSummaryDB, HealthDB.SummaryDB]
+    for db in delete_db_list:
+        db.delete_db(db_params_dict)
 
 
 def export_activity(debug, export_activity_id):
@@ -277,6 +276,7 @@ def main(argv):
     _import_data = False
     _analyze_data = False
     _delete_db = False
+    _delete_db_list = []
     activities = False
     debug = 0
     test = False
@@ -312,6 +312,7 @@ def main(argv):
         elif opt in ("-a", "--activities"):
             logging.debug("activities")
             activities = True
+            _delete_db_list.append(GarminDB.ActivitiesDB)
         elif opt in ("-c", "--copy"):
             logging.debug("Copy")
             _copy_data = True
@@ -334,6 +335,7 @@ def main(argv):
         elif opt in ("-m", "--monitoring"):
             logging.debug("Monitoring")
             monitoring = True
+            _delete_db_list.append(GarminDB.MonitoringDB)
         elif opt in ("-o", "--overwrite"):
             overwite = True
         elif opt in ("-l", "--latest"):
@@ -359,7 +361,7 @@ def main(argv):
         root_logger.setLevel(logging.INFO)
 
     if _delete_db:
-        delete_dbs(debug)
+        delete_dbs(_delete_db_list)
         sys.exit()
 
     if _copy_data:

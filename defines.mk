@@ -10,6 +10,7 @@ PLATFORM=$(shell uname)
 ifeq ($(PLATFORM), Linux)
 
 TIME ?= $(shell which time)
+YESTERDAY = $(sehll date --date yesterday "%m/%d/%Y")
 PYTHON2=$(shell which python)
 PIP3=$(shell which pip3)
 PYTHON3=$(shell which python3)
@@ -17,6 +18,7 @@ PYTHON3=$(shell which python3)
 else ifeq ($(PLATFORM), Darwin) # MacOS
 
 TIME ?= time
+YESTERDAY = $(shell date -v-1d +"%m/%d/%Y")
 PYTHON2=$(shell which python)
 PIP3=$(shell which pip3)
 PYTHON3=$(shell which python3)
@@ -58,4 +60,4 @@ $(error pip not found)
 endif
 
 
-export TIME PLATFORM PYTHON PIP PIP_INSTALL_OPT
+export TIME PLATFORM PYTHON PIP PIP_INSTALL_OPT YESTERDAY

@@ -207,6 +207,19 @@ class Graph(object):
         graph_func = getattr(self, graph_func_name, None)
         graph_func(time, data, period)
 
+    def __format_steps(self, data):
+        steps = []
+        steps_count = {}
+        for entry in data:
+            if entry.steps is not None:
+                if entry.activity_type in steps_count:
+                    if entry.steps > steps_count[entry.activity_type]:
+                        steps_count[entry.activity_type] = entry.steps
+                else:
+                    steps_count[entry.activity_type] = entry.steps
+            steps.append(sum(steps_count.values()))
+        return steps
+
     def graph_date(self, date):
         """Generate a graph for the given date."""
         db_params = GarminDBConfigManager.get_db_params()
@@ -219,7 +232,7 @@ class Graph(object):
             {
                 'label'     : 'Cumulative Steps',
                 'time'      : [entry.timestamp for entry in data],
-                'data'      : self.__remove_discontinuities([entry.steps for entry in data]),
+                'data'      : self.__format_steps(data),
             },
             {
                 'label'     : 'Heart Rate',

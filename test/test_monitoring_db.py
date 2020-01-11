@@ -29,7 +29,7 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         db_params = GarminDBConfigManager.get_db_params()
-        garmin_mon_db = GarminDB.MonitoringDB(db_params)
+        cls.garmin_mon_db = GarminDB.MonitoringDB(db_params)
         table_dict = {
             'monitoring_info_table'         : GarminDB.MonitoringInfo,
             'monitoring_hr_table'           : GarminDB.MonitoringHeartRate,
@@ -37,7 +37,7 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
             'monitoring_climb_table'        : GarminDB.MonitoringClimb,
             'monitoring_table'              : GarminDB.Monitoring,
         }
-        super().setUpClass(garmin_mon_db, table_dict)
+        super().setUpClass(cls.garmin_mon_db, table_dict)
 
     def test_garmin_mon_db_tables_exists(self):
         self.assertGreater(GarminDB.MonitoringInfo.row_count(self.db), 0)
@@ -87,6 +87,22 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
             GarminDB.DailySummary : [GarminDB.DailySummary.rhr, GarminDB.DailySummary.distance, GarminDB.DailySummary.steps, GarminDB.DailySummary.floors_goal]
         }
         self.check_not_none_cols(GarminDB.GarminDB(db_params), table_not_none_cols_dict)
+
+    def check_day_steps(self, data):
+        last_steps = {}
+        for monitoring in data:
+            if monitoring.steps is not None:
+                steps = monitoring.steps
+                activity_type = monitoring.activity_type
+                if activity_type in last_steps:
+                    activity_last_steps = last_steps[activity_type]
+                    self.assertGreaterEqual(steps, activity_last_steps, f'{repr(monitoring)} - steps not greater than last steps')
+                last_steps[activity_type] = steps
+
+    def test_db_data_integrity(self):
+        yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).date()
+        day_data = GarminDB.Monitoring.get_for_day(self.garmin_mon_db, GarminDB.Monitoring, yesterday)
+        self.check_day_steps(day_data)
 
 
 if __name__ == '__main__':

@@ -60,7 +60,7 @@ class FitFileProcessor(object):
     def __write_message_types(self, fit_file, message_types):
         """Write all messages from the FIT file to the database ordered by message type."""
         root_logger.debug("Importing %s (%s) [%s] with message types: %s",
-                          fit_file.filename, fit_file.local_time_created, fit_file.type, message_types)
+                          fit_file.filename, fit_file.time_created_local, fit_file.type, message_types)
         #
         # Some ordering is important: 1. create new file entries 2. create new device entries
         #
@@ -372,7 +372,7 @@ class FitFileProcessor(object):
 
     def _write_device_settings_entry(self, fit_file, device_settings_message_dict):
         root_logger.debug("device settings message: %r", device_settings_message_dict)
-        timestamp = fit_file.local_time_created
+        timestamp = fit_file.time_created_local
         attribute_names = [
             'active_time_zone', 'date_mode'
         ]
@@ -420,7 +420,7 @@ class FitFileProcessor(object):
 
     def _write_user_profile_entry(self, fit_file, message_dict):
         root_logger.debug("user profile message: %r", message_dict)
-        timestamp = fit_file.local_time_created
+        timestamp = fit_file.time_created_local
         attribute_names = [
             'gender', 'height', 'weight', 'language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time',
             'speed_setting'
@@ -506,8 +506,8 @@ class FitFileProcessor(object):
         rr = self.__get_field_value(message_dict, 'respiration_rate')
         if rr > 0:
             respiration = {
-                    'timestamp'         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
-                    'rr'                : rr,
+                'timestamp'         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
+                'rr'                : rr,
             }
             if fit_file.type is Fit.field_enums.FileType.monitoring_b:
                 GarminDB.MonitoringRespirationRate.s_create_or_update(self.garmin_mon_db_session, respiration)
@@ -517,8 +517,8 @@ class FitFileProcessor(object):
     def _write_pulse_ox_entry(self, fit_file, message_dict):
         logger.debug("pulse_ox message: %r", message_dict)
         pulse_ox = {
-                'timestamp'     : fit_file.utc_datetime_to_local(message_dict['timestamp']),
-                'pulse_ox'      : self.__get_field_value(message_dict, 'pulse_ox'),
+            'timestamp'     : fit_file.utc_datetime_to_local(message_dict['timestamp']),
+            'pulse_ox'      : self.__get_field_value(message_dict, 'pulse_ox'),
         }
         if fit_file.type is Fit.field_enums.FileType.monitoring_b:
             GarminDB.MonitoringPulseOx.s_create_or_update(self.garmin_mon_db_session, pulse_ox)
