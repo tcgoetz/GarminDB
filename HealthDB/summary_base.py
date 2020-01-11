@@ -15,7 +15,7 @@ from utilities import db
 class SummaryBase(db.DBObject):
     """Base class for implementing summary databse objects."""
 
-    view_version = 8
+    view_version = 9
 
     hr_avg = Column(Float)
     hr_min = Column(Float)
@@ -144,7 +144,10 @@ class SummaryBase(db.DBObject):
             cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
             cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
             cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
-            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg')
+            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
+            cls.round_col(cls.__tablename__ + '.spo2_avg', 'spo2_avg'),
+            cls.round_col(cls.__tablename__ + '.spo2_min', 'spo2_min'),
+            cls.round_col(cls.__tablename__ + '.rr_waking_avg', 'rr_waking_avg')
         ]
         cls.create_summary_view(db, cols)
 
@@ -172,7 +175,10 @@ class SummaryBase(db.DBObject):
             cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
             cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
             cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
-            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg')
+            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
+            cls.round_col(cls.__tablename__ + '.spo2_avg', 'spo2_avg'),
+            cls.round_col(cls.__tablename__ + '.spo2_min', 'spo2_min'),
+            cls.round_col(cls.__tablename__ + '.rr_waking_avg', 'rr_waking_avg')
         ]
         cls.create_summary_view(db, cols)
 
@@ -203,6 +209,11 @@ class SummaryBase(db.DBObject):
             cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
             cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
             cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
-            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg')
+            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
+            cls.round_col(cls.__tablename__ + '.spo2_avg', 'spo2_avg'),
+            cls.round_col(cls.__tablename__ + '.spo2_min', 'spo2_min'),
+            cls.round_col(cls.__tablename__ + '.rr_waking_avg', 'rr_waking_avg'),
+            cls.round_col(cls.__tablename__ + '.rr_max', 'rr_max'),
+            cls.round_col(cls.__tablename__ + '.rr_min', 'rr_min')
         ]
         cls.create_summary_view(db, cols)

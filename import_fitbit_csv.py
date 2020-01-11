@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import sys
 import logging
-import progressbar
+from tqdm import tqdm
 
 from utilities import CsvImporter
 import FitBitDB
@@ -66,7 +66,7 @@ class FitBitData(object):
 
     def process_files(self):
         """Import files into a database."""
-        for file_name in progressbar.progressbar(self.file_names):
+        for file_name in tqdm(self.file_names, unit='files'):
             logger.info("Processing file: " + file_name)
             self.csvimporter = CsvImporter(file_name, self.cols_map, self.__write_entry)
             self.csvimporter.process_file(not self.metric)

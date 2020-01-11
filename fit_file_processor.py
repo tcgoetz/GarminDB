@@ -325,6 +325,8 @@ class FitFileProcessor(object):
             'laps'                              : self.__get_field_value(message_dict, 'num_laps'),
             'avg_hr'                            : self.__get_field_value(message_dict, 'avg_heart_rate'),
             'max_hr'                            : self.__get_field_value(message_dict, 'max_heart_rate'),
+            'avg_rr'                            : self.__get_field_value(message_dict, 'avg_respiration_rate'),
+            'max_rr'                            : self.__get_field_value(message_dict, 'max_respiration_rate'),
             'calories'                          : self.__get_field_value(message_dict, 'total_calories'),
             'avg_cadence'                       : self.__get_field_value(message_dict, 'avg_cadence'),
             'max_cadence'                       : self.__get_field_value(message_dict, 'max_cadence'),
@@ -398,6 +400,8 @@ class FitFileProcessor(object):
                 'cycles'                            : self.__get_field_value(message_dict, 'total_cycles'),
                 'avg_hr'                            : self.__get_field_value(message_dict, 'avg_heart_rate'),
                 'max_hr'                            : self.__get_field_value(message_dict, 'max_heart_rate'),
+                'avg_rr'                            : self.__get_field_value(message_dict, 'avg_respiration_rate'),
+                'max_rr'                            : self.__get_field_value(message_dict, 'max_respiration_rate'),
                 'calories'                          : self.__get_field_value(message_dict, 'total_calories'),
                 'avg_cadence'                       : self.__get_field_value(message_dict, 'avg_cadence'),
                 'max_cadence'                       : self.__get_field_value(message_dict, 'max_cadence'),
@@ -444,6 +448,7 @@ class FitFileProcessor(object):
                 'distance'                          : self.__get_field_value(message_dict, 'distance'),
                 'cadence'                           : self.__get_field_value(message_dict, 'cadence'),
                 'hr'                                : self.__get_field_value(message_dict, 'heart_rate'),
+                'rr'                                : self.__get_field_value(message_dict, 'respiration_rate'),
                 'altitude'                          : self.__get_field_value(message_dict, 'altitude'),
                 'speed'                             : self.__get_field_value(message_dict, 'speed'),
                 'temperature'                       : self.__get_field_value(message_dict, 'temperature'),
@@ -497,12 +502,12 @@ class FitFileProcessor(object):
             logger.error("Exception on monitoring entry: %r: %s", entry, traceback.format_exc())
 
     def _write_respiration_entry(self, fit_file, message_dict):
-        root_logger.info("respiration message: %r", message_dict)
+        logger.debug("respiration message: %r", message_dict)
         rr = self.__get_field_value(message_dict, 'respiration_rate')
         if rr > 0:
             respiration = {
                     'timestamp'         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
-                    'respiration_rate'  : rr,
+                    'rr'                : rr,
             }
             if fit_file.type is Fit.field_enums.FileType.monitoring_b:
                 GarminDB.MonitoringRespirationRate.s_create_or_update(self.garmin_mon_db_session, respiration)
@@ -510,7 +515,7 @@ class FitFileProcessor(object):
                 raise(ValueError(f'Unexpected file type {repr(fit_file.type)} for respiration message'))
 
     def _write_pulse_ox_entry(self, fit_file, message_dict):
-        root_logger.info("pulse_ox message: %r", message_dict)
+        logger.debug("pulse_ox message: %r", message_dict)
         pulse_ox = {
                 'timestamp'     : fit_file.utc_datetime_to_local(message_dict['timestamp']),
                 'pulse_ox'      : self.__get_field_value(message_dict, 'pulse_ox'),

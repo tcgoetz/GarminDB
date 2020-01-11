@@ -7,7 +7,7 @@ __license__ = "GPL"
 
 import sys
 import logging
-import progressbar
+from tqdm import tqdm
 
 import Fit
 from utilities import FileProcessor
@@ -47,7 +47,7 @@ class FitData(object):
     def process_files(self, db_params):
         """Import FIT files into the database."""
         fp = FitFileProcessor(db_params, self.debug)
-        for file_name in progressbar.progressbar(self.file_names):
+        for file_name in tqdm(self.file_names, unit='files'):
             try:
                 fit_file = Fit.file.File(file_name, self.measurement_system)
                 if self.fit_type is None or fit_file.type == self.fit_type:

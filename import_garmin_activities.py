@@ -5,10 +5,9 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 
-import os
 import sys
 import logging
-import progressbar
+from tqdm import tqdm
 import dateutil.parser
 
 import Fit
@@ -161,7 +160,7 @@ class GarminTcxData(object):
         garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
         with garmin_db.managed_session() as self.garmin_db_session:
             with garmin_act_db.managed_session() as self.garmin_act_db_session:
-                for file_name in progressbar.progressbar(self.file_names):
+                for file_name in tqdm(self.file_names, unit='files'):
                     self.__process_file(file_name)
                     self.garmin_db_session.commit()
                     self.garmin_act_db_session.commit()

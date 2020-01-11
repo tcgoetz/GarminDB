@@ -267,7 +267,7 @@ class MonitoringRespirationRate(MonitoringDB.Base, utilities.DBObject):
     table_version = 1
 
     timestamp = Column(DateTime, primary_key=True)
-    respiration_rate = Column(Float, nullable=False)
+    rr = Column(Float, nullable=False)
 
     time_col_name = 'timestamp'
 
@@ -275,9 +275,9 @@ class MonitoringRespirationRate(MonitoringDB.Base, utilities.DBObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dict of stats for table entries within the time span."""
         return {
-            'rr_avg' : cls.s_get_col_avg(session, cls.respiration_rate, start_ts, end_ts, True),
-            'rr_min' : cls.s_get_col_min(session, cls.respiration_rate, start_ts, end_ts, True),
-            'rr_max' : cls.s_get_col_max(session, cls.respiration_rate, start_ts, end_ts),
+            'rr_avg' : cls.s_get_col_avg(session, cls.rr, start_ts, end_ts, True),
+            'rr_min' : cls.s_get_col_min(session, cls.rr, start_ts, end_ts, True),
+            'rr_max' : cls.s_get_col_max(session, cls.rr, start_ts, end_ts),
         }
 
 

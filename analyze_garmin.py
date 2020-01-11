@@ -8,7 +8,7 @@ import sys
 import logging
 import datetime
 import calendar
-import progressbar
+from tqdm import tqdm
 
 import Fit
 import Fit.conversions
@@ -218,7 +218,7 @@ class Analyze(object):
 
     def __calculate_days(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         days = GarminDB.Monitoring.s_get_days(garmin_mon_session, year)
-        for day in progressbar.progressbar(days):
+        for day in tqdm(days, unit='days'):
             day_date = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
             self.__populate_hr_intensity(day_date, garmin_mon_session, garmin_sum_session)
             self.__calculate_day_stats(day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
@@ -246,7 +246,7 @@ class Analyze(object):
         HealthDB.WeeksSummary.s_create_or_update(sum_session, stats)
 
     def __calculate_weeks(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
-        for week_starting_day in progressbar.progressbar(range(1, 365, 7)):
+        for week_starting_day in tqdm(range(1, 365, 7), unit='weeks'):
             day_date = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
             if day_date < datetime.datetime.now().date():
                 self.__calculate_week_stats(day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
@@ -275,7 +275,7 @@ class Analyze(object):
 
     def __calculate_months(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         months = GarminDB.Monitoring._get_months(garmin_mon_session, year)
-        for month in progressbar.progressbar(months):
+        for month in tqdm(months, unit='months'):
             start_day_date = datetime.date(year, month, 1)
             end_day_date = datetime.date(year, month, calendar.monthrange(year, month)[1])
             self.__calculate_month_stats(start_day_date, end_day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)

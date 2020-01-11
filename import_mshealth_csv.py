@@ -7,7 +7,7 @@ __license__ = "GPL"
 import sys
 import re
 import logging
-import progressbar
+from tqdm import tqdm
 
 from utilities import CsvImporter
 import MSHealthDB
@@ -79,7 +79,7 @@ class MSHealthData(object):
 
     def process_files(self):
         """Import files into the databse."""
-        for file_name in progressbar.progressbar(self.file_names):
+        for file_name in tqdm(self.file_names, unit='files'):
             logger.info("Processing file: " + file_name)
             csvimporter = CsvImporter(file_name, self.cols_map, self.__write_entry)
             csvimporter.process_file(not self.metric)
@@ -110,7 +110,7 @@ class MSVaultData(object):
 
     def process_files(self):
         """Import files into the databse."""
-        for file_name in progressbar.progressbar(self.file_names):
+        for file_name in tqdm(self.file_names, unit='files'):
             logger.info("Processing file: " + file_name)
             csvimporter = CsvImporter(file_name, self.cols_map, self.__write_entry)
             csvimporter.process_file(not self.metric)

@@ -87,7 +87,7 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     """Class represents a databse table that contains data about recorded activities."""
 
     __tablename__ = 'activities'
-    table_version = 2
+    table_version = 3
 
     activity_id = Column(String, primary_key=True)
     name = Column(String)
@@ -109,8 +109,12 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     cycles = Column(Float)
     #
     laps = Column(Integer)
+    # beats per minute
     avg_hr = Column(Integer)
     max_hr = Column(Integer)
+    # breaths per minute
+    avg_rr = Column(Float)
+    max_rr = Column(Float)
     calories = Column(Integer)
     avg_cadence = Column(Integer)
     max_cadence = Column(Integer)
@@ -182,7 +186,7 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
     """Class that holds data for an activity lap."""
 
     __tablename__ = 'activity_laps'
-    table_version = 2
+    table_version = 3
 
     activity_id = Column(String, ForeignKey('activities.activity_id'))
     lap = Column(Integer)
@@ -194,9 +198,12 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
     # kms or miles
     distance = Column(Float)
     cycles = Column(Float)
-    #
+    # beats per minute
     avg_hr = Column(Integer)
     max_hr = Column(Integer)
+    # breaths per minute
+    avg_rr = Column(Float)
+    max_rr = Column(Float)
     calories = Column(Integer)
     avg_cadence = Column(Integer)
     max_cadence = Column(Integer)
@@ -252,23 +259,21 @@ class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
     """Encapsilates record for a single point in time from an activity."""
 
     __tablename__ = 'activity_records'
-    table_version = 2
+    table_version = 3
 
     activity_id = Column(String, ForeignKey('activities.activity_id'))
     record = Column(Integer)
     timestamp = Column(DateTime)
-    # degrees
-    position_lat = Column(Float)
-    position_long = Column(Float)
+    position_lat = Column(Float)    # degrees
+    position_long = Column(Float)   # degrees
     distance = Column(Float)
     cadence = Column(Integer)
-    hr = Column(Integer)
-    # feet or meters
     altitude = Column(Float)
-    # kmph or mph
-    speed = Column(Float)
-    # C or F
-    temperature = Column(Float)
+    hr = Column(Integer)            # beats per minute
+    rr = Column(Float)              # breaths per minute
+    altitude = Column(Float)        # feet or meters
+    speed = Column(Float)           # kmph or mph
+    temperature = Column(Float)     # C or F
 
     __table_args__ = (
         PrimaryKeyConstraint("activity_id", "record"),
@@ -342,7 +347,7 @@ class SportActivities(utilities.DBObject):
 class StepsActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'steps_activities'
     table_version = 3
-    view_version = 4
+    view_version = 5
 
     steps = Column(Integer)
     # pace in mins/mile
@@ -394,6 +399,8 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
             cls.round_col(cls.__tablename__ + '.max_steps_per_min', 'max_steps_per_min'),
             Activities.avg_hr.label('avg_hr'),
             Activities.max_hr.label('max_hr'),
+            Activities.avg_rr.label('avg_rr'),
+            Activities.max_rr.label('max_rr'),
             Activities.calories.label('calories'),
             cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
             cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
@@ -440,6 +447,8 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
             cls.round_col(cls.__tablename__ + '.max_steps_per_min', 'max_steps_per_min'),
             Activities.avg_hr.label('avg_hr'),
             Activities.max_hr.label('max_hr'),
+            Activities.avg_rr.label('avg_rr'),
+            Activities.max_rr.label('max_rr'),
             Activities.calories.label('calories'),
             cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
             cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
@@ -460,7 +469,7 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'paddle_activities'
     table_version = 2
-    view_version = 4
+    view_version = 5
 
     strokes = Column(Integer)
     # m or ft
@@ -484,6 +493,8 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
             Activities.max_cadence.label('max_cadence'),
             Activities.avg_hr.label('avg_hr'),
             Activities.max_hr.label('max_hr'),
+            Activities.avg_rr.label('avg_rr'),
+            Activities.max_rr.label('max_rr'),
             Activities.calories.label('calories'),
             cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
             cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
@@ -498,7 +509,7 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
 class CycleActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'cycle_activities'
     table_version = 2
-    view_version = 5
+    view_version = 6
 
     strokes = Column(Integer)
     vo2_max = Column(Float)
@@ -517,6 +528,8 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
             cls.strokes.label('strokes'),
             Activities.avg_hr.label('avg_hr'),
             Activities.max_hr.label('max_hr'),
+            Activities.avg_rr.label('avg_rr'),
+            Activities.max_rr.label('max_rr'),
             Activities.calories.label('calories'),
             cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
             Activities.avg_cadence.label('avg_rpms'),
@@ -534,7 +547,7 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'elliptical_activities'
     table_version = 2
-    view_version = 4
+    view_version = 5
 
     steps = Column(Integer)
     # kms or miles
@@ -553,6 +566,8 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
             cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
             Activities.avg_hr.label('avg_hr'),
             Activities.max_hr.label('max_hr'),
+            Activities.avg_rr.label('avg_rr'),
+            Activities.max_rr.label('max_rr'),
             Activities.calories.label('calories'),
             cls.round_col(Activities.__tablename__ + '.avg_cadence', 'avg_rpms'),
             cls.round_col(Activities.__tablename__ + '.max_cadence', 'max_rpms'),

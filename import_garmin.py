@@ -5,7 +5,6 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 
-import os
 import sys
 import logging
 import datetime
@@ -271,33 +270,33 @@ class GarminSummaryData(JsonFileProcessor):
 
     def _process_json(self, json_data):
         day = json_data['calendarDate'].date()
-        distance = Fit.Distance.from_meters(json_data['totalDistanceMeters'])
+        distance = Fit.Distance.from_meters(self._get_field(json_data, 'totalDistanceMeters', int))
         summary = {
             'day'                       : day,
-            'hr_min'                    : json_data['minHeartRate'],
-            'hr_max'                    : json_data['maxHeartRate'],
-            'rhr'                       : json_data['restingHeartRate'],
-            'stress_avg'                : json_data['averageStressLevel'],
-            'step_goal'                 : json_data['dailyStepGoal'],
-            'steps'                     : json_data['totalSteps'],
-            'floors_goal'               : json_data['userFloorsAscendedGoal'],
-            'moderate_activity_time'    : json_data['moderateIntensityMinutes'],
-            'vigorous_activity_time'    : json_data['vigorousIntensityMinutes'],
-            'intensity_time_goal'       : json_data['intensityMinutesGoal'],
-            'floors_up'                 : json_data['floorsAscended'],
-            'floors_down'               : json_data['floorsDescended'],
+            'hr_min'                    : self._get_field(json_data, 'minHeartRate', float),
+            'hr_max'                    : self._get_field(json_data, 'maxHeartRate', float),
+            'rhr'                       : self._get_field(json_data, 'restingHeartRate', float),
+            'stress_avg'                : self._get_field(json_data, 'averageStressLevel', float),
+            'step_goal'                 : self._get_field(json_data, 'dailyStepGoal', int),
+            'steps'                     : self._get_field(json_data, 'totalSteps', int),
+            'floors_goal'               : self._get_field(json_data, 'userFloorsAscendedGoal', float),
+            'moderate_activity_time'    : json_data.get('moderateIntensityMinutes'),
+            'vigorous_activity_time'    : json_data.get('vigorousIntensityMinutes'),
+            'intensity_time_goal'       : json_data.get('intensityMinutesGoal'),
+            'floors_up'                 : self._get_field(json_data, 'floorsAscended', float),
+            'floors_down'               : self._get_field(json_data, 'floorsDescended', float),
             'distance'                  : distance.kms_or_miles(self.measurement_system),
-            'calories_goal'             : json_data['netCalorieGoal'],
-            'calories_total'            : json_data['totalKilocalories'],
-            'calories_bmr'              : json_data['bmrKilocalories'],
-            'calories_active'           : json_data['activeKilocalories'],
-            'calories_consumed'         : json_data['consumedKilocalories'],
-            'spo2_avg'                  : json_data['averageSpo2'],
-            'spo2_min'                  : json_data['lowestSpo2'],
-            'rr_waking_avg'             : json_data['avgWakingRespirationValue'],
-            'rr_max'                    : json_data['highestRespirationValue'],
-            'rr_min'                    : json_data['lowestRespirationValue'],
-            'description'               : json_data['wellnessDescription'],
+            'calories_goal'             : self._get_field(json_data, 'netCalorieGoal', float),
+            'calories_total'            : self._get_field(json_data, 'totalKilocalories', float),
+            'calories_bmr'              : self._get_field(json_data, 'bmrKilocalories', float),
+            'calories_active'           : self._get_field(json_data, 'activeKilocalories', float),
+            'calories_consumed'         : self._get_field(json_data, 'consumedKilocalories', float),
+            'spo2_avg'                  : self._get_field(json_data, 'averageSpo2', float),
+            'spo2_min'                  : self._get_field(json_data, 'lowestSpo2', float),
+            'rr_waking_avg'             : self._get_field(json_data, 'avgWakingRespirationValue', float),
+            'rr_max'                    : self._get_field(json_data, 'highestRespirationValue', float),
+            'rr_min'                    : self._get_field(json_data, 'lowestRespirationValue', float),
+            'description'               : self._get_field(json_data, 'wellnessDescription'),
         }
         GarminDB.DailySummary.create_or_update(self.garmin_db, summary, ignore_none=True)
         return 1
