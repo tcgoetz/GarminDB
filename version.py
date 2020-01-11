@@ -5,10 +5,10 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 import utilities.version as uv
-from version_info import python_required, python_tested, version_info
+from version_info import python_required, python_tested, version_info, prerelease
 
 
-version_string = uv.to_string(version_info)
+version_string = uv.to_string(version_info, prerelease)
 
 
 def print_version(program):

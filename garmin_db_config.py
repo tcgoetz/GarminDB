@@ -45,6 +45,7 @@ class GarminDBConfig(object):
         'settings'              : 'settings'
     }
     graphs = {
+        'size'                  : [12.0, 8.0],
         'steps'                 : {'period' : 'weeks', 'days' : 730},
         'hr'                    : {'period' : 'weeks', 'days' : 730},
         'itime'                 : {'period' : 'weeks', 'days' : 730},

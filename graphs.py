@@ -84,7 +84,7 @@ class Graph(object):
     @classmethod
     def __graph_mulitple_single_axes(cls, time, data_list, stat_name, ylabel, save):
         title = f'{stat_name} Over Time'
-        figure = plt.figure()
+        figure = plt.figure(figsize=GarminDBConfigManager.graphs('size'))
         for index, data in enumerate(data_list):
             color = Colors.from_integer(index).name
             axes = figure.add_subplot(111, frame_on=(index == 0))
@@ -99,13 +99,8 @@ class Graph(object):
 
     @classmethod
     def __graph_mulitple(cls, time, data_list, stat_name, period, ylabel_list, yrange_list, save):
-        units = {
-            'days'      : 'Day',
-            'weeks'     : 'Week',
-            'months'    : 'Month'
-        }
-        title = f'{stat_name} per {units[period]}'
-        figure = plt.figure()
+        title = f'{stat_name} by {period}'
+        figure = plt.figure(figsize=GarminDBConfigManager.graphs('size'))
         for index, data in enumerate(data_list):
             color = Colors.from_integer(index).name
             axes = figure.add_subplot(111, label=ylabel_list[index], frame_on=(index == 0))
@@ -130,14 +125,14 @@ class Graph(object):
 
     @classmethod
     def __graph_over(cls, date, over_data_dicts, under_data_dict, title, xlabel, ylabel, save_name=None):
-        figure = plt.figure()
+        figure = plt.figure(figsize=GarminDBConfigManager.graphs('size'))
         # First graph the data that appears under
         axes = figure.add_subplot(111, frame_on=True)
         axes.fill_between(under_data_dict['time'], under_data_dict['data'], 0, color=Colors.c.name)
         axes.set_ylim(under_data_dict['limits'])
         axes.set_xticks([])
         axes.set_yticks([])
-        # then graph the data that appears over the under data
+        # then graph the data that appears on top
         colors = [Colors.r.name, Colors.b.name]
         for index, data in enumerate(over_data_dicts):
             over_data_dict = over_data_dicts[index]
