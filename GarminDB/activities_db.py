@@ -371,7 +371,8 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
     vo2_max = Column(Float)
 
     @classmethod
-    def _view_selectable(cls, include_sport=False, include_subsport=False, include_type=False, include_course=False):
+    def _view_selectable(cls, include_sport=False, include_subsport=False, include_type=False, include_course=False, include_rr=False,
+                         include_running_dynamics=False):
         # The query fails to genarate sql when using the func.round clause.
         selectable = [
             Activities.activity_id.label('activity_id'),
@@ -385,7 +386,7 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
         if include_type:
             selectable.append(Activities.type.label('type'))
         if include_course:
-            Activities.course_id.label('course_id')
+            selectable.append(Activities.course_id.label('course_id'))
         selectable += [
             Activities.start_time.label('start_time'),
             Activities.stop_time.label('stop_time'),
@@ -398,19 +399,26 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
             cls.round_col(cls.__tablename__ + '.avg_steps_per_min', 'avg_steps_per_min'),
             cls.round_col(cls.__tablename__ + '.max_steps_per_min', 'max_steps_per_min'),
             Activities.avg_hr.label('avg_hr'),
-            Activities.max_hr.label('max_hr'),
-            Activities.avg_rr.label('avg_rr'),
-            Activities.max_rr.label('max_rr'),
+            Activities.max_hr.label('max_hr')
+        ]
+        if include_rr:
+            selectable += [Activities.avg_rr.label('avg_rr'), Activities.max_rr.label('max_rr')]
+        selectable += [
             Activities.calories.label('calories'),
             cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
             cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
             cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
             cls.round_col(cls.__tablename__ + '.avg_step_length', 'avg_step_length'),
-            cls.round_col(cls.__tablename__ + '.avg_vertical_ratio', 'avg_vertical_ratio'),
-            cls.avg_gct_balance.label('avg_gct_balance'),
-            cls.round_col(cls.__tablename__ + '.avg_vertical_oscillation', 'avg_vertical_oscillation'),
-            cls.avg_ground_contact_time.label('avg_ground_contact_time'),
-            cls.avg_stance_time_percent.label('avg_stance_time_percent'),
+        ]
+        if include_running_dynamics:
+            selectable += [
+                cls.round_col(cls.__tablename__ + '.avg_vertical_ratio', 'avg_vertical_ratio'),
+                cls.avg_gct_balance.label('avg_gct_balance'),
+                cls.round_col(cls.__tablename__ + '.avg_vertical_oscillation', 'avg_vertical_oscillation'),
+                cls.avg_ground_contact_time.label('avg_ground_contact_time'),
+                cls.avg_stance_time_percent.label('avg_stance_time_percent')
+            ]
+        selectable += [
             cls.vo2_max.label('vo2_max'),
             Activities.training_effect.label('training_effect'),
             Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
@@ -422,8 +430,9 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
     @classmethod
     def create_view(cls, db):
         cls._create_activity_view(db, cls._view_selectable(include_sport=True, include_subsport=True, include_type=True, include_course=True))
-        cls._create_sport_view(db, cls._view_selectable(include_type=True), "walking")
-        cls._create_sport_view(db, cls._view_selectable(include_course=True, include_subsport=True), "running")
+        cls._create_sport_view(db, cls._view_selectable(), "walking")
+        cls._create_sport_view(db, cls._view_selectable(include_course=True, include_subsport=True, include_rr=True,
+                                                        include_running_dynamics=True), "running")
         cls._create_sport_view(db, cls._view_selectable(), "hiking")
 
     @classmethod
@@ -493,8 +502,6 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
             Activities.max_cadence.label('max_cadence'),
             Activities.avg_hr.label('avg_hr'),
             Activities.max_hr.label('max_hr'),
-            Activities.avg_rr.label('avg_rr'),
-            Activities.max_rr.label('max_rr'),
             Activities.calories.label('calories'),
             cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
             cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
