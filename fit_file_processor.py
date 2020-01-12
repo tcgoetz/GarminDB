@@ -174,8 +174,8 @@ class FitFileProcessor(object):
         steps = {
             'activity_id'                       : activity_id,
             'steps'                             : self.__get_total_steps(message_dict),
-            'avg_pace'                          : Fit.conversions.speed_to_pace(message_dict.get('avg_speed')),
-            'max_pace'                          : Fit.conversions.speed_to_pace(message_dict.get('max_speed')),
+            'avg_pace'                          : Fit.conversions.perhour_speed_to_pace(message_dict.get('avg_speed')),
+            'max_pace'                          : Fit.conversions.perhour_speed_to_pace(message_dict.get('max_speed')),
             'avg_steps_per_min'                 : Fit.Cadence.from_cycles(self.__get_field_value(message_dict, 'avg_cadence')).to_spm(),
             'max_steps_per_min'                 : Fit.Cadence.from_cycles(self.__get_field_value(message_dict, 'max_cadence')).to_spm(),
             'avg_step_length'                   : self.__get_field_value(message_dict, 'avg_step_length'),

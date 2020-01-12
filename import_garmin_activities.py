@@ -161,8 +161,11 @@ class GarminTcxData(object):
         garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
         with garmin_db.managed_session() as self.garmin_db_session:
             with garmin_act_db.managed_session() as self.garmin_act_db_session:
-                for file_name in progressbar.progressbar(self.file_names):
-                    self.__process_file(file_name)
+                for file_name in progressbar.progressbar(self.file_names, unit='files'):
+                    try:
+                        self.__process_file(file_name)
+                    except Exception as e:
+                        logger.error('Exception processing file %s: %s', file_name, e)
                     self.garmin_db_session.commit()
                     self.garmin_act_db_session.commit()
 
@@ -375,7 +378,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
         avg_moving_speed = Fit.conversions.mps_to_mph(avg_moving_speed_mps)
         run = {
             'activity_id'               : activity_id,
-            'avg_moving_pace'           : Fit.conversions.speed_to_pace(avg_moving_speed),
+            'avg_moving_pace'           : Fit.conversions.perhour_speed_to_pace(avg_moving_speed),
         }
         root_logger.debug("steps_activity for %d: %r", activity_id, run)
         GarminDB.StepsActivities.s_create_or_update(self.garmin_act_db_session, run, ignore_none=True)
