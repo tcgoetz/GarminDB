@@ -88,21 +88,21 @@ class GarminTcxData(object):
         for record_number, point in enumerate(tcx.get_lap_points(lap)):
             self.__process_record(tcx, activity_id, record_number, point)
         if not GarminDB.ActivityLaps.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'lap' : lap_number}):
-            start_loc = tcx.get_lap_start_loc(lap)
-            end_loc = tcx.get_lap_end_loc(lap)
             lap_data = {
                 'activity_id'                       : activity_id,
                 'lap'                               : lap_number,
                 'start_time'                        : tcx.get_lap_start(lap),
                 'stop_time'                         : tcx.get_lap_end(lap),
                 'elapsed_time'                      : tcx.get_lap_duration(lap),
-                'start_lat'                         : start_loc.lat_deg,
-                'start_long'                        : start_loc.long_deg,
-                'stop_lat'                          : end_loc.lat_deg,
-                'stop_long'                         : end_loc.long_deg,
                 'distance'                          : tcx.get_lap_distance(lap).meters_or_feet(measurement_system=self.measurement_system),
                 'calories'                          : tcx.get_lap_calories(lap)
             }
+            start_loc = tcx.get_lap_start_loc(lap)
+            if start_loc is not None:
+                lap_data.update({'start_lat': start_loc.lat_deg, 'start_long': start_loc.long_deg})
+            end_loc = tcx.get_lap_end_loc(lap)
+            if end_loc is not None:
+                lap_data.update({'stop_lat': end_loc.lat_deg, 'stop_long': end_loc.long_deg})
             root_logger.info("Inserting lap: %r (%d): %r", lap, lap_number, lap_data)
             self.garmin_act_db_session.add(GarminDB.ActivityLaps(**lap_data))
 
@@ -129,8 +129,6 @@ class GarminTcxData(object):
             'serial_number' : serial_number,
         }
         GarminDB.File.s_find_or_create(self.garmin_db_session, file)
-        start_loc = tcx.start_loc
-        end_loc = tcx.end_loc
         activity = {
             'activity_id'               : file_id,
             'start_time'                : start_time,
@@ -138,10 +136,6 @@ class GarminTcxData(object):
             'laps'                      : tcx.lap_count,
             'sport'                     : tcx.sport,
             'calories'                  : tcx.calories,
-            'start_lat'                 : start_loc.lat_deg,
-            'start_long'                : start_loc.long_deg,
-            'stop_lat'                  : end_loc.lat_deg,
-            'stop_long'                 : end_loc.long_deg,
             'distance'                  : tcx.distance.kms_or_miles(self.measurement_system),
             'avg_hr'                    : tcx.hr_avg,
             'max_hr'                    : tcx.hr_max,
@@ -150,8 +144,13 @@ class GarminTcxData(object):
             'ascent'                    : tcx.ascent.meters_or_feet(self.measurement_system),
             'descent'                   : tcx.descent.meters_or_feet(self.measurement_system)
         }
-        activity_not_zero = {key : value for (key, value) in activity.items() if value}
-        GarminDB.Activities.s_create_or_update(self.garmin_act_db_session, activity_not_zero, ignore_none=True)
+        start_loc = tcx.start_loc
+        if start_loc is not None:
+            activity.update({'start_lat': start_loc.lat_deg, 'start_long': start_loc.long_deg})
+        end_loc = tcx.end_loc
+        if end_loc is not None:
+            activity.update({'stop_lat': end_loc.lat_deg, 'stop_long': end_loc.long_deg})
+        GarminDB.Activities.s_create_or_update(self.garmin_act_db_session, activity, ignore_none=True, ignore_zero=True)
         for lap_number, lap in enumerate(tcx.laps):
             self.__process_lap(tcx, file_id, lap_number, lap)
 
