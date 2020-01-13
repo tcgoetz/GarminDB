@@ -308,8 +308,8 @@ class FitFileProcessor(object):
 
     def _write_session_entry(self, fit_file, message_dict):
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
-        sport = message_dict['sport']
-        sub_sport = message_dict['sub_sport']
+        sport = message_dict.get('sport')
+        sub_sport = message_dict.get('sub_sport')
         activity = {
             'activity_id'                       : activity_id,
             'start_time'                        : fit_file.utc_datetime_to_local(message_dict['start_time']),
@@ -346,18 +346,19 @@ class FitFileProcessor(object):
             root_logger.debug("Updating with %r", activity)
             current.update_from_dict(activity, ignore_none=True, ignore_zero=True)
         else:
-            activity.update({'sport' : sport.name, 'sub_sport' : sub_sport.name})
+            activity.update({'sport': sport.name, 'sub_sport': sub_sport.name})
             root_logger.debug("Adding %r", activity)
             self.garmin_act_db_session.add(GarminDB.Activities(**activity))
-        function_name = '_write_' + sport.name + '_entry'
-        try:
-            function = getattr(self, function_name, None)
-            if function is not None:
-                function(fit_file, activity_id, sub_sport, message_dict)
-            else:
-                root_logger.warning("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_dict)
-        except Exception as e:
-            root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
+        if sport is not None:
+            function_name = '_write_' + sport.name + '_entry'
+            try:
+                function = getattr(self, function_name, None)
+                if function is not None:
+                    function(fit_file, activity_id, sub_sport, message_dict)
+                else:
+                    root_logger.warning("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_dict)
+            except Exception as e:
+                root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
 
     def _write_attribute(self, timestamp, parsed_message, attribute_name, db_attribute_name=None):
         attribute = parsed_message.get(attribute_name)

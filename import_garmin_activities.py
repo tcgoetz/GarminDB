@@ -69,17 +69,17 @@ class GarminTcxData(object):
     def __process_record(self, tcx, activity_id, record_number, point):
         root_logger.debug("Processing record: %r (%d)", point, record_number)
         if not GarminDB.ActivityRecords.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'record' : record_number}):
-            loc = tcx.get_point_loc(point)
             record = {
                 'activity_id'                       : activity_id,
                 'record'                            : record_number,
                 'timestamp'                         : tcx.get_point_time(point),
-                'position_lat'                      : loc.lat_deg,
-                'position_long'                     : loc.long_deg,
                 'hr'                                : tcx.get_point_hr(point),
                 'altitude'                          : tcx.get_point_altitude(point).meters_or_feet(measurement_system=self.measurement_system),
                 'speed'                             : tcx.get_point_speed(point).kph_or_mph(measurement_system=self.measurement_system)
             }
+            loc = tcx.get_point_loc(point)
+            if loc is not None:
+                record.update({'position_lat': loc.lat_deg, 'position_long': loc.long_deg})
             self.garmin_act_db_session.add(GarminDB.ActivityRecords(**record))
 
     def __process_lap(self, tcx, activity_id, lap_number, lap):
