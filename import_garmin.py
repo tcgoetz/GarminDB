@@ -38,10 +38,10 @@ class GarminWeightData(JsonFileProcessor):
 
         """
         logger.info("Processing weight data")
-        super().__init__(None, input_dir, r'weight_\d{4}-\d{2}-\d{2}\.json', latest, debug)
+        super().__init__(r'weight_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
         self.measurement_system = measurement_system
         self.garmin_db = GarminDB.GarminDB(db_params)
-        self.conversions = {'startDate' : dateutil.parser.parse}
+        self.conversions = {'startDate': dateutil.parser.parse}
 
     def _process_json(self, json_data):
         weight_list = json_data['dateWeightList']
@@ -53,6 +53,7 @@ class GarminWeightData(JsonFileProcessor):
             }
             GarminDB.Weight.find_or_create(self.garmin_db, point)
             return 1
+        return 0
 
 
 class GarminMonitoringFitData(FitData):
@@ -121,7 +122,7 @@ class GarminSleepData(JsonFileProcessor):
 
         """
         logger.info("Processing sleep data")
-        super().__init__(None, input_dir, r'sleep_\d{4}-\d{2}-\d{2}\.json', latest, debug)
+        super().__init__(r'sleep_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
         self.garmin_db = GarminDB.GarminDB(db_params)
         self.conversions = {
             'calendarDate'              : dateutil.parser.parse,
@@ -152,13 +153,13 @@ class GarminSleepData(JsonFileProcessor):
             sleep_activity_levels = SleepActivityLevels
         day_data = {
             'day' : day,
-            'start' : daily_sleep.get('sleepStartTimestampGMT'),
-            'end' : daily_sleep.get('sleepEndTimestampGMT'),
-            'total_sleep' : daily_sleep.get('sleepTimeSeconds'),
-            'deep_sleep' : daily_sleep.get('deepSleepSeconds'),
-            'light_sleep' : daily_sleep.get('lightSleepSeconds'),
-            'rem_sleep' : daily_sleep.get('remSleepSeconds'),
-            'awake' : daily_sleep.get('awakeSleepSeconds')
+            'start': daily_sleep.get('sleepStartTimestampGMT'),
+            'end': daily_sleep.get('sleepEndTimestampGMT'),
+            'total_sleep': daily_sleep.get('sleepTimeSeconds'),
+            'deep_sleep': daily_sleep.get('deepSleepSeconds'),
+            'light_sleep': daily_sleep.get('lightSleepSeconds'),
+            'rem_sleep': daily_sleep.get('remSleepSeconds'),
+            'awake': daily_sleep.get('awakeSleepSeconds')
         }
         GarminDB.Sleep.create_or_update(self.garmin_db, day_data, ignore_none=True)
         sleep_levels = json_data.get('sleepLevels')
@@ -170,9 +171,9 @@ class GarminSleepData(JsonFileProcessor):
             event = sleep_activity_levels(sleep_level['activityLevel'])
             duration = (datetime.datetime.min + (end - start)).time()
             level_data = {
-                'timestamp' : start,
-                'event' : event.name,
-                'duration' : duration
+                'timestamp': start,
+                'event': event.name,
+                'duration': duration
             }
             GarminDB.SleepEvents.create_or_update(self.garmin_db, level_data, ignore_none=True)
         return len(sleep_levels)
@@ -193,9 +194,9 @@ class GarminRhrData(JsonFileProcessor):
 
         """
         logger.info("Processing rhr data")
-        super().__init__(None, input_dir, r'rhr_\d{4}-\d{2}-\d{2}\.json', latest, debug)
+        super().__init__(r'rhr_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
         self.garmin_db = GarminDB.GarminDB(db_params)
-        self.conversions = {'statisticsStartDate' : dateutil.parser.parse}
+        self.conversions = {'statisticsStartDate': dateutil.parser.parse}
 
     def _process_json(self, json_data):
         rhr_list = json_data['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
@@ -208,6 +209,7 @@ class GarminRhrData(JsonFileProcessor):
                 }
                 GarminDB.RestingHeartRate.create_or_update(self.garmin_db, point, ignore_none=True)
                 return 1
+        return 0
 
 
 class GarminProfile(JsonFileProcessor):
@@ -224,7 +226,7 @@ class GarminProfile(JsonFileProcessor):
 
         """
         logger.info("Processing profile data")
-        super().__init__(None, input_dir, r'profile\.json', False, debug)
+        super().__init__(r'profile\.json', input_dir=input_dir, latest=False, debug=debug)
         self.garmin_db = GarminDB.GarminDB(db_params)
         self.conversions = {'calendarDate' : dateutil.parser.parse}
 
@@ -257,7 +259,7 @@ class GarminSummaryData(JsonFileProcessor):
 
         """
         logger.info("Processing daily summary data")
-        super().__init__(None, input_dir, r'daily_summary_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
+        super().__init__(r'daily_summary_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug, recursive=True)
         self.input_dir = input_dir
         self.measurement_system = measurement_system
         self.garmin_db = GarminDB.GarminDB(db_params)
@@ -318,12 +320,12 @@ class GarminHydrationData(JsonFileProcessor):
 
         """
         logger.info("Processing daily hydration data")
-        super().__init__(None, input_dir, r'hydration_\d{4}-\d{2}-\d{2}\.json', latest, debug, recursive=True)
+        super().__init__(r'hydration_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug, recursive=True)
         self.input_dir = input_dir
         self.measurement_system = measurement_system
         self.garmin_db = GarminDB.GarminDB(db_params)
         self.conversions = {
-            'calendarDate'              : dateutil.parser.parse
+            'calendarDate': dateutil.parser.parse
         }
 
     def _process_json(self, json_data):

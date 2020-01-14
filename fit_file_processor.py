@@ -526,5 +526,8 @@ class FitFileProcessor(object):
         else:
             raise(ValueError(f'Unexpected file type {repr(fit_file.type)} for pulse ox'))
 
-    def _write_set_entry(self, fit_file, set_message_dict):
-        root_logger.debug("set message: %r", set_message_dict)
+    def _write_set_entry(self, fit_file, message_dict):
+        root_logger.debug("set message: %r", message_dict)
+
+    def _write_watchface_settings_entry(self, fit_file, message_dict):
+        root_logger.debug("watchface message: %r", message_dict)
