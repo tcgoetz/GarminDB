@@ -254,9 +254,9 @@ class FitFileProcessor(object):
     def __choose_sport(self, current_sport, current_sub_sport, new_sport, new_sub_sport):
         sport = Fit.field_enums.Sport.strict_from_string(current_sport)
         sub_sport = Fit.field_enums.SubSport.strict_from_string(current_sub_sport)
-        if (sport is None and new_sport is not None) or (not sport.preferred() and new_sport.preferred()):
+        if new_sport is not None and (sport is None or (not sport.preferred() and new_sport.preferred())):
             sport = new_sport
-        if (sub_sport is None and new_sub_sport is not None) or (not sub_sport.preferred() and new_sub_sport.preferred()):
+        if new_sub_sport is not None and (sub_sport is None or (not sub_sport.preferred() and new_sub_sport.preferred())):
             sub_sport = new_sub_sport
         return {'sport' : sport.name, 'sub_sport' : sub_sport.name}
 
