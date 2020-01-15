@@ -15,6 +15,8 @@ import GarminDB
 class GarminDbTcx(Tcx):
     """Read and write TCX files."""
 
+    __product_to_manufactuer_cache = {}
+
     def __init__(self, debug=False):
         """Return and instance of the GaminDbTcx class."""
         super().__init__(debug)
@@ -31,19 +33,32 @@ class GarminDbTcx(Tcx):
         """Add a creator element."""
         super().add_creator(product, serial_number, product_id, version)
 
+    def __manufacturer_from_product(self, product):
+        for manufacturer in GarminDB.Device.Manufacturer:
+            if manufacturer.name.lower() in product.lower():
+                return manufacturer
+        mappings = {
+            r'VivoActive|Forerunner|Fenix' : GarminDB.Device.Manufacturer.Garmin,
+        }
+        for regex, manufacturer in mappings.items():
+            match = re.search(regex, product)
+            if match:
+                return manufacturer
+
+    def _manufacturer_from_product(self, product):
+        if product in self.__product_to_manufactuer_cache:
+            return self.__product_to_manufactuer_cache[product]
+        manufacturer = self.__manufacturer_from_product(product)
+        if manufacturer is not None:
+            self.__product_to_manufactuer_cache[product] = manufacturer
+        return manufacturer
+
     def get_manufacturer_and_product(self):
         """Return the product and interperlated manufacturer from the parsed TCX file."""
         product = super().creator_product
         if not product:
             return (None, None)
-        manufacturer = GarminDB.Device.Manufacturer.Unknown
-        match = re.search('VivoActive|Forerunner|Fenix', product)
-        if match:
-            manufacturer = GarminDB.Device.Manufacturer.Garmin
-        match = re.search('Microsoft', product)
-        if match:
-            manufacturer = GarminDB.Device.Manufacturer.Microsoft
-        return (manufacturer, product)
+        return (self._manufacturer_from_product(product), product)
 
     @property
     def serial_number(self):
