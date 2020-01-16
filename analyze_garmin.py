@@ -95,7 +95,7 @@ class Analyze(object):
         stat_logger.info("Sports: %s", ', '.join(sports))
         sub_sports = list_not_none(GarminDB.Activities.get_col_distinct(self.garmin_act_db, GarminDB.Activities.sub_sport))
         stat_logger.info("SubSports: %s", ', '.join(sub_sports))
-        for sport_name in [sport.name for sport in Fit.field_enums.Sport]:
+        for sport_name in [sport.name for sport in Fit.Sport]:
             self.__report_sport(GarminDB.Activities.sport, sport_name)
 
     def __get_col_stats(self, table, col, name, ignore_le_zero=False, time_col=False):
@@ -191,7 +191,7 @@ class Analyze(object):
                             'intensity'     : monitoring.intensity,
                             'heart_rate'    : hr.heart_rate
                         }
-                        GarminDB.IntensityHR.s_create_or_update(garmin_sum_session, entry, ignore_none=True)
+                        GarminDB.IntensityHR.s_insert_or_update(garmin_sum_session, entry, ignore_none=True)
                 previous_ts = monitoring.timestamp
 
     def __calculate_day_stats(self, day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
@@ -213,8 +213,8 @@ class Analyze(object):
         stats.update(GarminDB.Sleep.get_daily_stats(garmin_session, day_date))
         stats.update(GarminDB.Activities.get_daily_stats(garmin_act_session, day_date))
         # save it to the db
-        GarminDB.DaysSummary.s_create_or_update(garmin_sum_session, stats)
-        HealthDB.DaysSummary.s_create_or_update(sum_session, stats)
+        GarminDB.DaysSummary.s_insert_or_update(garmin_sum_session, stats)
+        HealthDB.DaysSummary.s_insert_or_update(sum_session, stats)
 
     def __calculate_days(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         days = GarminDB.Monitoring.s_get_days(garmin_mon_session, year)
@@ -242,8 +242,8 @@ class Analyze(object):
         stats.update(GarminDB.Sleep.get_weekly_stats(garmin_session, day_date))
         stats.update(GarminDB.Activities.get_weekly_stats(garmin_act_session, day_date))
         # save it to the db
-        GarminDB.WeeksSummary.s_create_or_update(garmin_sum_session, stats)
-        HealthDB.WeeksSummary.s_create_or_update(sum_session, stats)
+        GarminDB.WeeksSummary.s_insert_or_update(garmin_sum_session, stats)
+        HealthDB.WeeksSummary.s_insert_or_update(sum_session, stats)
 
     def __calculate_weeks(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         for week_starting_day in tqdm(range(1, 365, 7), unit='weeks'):
@@ -254,15 +254,15 @@ class Analyze(object):
     def __calculate_month_stats(self, start_day_date, end_day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         stats = GarminDB.DailySummary.get_monthly_stats(garmin_session, start_day_date, end_day_date)
         # prefer getting stats from the daily summary.
-        if stats.get('rhr_avg') is None:
+        if 'rhr_avg' in stats:
             stats.update(GarminDB.RestingHeartRate.get_monthly_stats(garmin_session, start_day_date, end_day_date))
-        if stats.get('stress_avg') is None:
+        if 'stress_avg' in stats:
             stats.update(GarminDB.Stress.get_monthly_stats(garmin_session, start_day_date, end_day_date))
-        if stats.get('intensity_time') is None:
+        if 'intensity_time' in stats:
             stats.update(GarminDB.MonitoringIntensity.get_monthly_stats(garmin_mon_session, start_day_date, end_day_date))
-        if stats.get('floors') is None:
+        if 'floors' in stats:
             stats.update(GarminDB.MonitoringClimb.get_monthly_stats(garmin_mon_session, start_day_date, end_day_date, self.measurement_system))
-        if stats.get('steps') is None:
+        if 'steps' in stats:
             stats.update(GarminDB.Monitoring.get_monthly_stats(garmin_mon_session, start_day_date, end_day_date))
         stats.update(GarminDB.MonitoringHeartRate.get_monthly_stats(garmin_mon_session, start_day_date, end_day_date))
         stats.update(GarminDB.IntensityHR.get_monthly_stats(garmin_sum_session, start_day_date, end_day_date))
@@ -270,8 +270,8 @@ class Analyze(object):
         stats.update(GarminDB.Sleep.get_monthly_stats(garmin_session, start_day_date, end_day_date))
         stats.update(GarminDB.Activities.get_monthly_stats(garmin_act_session, start_day_date, end_day_date))
         # save it to the db
-        GarminDB.MonthsSummary.s_create_or_update(garmin_sum_session, stats)
-        HealthDB.MonthsSummary.s_create_or_update(sum_session, stats)
+        GarminDB.MonthsSummary.s_insert_or_update(garmin_sum_session, stats)
+        HealthDB.MonthsSummary.s_insert_or_update(sum_session, stats)
 
     def __calculate_months(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         months = GarminDB.Monitoring._get_months(garmin_mon_session, year)
@@ -280,15 +280,38 @@ class Analyze(object):
             end_day_date = datetime.date(year, month, calendar.monthrange(year, month)[1])
             self.__calculate_month_stats(start_day_date, end_day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
 
+    def __calculate_year_stats(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
+        stats = GarminDB.DailySummary.get_yearly_stats(garmin_session, year)
+        # prefer getting stats from the daily summary.
+        if 'rhr_avg' in stats:
+            stats.update(GarminDB.RestingHeartRate.get_yearly_stats(garmin_session, year))
+        if 'stress_avg' in stats:
+            stats.update(GarminDB.Stress.get_yearly_stats(garmin_session, year))
+        if 'intensity_time' in stats:
+            stats.update(GarminDB.MonitoringIntensity.get_yearly_stats(garmin_mon_session, year))
+        if 'floors' in stats:
+            stats.update(GarminDB.MonitoringClimb.get_yearly_stats(garmin_mon_session, year, self.measurement_system))
+        if 'steps' in stats:
+            stats.update(GarminDB.Monitoring.get_yearly_stats(garmin_mon_session, year))
+        stats.update(GarminDB.MonitoringHeartRate.get_yearly_stats(garmin_mon_session, year))
+        stats.update(GarminDB.IntensityHR.get_yearly_stats(garmin_sum_session, year))
+        stats.update(GarminDB.Weight.get_yearly_stats(garmin_session, year))
+        stats.update(GarminDB.Sleep.get_yearly_stats(garmin_session, year))
+        stats.update(GarminDB.Activities.get_yearly_stats(garmin_act_session, year))
+        # save it to the db
+        GarminDB.YearsSummary.s_insert_or_update(garmin_sum_session, stats)
+        HealthDB.YearsSummary.s_insert_or_update(sum_session, stats)
+
     def __calculate_year(self, year):
-        with self.garmin_db.managed_session() as garmin_session:
-            with self.garmin_mon_db.managed_session() as garmin_mon_session:
-                with self.garmin_act_db.managed_session() as garmin_act_session:
-                    with self.garmin_sum_db.managed_session() as garmin_sum_session:
-                        with self.sum_db.managed_session() as sum_session:
-                            self.__calculate_days(year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
-                            self.__calculate_weeks(year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
-                            self.__calculate_months(year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
+        with self.garmin_db.managed_session() as garmin_session, self.garmin_mon_db.managed_session() as garmin_mon_session, \
+             self.garmin_act_db.managed_session() as garmin_act_session, self.garmin_sum_db.managed_session() as garmin_sum_session, \
+             self.sum_db.managed_session() as sum_session:
+            # calculate part of the years
+            self.__calculate_days(year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
+            self.__calculate_weeks(year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
+            self.__calculate_months(year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
+            # now calculate the year itself
+            self.__calculate_year_stats(year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
 
     def summary(self):
         """Summarize Garmin health data. Daily, weekly, and monthly, tables will be generated."""

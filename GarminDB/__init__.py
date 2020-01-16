@@ -11,4 +11,4 @@ from GarminDB.monitoring_db import MonitoringDB, MonitoringInfo, MonitoringHeart
     MonitoringRespirationRate, MonitoringPulseOx
 from GarminDB.activities_db import ActivitiesDB, ActivitiesLocationSegment, Activities, ActivityLaps, ActivityRecords, SportActivities, StepsActivities, \
     PaddleActivities, CycleActivities, EllipticalActivities
-from GarminDB.garmin_summary_db import GarminSummaryDB, Summary, MonthsSummary, WeeksSummary, DaysSummary, IntensityHR
+from GarminDB.garmin_summary_db import GarminSummaryDB, Summary, YearsSummary, MonthsSummary, WeeksSummary, DaysSummary, IntensityHR

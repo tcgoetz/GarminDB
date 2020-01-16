@@ -1,6 +1,7 @@
 sqlalchemy
 requests
 python-dateutil
+cached-property
 tqdm
 PyInstaller
 matplotlib

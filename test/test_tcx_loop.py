@@ -8,7 +8,7 @@ import unittest
 import logging
 import datetime
 
-from Fit import field_enums, Distance, Speed
+from Fit import GarminProduct, Distance, Speed, Sport
 from garmin_db_tcx import GarminDbTcx
 from utilities import Location
 
@@ -30,10 +30,10 @@ class TestLoop(unittest.TestCase):
         cls.tcx_filename_regex = r'.*\.tcx'
 
     def test_loop(self):
-        sport = field_enums.Sport.boating.name
+        sport = Sport.boating.name
         start_time = datetime.datetime.now()
         stop_time = start_time + datetime.timedelta(hours=1)
-        product = field_enums.GarminProduct.Fenix.name
+        product = GarminProduct.Fenix.name
         serial_number = 123412341234
         version = (1, 2, 3, 4)
         lap_distance = Distance.from_meters(10)

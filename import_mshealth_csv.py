@@ -75,7 +75,7 @@ class MSHealthData(object):
         return len(self.file_names)
 
     def __write_entry(self, db_entry):
-        MSHealthDB.DaysSummary.find_or_create(self.mshealth_db, db_entry)
+        MSHealthDB.DaysSummary.insert_or_update(self.mshealth_db, db_entry)
 
     def process_files(self):
         """Import files into the databse."""
@@ -106,7 +106,10 @@ class MSVaultData(object):
         return len(self.file_names)
 
     def __write_entry(self, db_entry):
-        MSHealthDB.MSVaultWeight.find_or_create(self.mshealth_db, MSHealthDB.MSVaultWeight.intersection(db_entry))
+        try:
+            MSHealthDB.MSVaultWeight.insert_or_update(self.mshealth_db, MSHealthDB.MSVaultWeight.intersection(db_entry))
+        except Exception as e:
+            logger.error('Failed to save %r to db: %s', db_entry, e)
 
     def process_files(self):
         """Import files into the databse."""

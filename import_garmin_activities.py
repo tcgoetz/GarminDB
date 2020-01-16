@@ -38,7 +38,7 @@ class GarminActivitiesFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, debug, latest, False, Fit.field_enums.FileType.activity, measurement_system)
+        super().__init__(input_dir, debug, latest, False, Fit.FileType.activity, measurement_system)
 
 
 class GarminTcxData(object):
@@ -106,7 +106,6 @@ class GarminTcxData(object):
             self.garmin_act_db_session.add(GarminDB.ActivityLaps(**lap_data))
 
     def __process_file(self, file_name):
-        root_logger.info("Processing file: %s", file_name)
         tcx = GarminDbTcx()
         tcx.read(file_name)
         start_time = tcx.start_time
@@ -119,7 +118,8 @@ class GarminTcxData(object):
             'product'           : product,
             'hardware_version'  : None,
         }
-        GarminDB.Device.s_create_or_update(self.garmin_db_session, device, ignore_none=True)
+        GarminDB.Device.s_insert_or_update(self.garmin_db_session, device, ignore_none=True)
+        root_logger.info("Processing file: %s for manufacturer %s product %s device %s", file_name, manufacturer, product, serial_number)
         (file_id, file_name) = GarminDB.File.name_and_id_from_path(file_name)
         file = {
             'id'            : file_id,
@@ -127,7 +127,7 @@ class GarminTcxData(object):
             'type'          : GarminDB.File.FileType.tcx,
             'serial_number' : serial_number,
         }
-        GarminDB.File.s_find_or_create(self.garmin_db_session, file)
+        GarminDB.File.s_insert_or_update(self.garmin_db_session, file)
         activity = {
             'activity_id'               : file_id,
             'start_time'                : start_time,
@@ -149,7 +149,7 @@ class GarminTcxData(object):
         end_loc = tcx.end_loc
         if end_loc is not None:
             activity.update({'stop_lat': end_loc.lat_deg, 'stop_long': end_loc.long_deg})
-        GarminDB.Activities.s_create_or_update(self.garmin_act_db_session, activity, ignore_none=True, ignore_zero=True)
+        GarminDB.Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True, ignore_zero=True)
         for lap_number, lap in enumerate(tcx.laps):
             self.__process_lap(tcx, file_id, lap_number, lap)
 
@@ -157,15 +157,14 @@ class GarminTcxData(object):
         """Import data from TCX files into the database."""
         garmin_db = GarminDB.GarminDB(db_params, self.debug - 1)
         garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
-        with garmin_db.managed_session() as self.garmin_db_session:
-            with garmin_act_db.managed_session() as self.garmin_act_db_session:
-                for file_name in tqdm(self.file_names, unit='files'):
-                    try:
-                        self.__process_file(file_name)
-                    except Exception as e:
-                        logger.error('Failed to processes file %s: %s', file_name, e)
-                    self.garmin_db_session.commit()
-                    self.garmin_act_db_session.commit()
+        with garmin_db.managed_session() as self.garmin_db_session, garmin_act_db.managed_session() as self.garmin_act_db_session:
+            for file_name in tqdm(self.file_names, unit='files'):
+                try:
+                    self.__process_file(file_name)
+                except Exception as e:
+                    logger.error('Failed to processes file %s: %s', file_name, e)
+                self.garmin_db_session.commit()
+                self.garmin_act_db_session.commit()
 
 
 class GarminJsonSummaryData(JsonFileProcessor):
@@ -208,7 +207,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
             'avg_ground_contact_time'   : Fit.conversions.ms_to_dt_time(self._get_field(activity_summary, 'avgGroundContactTime', float)),
             'vo2_max'                   : self._get_field(activity_summary, 'vO2MaxValue', float),
         }
-        GarminDB.StepsActivities.s_create_or_update(self.garmin_act_db_session, run, ignore_none=True)
+        GarminDB.StepsActivities.s_insert_or_update(self.garmin_act_db_session, run, ignore_none=True)
 
     def _process_inline_skating(self, sub_sport, activity_id, activity_summary):
         root_logger.debug("inline_skating for %s: %r", activity_id, activity_summary)
@@ -247,14 +246,14 @@ class GarminJsonSummaryData(JsonFileProcessor):
             'avg_cadence'               : self._get_field(activity_summary, 'avgStrokeCadence', float),
             'max_cadence'               : self._get_field(activity_summary, 'maxStrokeCadence', float),
         }
-        GarminDB.Activities.s_create_or_update(self.garmin_act_db_session, activity, ignore_none=True)
+        GarminDB.Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
         avg_stroke_distance = Fit.Distance.from_meters(self._get_field(activity_summary, 'avgStrokeDistance', float))
         paddle = {
             'activity_id'               : activity_id,
             'strokes'                   : self._get_field(activity_summary, 'strokes', float),
             'avg_stroke_distance'       : avg_stroke_distance.meters_or_feet(self.measurement_system),
         }
-        GarminDB.PaddleActivities.s_create_or_update(self.garmin_act_db_session, paddle, ignore_none=True)
+        GarminDB.PaddleActivities.s_insert_or_update(self.garmin_act_db_session, paddle, ignore_none=True)
 
     def _process_cycling(self, sub_sport, activity_id, activity_summary):
         activity = {
@@ -262,13 +261,13 @@ class GarminJsonSummaryData(JsonFileProcessor):
             'avg_cadence'               : self._get_field(activity_summary, 'averageBikingCadenceInRevPerMinute', float),
             'max_cadence'               : self._get_field(activity_summary, 'maxBikingCadenceInRevPerMinute', float),
         }
-        GarminDB.Activities.s_create_or_update(self.garmin_act_db_session, activity, ignore_none=True)
+        GarminDB.Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
         ride = {
             'activity_id'               : activity_id,
             'strokes'                   : self._get_field(activity_summary, 'strokes', float),
             'vo2_max'                   : self._get_field(activity_summary, 'vO2MaxValue', float),
         }
-        GarminDB.CycleActivities.s_create_or_update(self.garmin_act_db_session, ride, ignore_none=True)
+        GarminDB.CycleActivities.s_insert_or_update(self.garmin_act_db_session, ride, ignore_none=True)
 
     def _process_mountain_biking(self, activity_id, activity_summary):
         return self._process_cycling(activity_id, activity_summary)
@@ -280,12 +279,12 @@ class GarminJsonSummaryData(JsonFileProcessor):
                 'avg_cadence'               : self._get_field(activity_summary, 'averageRunningCadenceInStepsPerMinute', float),
                 'max_cadence'               : self._get_field(activity_summary, 'maxRunningCadenceInStepsPerMinute', float),
             }
-            GarminDB.Activities.s_create_or_update(self.garmin_act_db_session, activity, ignore_none=True)
+            GarminDB.Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
             workout = {
                 'activity_id'               : activity_id,
                 'steps'                     : self._get_field(activity_summary, 'steps', float),
             }
-            GarminDB.EllipticalActivities.s_create_or_update(self.garmin_act_db_session, workout, ignore_none=True)
+            GarminDB.EllipticalActivities.s_insert_or_update(self.garmin_act_db_session, workout, ignore_none=True)
 
     def _process_fitness_equipment(self, sub_sport, activity_id, activity_summary):
         root_logger.debug("process_fitness_equipment (%s) for %s", sub_sport, activity_id)
@@ -330,7 +329,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
             'training_effect'           : self._get_field(json_data, 'aerobicTrainingEffect', float),
             'anaerobic_training_effect' : self._get_field(json_data, 'anaerobicTrainingEffect', float),
         }
-        GarminDB.Activities.s_create_or_update(self.garmin_act_db_session, activity, ignore_none=True)
+        GarminDB.Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
         self._call_process_func(sport.name, sub_sport, activity_id, json_data)
         return 1
 
@@ -373,7 +372,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
             'avg_moving_pace'   : Fit.conversions.perhour_speed_to_pace(avg_moving_speed),
         }
         root_logger.debug("steps_activity for %d: %r", activity_id, run)
-        GarminDB.StepsActivities.s_create_or_update(self.garmin_act_db_session, run, ignore_none=True)
+        GarminDB.StepsActivities.s_insert_or_update(self.garmin_act_db_session, run, ignore_none=True)
 
     def _process_cycling(self, sub_sport, activity_id, json_data):
         root_logger.debug("cycling (%s) for %d: %r", sub_sport, activity_id, json_data)
@@ -433,7 +432,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
             'course_id'                 : self._get_field(metadata_dto, 'associatedCourseId', int),
             'avg_temperature'           : avg_temperature.c_or_f(self.measurement_system) if avg_temperature is not None else None,
         }
-        GarminDB.Activities.s_create_or_update(self.garmin_act_db_session, activity, ignore_none=True)
+        GarminDB.Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
         self._call_process_func(sport.name, sub_sport, activity_id, json_data)
         return 1
 

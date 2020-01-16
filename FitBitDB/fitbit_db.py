@@ -20,6 +20,8 @@ class FitBitDB(utilities.DB):
     """Object representing a database for storing health data from FitBit."""
 
     Base = declarative_base()
+
+    db_tables = []
     db_name = 'fitbit'
 
     def __init__(self, db_params, debug=False):
@@ -35,10 +37,16 @@ class FitBitDB(utilities.DB):
 
 
 class Attributes(FitBitDB.Base, utilities.KeyValueObject):
+    """Object representing generic key-value data from a FitBit device."""
+
+    db = FitBitDB
     __tablename__ = 'attributes'
 
 
 class DaysSummary(FitBitDB.Base, utilities.DBObject):
+    """A table that holds summarized information about a day with one row per day."""
+
+    db = FitBitDB
     __tablename__ = 'days_summary'
 
     day = Column(Date, primary_key=True)
@@ -65,8 +73,6 @@ class DaysSummary(FitBitDB.Base, utilities.DBObject):
     sleep_efficiency = Column(Integer)
     weight = Column(Float)
     bmi = Column(Float)
-
-    time_col_name = 'day'
 
     @classmethod
     def get_activity_mins_stats(cls, db, func, start_ts, end_ts):

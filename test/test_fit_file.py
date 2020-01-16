@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 test_activity_files     = True
 test_monitoring_files   = True
 test_sleep_files        = True
+test_metrics_files      = True
 test_unknown_files      = True
 
 
@@ -87,7 +88,7 @@ class TestFitFile(unittest.TestCase):
 
     def check_timestamp(self, fit_file, message):
         # Garmin Connect generated files can have device dates far in the future
-        if message.type() != Fit.MessageType.device_info and message.get('product') != Fit.field_enums.GarminProduct.connect:
+        if message.type() != Fit.MessageType.device_info and message.get('product') != Fit.GarminProduct.connect:
             self.check_value_range(fit_file, message, 'timestamp',
                                    datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc),
                                    datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc))
@@ -101,12 +102,12 @@ class TestFitFile(unittest.TestCase):
     def check_file_id(self, fit_file, file_type):
         messages = fit_file[Fit.MessageType.file_id]
         for message in messages:
-            self.check_value(fit_file, message, 'manufacturer', Fit.field_enums.Manufacturer.Garmin)
+            self.check_value(fit_file, message, 'manufacturer', Fit.Manufacturer.Garmin)
             self.check_value(fit_file, message, 'type', file_type)
 
     def check_sport_value(self, fit_file, message):
-        self.check_type(fit_file, message, 'sport', Fit.field_enums.Sport)
-        self.check_type(fit_file, message, 'sub_sport', Fit.field_enums.SubSport)
+        self.check_type(fit_file, message, 'sport', Fit.Sport)
+        self.check_type(fit_file, message, 'sub_sport', Fit.SubSport)
 
     def check_sport(self, fit_file):
         sport_messages = fit_file[Fit.MessageType.sport]
@@ -127,7 +128,7 @@ class TestFitFile(unittest.TestCase):
     def check_lap_or_record(self, fit_file, sport, message):
         self.check_message_fields(fit_file, message.type(), message)
         if 'distance' in message and message['distance'].value > 0.1:
-            if sport == Fit.field_enums.Sport.running or sport == Fit.field_enums.Sport.walking:
+            if sport == Fit.Sport.running or sport == Fit.Sport.walking:
                 self.check_step_lap_or_record(message)
 
     def check_monitoring_messages(self, fit_file):
@@ -149,14 +150,14 @@ class TestFitFile(unittest.TestCase):
         fit_file = Fit.file.File(filename, self.measurement_system)
         self.check_message_types(fit_file, dump_message=True)
         logger.info('%s (%s) monitoring file message types: %s', filename, fit_file.time_created_local, fit_file.message_types())
-        self.check_file_id(fit_file, Fit.field_enums.FileType.monitoring_b)
+        self.check_file_id(fit_file, Fit.FileType.monitoring_b)
         self.check_monitoring_messages(fit_file)
 
     def check_activity_file(self, filename):
         fit_file = Fit.file.File(filename, self.measurement_system)
         logger.info('%s (%s) activity file message types: %s', filename, fit_file.time_created_local, fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
-        self.check_file_id(fit_file, Fit.field_enums.FileType.activity)
+        self.check_file_id(fit_file, Fit.FileType.activity)
         sport = self.check_sport(fit_file)
         for message in fit_file[Fit.MessageType.record]:
             self.check_lap_or_record(fit_file, sport, message)
@@ -171,7 +172,7 @@ class TestFitFile(unittest.TestCase):
         fit_file = Fit.file.File(filename, self.measurement_system)
         logger.info('%s (%s) sleep file message types: %s', filename, fit_file.time_created_local, fit_file.message_types())
         self.check_message_types(fit_file, dump_message=True)
-        self.check_file_id(fit_file, Fit.field_enums.FileType.sleep)
+        self.check_file_id(fit_file, Fit.FileType.sleep)
 
     def check_unknown_file(self, filename):
         logger.info('Parsing ' + filename)
@@ -202,6 +203,14 @@ class TestFitFile(unittest.TestCase):
         file_names = FileProcessor.dir_to_files(activity_path, Fit.file.name_regex, False)
         for file_name in file_names:
             self.check_sleep_file(file_name)
+
+    @unittest.skipIf(not test_metrics_files, 'Test not selected')
+    def test_parse_metrics(self):
+        # root_logger.setLevel(logging.DEBUG)
+        activity_path = self.file_path + '/metrics'
+        file_names = FileProcessor.dir_to_files(activity_path, Fit.file.name_regex, False)
+        for file_name in file_names:
+            self.check_unknown_file(file_name)
 
     @unittest.skipIf(not test_unknown_files, 'Test not selected')
     def test_parse_unknown(self):

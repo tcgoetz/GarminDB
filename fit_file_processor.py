@@ -131,14 +131,16 @@ class FitFileProcessor(object):
         if _manufacturer is not None:
             self.manufacturer = _manufacturer
         self.product = message_dict.get('product')
+        device_type = GarminDB.Device.derive_device_type(self.manufacturer, self.product)
         if self.serial_number:
             device = {
                 'serial_number' : self.serial_number,
                 'timestamp'     : fit_file.utc_datetime_to_local(message_dict['time_created']),
+                'device_type'   : Fit.field_enums.name_for_enum(device_type),
                 'manufacturer'  : self.manufacturer,
                 'product'       : Fit.field_enums.name_for_enum(self.product),
             }
-            GarminDB.Device.s_find_or_create(self.garmin_db_session, device)
+            GarminDB.Device.s_insert_or_update(self.garmin_db_session, device)
         (file_id, file_name) = GarminDB.File.name_and_id_from_path(fit_file.filename)
         file = {
             'id'            : file_id,
@@ -146,12 +148,12 @@ class FitFileProcessor(object):
             'type'          : GarminDB.File.FileType.convert(message_dict['type']),
             'serial_number' : self.serial_number,
         }
-        GarminDB.File.s_find_or_create(self.garmin_db_session, file)
+        GarminDB.File.s_insert_or_update(self.garmin_db_session, file)
 
     def _write_device_info_entry(self, fit_file, message_dict):
         timestamp = fit_file.utc_datetime_to_local(message_dict['timestamp'])
         try:
-            device_type = message_dict.get('device_type')
+            device_type = message_dict.get('device_type', Fit.field_enums.DeviceType.fitness_tracker)
             serial_number = message_dict.get('serial_number')
             manufacturer = GarminDB.Device.Manufacturer.convert(message_dict.get('manufacturer'))
             product = message_dict.get('product')
@@ -170,18 +172,19 @@ class FitFileProcessor(object):
             device = {
                 'serial_number'     : serial_number,
                 'timestamp'         : timestamp,
+                'device_type'       : Fit.field_enums.name_for_enum(device_type),
                 'manufacturer'      : manufacturer,
                 'product'           : Fit.field_enums.name_for_enum(product),
                 'hardware_version'  : message_dict.get('hardware_version'),
             }
             try:
-                GarminDB.Device.s_create_or_update(self.garmin_db_session, device, ignore_none=True)
+                GarminDB.Device.s_insert_or_update(self.garmin_db_session, device, ignore_none=True)
             except Exception as e:
                 logger.error("Device not written: %r - %s", message_dict, e)
             device_info = {
                 'file_id'               : GarminDB.File.s_get_id(self.garmin_db_session, fit_file.filename),
                 'serial_number'         : serial_number,
-                'device_type'           : Fit.field_enums.name_for_enum(device_type),
+                # 'device_type'           : Fit.field_enums.name_for_enum(device_type),
                 'timestamp'             : timestamp,
                 'cum_operating_time'    : message_dict.get('cum_operating_time'),
                 'battery_voltage'       : message_dict.get('battery_voltage'),
@@ -197,7 +200,7 @@ class FitFileProcessor(object):
             'timestamp' : stress_message_dict['local_timestamp'],
             'stress'    : stress_message_dict['stress_level'],
         }
-        GarminDB.Stress.s_find_or_create(self.garmin_db_session, stress)
+        GarminDB.Stress.s_insert_or_update(self.garmin_db_session, stress)
 
     def _write_event_entry(self, fit_file, event_message_dict):
         root_logger.debug("event message: %r", event_message_dict)
@@ -242,7 +245,7 @@ class FitFileProcessor(object):
             'avg_stance_time_percent'           : self.__get_field_value(message_dict, 'avg_stance_time_percent'),
         }
         root_logger.info("steps: %r", steps)
-        GarminDB.StepsActivities.s_create_or_update(self.garmin_act_db_session, steps, ignore_none=True, ignore_zero=True)
+        GarminDB.StepsActivities.s_insert_or_update(self.garmin_act_db_session, steps, ignore_none=True, ignore_zero=True)
 
     def _write_running_entry(self, fit_file, activity_id, sub_sport, message_dict):
         return self._write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
@@ -258,7 +261,7 @@ class FitFileProcessor(object):
             'activity_id'                        : activity_id,
             'strokes'                            : self.__get_field_value(message_dict, 'total_strokes'),
         }
-        GarminDB.CycleActivities.s_create_or_update(self.garmin_act_db_session, ride, ignore_none=True, ignore_zero=True)
+        GarminDB.CycleActivities.s_insert_or_update(self.garmin_act_db_session, ride, ignore_none=True, ignore_zero=True)
 
     def _write_stand_up_paddleboarding_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("sup sport entry: %r", message_dict)
@@ -267,7 +270,7 @@ class FitFileProcessor(object):
             'strokes'                           : self.__get_field_value(message_dict, 'total_strokes'),
             'avg_stroke_distance'               : self.__get_field_value(message_dict, 'avg_stroke_distance'),
         }
-        GarminDB.PaddleActivities.s_create_or_update(self.garmin_act_db_session, paddle, ignore_none=True, ignore_zero=True)
+        GarminDB.PaddleActivities.s_insert_or_update(self.garmin_act_db_session, paddle, ignore_none=True, ignore_zero=True)
 
     def _write_rowing_entry(self, fit_file, activity_id, sub_sport, message_dict):
         root_logger.debug("row sport entry: %r", message_dict)
@@ -283,7 +286,7 @@ class FitFileProcessor(object):
             'steps'                             : self.__get_total_steps(message_dict),
             'elliptical_distance'               : self.__get_total_distance(message_dict),
         }
-        GarminDB.EllipticalActivities.s_create_or_update(self.garmin_act_db_session, workout, ignore_none=True, ignore_zero=True)
+        GarminDB.EllipticalActivities.s_insert_or_update(self.garmin_act_db_session, workout, ignore_none=True, ignore_zero=True)
 
     def _write_fitness_equipment_entry(self, fit_file, activity_id, sub_sport, message_dict):
         try:
@@ -308,8 +311,8 @@ class FitFileProcessor(object):
         root_logger.debug("Generic sport entry: %r", message_dict)
 
     def __choose_sport(self, current_sport, current_sub_sport, new_sport, new_sub_sport):
-        sport = Fit.field_enums.Sport.strict_from_string(current_sport)
-        sub_sport = Fit.field_enums.SubSport.strict_from_string(current_sub_sport)
+        sport = Fit.Sport.strict_from_string(current_sport)
+        sub_sport = Fit.SubSport.strict_from_string(current_sub_sport)
         if new_sport is not None and (sport is None or (not sport.preferred() and new_sport.preferred())):
             sport = new_sport
         if new_sub_sport is not None and (sub_sport is None or (not sub_sport.preferred() and new_sub_sport.preferred())):
@@ -486,7 +489,7 @@ class FitFileProcessor(object):
                     'cycles_to_distance'        : message_dict['cycles_to_distance'][index],
                     'cycles_to_calories'        : message_dict['cycles_to_calories'][index]
                 }
-                GarminDB.MonitoringInfo.s_find_or_create(self.garmin_mon_db_session, entry)
+                GarminDB.MonitoringInfo.s_insert_or_update(self.garmin_mon_db_session, entry)
 
     def _write_monitoring_entry(self, fit_file, message_dict):
         # Only include not None values so that we match and update only if a table's columns if it has values.
@@ -495,13 +498,13 @@ class FitFileProcessor(object):
         try:
             intersection = GarminDB.MonitoringHeartRate.intersection(entry)
             if len(intersection) > 1 and intersection['heart_rate'] > 0:
-                GarminDB.MonitoringHeartRate.s_create_or_update(self.garmin_mon_db_session, intersection)
+                GarminDB.MonitoringHeartRate.s_insert_or_update(self.garmin_mon_db_session, intersection)
             intersection = GarminDB.MonitoringIntensity.intersection(entry)
             if len(intersection) > 1:
-                GarminDB.MonitoringIntensity.s_create_or_update(self.garmin_mon_db_session, intersection)
+                GarminDB.MonitoringIntensity.s_insert_or_update(self.garmin_mon_db_session, intersection)
             intersection = GarminDB.MonitoringClimb.intersection(entry)
             if len(intersection) > 1:
-                GarminDB.MonitoringClimb.s_create_or_update(self.garmin_mon_db_session, intersection)
+                GarminDB.MonitoringClimb.s_insert_or_update(self.garmin_mon_db_session, intersection)
             intersection = GarminDB.Monitoring.intersection(entry)
             if len(intersection) > 1:
                 GarminDB.Monitoring.s_create_or_update(self.garmin_mon_db_session, intersection)
@@ -518,8 +521,8 @@ class FitFileProcessor(object):
                 'timestamp'         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
                 'rr'                : rr,
             }
-            if fit_file.type is Fit.field_enums.FileType.monitoring_b:
-                GarminDB.MonitoringRespirationRate.s_create_or_update(self.garmin_mon_db_session, respiration)
+            if fit_file.type is Fit.FileType.monitoring_b:
+                GarminDB.MonitoringRespirationRate.s_insert_or_update(self.garmin_mon_db_session, respiration)
             else:
                 raise(ValueError(f'Unexpected file type {repr(fit_file.type)} for respiration message'))
 
@@ -529,8 +532,8 @@ class FitFileProcessor(object):
             'timestamp'     : fit_file.utc_datetime_to_local(message_dict['timestamp']),
             'pulse_ox'      : self.__get_field_value(message_dict, 'pulse_ox'),
         }
-        if fit_file.type is Fit.field_enums.FileType.monitoring_b:
-            GarminDB.MonitoringPulseOx.s_create_or_update(self.garmin_mon_db_session, pulse_ox)
+        if fit_file.type is Fit.FileType.monitoring_b:
+            GarminDB.MonitoringPulseOx.s_insert_or_update(self.garmin_mon_db_session, pulse_ox)
         else:
             raise(ValueError(f'Unexpected file type {repr(fit_file.type)} for pulse ox'))
 

@@ -19,6 +19,8 @@ class GarminSummaryDB(utilities.DB):
     """Object representing a database for storing health summary data from a Garmin device."""
 
     Base = declarative_base()
+
+    db_tables = []
     db_name = 'garmin_summary'
     db_version = 7
 
@@ -38,77 +40,102 @@ class GarminSummaryDB(utilities.DB):
         self.version = GarminSummaryDB._DbVersion()
         self.version.version_check(self, self.db_version)
         #
-        self.tables = [Summary, MonthsSummary, WeeksSummary, DaysSummary, IntensityHR]
-        for table in self.tables:
+        for table in self.db_tables:
             self.version.table_version_check(self, table)
             if not self.version.view_version_check(self, table):
                 table.delete_view(self)
-        #
-        MonthsSummary.create_months_view(self)
-        WeeksSummary.create_weeks_view(self)
-        DaysSummary.create_days_view(self)
 
 
 class Summary(GarminSummaryDB.Base, utilities.KeyValueObject):
     """A table holding statistics about health data as key-value pairs."""
 
     __tablename__ = 'summary'
+
+    db = GarminSummaryDB
     table_version = 1
 
 
-class MonthsSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
-    """A table holding summarizzed data with one row per month."""
+class YearsSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
+    """A table holding summarized data with one row per year."""
 
-    __tablename__ = 'months_summary'
+    __tablename__ = 'years_summary'
+
+    db = GarminSummaryDB
     table_version = 3
     view_version = HealthDB.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
 
-    time_col_name = 'first_day'
+    @classmethod
+    def create_view(cls, db):
+        cls.create_years_view(db)
+
+
+class MonthsSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
+    """A table holding summarized data with one row per month."""
+
+    __tablename__ = 'months_summary'
+
+    db = GarminSummaryDB
+    table_version = 3
+    view_version = HealthDB.SummaryBase.view_version
+
+    first_day = Column(Date, primary_key=True)
+
+    @classmethod
+    def create_view(cls, db):
+        cls.create_months_view(db)
 
 
 class WeeksSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     """A table holding summarizzed data with one row per week."""
 
     __tablename__ = 'weeks_summary'
+
+    db = GarminSummaryDB
     table_version = 3
     view_version = HealthDB.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
 
-    time_col_name = 'first_day'
+    @classmethod
+    def create_view(cls, db):
+        cls.create_weeks_view(db)
 
 
 class DaysSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     """A table holding summarizzed data with one row per day."""
 
     __tablename__ = 'days_summary'
+
+    db = GarminSummaryDB
     table_version = 3
     view_version = HealthDB.SummaryBase.view_version
 
     day = Column(Date, primary_key=True)
 
-    time_col_name = 'day'
+    @classmethod
+    def create_view(cls, db):
+        cls.create_days_view(db)
 
 
 class IntensityHR(GarminSummaryDB.Base, utilities.DBObject):
     """Monitoring heart rate values that fall within a intensity period."""
 
     __tablename__ = 'intensity_hr'
+
+    db = GarminSummaryDB
     table_version = 1
 
     timestamp = Column(DateTime, primary_key=True)
     intensity = Column(Integer, nullable=False)
     heart_rate = Column(Integer, nullable=False)
 
-    time_col_name = 'timestamp'
-
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
         return {
             'inactive_hr_avg' : cls.s_get_col_avg_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
-            'inactive_hr_min' : cls.ss_get_col_min_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
-            'inactive_hr_max' : cls.ss_get_col_max_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
+            'inactive_hr_min' : cls.s_get_col_min_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
+            'inactive_hr_max' : cls.s_get_col_max_for_value(session, cls.heart_rate, cls.intensity, 0, start_ts, end_ts, True),
         }

@@ -5,9 +5,10 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 import os
+import re
 import datetime
 import logging
-from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enum, ForeignKey, func
+from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enum, ForeignKey, func, PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -23,6 +24,8 @@ class GarminDB(utilities.DB):
     """Object representing a database for storing health data from a Garmin device."""
 
     Base = declarative_base()
+
+    db_tables = []
     db_name = 'garmin'
     db_version = 13
 
@@ -41,19 +44,18 @@ class GarminDB(utilities.DB):
         GarminDB.Base.metadata.create_all(self.engine)
         self.version = GarminDB._DbVersion()
         self.version.version_check(self, self.db_version)
-        self.tables = [Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate, DailySummary]
-        for table in self.tables:
+        for table in self.db_tables:
             self.version.table_version_check(self, table)
             if not self.version.view_version_check(self, table):
                 table.delete_view(self)
-        DeviceInfo.create_view(self)
-        File.create_view(self)
 
 
 class Attributes(GarminDB.Base, utilities.KeyValueObject):
-    """Object representing genertic key-value data from a Garmin device."""
+    """Object representing generic key-value data from a Garmin device."""
 
     __tablename__ = 'attributes'
+
+    db = GarminDB
     table_version = 1
 
     @classmethod
@@ -71,68 +73,79 @@ class Device(GarminDB.Base, utilities.DBObject):
     """Class representing a Garmin device."""
 
     __tablename__ = 'devices'
-    table_version = 3
+
+    db = GarminDB
+    table_version = 4
     unknown_device_serial_number = 9999999999
 
-    Manufacturer = utilities.derived_enum.derive('Manufacturer', Fit.field_enums.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
+    Manufacturer = utilities.derived_enum.derive('Manufacturer', Fit.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
 
     serial_number = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
+    device_type = Column(String)
     manufacturer = Column(Enum(Manufacturer))
     product = Column(String)
     hardware_version = Column(String)
 
-    time_col_name = 'timestamp'
-    match_col_names = ['serial_number']
-
     @property
     def product_as_enum(self):
-        """Convert the product attribute form a string to an enum and return it."""
+        """Convert the product attribute from a string to an enum and return it."""
         return Fit.field_enums.product_enum(self.manufacturer, self.product)
-
-    @classmethod
-    def get(cls, db, serial_number):
-        """Return a device entry given the device's serial number."""
-        return cls.find_one(db, {'serial_number' : serial_number})
-
-    @classmethod
-    def s_get(cls, session, serial_number):
-        """Return a device entry given the device's serial number."""
-        return session.query(cls).filter(cls.serial_number == serial_number).one_or_none()
 
     @classmethod
     def local_device_serial_number(cls, serial_number, device_type):
         """Return a synthetic serial number for a sub device composed of the parent's serial number and the sub device type."""
         return '%s%06d' % (serial_number, device_type.value)
 
+    @classmethod
+    def derive_device_type(cls, manufacturer, product):
+        """Return a device type for the device inferred from its manufactuer and product information."""
+        device_type_mappings = {
+            cls.Manufacturer.Garmin: {
+                Fit.field_enums.DeviceType.fitness_tracker  : r'Vivo|Forerunner|Fenix',
+                Fit.field_enums.DeviceType.bike_gps         : r'Edge',
+                Fit.field_enums.DeviceType.standalone_gps   : r'GPSMap',
+                Fit.field_enums.DeviceType.software         : r'connect|Training_Center'
+            },
+            cls.Manufacturer.Microsoft: {
+                Fit.field_enums.DeviceType.fitness_tracker  : r'Microsoft Band'
+            }
+        }
+        if manufacturer in device_type_mappings:
+            for device_type, regex in device_type_mappings[manufacturer].items():
+                if re.search(regex, product.name, re.IGNORECASE):
+                    return device_type
+
 
 class DeviceInfo(GarminDB.Base, utilities.DBObject):
     """Class representing a Garmin device info message from a FIT file."""
 
     __tablename__ = 'device_info'
-    table_version = 2
-    view_version = 4
 
-    id = Column(Integer, primary_key=True)
+    db = GarminDB
+    table_version = 3
+    view_version = 5
+
     timestamp = Column(DateTime, nullable=False)
     file_id = Column(String, ForeignKey('files.id'))
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
-    device_type = Column(String)
     software_version = Column(String)
     cum_operating_time = Column(Time, nullable=False, default=datetime.time.min)
     battery_voltage = Column(Float)
 
-    time_col_name = 'timestamp'
-    match_col_names = ['timestamp', 'serial_number', 'device_type']
+    __table_args__ = (
+        PrimaryKeyConstraint('timestamp', 'serial_number'),
+    )
+    match_col_names = ['timestamp', 'serial_number']
 
     @classmethod
     def create_view(cls, db):
-        """Create a databse view that presents the device info data in a more user friendly way."""
+        """Create a database view that presents the device info data in a more user friendly way."""
         cols = [
             cls.timestamp.label('timestamp'),
             cls.file_id.label('file_id'),
             cls.serial_number.label('serial_number'),
-            cls.device_type.label('device_type'),
+            Device.device_type.label('device_type'),
             cls.software_version.label('software_version'),
             Device.manufacturer.label('manufacturer'),
             Device.product.label('product'),
@@ -145,11 +158,13 @@ class File(GarminDB.Base, utilities.DBObject):
     """Class representing a data file."""
 
     __tablename__ = 'files'
+
+    db = GarminDB
     table_version = 3
     view_version = 4
 
     fit_file_types_prefix = 'fit_'
-    FileType = utilities.derived_enum.derive('FileType', Fit.field_enums.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
+    FileType = utilities.derived_enum.derive('FileType', Fit.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
 
     id = Column(String, primary_key=True)
     name = Column(String, unique=True)
@@ -161,12 +176,7 @@ class File(GarminDB.Base, utilities.DBObject):
     @classmethod
     def s_get_id(cls, session, pathname):
         """Return the id of a file given it's pathname."""
-        return cls.s_find_id(session, {'name' : os.path.basename(pathname)})
-
-    @classmethod
-    def get_id(cls, db, pathname):
-        """Return the id of a file given it's pathname."""
-        return cls.find_id(db, {'name' : os.path.basename(pathname)})
+        return cls.s_find_id(session, {File.name : os.path.basename(pathname)})
 
     @classmethod
     def s_get(cls, session, file_id):
@@ -206,12 +216,12 @@ class Weight(GarminDB.Base, utilities.DBObject):
     """Class representing a weight entry."""
 
     __tablename__ = 'weight'
+
+    db = GarminDB
     table_version = 1
 
     day = Column(Date, primary_key=True)
     weight = Column(Float, nullable=False)
-
-    time_col_name = 'day'
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
@@ -228,12 +238,12 @@ class Stress(GarminDB.Base, utilities.DBObject):
     """Class representing a stress reading."""
 
     __tablename__ = 'stress'
+
+    db = GarminDB
     table_version = 1
 
     timestamp = Column(DateTime, primary_key=True, unique=True)
     stress = Column(Integer, nullable=False)
-
-    time_col_name = 'timestamp'
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
@@ -248,6 +258,8 @@ class Sleep(GarminDB.Base, utilities.DBObject):
     """Class representing a sleep session."""
 
     __tablename__ = 'sleep'
+
+    db = GarminDB
     table_version = 1
 
     day = Column(Date, primary_key=True)
@@ -258,8 +270,6 @@ class Sleep(GarminDB.Base, utilities.DBObject):
     light_sleep = Column(Time, nullable=False, default=datetime.time.min)
     rem_sleep = Column(Time, nullable=False, default=datetime.time.min)
     awake = Column(Time, nullable=False, default=datetime.time.min)
-
-    time_col_name = 'day'
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
@@ -278,14 +288,14 @@ class SleepEvents(GarminDB.Base, utilities.DBObject):
     """Table that stores events recorded druing sleep."""
 
     __tablename__ = 'sleep_events'
+
+    db = GarminDB
     table_version = 1
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, unique=True)
     event = Column(String)
     duration = Column(Time, nullable=False, default=datetime.time.min)
-
-    time_col_name = 'timestamp'
 
     @classmethod
     def get_wake_time(cls, db, day_date):
@@ -301,19 +311,19 @@ class RestingHeartRate(GarminDB.Base, utilities.DBObject):
     """Class representing a daily resting heart rate reading."""
 
     __tablename__ = 'resting_hr'
+
+    db = GarminDB
     table_version = 1
 
     day = Column(Date, primary_key=True)
     resting_heart_rate = Column(Float)
 
-    time_col_name = 'day'
-
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
         stats = {
-            'rhr_avg' : cls.s_get_col_avg(session, cls.resting_heart_rate, start_ts, end_ts, True),
-            'rhr_min' : cls.s_get_col_min(session, cls.resting_heart_rate, start_ts, end_ts, True),
+            'rhr_avg' : cls.s_get_col_avg(session, cls.resting_heart_rate, start_ts, end_ts, ignore_le_zero=True),
+            'rhr_min' : cls.s_get_col_min(session, cls.resting_heart_rate, start_ts, end_ts, ignore_le_zero=True),
             'rhr_max' : cls.s_get_col_max(session, cls.resting_heart_rate, start_ts, end_ts),
         }
         return stats
@@ -323,6 +333,8 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
     """Class representing a Garmin daily summary."""
 
     __tablename__ = 'daily_summary'
+
+    db = GarminDB
     table_version = 3
 
     day = Column(Date, primary_key=True)
@@ -352,8 +364,6 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
     rr_max = Column(Float)
     rr_min = Column(Float)
     description = Column(String)
-
-    time_col_name = 'day'
 
     @hybrid_property
     def intensity_time(self):
@@ -413,11 +423,11 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
             'steps_goal'                : cls.s_get_col_sum(session, cls.step_goal, start_ts, end_ts),
             'floors'                    : cls.s_get_col_sum(session, cls.floors_up, start_ts, end_ts),
             'floors_goal'               : cls.s_get_col_sum(session, cls.floors_goal, start_ts, end_ts),
-            'calories_goal'             : cls.s_get_col_avg(session, cls.calories_goal, start_ts, end_ts),
-            'intensity_time'            : cls.s_get_time_col_sum(session, cls.intensity_time, start_ts, end_ts),
-            'moderate_activity_time'    : cls.s_get_time_col_sum(session, cls.moderate_activity_time, start_ts, end_ts),
+            'intensity_time'            : cls.s_get_time_col_avg(session, cls.intensity_time, start_ts, end_ts),
+            'moderate_activity_time'    : cls.s_get_time_col_avg(session, cls.moderate_activity_time, start_ts, end_ts),
             'vigorous_activity_time'    : cls.s_get_time_col_sum(session, cls.vigorous_activity_time, start_ts, end_ts),
             'intensity_time_goal'       : cls.s_get_time_col_avg(session, cls.intensity_time_goal, start_ts, end_ts),
+            'calories_goal'             : cls.s_get_col_sum(session, cls.calories_goal, start_ts, end_ts),
             'calories_avg'              : cls.s_get_col_avg(session, cls.calories_total, start_ts, end_ts),
             'calories_bmr_avg'          : cls.s_get_col_avg(session, cls.calories_bmr, start_ts, end_ts),
             'calories_active_avg'       : cls.s_get_col_avg(session, cls.calories_active, start_ts, end_ts),

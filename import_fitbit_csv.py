@@ -62,7 +62,7 @@ class FitBitData(object):
         return len(self.file_names)
 
     def __write_entry(self, db_entry):
-        FitBitDB.DaysSummary.find_or_create(self.fitbitdb, FitBitDB.DaysSummary.intersection(db_entry))
+        FitBitDB.DaysSummary.insert_or_update(self.fitbitdb, FitBitDB.DaysSummary.intersection(db_entry))
 
     def process_files(self):
         """Import files into a database."""

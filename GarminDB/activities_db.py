@@ -22,6 +22,8 @@ class ActivitiesDB(utilities.DB):
     """Object representing a database for storing activities data."""
 
     Base = declarative_base()
+
+    db_tables = []
     db_name = 'garmin_activities'
     db_version = 12
 
@@ -41,16 +43,10 @@ class ActivitiesDB(utilities.DB):
         self.version = ActivitiesDB._DbVersion()
         self.version.version_check(self, self.db_version)
         #
-        self.tables = [Activities, ActivityLaps, ActivityRecords, ActivityRecords, StepsActivities, PaddleActivities, EllipticalActivities]
-        for table in self.tables:
+        for table in self.db_tables:
             self.version.table_version_check(self, table)
             if not self.version.view_version_check(self, table):
                 table.delete_view(self)
-        # Create or Recreate views
-        StepsActivities.create_view(self)
-        PaddleActivities.create_view(self)
-        CycleActivities.create_view(self)
-        EllipticalActivities.create_view(self)
 
 
 class ActivitiesLocationSegment(utilities.DBObject):
@@ -87,6 +83,8 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     """Class represents a databse table that contains data about recorded activities."""
 
     __tablename__ = 'activities'
+
+    db = ActivitiesDB
     table_version = 3
 
     activity_id = Column(String, primary_key=True)
@@ -132,26 +130,15 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)
 
-    time_col_name = 'start_time'
-
     @classmethod
     def s_find_one(cls, session, values_dict):
         """Find a table row that matches the values in the values_dict."""
+        raise Exception('In use???')
         return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).one_or_none()
 
     def is_steps_activity(self):
         """Return if the activity is a steps based activity."""
         return self.sport in ['walking', 'running', 'hiking']
-
-    @classmethod
-    def get(cls, db, activity_id):
-        """Return a single activity instance for the given id."""
-        return cls.find_one(db, {'activity_id' : activity_id})
-
-    @classmethod
-    def s_get(cls, session, activity_id):
-        """Return a single activity instance for the given id."""
-        return session.query(cls).filter(cls.activity_id == activity_id).one_or_none()
 
     @classmethod
     def get_by_course_id(cls, db, course_id):
@@ -186,6 +173,8 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
     """Class that holds data for an activity lap."""
 
     __tablename__ = 'activity_laps'
+
+    db = ActivitiesDB
     table_version = 3
 
     activity_id = Column(String, ForeignKey('activities.activity_id'))
@@ -222,8 +211,6 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
         PrimaryKeyConstraint("activity_id", "lap"),
     )
 
-    time_col_name = 'start_time'
-
     @classmethod
     def s_exists(cls, session, values_dict):
         """Return if a matching lap instance exists."""
@@ -259,6 +246,8 @@ class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
     """Encapsilates record for a single point in time from an activity."""
 
     __tablename__ = 'activity_records'
+
+    db = ActivitiesDB
     table_version = 3
 
     activity_id = Column(String, ForeignKey('activities.activity_id'))
@@ -278,8 +267,6 @@ class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
     __table_args__ = (
         PrimaryKeyConstraint("activity_id", "record"),
     )
-
-    time_col_name = 'timestamp'
 
     @classmethod
     def s_exists(cls, session, values_dict):
@@ -347,6 +334,8 @@ class SportActivities(utilities.DBObject):
 
 class StepsActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'steps_activities'
+
+    db = ActivitiesDB
     table_version = 3
     view_version = 5
 
@@ -477,7 +466,10 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
 
 
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
+
     __tablename__ = 'paddle_activities'
+
+    db = ActivitiesDB
     table_version = 2
     view_version = 5
 
@@ -515,7 +507,10 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
 
 
 class CycleActivities(ActivitiesDB.Base, SportActivities):
+
     __tablename__ = 'cycle_activities'
+
+    db = ActivitiesDB
     table_version = 2
     view_version = 6
 
@@ -553,7 +548,10 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
 
 
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
+
     __tablename__ = 'elliptical_activities'
+
+    db = ActivitiesDB
     table_version = 2
     view_version = 5
 

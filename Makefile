@@ -25,6 +25,7 @@ create_copy_dbs: copy_garmin mshealth fitbit
 # delete the exisitng dbs and build new dbs from already downloaded data files
 rebuild_dbs: clean_dbs build_dbs
 rebuild_mon_db: clean_garmin_monitoring_dbs build_garmin_monitoring
+rebuild_act_db: clean_garmin_activities_dbs build_garmin_activities
 
 # update the exisitng dbs by downloading data files for dates after the last in the dbs and update the dbs
 update_dbs: update_garmin
@@ -125,6 +126,9 @@ build_garmin:
 build_garmin_monitoring:
 	$(TIME) $(PYTHON) garmin.py --monitoring --import --analyze
 
+build_garmin_activities:
+	$(TIME) $(PYTHON) garmin.py --activities --import --analyze
+
 copy_garmin_settings:
 	$(TIME) $(PYTHON) garmin.py --copy
 
@@ -146,6 +150,9 @@ clean_garmin_dbs:
 
 clean_garmin_monitoring_dbs:
 	$(PYTHON) garmin.py --delete_db --monitoring
+
+clean_garmin_activities_dbs:
+	$(PYTHON) garmin.py --delete_db --activities
 
 package_garmin:
 	pyinstaller --clean --noconfirm --onefile garmin.py

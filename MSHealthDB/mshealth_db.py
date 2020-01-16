@@ -20,6 +20,8 @@ class MSHealthDB(utilities.DB):
     """Object representing a database for storing health data from Microsoft."""
 
     Base = declarative_base()
+
+    db_tables = []
     db_name = 'mshealth'
 
     def __init__(self, db_params, debug=False):
@@ -37,12 +39,14 @@ class MSHealthDB(utilities.DB):
 class Attributes(MSHealthDB.Base, utilities.KeyValueObject):
     """A table that holds attributes about the user as key-value pairs."""
 
+    db = MSHealthDB
     __tablename__ = 'attributes'
 
 
 class DaysSummary(MSHealthDB.Base, utilities.DBObject):
     """A table that holds summarized information about a day with one row per day."""
 
+    db = MSHealthDB
     __tablename__ = 'days_summary'
 
     day = Column(Date, primary_key=True)
@@ -82,8 +86,6 @@ class DaysSummary(MSHealthDB.Base, utilities.DBObject):
     guided_workout_events = Column(Integer)
     guided_workout_calories = Column(Integer)
     guided_workout_secs = Column(Integer)
-
-    time_col_name = 'day'
 
     @classmethod
     def get_hr_stats(cls, db, start_ts, end_ts):
@@ -183,12 +185,11 @@ class DaysSummary(MSHealthDB.Base, utilities.DBObject):
 class MSVaultWeight(MSHealthDB.Base, utilities.DBObject):
     """Class for a databse table holding weight data from Microsoft Health Vault."""
 
+    db = MSHealthDB
     __tablename__ = 'weight'
 
     timestamp = Column(DateTime, primary_key=True, unique=True)
     weight = Column(Float)
-
-    time_col_name = 'timestamp'
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):

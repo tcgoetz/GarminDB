@@ -57,11 +57,11 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         self.check_not_none_cols(self.test_act_db, {GarminDB.Activities : fields_list})
 
     def check_sport(self, activity):
-        sport = Fit.field_enums.Sport.from_string(activity.sport)
-        self.assertIsInstance(sport, Fit.field_enums.Sport, f'sport ({type(sport)}) from {repr(activity)}')
+        sport = Fit.Sport.from_string(activity.sport)
+        self.assertIsInstance(sport, Fit.Sport, f'sport ({type(sport)}) from {repr(activity)}')
         self.assertEqual(activity.sport, sport.name)
-        sub_sport = Fit.field_enums.SubSport.from_string(activity.sub_sport)
-        self.assertIsInstance(sub_sport, Fit.field_enums.SubSport, f'sub_sport ({type(sub_sport)}) from {repr(activity)}')
+        sub_sport = Fit.SubSport.from_string(activity.sub_sport)
+        self.assertIsInstance(sub_sport, Fit.SubSport, f'sub_sport ({type(sub_sport)}) from {repr(activity)}')
         self.assertEqual(activity.sub_sport, sub_sport.name)
 
     def check_activities(self):

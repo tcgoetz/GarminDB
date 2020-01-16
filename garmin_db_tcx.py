@@ -5,6 +5,7 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 import re
+from cached_property import cached_property
 
 from Tcx import Tcx
 from utilities import Location
@@ -16,6 +17,10 @@ class GarminDbTcx(Tcx):
     """Read and write TCX files."""
 
     __product_to_manufactuer_cache = {}
+
+    __default_device_serial_numbers = {
+        (GarminDB.Device.Manufacturer.Microsoft, 'Microsoft Band') : GarminDB.Device.unknown_device_serial_number + 1
+    }
 
     def __init__(self, debug=False):
         """Return and instance of the GaminDbTcx class."""
@@ -41,8 +46,7 @@ class GarminDbTcx(Tcx):
             r'VivoActive|Forerunner|Fenix' : GarminDB.Device.Manufacturer.Garmin,
         }
         for regex, manufacturer in mappings.items():
-            match = re.search(regex, product)
-            if match:
+            if re.search(regex, product, re.IGNORECASE):
                 return manufacturer
 
     def _manufacturer_from_product(self, product):
@@ -60,38 +64,44 @@ class GarminDbTcx(Tcx):
             return (None, None)
         return (self._manufacturer_from_product(product), product)
 
-    @property
+    @cached_property
     def serial_number(self):
         """Return the serial number of the device that recorded the parsed TCX file."""
         serial_number = super().creator_serialnumber
-        return serial_number if serial_number is None or serial_number == 0 else GarminDB.Device.unknown_device_serial_number
+        if not serial_number or serial_number == '0':
+            (manufactuer, product) = self.get_manufacturer_and_product()
+            if (manufactuer, product) in self.__default_device_serial_numbers:
+                serial_number = self.__default_device_serial_numbers[(manufactuer, product)]
+            else:
+                serial_number = GarminDB.Device.unknown_device_serial_number
+        return serial_number
 
-    @property
+    @cached_property
     def start_loc(self):
         """Return the start location of the activity as a Location instance."""
         return Location(location=super().start_loc)
 
-    @property
+    @cached_property
     def end_loc(self):
         """Return the end location of the activity as a tuple of Location instances."""
         return Location(location=super().end_loc)
 
-    @property
+    @cached_property
     def distance(self):
         """Return the total distance recorded for the activity."""
         return Distance.from_meters(super().distance)
 
-    @property
+    @cached_property
     def speed_max(self):
         """Return the maximum of all speed readings in the TCX file."""
         return Speed.from_mps(super().speed_max)
 
-    @property
+    @cached_property
     def ascent(self):
         """Return the total ascent over the activity."""
         return Distance.from_meters(super().ascent)
 
-    @property
+    @cached_property
     def descent(self):
         """Return the total descent over the activity."""
         return Distance.from_meters(super().descent)

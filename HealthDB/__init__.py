@@ -7,4 +7,4 @@ __license__ = "GPL"
 # flake8: noqa
 
 from HealthDB.summary_base import SummaryBase
-from HealthDB.summary_db import SummaryDB, Summary, MonthsSummary, WeeksSummary, DaysSummary
+from HealthDB.summary_db import SummaryDB, Summary, YearsSummary, MonthsSummary, WeeksSummary, DaysSummary

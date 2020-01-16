@@ -64,7 +64,7 @@ class TestGarminDbObjects(unittest.TestCase):
 
     def test_file_type(self):
         file_types_list = list(GarminDB.File.FileType)
-        self.assertIn(GarminDB.File.FileType.convert(Fit.field_enums.FileType.goals), file_types_list)
+        self.assertIn(GarminDB.File.FileType.convert(Fit.FileType.goals), file_types_list)
 
 
 if __name__ == '__main__':
