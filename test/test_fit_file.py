@@ -21,11 +21,11 @@ root_logger.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-test_activity_files     = True
+test_activity_files     = False
 test_monitoring_files   = True
-test_sleep_files        = True
-test_metrics_files      = True
-test_unknown_files      = True
+test_sleep_files        = False
+test_metrics_files      = False
+test_unknown_files      = False
 
 
 class TestFitFile(unittest.TestCase):

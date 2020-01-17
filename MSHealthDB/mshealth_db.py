@@ -23,31 +23,28 @@ class MSHealthDB(utilities.DB):
 
     db_tables = []
     db_name = 'mshealth'
+    db_version = 1
 
-    def __init__(self, db_params, debug=False):
-        """
-        Return an instance of MSHealthDB.
-
-        Paramters:
-            db_params (dict): Config data for accessing the database
-            debug (Boolean): enable debug logging
-        """
-        super().__init__(db_params, debug)
-        MSHealthDB.Base.metadata.create_all(self.engine)
+    class _DbVersion(Base, utilities.DbVersionObject):
+        """Stores version information for this database and it's tables."""
 
 
 class Attributes(MSHealthDB.Base, utilities.KeyValueObject):
     """A table that holds attributes about the user as key-value pairs."""
 
-    db = MSHealthDB
     __tablename__ = 'attributes'
+
+    db = MSHealthDB
+    table_version = 1
 
 
 class DaysSummary(MSHealthDB.Base, utilities.DBObject):
     """A table that holds summarized information about a day with one row per day."""
 
-    db = MSHealthDB
     __tablename__ = 'days_summary'
+
+    db = MSHealthDB
+    table_version = 1
 
     day = Column(Date, primary_key=True)
     calories = Column(Integer)
@@ -185,8 +182,10 @@ class DaysSummary(MSHealthDB.Base, utilities.DBObject):
 class MSVaultWeight(MSHealthDB.Base, utilities.DBObject):
     """Class for a databse table holding weight data from Microsoft Health Vault."""
 
-    db = MSHealthDB
     __tablename__ = 'weight'
+
+    db = MSHealthDB
+    table_version = 1
 
     timestamp = Column(DateTime, primary_key=True, unique=True)
     weight = Column(Float)

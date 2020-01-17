@@ -25,25 +25,7 @@ class GarminSummaryDB(utilities.DB):
     db_version = 7
 
     class _DbVersion(Base, utilities.DbVersionObject):
-        pass
-
-    def __init__(self, db_params, debug=False):
-        """
-        Return an instance of GarminSummaryDB.
-
-        Paramters:
-            db_params (dict): Config data for accessing the database
-            debug (Boolean): enable debug logging
-        """
-        super().__init__(db_params, debug)
-        GarminSummaryDB.Base.metadata.create_all(self.engine)
-        self.version = GarminSummaryDB._DbVersion()
-        self.version.version_check(self, self.db_version)
-        #
-        for table in self.db_tables:
-            self.version.table_version_check(self, table)
-            if not self.version.view_version_check(self, table):
-                table.delete_view(self)
+        """Stores version information for this databse and it's tables."""
 
 
 class Summary(GarminSummaryDB.Base, utilities.KeyValueObject):

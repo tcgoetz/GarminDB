@@ -304,8 +304,8 @@ class Analyze(object):
 
     def __calculate_year(self, year):
         with self.garmin_db.managed_session() as garmin_session, self.garmin_mon_db.managed_session() as garmin_mon_session, \
-             self.garmin_act_db.managed_session() as garmin_act_session, self.garmin_sum_db.managed_session() as garmin_sum_session, \
-             self.sum_db.managed_session() as sum_session:
+                self.garmin_act_db.managed_session() as garmin_act_session, self.garmin_sum_db.managed_session() as garmin_sum_session, \
+                self.sum_db.managed_session() as sum_session:
             # calculate part of the years
             self.__calculate_days(year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
             self.__calculate_weeks(year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)

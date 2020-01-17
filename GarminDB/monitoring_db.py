@@ -27,25 +27,7 @@ class MonitoringDB(utilities.DB):
     db_version = 5
 
     class _DbVersion(Base, utilities.DbVersionObject):
-        pass
-
-    def __init__(self, db_params, debug=False):
-        """
-        Return an instance of MonitoringDB.
-
-        Paramters:
-            db_params (dict): Config data for accessing the database
-            debug (Boolean): enable debug logging
-        """
-        super().__init__(db_params, debug)
-        MonitoringDB.Base.metadata.create_all(self.engine)
-        self.version = MonitoringDB._DbVersion()
-        self.version.version_check(self, self.db_version)
-        #
-        for table in self.db_tables:
-            self.version.table_version_check(self, table)
-            if not self.version.view_version_check(self, table):
-                table.delete_view(self)
+        """Stores version information for this databse and it's tables."""
 
 
 class MonitoringInfo(MonitoringDB.Base, utilities.DBObject):
@@ -160,7 +142,6 @@ class MonitoringClimb(MonitoringDB.Base, utilities.DBObject):
     __table_args__ = (
         UniqueConstraint("timestamp", "ascent", "descent", "cum_ascent", "cum_descent"),
     )
-    # match_col_names = ["timestamp", "ascent", "descent", "cum_ascent", "cum_descent"]
 
     @classmethod
     def get_stats(cls, session, func, start_ts, end_ts, measurement_system):
@@ -228,6 +209,11 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
     __table_args__ = (
         UniqueConstraint("timestamp", "activity_type", "intensity", "duration"),
     )
+
+    @classmethod
+    def s_get_from_dict(cls, session, values_dict):
+        """Return a single DeviceInfo instance for the given id."""
+        return session.query(cls).filter(cls.timestamp == values_dict['timestamp']).filter(cls.activity_type == values_dict['activity_type']).one_or_none()
 
     @classmethod
     def get_active_calories(cls, session, activity_type, start_ts, end_ts):

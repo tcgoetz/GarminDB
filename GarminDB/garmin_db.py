@@ -30,24 +30,7 @@ class GarminDB(utilities.DB):
     db_version = 13
 
     class _DbVersion(Base, utilities.DbVersionObject):
-        pass
-
-    def __init__(self, db_params, debug=False):
-        """
-        Return an instance of GarminDB.
-
-        Paramters:
-            db_params (dict): Config data for accessing the database
-            debug (Boolean): enable debug logging
-        """
-        super().__init__(db_params, debug)
-        GarminDB.Base.metadata.create_all(self.engine)
-        self.version = GarminDB._DbVersion()
-        self.version.version_check(self, self.db_version)
-        for table in self.db_tables:
-            self.version.table_version_check(self, table)
-            if not self.version.view_version_check(self, table):
-                table.delete_view(self)
+        """Stores version information for this databse and it's tables."""
 
 
 class Attributes(GarminDB.Base, utilities.KeyValueObject):
@@ -136,7 +119,11 @@ class DeviceInfo(GarminDB.Base, utilities.DBObject):
     __table_args__ = (
         PrimaryKeyConstraint('timestamp', 'serial_number'),
     )
-    match_col_names = ['timestamp', 'serial_number']
+
+    @classmethod
+    def s_get_from_dict(cls, session, values_dict):
+        """Return a single DeviceInfo instance for the given id."""
+        return session.query(cls).filter(cls.timestamp == values_dict['timestamp']).filter(cls.serial_number == values_dict['serial_number']).one_or_none()
 
     @classmethod
     def create_view(cls, db):
@@ -170,8 +157,6 @@ class File(GarminDB.Base, utilities.DBObject):
     name = Column(String, unique=True)
     type = Column(Enum(FileType), nullable=False)
     serial_number = Column(Integer, ForeignKey('devices.serial_number'))
-
-    match_col_names = ['name']
 
     @classmethod
     def s_get_id(cls, session, pathname):
@@ -290,10 +275,9 @@ class SleepEvents(GarminDB.Base, utilities.DBObject):
     __tablename__ = 'sleep_events'
 
     db = GarminDB
-    table_version = 1
+    table_version = 2
 
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime, unique=True)
+    timestamp = Column(DateTime, primary_key=True)
     event = Column(String)
     duration = Column(Time, nullable=False, default=datetime.time.min)
 

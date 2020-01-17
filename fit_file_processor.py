@@ -191,7 +191,7 @@ class FitFileProcessor(object):
                 'software_version'      : message_dict['software_version'],
             }
             try:
-                GarminDB.DeviceInfo.s_create_or_update(self.garmin_db_session, device_info, ignore_none=True)
+                GarminDB.DeviceInfo.s_insert_or_update(self.garmin_db_session, device_info, ignore_none=True)
             except Exception as e:
                 logger.warning("device_info not written: %r - %s", message_dict, e)
 
@@ -507,7 +507,7 @@ class FitFileProcessor(object):
                 GarminDB.MonitoringClimb.s_insert_or_update(self.garmin_mon_db_session, intersection)
             intersection = GarminDB.Monitoring.intersection(entry)
             if len(intersection) > 1:
-                GarminDB.Monitoring.s_create_or_update(self.garmin_mon_db_session, intersection)
+                GarminDB.Monitoring.s_insert_or_update(self.garmin_mon_db_session, intersection)
         except ValueError:
             logger.error("write_monitoring_entry: ValueError for %r: %s", entry, traceback.format_exc())
         except Exception:

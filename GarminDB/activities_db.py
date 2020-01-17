@@ -28,25 +28,7 @@ class ActivitiesDB(utilities.DB):
     db_version = 12
 
     class _DbVersion(Base, utilities.DbVersionObject):
-        pass
-
-    def __init__(self, db_params, debug=False):
-        """
-        Return an instance of ActivitiesDB.
-
-        Paramters:
-            db_params (dict): Config data for accessing the database
-            debug (Boolean): enable debug logging
-        """
-        super().__init__(db_params, debug)
-        ActivitiesDB.Base.metadata.create_all(self.engine)
-        self.version = ActivitiesDB._DbVersion()
-        self.version.version_check(self, self.db_version)
-        #
-        for table in self.db_tables:
-            self.version.table_version_check(self, table)
-            if not self.version.view_version_check(self, table):
-                table.delete_view(self)
+        """Stores version information for this database and it's tables."""
 
 
 class ActivitiesLocationSegment(utilities.DBObject):
@@ -130,12 +112,6 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)
 
-    @classmethod
-    def s_find_one(cls, session, values_dict):
-        """Find a table row that matches the values in the values_dict."""
-        raise Exception('In use???')
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).one_or_none()
-
     def is_steps_activity(self):
         """Return if the activity is a steps based activity."""
         return self.sport in ['walking', 'running', 'hiking']
@@ -216,21 +192,6 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
         """Return if a matching lap instance exists."""
         return session.query(exists().where(cls.activity_id == values_dict['activity_id']).where(cls.lap == values_dict['lap'])).scalar()
 
-    @classmethod
-    def s_find_one(cls, session, values_dict):
-        """Find a table row that matches the values in the values_dict."""
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.lap == values_dict['lap']).one_or_none()
-
-    @classmethod
-    def get(cls, db, activity_id):
-        """Return all laps for the activity with id activity_id."""
-        return cls.find(db, {'activity_id' : activity_id})
-
-    @classmethod
-    def s_get(cls, session, activity_id):
-        """Return all laps for the activity with id activity_id."""
-        return session.query(cls).filter(cls.activity_id == activity_id).all()
-
     @hybrid_property
     def start_loc(self):
         """Return the lap start location."""
@@ -273,11 +234,6 @@ class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
         """Return if a matching record exists in the database."""
         return session.query(exists().where(cls.activity_id == values_dict['activity_id']).where(cls.record == values_dict['record'])).scalar()
 
-    @classmethod
-    def s_find_one(cls, session, values_dict):
-        """Find a table row that matches the values in the values_dict."""
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.record == values_dict['record']).one_or_none()
-
     @hybrid_property
     def position(self):
         """Return the location where the record was recorded."""
@@ -291,8 +247,6 @@ class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
 
 class SportActivities(utilities.DBObject):
     """Base class for all sport based activity tables."""
-
-    match_col_names = ['activity_id']
 
     @declared_attr
     def activity_id(cls):
@@ -321,10 +275,6 @@ class SportActivities(utilities.DBObject):
     @classmethod
     def create_view(cls, db):
         cls._create_activity_view(db, cls._view_selectable())
-
-    @classmethod
-    def get(cls, db, activity_id):
-        return cls.find_one(db, {'activity_id' : activity_id})
 
     @classmethod
     def google_map_loc(cls, label):

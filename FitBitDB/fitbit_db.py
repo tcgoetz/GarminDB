@@ -23,31 +23,28 @@ class FitBitDB(utilities.DB):
 
     db_tables = []
     db_name = 'fitbit'
+    db_version = 1
 
-    def __init__(self, db_params, debug=False):
-        """
-        Return an instance of FitBitDB.
-
-        Paramters:
-            db_params (dict): Config data for accessing the database
-            debug (Boolean): enable debug logging
-        """
-        super().__init__(db_params, debug)
-        FitBitDB.Base.metadata.create_all(self.engine)
+    class _DbVersion(Base, utilities.DbVersionObject):
+        """Stores version information for this database and it's tables."""
 
 
 class Attributes(FitBitDB.Base, utilities.KeyValueObject):
     """Object representing generic key-value data from a FitBit device."""
 
-    db = FitBitDB
     __tablename__ = 'attributes'
+
+    db = FitBitDB
+    table_version = 1
 
 
 class DaysSummary(FitBitDB.Base, utilities.DBObject):
     """A table that holds summarized information about a day with one row per day."""
 
-    db = FitBitDB
     __tablename__ = 'days_summary'
+
+    db = FitBitDB
+    table_version = 1
 
     day = Column(Date, primary_key=True)
     calories_in = Column(Integer)

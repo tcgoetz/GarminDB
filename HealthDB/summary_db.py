@@ -27,25 +27,7 @@ class SummaryDB(db.DB):
     db_version = 6
 
     class _DbVersion(Base, dbv.DbVersionObject):
-        pass
-
-    def __init__(self, db_params, debug=False):
-        """
-        Return an instance of SummaryDB.
-
-        Paramters:
-            db_params (dict): Config data for accessing the database
-            debug (Boolean): enable debug logging
-        """
-        super().__init__(db_params, debug)
-        SummaryDB.Base.metadata.create_all(self.engine)
-        version = SummaryDB._DbVersion()
-        version.version_check(self, self.db_version)
-        #
-        for table in self.db_tables:
-            version.table_version_check(self, table)
-            if not version.view_version_check(self, table):
-                table.delete_view(self)
+        """Stores version information for this databse and it's tables."""
 
 
 class Summary(SummaryDB.Base, key_value.KeyValueObject):

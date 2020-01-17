@@ -51,7 +51,7 @@ class GarminWeightData(JsonFileProcessor):
                 'day'       : json_data['startDate'].date(),
                 'weight'    : weight.kgs_or_lbs(self.measurement_system)
             }
-            GarminDB.Weight.find_or_create(self.garmin_db, point)
+            GarminDB.Weight.insert_or_update(self.garmin_db, point)
             return 1
         return 0
 
@@ -161,7 +161,7 @@ class GarminSleepData(JsonFileProcessor):
             'rem_sleep': daily_sleep.get('remSleepSeconds'),
             'awake': daily_sleep.get('awakeSleepSeconds')
         }
-        GarminDB.Sleep.create_or_update(self.garmin_db, day_data, ignore_none=True)
+        GarminDB.Sleep.insert_or_update(self.garmin_db, day_data, ignore_none=True)
         sleep_levels = json_data.get('sleepLevels')
         if sleep_levels is None:
             return 0
@@ -175,7 +175,7 @@ class GarminSleepData(JsonFileProcessor):
                 'event': event.name,
                 'duration': duration
             }
-            GarminDB.SleepEvents.create_or_update(self.garmin_db, level_data, ignore_none=True)
+            GarminDB.SleepEvents.insert_or_update(self.garmin_db, level_data, ignore_none=True)
         return len(sleep_levels)
 
 
@@ -207,7 +207,7 @@ class GarminRhrData(JsonFileProcessor):
                     'day'                   : json_data['statisticsStartDate'].date(),
                     'resting_heart_rate'    : rhr
                 }
-                GarminDB.RestingHeartRate.create_or_update(self.garmin_db, point, ignore_none=True)
+                GarminDB.RestingHeartRate.insert_or_update(self.garmin_db, point, ignore_none=True)
                 return 1
         return 0
 
@@ -300,7 +300,7 @@ class GarminSummaryData(JsonFileProcessor):
             'rr_min'                    : self._get_field(json_data, 'lowestRespirationValue', float),
             'description'               : self._get_field(json_data, 'wellnessDescription'),
         }
-        GarminDB.DailySummary.create_or_update(self.garmin_db, summary, ignore_none=True)
+        GarminDB.DailySummary.insert_or_update(self.garmin_db, summary, ignore_none=True)
         return 1
 
 
@@ -337,5 +337,5 @@ class GarminHydrationData(JsonFileProcessor):
             'hydration_goal'            : hydration_goal.ml_or_oz(self.measurement_system, rounded=True)
         }
         root_logger.info("Processing daily hydration data %r", summary)
-        GarminDB.DailySummary.create_or_update(self.garmin_db, summary, ignore_none=True)
+        GarminDB.DailySummary.insert_or_update(self.garmin_db, summary, ignore_none=True)
         return 1

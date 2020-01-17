@@ -100,8 +100,8 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
                 last_steps[activity_type] = steps
 
     def test_db_data_integrity(self):
-        yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).date()
-        day_data = GarminDB.Monitoring.get_for_day(self.garmin_mon_db, GarminDB.Monitoring, yesterday)
+        target_day = (datetime.datetime.now() - datetime.timedelta(days=2)).date()
+        day_data = GarminDB.Monitoring.get_for_day(self.garmin_mon_db, GarminDB.Monitoring, target_day)
         self.check_day_steps(day_data)
 
 
