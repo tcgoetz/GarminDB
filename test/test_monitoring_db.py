@@ -55,8 +55,8 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
 
     def test_garmin_mon_db_uptodate(self):
         uptodate_tables = {
-                'monitoring_hr_table'           : GarminDB.MonitoringHeartRate,
-                'monitoring_table'              : GarminDB.Monitoring,
+                'monitoring_hr_table'   : GarminDB.MonitoringHeartRate,
+                'monitoring_table'      : GarminDB.Monitoring,
             }
         for table_name, table in uptodate_tables.items():
             latest = GarminDB.MonitoringHeartRate.latest_time(self.db, GarminDB.MonitoringHeartRate.heart_rate)
@@ -90,14 +90,17 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
 
     def check_day_steps(self, data):
         last_steps = {}
+        last_steps_timestamp = None
         for monitoring in data:
             if monitoring.steps is not None:
                 steps = monitoring.steps
                 activity_type = monitoring.activity_type
                 if activity_type in last_steps:
                     activity_last_steps = last_steps[activity_type]
-                    self.assertGreaterEqual(steps, activity_last_steps, f'{repr(monitoring)} - steps not greater than last steps')
+                    self.assertGreaterEqual(steps, activity_last_steps,
+                                            f'{repr(monitoring)} - steps at {monitoring.timestamp} not greater than last steps at {last_steps_timestamp}')
                 last_steps[activity_type] = steps
+                last_steps_timestamp = monitoring.timestamp
 
     def test_db_data_integrity(self):
         target_day = (datetime.datetime.now() - datetime.timedelta(days=2)).date()

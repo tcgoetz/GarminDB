@@ -39,7 +39,7 @@ class TestGarminDbObjects(unittest.TestCase):
         }
         logger.info("check_file_table: %r", file_dict)
         GarminDB.File.insert_or_update(garmindb, file_dict)
-        file = GarminDB.File.s_get(garmindb, file_id)
+        file = GarminDB.File.get(garmindb, file_id)
         self.assertEqual(file.id, file_dict['id'])
         self.assertEqual(file.name, file_dict['name'])
         self.assertEqual(file.type, file_dict['type'])

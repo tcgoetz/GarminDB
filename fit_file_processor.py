@@ -7,6 +7,7 @@ __license__ = "GPL"
 import logging
 import sys
 import traceback
+import datetime
 
 import Fit
 import GarminDB
@@ -42,7 +43,7 @@ class FitFileProcessor(object):
         if function is not None:
             for message in messages:
                 # parse the message with lower case field names
-                function(fit_file, message.to_lower_dict())
+                function(fit_file, message.to_dict())
         elif isinstance(message_type, Fit.UnknownMessageType) or message_type.is_unknown():
             root_logger.debug("No entry handler %s for message type %r (%d) from %s: %s",
                               handler_name, message_type, len(messages), fit_file.filename, messages[0])
@@ -56,17 +57,17 @@ class FitFileProcessor(object):
         self.manufacturer = None
         self.product = None
         for message in messages:
-            self._write_file_id_entry(fit_file, message.to_lower_dict())
+            self._write_file_id_entry(fit_file, message.to_dict())
 
     def _write_lap(self, fit_file, message_type, messages):
         """Write all lap messages to the database."""
         for lap_num, message in enumerate(messages):
-            self._write_lap_entry(fit_file, message.to_lower_dict(), lap_num)
+            self._write_lap_entry(fit_file, message.to_dict(), lap_num)
 
     def _write_record(self, fit_file, message_type, messages):
         """Write all record messages to the database."""
         for record_num, message in enumerate(messages):
-            self._write_record_entry(fit_file, message.to_lower_dict(), record_num)
+            self._write_record_entry(fit_file, message.to_dict(), record_num)
 
     def __write_message_type(self, fit_file, message_type):
         messages = fit_file[message_type]
@@ -76,8 +77,8 @@ class FitFileProcessor(object):
 
     def __write_message_types(self, fit_file, message_types):
         """Write all messages from the FIT file to the database ordered by message type."""
-        root_logger.debug("Importing %s (%s) [%s] with message types: %s",
-                          fit_file.filename, fit_file.time_created_local, fit_file.type, message_types)
+        root_logger.info("Importing %s (%s) [%s] with message types: %s",
+                         fit_file.filename, fit_file.time_created_local, fit_file.type, message_types)
         #
         # Some ordering is important: 1. create new file entries 2. create new device entries
         #
@@ -92,7 +93,7 @@ class FitFileProcessor(object):
         """Given a Fit File object, write all of its messages to the DB."""
         with self.garmin_db.managed_session() as self.garmin_db_session, self.garmin_mon_db.managed_session() as self.garmin_mon_db_session, \
                 self.garmin_act_db.managed_session() as self.garmin_act_db_session:
-            self.__write_message_types(fit_file, fit_file.message_types())
+            self.__write_message_types(fit_file, fit_file.message_types)
             # Now write a file's worth of data to the DB
             self.garmin_act_db_session.commit()
             self.garmin_mon_db_session.commit()
@@ -494,7 +495,12 @@ class FitFileProcessor(object):
     def _write_monitoring_entry(self, fit_file, message_dict):
         # Only include not None values so that we match and update only if a table's columns if it has values.
         entry = utilities.list_and_dict.dict_filter_none_values(message_dict)
-        entry['timestamp'] = fit_file.utc_datetime_to_local(message_dict['timestamp'])
+        timestamp = fit_file.utc_datetime_to_local(message_dict['timestamp'])
+        # Hack: daily monitoring summaries appear at 00:00:00 localtime for the PREVIOUS day. Subtract a second so they appear int he previous day.
+        if timestamp.time() == datetime.time.min:
+            timestamp = timestamp - datetime.timedelta(seconds=1)
+        entry['timestamp'] = timestamp
+        logger.debug("monitoring entry: %r", entry)
         try:
             intersection = GarminDB.MonitoringHeartRate.intersection(entry)
             if len(intersection) > 1 and intersection['heart_rate'] > 0:

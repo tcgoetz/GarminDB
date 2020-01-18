@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, Integer, DateTime, Time, Float, Enum, FLOAT, UniqueConstraint
+from sqlalchemy import Column, Integer, DateTime, Time, Float, Enum, FLOAT, UniqueConstraint, PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -192,9 +192,8 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
     __tablename__ = 'monitoring'
 
     db = MonitoringDB
-    table_version = 1
+    table_version = 2
 
-    id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, nullable=False)
     activity_type = Column(Enum(Fit.field_enums.ActivityType))
     intensity = Column(Integer)
@@ -207,7 +206,7 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
     cycles = Column(Float)
 
     __table_args__ = (
-        UniqueConstraint("timestamp", "activity_type", "intensity", "duration"),
+        PrimaryKeyConstraint("timestamp", "activity_type"),
     )
 
     @classmethod

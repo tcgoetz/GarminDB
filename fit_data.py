@@ -54,6 +54,6 @@ class FitData(object):
                     fp.write_file(fit_file)
                 else:
                     root_logger.info("skipping non %s file %s type %r message types %r",
-                                     self.fit_type, file_name, fit_file.type, fit_file.message_types())
+                                     self.fit_type, file_name, fit_file.type, fit_file.message_types)
             except Fit.exceptions.FitFileError as e:
                 logger.error("Failed to parse %s: %s", file_name, e)
