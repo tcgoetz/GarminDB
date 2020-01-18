@@ -42,8 +42,7 @@ class FitFileProcessor(object):
         function = getattr(self, handler_name, None)
         if function is not None:
             for message in messages:
-                # parse the message with lower case field names
-                function(fit_file, message.to_dict())
+                function(fit_file, message.fields)
         elif isinstance(message_type, Fit.UnknownMessageType) or message_type.is_unknown():
             root_logger.debug("No entry handler %s for message type %r (%d) from %s: %s",
                               handler_name, message_type, len(messages), fit_file.filename, messages[0])
@@ -57,17 +56,17 @@ class FitFileProcessor(object):
         self.manufacturer = None
         self.product = None
         for message in messages:
-            self._write_file_id_entry(fit_file, message.to_dict())
+            self._write_file_id_entry(fit_file, message.fields)
 
     def _write_lap(self, fit_file, message_type, messages):
         """Write all lap messages to the database."""
         for lap_num, message in enumerate(messages):
-            self._write_lap_entry(fit_file, message.to_dict(), lap_num)
+            self._write_lap_entry(fit_file, message.fields, lap_num)
 
     def _write_record(self, fit_file, message_type, messages):
         """Write all record messages to the database."""
         for record_num, message in enumerate(messages):
-            self._write_record_entry(fit_file, message.to_dict(), record_num)
+            self._write_record_entry(fit_file, message.fields, record_num)
 
     def __write_message_type(self, fit_file, message_type):
         messages = fit_file[message_type]
@@ -99,44 +98,44 @@ class FitFileProcessor(object):
             self.garmin_mon_db_session.commit()
             self.garmin_db_session.commit()
 
-    def __get_field_value(self, message_dict, field_name):
+    def __get_field_value(self, message_fields, field_name):
         prefixes = ['dev_', 'enhanced_', '']
         for prefix in prefixes:
             prefixed_field_name = prefix + field_name
-            if prefixed_field_name in message_dict:
-                return message_dict[prefixed_field_name]
+            if prefixed_field_name in message_fields:
+                return message_fields[prefixed_field_name]
 
-    def __get_field_list_value(self, message_dict, dev_field_name_list, field_name_list):
+    def __get_field_list_value(self, message_fields, dev_field_name_list, field_name_list):
         for field_name in dev_field_name_list:
             dev_field_name = 'dev_' + field_name
-            if dev_field_name in message_dict:
-                return message_dict[dev_field_name]
+            if dev_field_name in message_fields:
+                return message_fields[dev_field_name]
         for field_name in field_name_list:
-            value = self.__get_field_value(message_dict, field_name)
+            value = self.__get_field_value(message_fields, field_name)
             if value is not None:
                 return value
 
-    def __get_total_steps(self, message_dict):
-        return self.__get_field_list_value(message_dict, ['tStps', 'Stps', 'ts', 'totalsteps'], ['total_steps'])
+    def __get_total_steps(self, message_fields):
+        return self.__get_field_list_value(message_fields, ['tStps', 'Stps', 'ts', 'totalsteps'], ['total_steps'])
 
-    def __get_total_distance(self, message_dict):
-        return self.__get_field_list_value(message_dict, ['user_distance'], ['total_distance'])
+    def __get_total_distance(self, message_fields):
+        return self.__get_field_list_value(message_fields, ['user_distance'], ['total_distance'])
 
     #
     # Message type handlers
     #
-    def _write_file_id_entry(self, fit_file, message_dict):
-        root_logger.debug("file_id message: %r", message_dict)
-        self.serial_number = message_dict.get('serial_number')
-        _manufacturer = GarminDB.Device.Manufacturer.convert(message_dict.get('manufacturer'))
+    def _write_file_id_entry(self, fit_file, message_fields):
+        root_logger.debug("file_id fields: %r", message_fields)
+        self.serial_number = message_fields.serial_number
+        _manufacturer = GarminDB.Device.Manufacturer.convert(message_fields.manufacturer)
         if _manufacturer is not None:
             self.manufacturer = _manufacturer
-        self.product = message_dict.get('product')
+        self.product = message_fields.product
         device_type = GarminDB.Device.derive_device_type(self.manufacturer, self.product)
         if self.serial_number:
             device = {
                 'serial_number' : self.serial_number,
-                'timestamp'     : fit_file.utc_datetime_to_local(message_dict['time_created']),
+                'timestamp'     : fit_file.utc_datetime_to_local(message_fields.time_created),
                 'device_type'   : Fit.field_enums.name_for_enum(device_type),
                 'manufacturer'  : self.manufacturer,
                 'product'       : Fit.field_enums.name_for_enum(self.product),
@@ -146,19 +145,19 @@ class FitFileProcessor(object):
         file = {
             'id'            : file_id,
             'name'          : file_name,
-            'type'          : GarminDB.File.FileType.convert(message_dict['type']),
+            'type'          : GarminDB.File.FileType.convert(message_fields.type),
             'serial_number' : self.serial_number,
         }
         GarminDB.File.s_insert_or_update(self.garmin_db_session, file)
 
-    def _write_device_info_entry(self, fit_file, message_dict):
-        timestamp = fit_file.utc_datetime_to_local(message_dict['timestamp'])
+    def _write_device_info_entry(self, fit_file, message_fields):
+        timestamp = fit_file.utc_datetime_to_local(message_fields.timestamp)
         try:
-            device_type = message_dict.get('device_type', Fit.field_enums.DeviceType.fitness_tracker)
-            serial_number = message_dict.get('serial_number')
-            manufacturer = GarminDB.Device.Manufacturer.convert(message_dict.get('manufacturer'))
-            product = message_dict.get('product')
-            source_type = message_dict.get('source_type')
+            device_type = message_fields.get('device_type', Fit.field_enums.DeviceType.fitness_tracker)
+            serial_number = message_fields.serial_number
+            manufacturer = GarminDB.Device.Manufacturer.convert(message_fields.manufacturer)
+            product = message_fields.product
+            source_type = message_fields.source_type
             # local devices are part of the main device. Base missing fields off of the main device.
             if source_type is Fit.field_enums.SourceType.local:
                 if serial_number is None and self.serial_number is not None and device_type is not None:
@@ -168,7 +167,7 @@ class FitFileProcessor(object):
                 if product is None:
                     product = self.product
         except Exception as e:
-            logger.warning("Unrecognized device in %s: %r - %s", fit_file.filename, message_dict, e)
+            logger.warning("Unrecognized device in %s: %r - %s", fit_file.filename, message_fields, e)
         if serial_number is not None:
             device = {
                 'serial_number'     : serial_number,
@@ -176,140 +175,140 @@ class FitFileProcessor(object):
                 'device_type'       : Fit.field_enums.name_for_enum(device_type),
                 'manufacturer'      : manufacturer,
                 'product'           : Fit.field_enums.name_for_enum(product),
-                'hardware_version'  : message_dict.get('hardware_version'),
+                'hardware_version'  : message_fields.hardware_version,
             }
             try:
                 GarminDB.Device.s_insert_or_update(self.garmin_db_session, device, ignore_none=True)
             except Exception as e:
-                logger.error("Device not written: %r - %s", message_dict, e)
+                logger.error("Device not written: %r - %s", message_fields, e)
             device_info = {
                 'file_id'               : GarminDB.File.s_get_id(self.garmin_db_session, fit_file.filename),
                 'serial_number'         : serial_number,
                 # 'device_type'           : Fit.field_enums.name_for_enum(device_type),
                 'timestamp'             : timestamp,
-                'cum_operating_time'    : message_dict.get('cum_operating_time'),
-                'battery_voltage'       : message_dict.get('battery_voltage'),
-                'software_version'      : message_dict['software_version'],
+                'cum_operating_time'    : message_fields.cum_operating_time,
+                'battery_voltage'       : message_fields.battery_voltage,
+                'software_version'      : message_fields.software_version,
             }
             try:
                 GarminDB.DeviceInfo.s_insert_or_update(self.garmin_db_session, device_info, ignore_none=True)
             except Exception as e:
-                logger.warning("device_info not written: %r - %s", message_dict, e)
+                logger.warning("device_info not written: %r - %s", message_fields, e)
 
-    def _write_stress_level_entry(self, fit_file, stress_message_dict):
+    def _write_stress_level_entry(self, fit_file, message_fields):
         stress = {
-            'timestamp' : stress_message_dict['local_timestamp'],
-            'stress'    : stress_message_dict['stress_level'],
+            'timestamp' : message_fields.local_timestamp,
+            'stress'    : message_fields.stress_level,
         }
         GarminDB.Stress.s_insert_or_update(self.garmin_db_session, stress)
 
-    def _write_event_entry(self, fit_file, event_message_dict):
-        root_logger.debug("event message: %r", event_message_dict)
+    def _write_event_entry(self, fit_file, message_fields):
+        root_logger.debug("event message: %r", message_fields)
 
-    def _write_hrv_entry(self, fit_file, hrv_message_dict):
-        root_logger.debug("hrv message: %r", hrv_message_dict)
+    def _write_hrv_entry(self, fit_file, message_fields):
+        root_logger.debug("hrv message: %r", message_fields)
 
-    def _write_ohr_settings_entry(self, fit_file, message_dict):
-        root_logger.debug("ohr_settings message: %r", message_dict)
+    def _write_ohr_settings_entry(self, fit_file, message_fields):
+        root_logger.debug("ohr_settings message: %r", message_fields)
 
-    def _write_software_entry(self, fit_file, software_message_dict):
-        root_logger.debug("software message: %r", software_message_dict)
+    def _write_software_entry(self, fit_file, message_fields):
+        root_logger.debug("software message: %r", message_fields)
 
-    def _write_file_creator_entry(self, fit_file, file_creator_message_dict):
-        root_logger.debug("file creator message: %r", file_creator_message_dict)
+    def _write_file_creator_entry(self, fit_file, message_fields):
+        root_logger.debug("file creator message: %r", message_fields)
 
-    def _write_sport_entry(self, fit_file, sport_message_dict):
-        root_logger.debug("sport message: %r", sport_message_dict)
+    def _write_sport_entry(self, fit_file, message_fields):
+        root_logger.debug("sport message: %r", message_fields)
 
-    def _write_sensor_entry(self, fit_file, sensor_message_dict):
-        root_logger.debug("sensor message: %r", sensor_message_dict)
+    def _write_sensor_entry(self, fit_file, message_fields):
+        root_logger.debug("sensor message: %r", message_fields)
 
-    def _write_source_entry(self, fit_file, source_message_dict):
-        root_logger.debug("source message: %r", source_message_dict)
+    def _write_source_entry(self, fit_file, message_fields):
+        root_logger.debug("source message: %r", message_fields)
 
-    def _write_training_file_entry(self, fit_file, message_dict):
-        root_logger.debug("Training file entry: %r", message_dict)
+    def _write_training_file_entry(self, fit_file, message_fields):
+        root_logger.debug("Training file entry: %r", message_fields)
 
-    def _write_steps_entry(self, fit_file, activity_id, sub_sport, message_dict):
+    def _write_steps_entry(self, fit_file, activity_id, sub_sport, message_fields):
         steps = {
             'activity_id'                       : activity_id,
-            'steps'                             : self.__get_total_steps(message_dict),
-            'avg_pace'                          : Fit.conversions.perhour_speed_to_pace(message_dict.get('avg_speed')),
-            'max_pace'                          : Fit.conversions.perhour_speed_to_pace(message_dict.get('max_speed')),
-            'avg_steps_per_min'                 : Fit.Cadence.from_cycles(self.__get_field_value(message_dict, 'avg_cadence')).to_spm(),
-            'max_steps_per_min'                 : Fit.Cadence.from_cycles(self.__get_field_value(message_dict, 'max_cadence')).to_spm(),
-            'avg_step_length'                   : self.__get_field_value(message_dict, 'avg_step_length'),
-            'avg_vertical_ratio'                : self.__get_field_value(message_dict, 'avg_vertical_ratio'),
-            'avg_vertical_oscillation'          : self.__get_field_value(message_dict, 'avg_vertical_oscillation'),
-            'avg_gct_balance'                   : self.__get_field_value(message_dict, 'avg_stance_time_balance'),
-            'avg_ground_contact_time'           : self.__get_field_value(message_dict, 'avg_stance_time'),
-            'avg_stance_time_percent'           : self.__get_field_value(message_dict, 'avg_stance_time_percent'),
+            'steps'                             : self.__get_total_steps(message_fields),
+            'avg_pace'                          : Fit.conversions.perhour_speed_to_pace(message_fields.avg_speed),
+            'max_pace'                          : Fit.conversions.perhour_speed_to_pace(message_fields.max_speed),
+            'avg_steps_per_min'                 : Fit.Cadence.from_cycles(self.__get_field_value(message_fields, 'avg_cadence')).to_spm(),
+            'max_steps_per_min'                 : Fit.Cadence.from_cycles(self.__get_field_value(message_fields, 'max_cadence')).to_spm(),
+            'avg_step_length'                   : self.__get_field_value(message_fields, 'avg_step_length'),
+            'avg_vertical_ratio'                : self.__get_field_value(message_fields, 'avg_vertical_ratio'),
+            'avg_vertical_oscillation'          : self.__get_field_value(message_fields, 'avg_vertical_oscillation'),
+            'avg_gct_balance'                   : self.__get_field_value(message_fields, 'avg_stance_time_balance'),
+            'avg_ground_contact_time'           : self.__get_field_value(message_fields, 'avg_stance_time'),
+            'avg_stance_time_percent'           : self.__get_field_value(message_fields, 'avg_stance_time_percent'),
         }
         root_logger.info("steps: %r", steps)
         GarminDB.StepsActivities.s_insert_or_update(self.garmin_act_db_session, steps, ignore_none=True, ignore_zero=True)
 
-    def _write_running_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        return self._write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
+    def _write_running_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        return self._write_steps_entry(fit_file, activity_id, sub_sport, message_fields)
 
-    def _write_walking_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        return self._write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
+    def _write_walking_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        return self._write_steps_entry(fit_file, activity_id, sub_sport, message_fields)
 
-    def _write_hiking_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        return self._write_steps_entry(fit_file, activity_id, sub_sport, message_dict)
+    def _write_hiking_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        return self._write_steps_entry(fit_file, activity_id, sub_sport, message_fields)
 
-    def _write_cycling_entry(self, fit_file, activity_id, sub_sport, message_dict):
+    def _write_cycling_entry(self, fit_file, activity_id, sub_sport, message_fields):
         ride = {
-            'activity_id'                        : activity_id,
-            'strokes'                            : self.__get_field_value(message_dict, 'total_strokes'),
+            'activity_id'   : activity_id,
+            'strokes'       : self.__get_field_value(message_fields, 'total_strokes'),
         }
         GarminDB.CycleActivities.s_insert_or_update(self.garmin_act_db_session, ride, ignore_none=True, ignore_zero=True)
 
-    def _write_stand_up_paddleboarding_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("sup sport entry: %r", message_dict)
+    def _write_stand_up_paddleboarding_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        root_logger.debug("sup sport entry: %r", message_fields)
         paddle = {
-            'activity_id'                       : activity_id,
-            'strokes'                           : self.__get_field_value(message_dict, 'total_strokes'),
-            'avg_stroke_distance'               : self.__get_field_value(message_dict, 'avg_stroke_distance'),
+            'activity_id'           : activity_id,
+            'strokes'               : self.__get_field_value(message_fields, 'total_strokes'),
+            'avg_stroke_distance'   : self.__get_field_value(message_fields, 'avg_stroke_distance'),
         }
         GarminDB.PaddleActivities.s_insert_or_update(self.garmin_act_db_session, paddle, ignore_none=True, ignore_zero=True)
 
-    def _write_rowing_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("row sport entry: %r", message_dict)
-        return self._write_stand_up_paddleboarding_entry(fit_file, activity_id, sub_sport, message_dict)
+    def _write_rowing_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        root_logger.debug("row sport entry: %r", message_fields)
+        return self._write_stand_up_paddleboarding_entry(fit_file, activity_id, sub_sport, message_fields)
 
-    def _write_boating_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("boating sport entry: %r", message_dict)
+    def _write_boating_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        root_logger.debug("boating sport entry: %r", message_fields)
 
-    def _write_elliptical_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("elliptical entry: %r", message_dict)
+    def _write_elliptical_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        root_logger.debug("elliptical entry: %r", message_fields)
         workout = {
-            'activity_id'                       : activity_id,
-            'steps'                             : self.__get_total_steps(message_dict),
-            'elliptical_distance'               : self.__get_total_distance(message_dict),
+            'activity_id'           : activity_id,
+            'steps'                 : self.__get_total_steps(message_fields),
+            'elliptical_distance'   : self.__get_total_distance(message_fields),
         }
         GarminDB.EllipticalActivities.s_insert_or_update(self.garmin_act_db_session, workout, ignore_none=True, ignore_zero=True)
 
-    def _write_fitness_equipment_entry(self, fit_file, activity_id, sub_sport, message_dict):
+    def _write_fitness_equipment_entry(self, fit_file, activity_id, sub_sport, message_fields):
         try:
             function = getattr(self, '_write_' + sub_sport.name + '_entry')
-            function(fit_file, activity_id, sub_sport, message_dict)
+            function(fit_file, activity_id, sub_sport, message_fields)
         except AttributeError:
-            root_logger.info("No sub sport handler type %s from %s: %s", sub_sport, fit_file.filename, message_dict)
+            root_logger.info("No sub sport handler type %s from %s: %s", sub_sport, fit_file.filename, message_fields)
 
-    def _write_alpine_skiing_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("Skiing sport entry: %r", message_dict)
+    def _write_alpine_skiing_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        root_logger.debug("Skiing sport entry: %r", message_fields)
 
-    def _write_swimming_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("Swimming sport entry: %r", message_dict)
+    def _write_swimming_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        root_logger.debug("Swimming sport entry: %r", message_fields)
 
-    def _write_training_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("Training sport entry: %r", message_dict)
+    def _write_training_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        root_logger.debug("Training sport entry: %r", message_fields)
 
-    def _write_transition_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("Transition sport entry: %r", message_dict)
+    def _write_transition_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        root_logger.debug("Transition sport entry: %r", message_fields)
 
-    def _write_generic_entry(self, fit_file, activity_id, sub_sport, message_dict):
-        root_logger.debug("Generic sport entry: %r", message_dict)
+    def _write_generic_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        root_logger.debug("Generic sport entry: %r", message_fields)
 
     def __choose_sport(self, current_sport, current_sub_sport, new_sport, new_sub_sport):
         sport = Fit.Sport.strict_from_string(current_sport)
@@ -320,38 +319,38 @@ class FitFileProcessor(object):
             sub_sport = new_sub_sport
         return {'sport' : sport.name, 'sub_sport' : sub_sport.name}
 
-    def _write_session_entry(self, fit_file, message_dict):
+    def _write_session_entry(self, fit_file, message_fields):
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
-        sport = message_dict.get('sport')
-        sub_sport = message_dict.get('sub_sport')
+        sport = message_fields.sport
+        sub_sport = message_fields.sub_sport
         activity = {
             'activity_id'                       : activity_id,
-            'start_time'                        : fit_file.utc_datetime_to_local(message_dict['start_time']),
-            'stop_time'                         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
-            'elapsed_time'                      : message_dict['total_elapsed_time'],
-            'moving_time'                       : self.__get_field_value(message_dict, 'total_timer_time'),
-            'start_lat'                         : self.__get_field_value(message_dict, 'start_position_lat'),
-            'start_long'                        : self.__get_field_value(message_dict, 'start_position_long'),
-            'stop_lat'                          : self.__get_field_value(message_dict, 'end_position_lat'),
-            'stop_long'                         : self.__get_field_value(message_dict, 'end_position_long'),
-            'distance'                          : self.__get_total_distance(message_dict),
-            'cycles'                            : self.__get_field_value(message_dict, 'total_cycles'),
-            'laps'                              : self.__get_field_value(message_dict, 'num_laps'),
-            'avg_hr'                            : self.__get_field_value(message_dict, 'avg_heart_rate'),
-            'max_hr'                            : self.__get_field_value(message_dict, 'max_heart_rate'),
-            'avg_rr'                            : self.__get_field_value(message_dict, 'avg_respiration_rate'),
-            'max_rr'                            : self.__get_field_value(message_dict, 'max_respiration_rate'),
-            'calories'                          : self.__get_field_value(message_dict, 'total_calories'),
-            'avg_cadence'                       : self.__get_field_value(message_dict, 'avg_cadence'),
-            'max_cadence'                       : self.__get_field_value(message_dict, 'max_cadence'),
-            'avg_speed'                         : self.__get_field_value(message_dict, 'avg_speed'),
-            'max_speed'                         : self.__get_field_value(message_dict, 'max_speed'),
-            'ascent'                            : self.__get_field_value(message_dict, 'total_ascent'),
-            'descent'                           : self.__get_field_value(message_dict, 'total_descent'),
-            'max_temperature'                   : self.__get_field_value(message_dict, 'max_temperature'),
-            'avg_temperature'                   : self.__get_field_value(message_dict, 'avg_temperature'),
-            'training_effect'                   : self.__get_field_value(message_dict, 'total_training_effect'),
-            'anaerobic_training_effect'         : self.__get_field_value(message_dict, 'total_anaerobic_training_effect')
+            'start_time'                        : fit_file.utc_datetime_to_local(message_fields.start_time),
+            'stop_time'                         : fit_file.utc_datetime_to_local(message_fields.timestamp),
+            'elapsed_time'                      : message_fields.total_elapsed_time,
+            'moving_time'                       : self.__get_field_value(message_fields, 'total_timer_time'),
+            'start_lat'                         : self.__get_field_value(message_fields, 'start_position_lat'),
+            'start_long'                        : self.__get_field_value(message_fields, 'start_position_long'),
+            'stop_lat'                          : self.__get_field_value(message_fields, 'end_position_lat'),
+            'stop_long'                         : self.__get_field_value(message_fields, 'end_position_long'),
+            'distance'                          : self.__get_total_distance(message_fields),
+            'cycles'                            : self.__get_field_value(message_fields, 'total_cycles'),
+            'laps'                              : self.__get_field_value(message_fields, 'num_laps'),
+            'avg_hr'                            : self.__get_field_value(message_fields, 'avg_heart_rate'),
+            'max_hr'                            : self.__get_field_value(message_fields, 'max_heart_rate'),
+            'avg_rr'                            : self.__get_field_value(message_fields, 'avg_respiration_rate'),
+            'max_rr'                            : self.__get_field_value(message_fields, 'max_respiration_rate'),
+            'calories'                          : self.__get_field_value(message_fields, 'total_calories'),
+            'avg_cadence'                       : self.__get_field_value(message_fields, 'avg_cadence'),
+            'max_cadence'                       : self.__get_field_value(message_fields, 'max_cadence'),
+            'avg_speed'                         : self.__get_field_value(message_fields, 'avg_speed'),
+            'max_speed'                         : self.__get_field_value(message_fields, 'max_speed'),
+            'ascent'                            : self.__get_field_value(message_fields, 'total_ascent'),
+            'descent'                           : self.__get_field_value(message_fields, 'total_descent'),
+            'max_temperature'                   : self.__get_field_value(message_fields, 'max_temperature'),
+            'avg_temperature'                   : self.__get_field_value(message_fields, 'avg_temperature'),
+            'training_effect'                   : self.__get_field_value(message_fields, 'total_training_effect'),
+            'anaerobic_training_effect'         : self.__get_field_value(message_fields, 'total_anaerobic_training_effect')
         }
         # json metadata gives better values for sport and subsport, so use existing value if set
         current = GarminDB.Activities.s_get(self.garmin_act_db_session, activity_id)
@@ -368,34 +367,34 @@ class FitFileProcessor(object):
             try:
                 function = getattr(self, function_name, None)
                 if function is not None:
-                    function(fit_file, activity_id, sub_sport, message_dict)
+                    function(fit_file, activity_id, sub_sport, message_fields)
                 else:
-                    root_logger.warning("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_dict)
+                    root_logger.warning("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_fields)
             except Exception as e:
                 root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
 
-    def _write_attribute(self, timestamp, parsed_message, attribute_name, db_attribute_name=None):
-        attribute = parsed_message.get(attribute_name)
+    def _write_attribute(self, timestamp, message_fields, attribute_name, db_attribute_name=None):
+        attribute = message_fields.get(attribute_name)
         if attribute is not None:
             if db_attribute_name is None:
                 db_attribute_name = attribute_name
             GarminDB.Attributes.s_set_newer(self.garmin_db_session, db_attribute_name, attribute, timestamp)
 
-    def _write_attributes(self, timestamp, parsed_message, attribute_names):
+    def _write_attributes(self, timestamp, message_fields, attribute_names):
         for attribute_name in attribute_names:
-            self._write_attribute(timestamp, parsed_message, attribute_name)
+            self._write_attribute(timestamp, message_fields, attribute_name)
 
-    def _write_device_settings_entry(self, fit_file, device_settings_message_dict):
-        root_logger.debug("device settings message: %r", device_settings_message_dict)
+    def _write_device_settings_entry(self, fit_file, message_fields):
+        root_logger.debug("device settings message: %r", message_fields)
         timestamp = fit_file.time_created_local
         attribute_names = [
             'active_time_zone', 'date_mode'
         ]
-        self._write_attributes(timestamp, device_settings_message_dict, attribute_names)
-        self._write_attribute(timestamp, device_settings_message_dict, 'active_time_zone', 'time_zone')
-        self._write_attribute(timestamp, device_settings_message_dict, 'date_mode', 'date_format')
+        self._write_attributes(timestamp, message_fields, attribute_names)
+        self._write_attribute(timestamp, message_fields, 'active_time_zone', 'time_zone')
+        self._write_attribute(timestamp, message_fields, 'date_mode', 'date_format')
 
-    def _write_lap_entry(self, fit_file, message_dict, lap_num):
+    def _write_lap_entry(self, fit_file, message_fields, lap_num):
         # we don't get laps data from multiple sources so we don't need to coellesce data in the DB.
         # It's fastest to just write new data out if the it doesn't currently exist.
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
@@ -403,52 +402,52 @@ class FitFileProcessor(object):
             lap = {
                 'activity_id'                       : GarminDB.File.id_from_path(fit_file.filename),
                 'lap'                               : lap_num,
-                'start_time'                        : fit_file.utc_datetime_to_local(message_dict['start_time']),
-                'stop_time'                         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
-                'elapsed_time'                      : self.__get_field_value(message_dict, 'total_elapsed_time'),
-                'moving_time'                       : self.__get_field_value(message_dict, 'total_timer_time'),
-                'start_lat'                         : self.__get_field_value(message_dict, 'start_position_lat'),
-                'start_long'                        : self.__get_field_value(message_dict, 'start_position_long'),
-                'stop_lat'                          : self.__get_field_value(message_dict, 'end_position_lat'),
-                'stop_long'                         : self.__get_field_value(message_dict, 'end_position_long'),
-                'distance'                          : self.__get_total_distance(message_dict),
-                'cycles'                            : self.__get_field_value(message_dict, 'total_cycles'),
-                'avg_hr'                            : self.__get_field_value(message_dict, 'avg_heart_rate'),
-                'max_hr'                            : self.__get_field_value(message_dict, 'max_heart_rate'),
-                'avg_rr'                            : self.__get_field_value(message_dict, 'avg_respiration_rate'),
-                'max_rr'                            : self.__get_field_value(message_dict, 'max_respiration_rate'),
-                'calories'                          : self.__get_field_value(message_dict, 'total_calories'),
-                'avg_cadence'                       : self.__get_field_value(message_dict, 'avg_cadence'),
-                'max_cadence'                       : self.__get_field_value(message_dict, 'max_cadence'),
-                'avg_speed'                         : self.__get_field_value(message_dict, 'avg_speed'),
-                'max_speed'                         : self.__get_field_value(message_dict, 'max_speed'),
-                'ascent'                            : self.__get_field_value(message_dict, 'total_ascent'),
-                'descent'                           : self.__get_field_value(message_dict, 'total_descent'),
-                'max_temperature'                   : self.__get_field_value(message_dict, 'max_temperature'),
-                'avg_temperature'                   : self.__get_field_value(message_dict, 'avg_temperature'),
+                'start_time'                        : fit_file.utc_datetime_to_local(message_fields.start_time),
+                'stop_time'                         : fit_file.utc_datetime_to_local(message_fields.timestamp),
+                'elapsed_time'                      : self.__get_field_value(message_fields, 'total_elapsed_time'),
+                'moving_time'                       : self.__get_field_value(message_fields, 'total_timer_time'),
+                'start_lat'                         : self.__get_field_value(message_fields, 'start_position_lat'),
+                'start_long'                        : self.__get_field_value(message_fields, 'start_position_long'),
+                'stop_lat'                          : self.__get_field_value(message_fields, 'end_position_lat'),
+                'stop_long'                         : self.__get_field_value(message_fields, 'end_position_long'),
+                'distance'                          : self.__get_total_distance(message_fields),
+                'cycles'                            : self.__get_field_value(message_fields, 'total_cycles'),
+                'avg_hr'                            : self.__get_field_value(message_fields, 'avg_heart_rate'),
+                'max_hr'                            : self.__get_field_value(message_fields, 'max_heart_rate'),
+                'avg_rr'                            : self.__get_field_value(message_fields, 'avg_respiration_rate'),
+                'max_rr'                            : self.__get_field_value(message_fields, 'max_respiration_rate'),
+                'calories'                          : self.__get_field_value(message_fields, 'total_calories'),
+                'avg_cadence'                       : self.__get_field_value(message_fields, 'avg_cadence'),
+                'max_cadence'                       : self.__get_field_value(message_fields, 'max_cadence'),
+                'avg_speed'                         : self.__get_field_value(message_fields, 'avg_speed'),
+                'max_speed'                         : self.__get_field_value(message_fields, 'max_speed'),
+                'ascent'                            : self.__get_field_value(message_fields, 'total_ascent'),
+                'descent'                           : self.__get_field_value(message_fields, 'total_descent'),
+                'max_temperature'                   : self.__get_field_value(message_fields, 'max_temperature'),
+                'avg_temperature'                   : self.__get_field_value(message_fields, 'avg_temperature'),
             }
             self.garmin_act_db_session.add(GarminDB.ActivityLaps(**lap))
 
-    def _write_battery_entry(self, fit_file, battery_message_dict):
-        root_logger.debug("battery message: %r", battery_message_dict)
+    def _write_battery_entry(self, fit_file, message_fields):
+        root_logger.debug("battery message: %r", message_fields)
 
-    def _write_user_profile_entry(self, fit_file, message_dict):
-        root_logger.debug("user profile message: %r", message_dict)
+    def _write_user_profile_entry(self, fit_file, message_fields):
+        root_logger.debug("user profile message: %r", message_fields)
         timestamp = fit_file.time_created_local
         attribute_names = [
             'gender', 'height', 'weight', 'language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time',
             'speed_setting'
         ]
-        self._write_attributes(timestamp, message_dict, attribute_names)
-        self._write_attribute(timestamp, message_dict, 'dist_setting', 'measurement_system')
+        self._write_attributes(timestamp, message_fields, attribute_names)
+        self._write_attribute(timestamp, message_fields, 'dist_setting', 'measurement_system')
 
-    def _write_activity_entry(self, fit_file, activity_message_dict):
-        root_logger.debug("activity message: %r", activity_message_dict)
+    def _write_activity_entry(self, fit_file, message_fields):
+        root_logger.debug("activity message: %r", message_fields)
 
-    def _write_zones_target_entry(self, fit_file, zones_target_message_dict):
-        root_logger.debug("zones target message: %r", zones_target_message_dict)
+    def _write_zones_target_entry(self, fit_file, message_fields):
+        root_logger.debug("zones target message: %r", message_fields)
 
-    def _write_record_entry(self, fit_file, message_dict, record_num):
+    def _write_record_entry(self, fit_file, message_fields, record_num):
         # We don't get record data from multiple sources so we don't need to coellesce data in the DB.
         # It's fastest to just write the new data out if it doesn't currently exist.
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
@@ -456,46 +455,46 @@ class FitFileProcessor(object):
             record = {
                 'activity_id'                       : activity_id,
                 'record'                            : record_num,
-                'timestamp'                         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
-                'position_lat'                      : self.__get_field_value(message_dict, 'position_lat'),
-                'position_long'                     : self.__get_field_value(message_dict, 'position_long'),
-                'distance'                          : self.__get_field_value(message_dict, 'distance'),
-                'cadence'                           : self.__get_field_value(message_dict, 'cadence'),
-                'hr'                                : self.__get_field_value(message_dict, 'heart_rate'),
-                'rr'                                : self.__get_field_value(message_dict, 'respiration_rate'),
-                'altitude'                          : self.__get_field_value(message_dict, 'altitude'),
-                'speed'                             : self.__get_field_value(message_dict, 'speed'),
-                'temperature'                       : self.__get_field_value(message_dict, 'temperature'),
+                'timestamp'                         : fit_file.utc_datetime_to_local(message_fields.timestamp),
+                'position_lat'                      : self.__get_field_value(message_fields, 'position_lat'),
+                'position_long'                     : self.__get_field_value(message_fields, 'position_long'),
+                'distance'                          : self.__get_field_value(message_fields, 'distance'),
+                'cadence'                           : self.__get_field_value(message_fields, 'cadence'),
+                'hr'                                : self.__get_field_value(message_fields, 'heart_rate'),
+                'rr'                                : self.__get_field_value(message_fields, 'respiration_rate'),
+                'altitude'                          : self.__get_field_value(message_fields, 'altitude'),
+                'speed'                             : self.__get_field_value(message_fields, 'speed'),
+                'temperature'                       : self.__get_field_value(message_fields, 'temperature'),
             }
             self.garmin_act_db_session.add(GarminDB.ActivityRecords(**record))
 
-    def _write_dev_data_id_entry(self, fit_file, dev_data_id_message_dict):
-        root_logger.debug("dev_data_id message: %r", dev_data_id_message_dict)
+    def _write_dev_data_id_entry(self, fit_file, message_fields):
+        root_logger.debug("dev_data_id message: %r", message_fields)
 
-    def _write_field_description_entry(self, fit_file, field_description_message_dict):
-        root_logger.debug("field_description message: %r", field_description_message_dict)
+    def _write_field_description_entry(self, fit_file, message_fields):
+        root_logger.debug("field_description message: %r", message_fields)
 
-    def _write_length_entry(self, fit_file, length_message_dict):
-        root_logger.debug("length message: %r", length_message_dict)
+    def _write_length_entry(self, fit_file, message_fields):
+        root_logger.debug("length message: %r", message_fields)
 
-    def _write_monitoring_info_entry(self, fit_file, message_dict):
-        activity_types = message_dict['activity_type']
+    def _write_monitoring_info_entry(self, fit_file, message_fields):
+        activity_types = message_fields.activity_type
         if isinstance(activity_types, list):
             for index, activity_type in enumerate(activity_types):
                 entry = {
                     'file_id'                   : GarminDB.File.s_get_id(self.garmin_db_session, fit_file.filename),
-                    'timestamp'                 : message_dict['local_timestamp'],
+                    'timestamp'                 : message_fields.local_timestamp,
                     'activity_type'             : activity_type,
-                    'resting_metabolic_rate'    : self.__get_field_value(message_dict, 'resting_metabolic_rate'),
-                    'cycles_to_distance'        : message_dict['cycles_to_distance'][index],
-                    'cycles_to_calories'        : message_dict['cycles_to_calories'][index]
+                    'resting_metabolic_rate'    : self.__get_field_value(message_fields, 'resting_metabolic_rate'),
+                    'cycles_to_distance'        : message_fields.cycles_to_distance[index],
+                    'cycles_to_calories'        : message_fields.cycles_to_calories[index]
                 }
                 GarminDB.MonitoringInfo.s_insert_or_update(self.garmin_mon_db_session, entry)
 
-    def _write_monitoring_entry(self, fit_file, message_dict):
+    def _write_monitoring_entry(self, fit_file, message_fields):
         # Only include not None values so that we match and update only if a table's columns if it has values.
-        entry = utilities.list_and_dict.dict_filter_none_values(message_dict)
-        timestamp = fit_file.utc_datetime_to_local(message_dict['timestamp'])
+        entry = utilities.list_and_dict.dict_filter_none_values(message_fields)
+        timestamp = fit_file.utc_datetime_to_local(message_fields.timestamp)
         # Hack: daily monitoring summaries appear at 00:00:00 localtime for the PREVIOUS day. Subtract a second so they appear int he previous day.
         if timestamp.time() == datetime.time.min:
             timestamp = timestamp - datetime.timedelta(seconds=1)
@@ -519,32 +518,32 @@ class FitFileProcessor(object):
         except Exception:
             logger.error("Exception on monitoring entry: %r: %s", entry, traceback.format_exc())
 
-    def _write_respiration_entry(self, fit_file, message_dict):
-        logger.debug("respiration message: %r", message_dict)
-        rr = self.__get_field_value(message_dict, 'respiration_rate')
+    def _write_respiration_entry(self, fit_file, message_fields):
+        logger.debug("respiration message: %r", message_fields)
+        rr = self.__get_field_value(message_fields, 'respiration_rate')
         if rr > 0:
             respiration = {
-                'timestamp'         : fit_file.utc_datetime_to_local(message_dict['timestamp']),
-                'rr'                : rr,
+                'timestamp' : fit_file.utc_datetime_to_local(message_fields.timestamp),
+                'rr'        : rr,
             }
             if fit_file.type is Fit.FileType.monitoring_b:
                 GarminDB.MonitoringRespirationRate.s_insert_or_update(self.garmin_mon_db_session, respiration)
             else:
                 raise(ValueError(f'Unexpected file type {repr(fit_file.type)} for respiration message'))
 
-    def _write_pulse_ox_entry(self, fit_file, message_dict):
-        logger.debug("pulse_ox message: %r", message_dict)
+    def _write_pulse_ox_entry(self, fit_file, message_fields):
+        logger.debug("pulse_ox message: %r", message_fields)
         pulse_ox = {
-            'timestamp'     : fit_file.utc_datetime_to_local(message_dict['timestamp']),
-            'pulse_ox'      : self.__get_field_value(message_dict, 'pulse_ox'),
+            'timestamp'     : fit_file.utc_datetime_to_local(message_fields.timestamp),
+            'pulse_ox'      : self.__get_field_value(message_fields, 'pulse_ox'),
         }
         if fit_file.type is Fit.FileType.monitoring_b:
             GarminDB.MonitoringPulseOx.s_insert_or_update(self.garmin_mon_db_session, pulse_ox)
         else:
             raise(ValueError(f'Unexpected file type {repr(fit_file.type)} for pulse ox'))
 
-    def _write_set_entry(self, fit_file, message_dict):
-        root_logger.debug("set message: %r", message_dict)
+    def _write_set_entry(self, fit_file, message_fields):
+        root_logger.debug("set message: %r", message_fields)
 
-    def _write_watchface_settings_entry(self, fit_file, message_dict):
-        root_logger.debug("watchface message: %r", message_dict)
+    def _write_watchface_settings_entry(self, fit_file, message_fields):
+        root_logger.debug("watchface message: %r", message_fields)

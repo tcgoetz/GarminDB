@@ -21,11 +21,11 @@ root_logger.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-test_activity_files     = False
+test_activity_files     = True
 test_monitoring_files   = True
-test_sleep_files        = False
-test_metrics_files      = False
-test_unknown_files      = False
+test_sleep_files        = True
+test_metrics_files      = True
+test_unknown_files      = True
 
 
 class TestFitFile(unittest.TestCase):
@@ -41,14 +41,13 @@ class TestFitFile(unittest.TestCase):
         self.check_timestamp(fit_file, message)
         self.check_temperature(message)
         self.check_sport_value(fit_file, message)
-        for field_name in message:
-            field_value = message[field_name]
-            if not field_value.is_invalid() and field_name.startswith('unknown'):
+        for field_name in message.field_values:
+            if not message.field_values[field_name].is_invalid() and field_name.startswith('unknown'):
                 if message_type not in unknown_message_fields:
-                    logger.info("Unknown %s message field: %s value %s", message_type, field_name, field_value.value)
+                    logger.info("Unknown %s message field: %s value %s", message_type, field_name, message.fields[field_name])
                     unknown_message_fields[message_type] = [field_name]
                 elif field_name not in unknown_message_fields[message_type]:
-                    logger.info("Unknown %s message field: %s value: %s", message_type, field_name, field_value.value)
+                    logger.info("Unknown %s message field: %s value: %s", message_type, field_name, message.fields[field_name])
                     unknown_message_fields[message_type].append(field_name)
 
     def check_message_types(self, fit_file, dump_message=False):
@@ -65,35 +64,35 @@ class TestFitFile(unittest.TestCase):
                 self.check_message_fields(fit_file, message_type, message)
 
     def check_type(self, fit_file, message, key, expected_type):
-        if key in message:
-            value = message[key].value
+        if key in message.fields:
+            value = message.fields[key]
             self.assertIsInstance(value, expected_type, 'file %s expected %r found %r' % (fit_file.filename, expected_type, value))
-            logger.info("%s %r: %r", fit_file.filename, message.type(), value)
+            logger.info("%s %r: %r", fit_file.filename, message.type, value)
 
-    def check_value(self, fit_file, message, key, expected_value):
-        if key in message:
-            value = message[key].value
+    def check_value(self, fit_file, message, field_name, expected_value):
+        if field_name in message.fields:
+            value = message.fields[field_name]
             self.assertEqual(value, expected_value, 'file %s expected %r found %r' % (fit_file.filename, expected_value, value))
 
     def check_value_range(self, fit_file, message, field_name, min_value, max_value, round_value=False):
-        if field_name in message:
-            value = message[field_name].value
+        if field_name in message.fields:
+            value = message.fields[field_name]
             if round_value:
                 value = round(value)
             self.assertGreaterEqual(value, min_value, '%s %r %s expected greater than %r was %r' %
-                                    (fit_file.filename, message.type(), field_name, min_value, value))
+                                    (fit_file.filename, message.type, field_name, min_value, value))
             self.assertLess(value, max_value, '%s %r %s expected less than %r was %r' %
-                            (fit_file.filename, message.type(), field_name, max_value, value))
+                            (fit_file.filename, message.type, field_name, max_value, value))
 
     def check_timestamp(self, fit_file, message):
         # Garmin Connect generated files can have device dates far in the future
-        if message.type() != Fit.MessageType.device_info and message.get('product') != Fit.GarminProduct.connect:
+        if message.type != Fit.MessageType.device_info and message.fields.product != Fit.GarminProduct.connect:
             self.check_value_range(fit_file, message, 'timestamp',
                                    datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc),
                                    datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc))
 
     def check_temperature(self, message):
-        for field_name in message:
+        for field_name in message.fields:
             if re.search('temperature_?\a{3}', field_name):
                 logger.info("checking " + field_name)
                 self.check_value_range(message, field_name, 0, 100)
@@ -123,38 +122,38 @@ class TestFitFile(unittest.TestCase):
     def check_sport(self, fit_file):
         for sport_message in fit_file.sport:
             self.check_sport_value(fit_file, sport_message)
-        sport = fit_file.sport[0].get('sport')
-        sub_sport = fit_file.sport[0].get('sub_sport')
+        sport = fit_file.sport[0].fields.sport
+        sub_sport = fit_file.sport[0].fields.sub_sport
         logger.info("%s: %r %r", fit_file.filename, sport, sub_sport)
         return sport
 
-    def check_step_lap_or_record(self, message):
-        self.check_value_range(message, 'distance', 0, 100 * 5280)
-        self.check_value_range(message, 'avg_vertical_oscillation', 0, 10)
-        self.check_value_range(message, 'step_length', 0, 64)
-        self.check_value_range(message, 'speed', 0, 100)
+    def check_step_lap_or_record(self, fit_file, message):
+        self.check_value_range(fit_file, message, 'distance', 0, 100 * 5280)
+        self.check_value_range(fit_file, message, 'avg_vertical_oscillation', 0, 10)
+        self.check_value_range(fit_file, message, 'step_length', 0, 64)
+        self.check_value_range(fit_file, message, 'speed', 0, 100)
 
     def check_lap_or_record(self, fit_file, sport, message):
-        self.check_message_fields(fit_file, message.type(), message)
-        if 'distance' in message and message['distance'].value > 0.1:
+        self.check_message_fields(fit_file, message.type, message)
+        if 'distance' in message.fields and message.fields.distance > 0.1:
             if sport == Fit.Sport.running or sport == Fit.Sport.walking:
-                self.check_step_lap_or_record(message)
+                self.check_step_lap_or_record(fit_file, message)
 
     def check_monitoring_messages(self, fit_file):
         last_steps = {}
         last_timestamp = None
         for message in fit_file.monitoring:
-            if 'steps' in message:
-                steps = message['steps'].value
-                activity_type = message['activity_type'].value
+            if 'steps' in message.fields:
+                steps = message.fields.steps
+                activity_type = message.fields.activity_type
                 if activity_type in last_steps:
                     activity_last_steps = last_steps[activity_type]
                     self.assertGreaterEqual(steps, activity_last_steps, f'{fit_file.filename}: {repr(message)} - steps not greater than last steps')
                 last_steps[activity_type] = steps
                 if last_timestamp:
-                    self.check_timestamp_delta(fit_file, last_timestamp, message.timestamp, (0, 43200))
-                last_timestamp = message.timestamp
-            self.check_message_fields(fit_file, message.type(), message)
+                    self.check_timestamp_delta(fit_file, last_timestamp, message.fields.timestamp, (0, 43200))
+                last_timestamp = message.fields.timestamp
+            self.check_message_fields(fit_file, message.type, message)
             self.check_value_range(fit_file, message, 'distance', 0, 100 * 5280, True)
             self.check_value_range(fit_file, message, 'cum_ascent', 0, 5280, True)
             self.check_value_range(fit_file, message, 'cum_descent', 0, 5280, True)
@@ -177,9 +176,7 @@ class TestFitFile(unittest.TestCase):
         for message in fit_file.lap:
             self.check_lap_or_record(fit_file, sport, message)
         for message in fit_file.session:
-            message_dict = message.to_dict()
-            sport = message_dict['sport']
-            self.check_lap_or_record(fit_file, sport, message)
+            self.check_lap_or_record(fit_file, message.fields.sport, message)
 
     def check_sleep_file(self, filename):
         fit_file = Fit.file.File(filename, self.measurement_system)

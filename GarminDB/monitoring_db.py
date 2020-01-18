@@ -38,12 +38,21 @@ class MonitoringInfo(MonitoringDB.Base, utilities.DBObject):
     db = MonitoringDB
     table_version = 1
 
-    timestamp = Column(DateTime, primary_key=True)
+    timestamp = Column(DateTime)
     file_id = Column(Integer, nullable=False)
     activity_type = Column(Enum(Fit.field_enums.ActivityType))
     resting_metabolic_rate = Column(Integer)
     cycles_to_distance = Column(FLOAT)
     cycles_to_calories = Column(FLOAT)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("timestamp", "activity_type"),
+    )
+
+    @classmethod
+    def s_get_from_dict(cls, session, values_dict):
+        """Return a single DeviceInfo instance for the given id."""
+        return session.query(cls).filter(cls.timestamp == values_dict['timestamp']).filter(cls.activity_type == values_dict['activity_type']).one_or_none()
 
     @classmethod
     def get_daily_bmr(cls, db, day_ts):
