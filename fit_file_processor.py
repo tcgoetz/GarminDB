@@ -42,7 +42,11 @@ class FitFileProcessor(object):
         function = getattr(self, handler_name, None)
         if function is not None:
             for message in messages:
-                function(fit_file, message.fields)
+                try:
+                    function(fit_file, message.fields)
+                except Exception as e:
+                    logger.error("Failed to write message %r type %r: %s", message_type, message, e)
+                    root_logger.error("Failed to write message %r type %r: %s", message_type, message, e)
         elif isinstance(message_type, Fit.UnknownMessageType) or message_type.is_unknown():
             root_logger.debug("No entry handler %s for message type %r (%d) from %s: %s",
                               handler_name, message_type, len(messages), fit_file.filename, messages[0])
@@ -99,7 +103,7 @@ class FitFileProcessor(object):
             self.garmin_db_session.commit()
 
     def __get_field_value(self, message_fields, field_name):
-        prefixes = ['dev_', 'enhanced_', '']
+        prefixes = ['dev_', '']
         for prefix in prefixes:
             prefixed_field_name = prefix + field_name
             if prefixed_field_name in message_fields:
@@ -152,22 +156,19 @@ class FitFileProcessor(object):
 
     def _write_device_info_entry(self, fit_file, message_fields):
         timestamp = fit_file.utc_datetime_to_local(message_fields.timestamp)
-        try:
-            device_type = message_fields.get('device_type', Fit.field_enums.DeviceType.fitness_tracker)
-            serial_number = message_fields.serial_number
-            manufacturer = GarminDB.Device.Manufacturer.convert(message_fields.manufacturer)
-            product = message_fields.product
-            source_type = message_fields.source_type
-            # local devices are part of the main device. Base missing fields off of the main device.
-            if source_type is Fit.field_enums.SourceType.local:
-                if serial_number is None and self.serial_number is not None and device_type is not None:
-                    serial_number = GarminDB.Device.local_device_serial_number(self.serial_number, device_type)
-                if manufacturer is None:
-                    manufacturer = self.manufacturer
-                if product is None:
-                    product = self.product
-        except Exception as e:
-            logger.warning("Unrecognized device in %s: %r - %s", fit_file.filename, message_fields, e)
+        device_type = message_fields.get('device_type', Fit.field_enums.DeviceType.fitness_tracker)
+        serial_number = message_fields.serial_number
+        manufacturer = GarminDB.Device.Manufacturer.convert(message_fields.manufacturer)
+        product = message_fields.product
+        source_type = message_fields.source_type
+        # local devices are part of the main device. Base missing fields off of the main device.
+        if source_type is Fit.field_enums.SourceType.local:
+            if serial_number is None and self.serial_number is not None and device_type is not None:
+                serial_number = GarminDB.Device.local_device_serial_number(self.serial_number, device_type)
+            if manufacturer is None:
+                manufacturer = self.manufacturer
+            if product is None:
+                product = self.product
         if serial_number is not None:
             device = {
                 'serial_number'     : serial_number,
@@ -177,10 +178,7 @@ class FitFileProcessor(object):
                 'product'           : Fit.field_enums.name_for_enum(product),
                 'hardware_version'  : message_fields.hardware_version,
             }
-            try:
-                GarminDB.Device.s_insert_or_update(self.garmin_db_session, device, ignore_none=True)
-            except Exception as e:
-                logger.error("Device not written: %r - %s", message_fields, e)
+            GarminDB.Device.s_insert_or_update(self.garmin_db_session, device, ignore_none=True)
             device_info = {
                 'file_id'               : GarminDB.File.s_get_id(self.garmin_db_session, fit_file.filename),
                 'serial_number'         : serial_number,
@@ -190,10 +188,7 @@ class FitFileProcessor(object):
                 'battery_voltage'       : message_fields.battery_voltage,
                 'software_version'      : message_fields.software_version,
             }
-            try:
-                GarminDB.DeviceInfo.s_insert_or_update(self.garmin_db_session, device_info, ignore_none=True)
-            except Exception as e:
-                logger.warning("device_info not written: %r - %s", message_fields, e)
+            GarminDB.DeviceInfo.s_insert_or_update(self.garmin_db_session, device_info, ignore_none=True)
 
     def _write_stress_level_entry(self, fit_file, message_fields):
         stress = {
