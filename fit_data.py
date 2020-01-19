@@ -58,3 +58,4 @@ class FitData(object):
                                      self.fit_type, file_name, fit_file.type, fit_file.message_types)
             except Exception as e:
                 logger.error("Failed to parse %s: %s", file_name, e)
+                root_logger.error("Failed to parse %s: %s", file_name, e)
