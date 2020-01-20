@@ -169,6 +169,8 @@ class FitFileProcessor(object):
                 manufacturer = self.manufacturer
             if product is None:
                 product = self.product
+            if device_type is Fit.field_enums.LocalDeviceType.invalid:
+                device_type = GarminDB.Device.derive_device_type(self.manufacturer, self.product)
         if serial_number is not None:
             device = {
                 'serial_number'     : serial_number,
