@@ -106,7 +106,7 @@ class DeviceInfo(GarminDB.Base, utilities.DBObject):
     __tablename__ = 'device_info'
 
     db = GarminDB
-    table_version = 3
+    table_version = 4
     view_version = 5
 
     timestamp = Column(DateTime, nullable=False)
@@ -114,6 +114,7 @@ class DeviceInfo(GarminDB.Base, utilities.DBObject):
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
     software_version = Column(String)
     cum_operating_time = Column(Time, nullable=False, default=datetime.time.min)
+    battery_status = Column(Enum(Fit.field_enums.BatteryStatus))
     battery_voltage = Column(Float)
 
     __table_args__ = (

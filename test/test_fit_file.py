@@ -77,12 +77,14 @@ class TestFitFile(unittest.TestCase):
     def check_value_range(self, fit_file, message, field_name, min_value, max_value, round_value=False):
         if field_name in message.fields:
             value = message.fields[field_name]
-            if round_value:
-                value = round(value)
-            self.assertGreaterEqual(value, min_value, '%s %r %s expected greater than %r was %r' %
-                                    (fit_file.filename, message.type, field_name, min_value, value))
-            self.assertLess(value, max_value, '%s %r %s expected less than %r was %r' %
-                            (fit_file.filename, message.type, field_name, max_value, value))
+            if value is not None:
+                if round_value:
+                    value = round(value)
+                self.assertGreaterEqual(value, min_value, '%s expected greater than %r was %r: %s %r' %
+                                        (field_name, min_value, value, fit_file.filename, message))
+                self.assertLess(value, max_value, '%s expected less than %r was %r: %s %r ' %
+                                (field_name, max_value, value, fit_file.filename, message))
+                return True
 
     def check_timestamp(self, fit_file, message):
         # Garmin Connect generated files can have device dates far in the future
@@ -125,19 +127,30 @@ class TestFitFile(unittest.TestCase):
         sport = fit_file.sport[0].fields.sport
         sub_sport = fit_file.sport[0].fields.sub_sport
         logger.info("%s: %r %r", fit_file.filename, sport, sub_sport)
-        return sport
+        return (sport, sub_sport)
 
-    def check_step_lap_or_record(self, fit_file, message):
-        self.check_value_range(fit_file, message, 'distance', 0, 100 * 5280)
+    def check_step_message(self, fit_file, message_index, message):
         self.check_value_range(fit_file, message, 'avg_vertical_oscillation', 0, 10)
         self.check_value_range(fit_file, message, 'step_length', 0, 64)
-        self.check_value_range(fit_file, message, 'speed', 0, 100)
+        self.check_value_range(fit_file, message, 'speed', 0, 25)
 
-    def check_lap_or_record(self, fit_file, sport, message):
+    def check_step_record(self, fit_file, message_index, message):
+        self.check_value_range(fit_file, message, 'distance', 0, 100)
+        self.check_step_message(fit_file, message_index, message)
+
+    def check_step_lap_or_session(self, fit_file, message_index, message):
+        self.check_value_range(fit_file, message, 'distance', 0, 100 * 5280)
+        self.check_step_message(fit_file, message_index, message)
+
+    def check_record(self, fit_file, sport, sub_sport, message_index, message):
         self.check_message_fields(fit_file, message.type, message)
-        if 'distance' in message.fields and message.fields.distance > 0.1:
-            if sport == Fit.Sport.running or sport == Fit.Sport.walking:
-                self.check_step_lap_or_record(fit_file, message)
+        if sport == Fit.Sport.running or sport == Fit.Sport.walking or sub_sport == Fit.SubSport.elliptical:
+            self.check_step_record(fit_file, message_index, message)
+
+    def check_lap_or_session(self, fit_file, sport, sub_sport, message_index, message):
+        self.check_message_fields(fit_file, message.type, message)
+        if sport == Fit.Sport.running or sport == Fit.Sport.walking or sub_sport == Fit.SubSport.elliptical:
+            self.check_step_lap_or_session(fit_file, message_index, message)
 
     def check_monitoring_messages(self, fit_file):
         last_steps = {}
@@ -170,13 +183,13 @@ class TestFitFile(unittest.TestCase):
         logger.info('%s (%s) activity file message types: %s', filename, fit_file.time_created_local, fit_file.message_types)
         self.check_message_types(fit_file, dump_message=True)
         self.check_file_id(fit_file, Fit.FileType.activity)
-        sport = self.check_sport(fit_file)
-        for message in fit_file.record:
-            self.check_lap_or_record(fit_file, sport, message)
-        for message in fit_file.lap:
-            self.check_lap_or_record(fit_file, sport, message)
-        for message in fit_file.session:
-            self.check_lap_or_record(fit_file, message.fields.sport, message)
+        (sport, sub_sport) = self.check_sport(fit_file)
+        for message_index, message in enumerate(fit_file.record):
+            self.check_record(fit_file, sport, sub_sport, message_index, message)
+        for message_index, message in enumerate(fit_file.lap):
+            self.check_lap_or_session(fit_file, sport, sub_sport, message_index, message)
+        for message_index, message in enumerate(fit_file.session):
+            self.check_lap_or_session(fit_file, sport, sub_sport, message_index, message)
 
     def check_sleep_file(self, filename):
         fit_file = Fit.file.File(filename, self.measurement_system)

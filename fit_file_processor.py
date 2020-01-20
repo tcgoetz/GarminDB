@@ -182,9 +182,9 @@ class FitFileProcessor(object):
             device_info = {
                 'file_id'               : GarminDB.File.s_get_id(self.garmin_db_session, fit_file.filename),
                 'serial_number'         : serial_number,
-                # 'device_type'           : Fit.field_enums.name_for_enum(device_type),
                 'timestamp'             : timestamp,
                 'cum_operating_time'    : message_fields.cum_operating_time,
+                'battery_status'        : message_fields.battery_status,
                 'battery_voltage'       : message_fields.battery_voltage,
                 'software_version'      : message_fields.software_version,
             }
@@ -528,12 +528,14 @@ class FitFileProcessor(object):
 
     def _write_pulse_ox_entry(self, fit_file, message_fields):
         logger.debug("pulse_ox message: %r", message_fields)
-        pulse_ox = {
-            'timestamp'     : fit_file.utc_datetime_to_local(message_fields.timestamp),
-            'pulse_ox'      : self.__get_field_value(message_fields, 'pulse_ox'),
-        }
         if fit_file.type is Fit.FileType.monitoring_b:
-            GarminDB.MonitoringPulseOx.s_insert_or_update(self.garmin_mon_db_session, pulse_ox)
+            pulse_ox = self.__get_field_value(message_fields, 'pulse_ox')
+            if pulse_ox is not None:
+                pulse_ox_entry = {
+                    'timestamp'     : fit_file.utc_datetime_to_local(message_fields.timestamp),
+                    'pulse_ox'      : pulse_ox,
+                }
+                GarminDB.MonitoringPulseOx.s_insert_or_update(self.garmin_mon_db_session, pulse_ox_entry)
         else:
             raise(ValueError(f'Unexpected file type {repr(fit_file.type)} for pulse ox'))
 

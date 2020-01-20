@@ -22,6 +22,7 @@ root_logger.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 do_single_import_tests = True
+do_multiple_import_tests = True
 
 
 class TestActivitiesDb(TestDBBase, unittest.TestCase):
@@ -56,6 +57,14 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
     def check_activities_fields(self, fields_list):
         self.check_not_none_cols(self.test_act_db, {GarminDB.Activities : fields_list})
 
+    def check_activities_field_value(self, field, min_value, max_value):
+        field_max = GarminDB.Activities.get_col_max(self.test_act_db, field)
+        if field_max is not None:
+            self.assertLessEqual(field_max, max_value)
+        field_min = GarminDB.Activities.get_col_min(self.test_act_db, field)
+        if field_min is not None:
+            self.assertGreaterEqual(field_min, min_value)
+
     def check_sport(self, activity):
         sport = Fit.Sport.from_string(activity.sport)
         self.assertIsInstance(sport, Fit.Sport, f'sport ({type(sport)}) from {repr(activity)}')
@@ -79,12 +88,15 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         self.check_db_tables_exists(self.test_mon_db, {'device_table' : GarminDB.Device})
         self.check_db_tables_exists(self.test_mon_db, {'file_table' : GarminDB.File, 'device_info_table' : GarminDB.DeviceInfo}, self.gfd_file_count)
 
-    @unittest.skipIf(not do_single_import_tests, "Skipping single import test")
-    def test_fit_file_import(self):
-        GarminDB.ActivitiesDB.delete_db(self.test_db_params)
-        self.fit_file_import()
-        self.check_activities_fields([GarminDB.Activities.start_time, GarminDB.Activities.stop_time, GarminDB.Activities.elapsed_time])
-        self.check_activities()
+    def summary_json_file_import(self):
+        gjsd = GarminJsonSummaryData(self.test_db_params, 'test_files/json/activity/summary', latest=False, measurement_system=self.measurement_system, debug=2)
+        if gjsd.file_count() > 0:
+            gjsd.process()
+
+    def details_json_file_import(self, delete_db=True):
+        gjsd = GarminJsonDetailsData(self.test_db_params, 'test_files/json/activity/details', latest=False, measurement_system=self.measurement_system, debug=2)
+        if gjsd.file_count() > 0:
+            gjsd.process()
 
     def tcx_file_import(self):
         GarminDB.ActivitiesDB.delete_db(self.test_db_params)
@@ -92,33 +104,36 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         if gtd.file_count() > 0:
             gtd.process_files(self.test_db_params)
 
+    #
+    # The actual tests
+    #
+    @unittest.skipIf(not do_single_import_tests, "Skipping single import test")
+    def test_fit_file_import(self):
+        GarminDB.ActivitiesDB.delete_db(self.test_db_params)
+        self.fit_file_import()
+        self.check_activities_fields([GarminDB.Activities.start_time, GarminDB.Activities.stop_time, GarminDB.Activities.elapsed_time])
+        self.check_activities()
+        self.check_activities_field_value(GarminDB.Activities.avg_speed, 0, 50)
+
     @unittest.skipIf(not do_single_import_tests, "Skipping single import test")
     def test_tcx_file_import(self):
         GarminDB.ActivitiesDB.delete_db(self.test_db_params)
         self.tcx_file_import()
         self.check_activities_fields([GarminDB.Activities.sport, GarminDB.Activities.laps])
 
-    def summary_json_file_import(self):
-        gjsd = GarminJsonSummaryData(self.test_db_params, 'test_files/json/activity/summary', latest=False, measurement_system=self.measurement_system, debug=2)
-        if gjsd.file_count() > 0:
-            gjsd.process()
-
     @unittest.skipIf(not do_single_import_tests, "Skipping single import test")
     def test_summary_json_file_import(self):
         GarminDB.ActivitiesDB.delete_db(self.test_db_params)
         self.summary_json_file_import()
         self.check_activities_fields([GarminDB.Activities.name, GarminDB.Activities.type, GarminDB.Activities.sport, GarminDB.Activities.sub_sport])
-
-    def details_json_file_import(self, delete_db=True):
-        gjsd = GarminJsonDetailsData(self.test_db_params, 'test_files/json/activity/details', latest=False, measurement_system=self.measurement_system, debug=2)
-        if gjsd.file_count() > 0:
-            gjsd.process()
+        self.check_activities_field_value(GarminDB.Activities.avg_speed, 0, 50)
 
     @unittest.skipIf(not do_single_import_tests, "Skipping single import test")
     def test_details_json_file_import(self):
         GarminDB.ActivitiesDB.delete_db(self.test_db_params)
         self.details_json_file_import()
 
+    @unittest.skipIf(not do_multiple_import_tests, "Skipping multiple import test")
     def test_file_import(self):
         root_logger.info("test_file_import: %r", self.test_db_params)
         self.summary_json_file_import()

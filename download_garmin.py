@@ -269,7 +269,7 @@ class Download(object):
     def __save_activity_file(self, activity_id_str):
         root_logger.debug("save_activity_file: %s", activity_id_str)
         zip_filename = f'{self.temp_dir}/activity_{activity_id_str}.zip'
-        url = f'activity/{ activity_id_str}'
+        url = f'activity/{activity_id_str}'
         try:
             self.download_service_rest_client.download_binary_file(url, zip_filename)
         except RestException as e:
