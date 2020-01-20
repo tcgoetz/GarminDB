@@ -178,6 +178,19 @@ class DaysSummary(MSHealthDB.Base, utilities.DBObject):
         stats['first_day'] = first_day_ts
         return stats
 
+    @classmethod
+    def get_yearly_stats(cls, db, year):
+        first_day_ts = datetime.datetime(year, 1, 1)
+        last_day_ts = first_day_ts + datetime.timedelta(365)
+        stats = cls.get_activity_mins_stats(db, cls.get_col_sum, first_day_ts, last_day_ts)
+        stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
+        stats.update(cls.get_steps_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
+        stats.update(cls.get_hr_stats(db, first_day_ts, last_day_ts))
+        stats.update(cls.get_sleep_stats(db, first_day_ts, last_day_ts))
+        stats.update(cls.get_calories_stats(db, first_day_ts, last_day_ts))
+        stats['first_day'] = first_day_ts
+        return stats
+
 
 class MSVaultWeight(MSHealthDB.Base, utilities.DBObject):
     """Class for a databse table holding weight data from Microsoft Health Vault."""

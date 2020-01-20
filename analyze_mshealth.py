@@ -85,3 +85,5 @@ class Analyze(object):
                 stats = MSHealthDB.DaysSummary.get_monthly_stats(self.mshealthdb, start_day_ts, end_day_ts)
                 stats.update(MSHealthDB.MSVaultWeight.get_monthly_stats(self.mshealthdb, start_day_ts, end_day_ts))
                 HealthDB.MonthsSummary.insert_or_update(self.sumdb, stats, ignore_none=True)
+            stats.update(MSHealthDB.MSVaultWeight.get_yearly_stats(self.mshealthdb, year))
+            HealthDB.YearsSummary.insert_or_update(self.sumdb, stats, ignore_none=True)

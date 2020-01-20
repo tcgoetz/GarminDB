@@ -77,3 +77,5 @@ class Analyze(object):
                 end_day_ts = datetime.date(year, month, calendar.monthrange(year, month)[1])
                 stats = FitBitDB.DaysSummary.get_monthly_stats(self.fitbitdb, start_day_ts, end_day_ts)
                 HealthDB.MonthsSummary.insert_or_update(self.sumdb, stats, ignore_none=True)
+            stats = FitBitDB.DaysSummary.get_yearly_stats(self.fitbitdb, year)
+            HealthDB.YearsSummary.insert_or_update(self.sumdb, stats, ignore_none=True)
