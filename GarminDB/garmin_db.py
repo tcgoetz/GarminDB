@@ -5,7 +5,6 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 import os
-import re
 import datetime
 import logging
 from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enum, ForeignKey, func, PrimaryKeyConstraint
@@ -79,25 +78,6 @@ class Device(GarminDB.Base, utilities.DBObject):
     def local_device_serial_number(cls, serial_number, device_type):
         """Return a synthetic serial number for a sub device composed of the parent's serial number and the sub device type."""
         return '%s%06d' % (serial_number, device_type.value)
-
-    @classmethod
-    def derive_device_type(cls, manufacturer, product):
-        """Return a device type for the device inferred from its manufactuer and product information."""
-        device_type_mappings = {
-            cls.Manufacturer.Garmin: {
-                Fit.field_enums.DeviceType.fitness_tracker  : r'Vivo|Forerunner|Fenix',
-                Fit.field_enums.DeviceType.bike_gps         : r'Edge',
-                Fit.field_enums.DeviceType.standalone_gps   : r'GPSMap',
-                Fit.field_enums.DeviceType.software         : r'connect|Training_Center'
-            },
-            cls.Manufacturer.Microsoft: {
-                Fit.field_enums.DeviceType.fitness_tracker  : r'Microsoft Band'
-            }
-        }
-        if manufacturer in device_type_mappings:
-            for device_type, regex in device_type_mappings[manufacturer].items():
-                if re.search(regex, product.name, re.IGNORECASE):
-                    return device_type
 
 
 class DeviceInfo(GarminDB.Base, utilities.DBObject):

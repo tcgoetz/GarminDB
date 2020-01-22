@@ -135,7 +135,7 @@ class FitFileProcessor(object):
         if _manufacturer is not None:
             self.manufacturer = _manufacturer
         self.product = message_fields.product
-        device_type = GarminDB.Device.derive_device_type(self.manufacturer, self.product)
+        device_type = Fit.MainDeviceType.derive_device_type(self.manufacturer, self.product)
         if self.serial_number:
             device = {
                 'serial_number' : self.serial_number,
@@ -156,7 +156,7 @@ class FitFileProcessor(object):
 
     def _write_device_info_entry(self, fit_file, message_fields):
         timestamp = fit_file.utc_datetime_to_local(message_fields.timestamp)
-        device_type = message_fields.get('device_type', Fit.field_enums.DeviceType.fitness_tracker)
+        device_type = message_fields.get('device_type', Fit.MainDeviceType.fitness_tracker)
         serial_number = message_fields.serial_number
         manufacturer = GarminDB.Device.Manufacturer.convert(message_fields.manufacturer)
         product = message_fields.product
@@ -169,8 +169,6 @@ class FitFileProcessor(object):
                 manufacturer = self.manufacturer
             if product is None:
                 product = self.product
-            if device_type is Fit.field_enums.LocalDeviceType.invalid:
-                device_type = GarminDB.Device.derive_device_type(self.manufacturer, self.product)
         if serial_number is not None:
             device = {
                 'serial_number'     : serial_number,
