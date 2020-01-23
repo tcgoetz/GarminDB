@@ -227,19 +227,6 @@ class FitFileProcessor(object):
     def _write_steps_entry(self, fit_file, activity_id, sub_sport, message_fields):
         steps = {
             'activity_id'                       : activity_id,
-<<<<<<< HEAD
-            'steps'                             : self.__get_total_steps(message_dict),
-            'avg_pace'                          : Fit.conversions.perhour_speed_to_pace(message_dict.get('avg_speed')),
-            'max_pace'                          : Fit.conversions.perhour_speed_to_pace(message_dict.get('max_speed')),
-            'avg_steps_per_min'                 : Fit.Cadence.from_cycles(self.__get_field_value(message_dict, 'avg_cadence')).to_spm(),
-            'max_steps_per_min'                 : Fit.Cadence.from_cycles(self.__get_field_value(message_dict, 'max_cadence')).to_spm(),
-            'avg_step_length'                   : self.__get_field_value(message_dict, 'avg_step_length'),
-            'avg_vertical_ratio'                : self.__get_field_value(message_dict, 'avg_vertical_ratio'),
-            'avg_vertical_oscillation'          : self.__get_field_value(message_dict, 'avg_vertical_oscillation'),
-            'avg_gct_balance'                   : self.__get_field_value(message_dict, 'avg_stance_time_balance'),
-            'avg_ground_contact_time'           : self.__get_field_value(message_dict, 'avg_stance_time'),
-            'avg_stance_time_percent'           : self.__get_field_value(message_dict, 'avg_stance_time_percent'),
-=======
             'steps'                             : self.__get_total_steps(message_fields),
             'avg_pace'                          : Fit.conversions.perhour_speed_to_pace(message_fields.avg_speed),
             'max_pace'                          : Fit.conversions.perhour_speed_to_pace(message_fields.max_speed),
@@ -251,7 +238,6 @@ class FitFileProcessor(object):
             'avg_gct_balance'                   : self.__get_field_value(message_fields, 'avg_stance_time_balance'),
             'avg_ground_contact_time'           : self.__get_field_value(message_fields, 'avg_stance_time'),
             'avg_stance_time_percent'           : self.__get_field_value(message_fields, 'avg_stance_time_percent'),
->>>>>>> origin/develop
         }
         root_logger.info("steps: %r", steps)
         GarminDB.StepsActivities.s_insert_or_update(self.garmin_act_db_session, steps, ignore_none=True, ignore_zero=True)
@@ -320,13 +306,8 @@ class FitFileProcessor(object):
         root_logger.debug("Generic sport entry: %r", message_fields)
 
     def __choose_sport(self, current_sport, current_sub_sport, new_sport, new_sub_sport):
-<<<<<<< HEAD
-        sport = Fit.field_enums.Sport.strict_from_string(current_sport)
-        sub_sport = Fit.field_enums.SubSport.strict_from_string(current_sub_sport)
-=======
         sport = Fit.Sport.strict_from_string(current_sport)
         sub_sport = Fit.SubSport.strict_from_string(current_sub_sport)
->>>>>>> origin/develop
         if new_sport is not None and (sport is None or (not sport.preferred() and new_sport.preferred())):
             sport = new_sport
         if new_sub_sport is not None and (sub_sport is None or (not sub_sport.preferred() and new_sub_sport.preferred())):
@@ -335,13 +316,8 @@ class FitFileProcessor(object):
 
     def _write_session_entry(self, fit_file, message_fields):
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
-<<<<<<< HEAD
-        sport = message_dict.get('sport')
-        sub_sport = message_dict.get('sub_sport')
-=======
         sport = message_fields.sport
         sub_sport = message_fields.sub_sport
->>>>>>> origin/develop
         activity = {
             'activity_id'                       : activity_id,
             'start_time'                        : fit_file.utc_datetime_to_local(message_fields.start_time),
@@ -386,15 +362,9 @@ class FitFileProcessor(object):
             try:
                 function = getattr(self, function_name, None)
                 if function is not None:
-<<<<<<< HEAD
-                    function(fit_file, activity_id, sub_sport, message_dict)
-                else:
-                    root_logger.warning("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_dict)
-=======
                     function(fit_file, activity_id, sub_sport, message_fields)
                 else:
                     root_logger.warning("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_fields)
->>>>>>> origin/develop
             except Exception as e:
                 root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
 

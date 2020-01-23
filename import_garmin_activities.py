@@ -127,11 +127,7 @@ class GarminTcxData(object):
             'type'          : GarminDB.File.FileType.tcx,
             'serial_number' : serial_number,
         }
-<<<<<<< HEAD
-        GarminDB.File.s_find_or_create(self.garmin_db_session, file)
-=======
         GarminDB.File.s_insert_or_update(self.garmin_db_session, file)
->>>>>>> origin/develop
         activity = {
             'activity_id'               : file_id,
             'start_time'                : start_time,
@@ -153,11 +149,7 @@ class GarminTcxData(object):
         end_loc = tcx.end_loc
         if end_loc is not None:
             activity.update({'stop_lat': end_loc.lat_deg, 'stop_long': end_loc.long_deg})
-<<<<<<< HEAD
-        GarminDB.Activities.s_create_or_update(self.garmin_act_db_session, activity, ignore_none=True, ignore_zero=True)
-=======
         GarminDB.Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True, ignore_zero=True)
->>>>>>> origin/develop
         for lap_number, lap in enumerate(tcx.laps):
             self.__process_lap(tcx, file_id, lap_number, lap)
 
@@ -165,17 +157,6 @@ class GarminTcxData(object):
         """Import data from TCX files into the database."""
         garmin_db = GarminDB.GarminDB(db_params, self.debug - 1)
         garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
-<<<<<<< HEAD
-        with garmin_db.managed_session() as self.garmin_db_session:
-            with garmin_act_db.managed_session() as self.garmin_act_db_session:
-                for file_name in progressbar.progressbar(self.file_names, unit='files'):
-                    try:
-                        self.__process_file(file_name)
-                    except Exception as e:
-                        logger.error('Exception processing file %s: %s', file_name, e)
-                    self.garmin_db_session.commit()
-                    self.garmin_act_db_session.commit()
-=======
         with garmin_db.managed_session() as self.garmin_db_session, garmin_act_db.managed_session() as self.garmin_act_db_session:
             for file_name in tqdm(self.file_names, unit='files'):
                 try:
@@ -184,7 +165,6 @@ class GarminTcxData(object):
                     logger.error('Failed to processes file %s: %s', file_name, e)
                 self.garmin_db_session.commit()
                 self.garmin_act_db_session.commit()
->>>>>>> origin/develop
 
 
 class GarminJsonSummaryData(JsonFileProcessor):
@@ -388,13 +368,8 @@ class GarminJsonDetailsData(JsonFileProcessor):
         avg_moving_speed_mps = summary_dto.get('averageMovingSpeed')
         avg_moving_speed = Fit.conversions.mps_to_mph(avg_moving_speed_mps)
         run = {
-<<<<<<< HEAD
-            'activity_id'               : activity_id,
-            'avg_moving_pace'           : Fit.conversions.perhour_speed_to_pace(avg_moving_speed),
-=======
             'activity_id'       : activity_id,
             'avg_moving_pace'   : Fit.conversions.perhour_speed_to_pace(avg_moving_speed),
->>>>>>> origin/develop
         }
         root_logger.debug("steps_activity for %d: %r", activity_id, run)
         GarminDB.StepsActivities.s_insert_or_update(self.garmin_act_db_session, run, ignore_none=True)
