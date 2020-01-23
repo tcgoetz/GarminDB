@@ -312,7 +312,7 @@ class FitFileProcessor(object):
             sport = new_sport
         if new_sub_sport is not None and (sub_sport is None or (not sub_sport.preferred() and new_sub_sport.preferred())):
             sub_sport = new_sub_sport
-        return {'sport' : sport.name, 'sub_sport' : sub_sport.name}
+        return {'sport' : Fit.field_enums.name_for_enum(sport), 'sub_sport' : Fit.field_enums.name_for_enum(sub_sport)}
 
     def _write_session_entry(self, fit_file, message_fields):
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
