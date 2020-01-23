@@ -14,7 +14,7 @@ import tempfile
 import zipfile
 import json
 import requests
-import progressbar
+from tqdm import tqdm
 
 import Fit.conversions as conversions
 from garmin_connect_config_manager import GarminConnectConfigManager
@@ -182,7 +182,7 @@ class Download(object):
                         logger.error('Failed to unzip %s to %s: %s', full_pathname, outdir, e)
 
     def __get_stat(self, stat_function, directory, date, days, overwite):
-        for day in progressbar.progressbar(range(0, days + 1)):
+        for day in tqdm(range(0, days + 1), unit='days'):
             download_date = date + datetime.timedelta(days=day)
             # always overwrite for yesterday and today since the last download may have been a partial result
             delta = datetime.datetime.now().date() - download_date
@@ -221,7 +221,7 @@ class Download(object):
     def get_monitoring(self, date, days):
         """Download the daily monitoring data from Garmin Connect, unzip and save the raw files."""
         root_logger.info("Geting monitoring: %s (%d)", date, days)
-        for day in progressbar.progressbar(range(0, days + 1)):
+        for day in tqdm(range(0, days + 1), unit='days'):
             day_date = date + datetime.timedelta(day)
             self.__get_monitoring_day(day_date)
             # pause for a second between every page access
@@ -269,7 +269,7 @@ class Download(object):
     def __save_activity_file(self, activity_id_str):
         root_logger.debug("save_activity_file: %s", activity_id_str)
         zip_filename = f'{self.temp_dir}/activity_{activity_id_str}.zip'
-        url = f'activity/{ activity_id_str}'
+        url = f'activity/{activity_id_str}'
         try:
             self.download_service_rest_client.download_binary_file(url, zip_filename)
         except RestException as e:
@@ -279,7 +279,7 @@ class Download(object):
         """Download activities files from Garmin Connect and save the raw files."""
         logger.info("Geting activities: '%s' (%d)", directory, count)
         activities = self.__get_activity_summaries(0, count)
-        for activity in progressbar.progressbar(activities):
+        for activity in tqdm(activities, unit='activities'):
             activity_id_str = str(activity['activityId'])
             activity_name_str = conversions.printable(activity['activityName'])
             root_logger.info("get_activities: %s (%s)", activity_name_str, activity_id_str)

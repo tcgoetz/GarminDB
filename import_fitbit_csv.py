@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import sys
 import logging
-import progressbar
+from tqdm import tqdm
 
 from utilities import CsvImporter
 import FitBitDB
@@ -62,11 +62,11 @@ class FitBitData(object):
         return len(self.file_names)
 
     def __write_entry(self, db_entry):
-        FitBitDB.DaysSummary.find_or_create(self.fitbitdb, FitBitDB.DaysSummary.intersection(db_entry))
+        FitBitDB.DaysSummary.insert_or_update(self.fitbitdb, FitBitDB.DaysSummary.intersection(db_entry))
 
     def process_files(self):
         """Import files into a database."""
-        for file_name in progressbar.progressbar(self.file_names):
+        for file_name in tqdm(self.file_names, unit='files'):
             logger.info("Processing file: " + file_name)
             self.csvimporter = CsvImporter(file_name, self.cols_map, self.__write_entry)
             self.csvimporter.process_file(not self.metric)

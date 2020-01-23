@@ -21,71 +21,83 @@ class SummaryDB(db.DB):
     """Objects representing a database summarizing health data."""
 
     Base = declarative_base()
+
+    db_tables = []
     db_name = 'summary'
     db_version = 6
 
     class _DbVersion(Base, dbv.DbVersionObject):
-        pass
-
-    def __init__(self, db_params, debug=False):
-        """
-        Return an instance of SummaryDB.
-
-        Paramters:
-            db_params (dict): Config data for accessing the database
-            debug (Boolean): enable debug logging
-        """
-        super().__init__(db_params, debug)
-        SummaryDB.Base.metadata.create_all(self.engine)
-        version = SummaryDB._DbVersion()
-        version.version_check(self, self.db_version)
-        #
-        self.tables = [Summary, MonthsSummary, WeeksSummary, DaysSummary]
-        for table in self.tables:
-            version.table_version_check(self, table)
-            if not version.view_version_check(self, table):
-                table.delete_view(self)
-        #
-        MonthsSummary.create_months_view(self)
-        WeeksSummary.create_weeks_view(self)
-        DaysSummary.create_days_view(self)
+        """Stores version information for this databse and it's tables."""
 
 
 class Summary(SummaryDB.Base, key_value.KeyValueObject):
     """Object representing health data statistics."""
 
     __tablename__ = 'summary'
+
+    db = SummaryDB
     table_version = 1
+
+
+class YearsSummary(SummaryDB.Base, sb.SummaryBase):
+    """Object representing summarized monthly health data."""
+
+    __tablename__ = 'years_summary'
+
+    db = SummaryDB
+    table_version = 2
+    view_version = sb.SummaryBase.view_version
+
+    first_day = Column(Date, primary_key=True)
+
+    @classmethod
+    def create_view(cls, db):
+        cls.create_years_view(db)
 
 
 class MonthsSummary(SummaryDB.Base, sb.SummaryBase):
     """Object representing summarized monthly health data."""
 
     __tablename__ = 'months_summary'
-    table_version = 1
+
+    db = SummaryDB
+    table_version = 2
     view_version = sb.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
-    time_col_name = 'first_day'
+
+    @classmethod
+    def create_view(cls, db):
+        cls.create_months_view(db)
 
 
 class WeeksSummary(SummaryDB.Base, sb.SummaryBase):
     """Object representing summarized weekly health data."""
 
     __tablename__ = 'weeks_summary'
-    table_version = 1
+
+    db = SummaryDB
+    table_version = 2
     view_version = sb.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
-    time_col_name = 'first_day'
+
+    @classmethod
+    def create_view(cls, db):
+        cls.create_weeks_view(db)
 
 
 class DaysSummary(SummaryDB.Base, sb.SummaryBase):
     """Object representing summarized daily health data."""
 
     __tablename__ = 'days_summary'
-    table_version = 1
+
+    db = SummaryDB
+    table_version = 2
     view_version = sb.SummaryBase.view_version
 
     day = Column(Date, primary_key=True)
-    time_col_name = 'day'
+
+    @classmethod
+    def create_view(cls, db):
+        cls.create_days_view(db)

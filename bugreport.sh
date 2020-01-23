@@ -3,7 +3,7 @@
 EPOCH=`date +'%s'`
 BUGREPORT=bugreport.txt
 PYTHON=python3
-PYTHON_PACKAGES="sqlalchemy requests python-dateutil progressbar2 PyInstaller matplotlib"
+PYTHON_PACKAGES="sqlalchemy requests python-dateutil tqdm PyInstaller matplotlib"
 
 zip -j -r bugreport_${EPOCH}.zip *.log
 

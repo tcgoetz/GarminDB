@@ -180,6 +180,11 @@ def is_stat_enabled(stat_name):
     return GarminDBConfig.enabled_stats[stat_name]
 
 
+def enabled_stats():
+    """Return all enabled statistics as a list of string names."""
+    return [stat_name for stat_name, stat_enabled in GarminDBConfig.enabled_stats.items() if stat_enabled]
+
+
 def device_settings_dir(mount_dir):
     """Return the full path to the settings file on a mounted device."""
     return mount_dir + os.sep + GarminDBConfig.device_directories['base'] + os.sep + GarminDBConfig.device_directories['settings']
@@ -200,14 +205,14 @@ def device_activities_dir(mount_dir):
     return mount_dir + os.sep + GarminDBConfig.device_directories['base'] + os.sep + GarminDBConfig.device_directories['activities']
 
 
-def graphs_activity(activity):
-    """Return a dictionary of graph config items for a given activity."""
-    return GarminDBConfig.graphs.get(activity)
+def graphs(key):
+    """Return a graph config item."""
+    return GarminDBConfig.graphs.get(key)
 
 
 def graphs_activity_config(activity, key):
     """Return a config value for the graphing capability given it's key name."""
-    activity = graphs_activity(activity)
+    activity = graphs(activity)
     if activity is not None:
         return activity.get(key)
 

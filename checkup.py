@@ -8,13 +8,14 @@ __license__ = "GPL"
 
 import sys
 import logging
-import getopt
+import argparse
 from datetime import datetime, timedelta
 
 import Fit
 import GarminDB
 import garmin_db_config_manager as GarminDBConfigManager
-from version import print_version
+from version import format_version
+
 
 logging.basicConfig(filename='graphs.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
@@ -86,45 +87,20 @@ class CheckUp(object):
         logger.info('  slowest: %s', self.__activity_string(activity_db, slowest_activity))
 
 
-def __print_usage(program, error=None):
-    if error is not None:
-        print(error)
-        print
-    print('%s [--goals]' % program)
-    print('    --goals        : run a checkup on the user\'s goals.')
-    sys.exit()
-
-
 def main(argv):
     """Run a data checkup of the user's choice."""
-    debug = 0
-    goals = False
-    course = None
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--version", help="print the program's version", action='version', version=format_version(sys.argv[0]))
+    parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
+    parser.add_argument("-g", "--goals", help="Run a checkup on the user\'s goals.", action="store_true", default=False)
+    parser.add_argument("-c", "--course", help="Show statistics over all workouts for a single course.", type=int, default=None)
+    args = parser.parse_args()
 
-    try:
-        opts, args = getopt.getopt(argv, "c:gt:v", ["goals", 'course=', "trace=", "version"])
-    except getopt.GetoptError as e:
-        __print_usage(sys.argv[0], str(e))
-
-    for opt, arg in opts:
-        if opt == '-h':
-            __print_usage(sys.argv[0])
-        elif opt in ("-v", "--version"):
-            print_version(sys.argv[0])
-        elif opt in ("-g", "--goals"):
-            logging.debug("Goals: %s", arg)
-            goals = True
-        elif opt in ("-c", "--course"):
-            logging.debug("Course: %s", arg)
-            course = arg
-        elif opt in ("-t", "--trace"):
-            debug = int(arg)
-
-    checkup = CheckUp(debug)
-    if goals:
+    checkup = CheckUp(args.trace)
+    if args.goals:
         checkup.goals()
-    if course:
-        checkup.activity_course(course)
+    if args.course:
+        checkup.activity_course(args.course)
 
 
 if __name__ == "__main__":

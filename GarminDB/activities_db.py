@@ -13,7 +13,6 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 import HealthDB
 import utilities
-from GarminDB.extra_data import ExtraData
 
 
 logger = logging.getLogger(__name__)
@@ -23,35 +22,13 @@ class ActivitiesDB(utilities.DB):
     """Object representing a database for storing activities data."""
 
     Base = declarative_base()
+
+    db_tables = []
     db_name = 'garmin_activities'
     db_version = 12
 
     class _DbVersion(Base, utilities.DbVersionObject):
-        pass
-
-    def __init__(self, db_params, debug=False):
-        """
-        Return an instance of ActivitiesDB.
-
-        Paramters:
-            db_params (dict): Config data for accessing the database
-            debug (Boolean): enable debug logging
-        """
-        super().__init__(db_params, debug)
-        ActivitiesDB.Base.metadata.create_all(self.engine)
-        self.version = ActivitiesDB._DbVersion()
-        self.version.version_check(self, self.db_version)
-        #
-        self.tables = [Activities, ActivityLaps, ActivityRecords, ActivityRecords, StepsActivities, PaddleActivities, EllipticalActivities, ActivitiesExtraData]
-        for table in self.tables:
-            self.version.table_version_check(self, table)
-            if not self.version.view_version_check(self, table):
-                table.delete_view(self)
-        # Create or Recreate views
-        StepsActivities.create_view(self)
-        PaddleActivities.create_view(self)
-        CycleActivities.create_view(self)
-        EllipticalActivities.create_view(self)
+        """Stores version information for this database and it's tables."""
 
 
 class ActivitiesLocationSegment(utilities.DBObject):
@@ -88,7 +65,9 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     """Class represents a databse table that contains data about recorded activities."""
 
     __tablename__ = 'activities'
-    table_version = 2
+
+    db = ActivitiesDB
+    table_version = 3
 
     activity_id = Column(String, primary_key=True)
     name = Column(String)
@@ -110,8 +89,12 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     cycles = Column(Float)
     #
     laps = Column(Integer)
+    # beats per minute
     avg_hr = Column(Integer)
     max_hr = Column(Integer)
+    # breaths per minute
+    avg_rr = Column(Float)
+    max_rr = Column(Float)
     calories = Column(Integer)
     avg_cadence = Column(Integer)
     max_cadence = Column(Integer)
@@ -129,26 +112,9 @@ class Activities(ActivitiesDB.Base, ActivitiesLocationSegment):
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)
 
-    time_col_name = 'start_time'
-
-    @classmethod
-    def s_find_one(cls, session, values_dict):
-        """Find a table row that matches the values in the values_dict."""
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).one_or_none()
-
     def is_steps_activity(self):
         """Return if the activity is a steps based activity."""
         return self.sport in ['walking', 'running', 'hiking']
-
-    @classmethod
-    def get(cls, db, activity_id):
-        """Return a single activity instance for the given id."""
-        return cls.find_one(db, {'activity_id' : activity_id})
-
-    @classmethod
-    def s_get(cls, session, activity_id):
-        """Return a single activity instance for the given id."""
-        return session.query(cls).filter(cls.activity_id == activity_id).one_or_none()
 
     @classmethod
     def get_by_course_id(cls, db, course_id):
@@ -183,7 +149,9 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
     """Class that holds data for an activity lap."""
 
     __tablename__ = 'activity_laps'
-    table_version = 2
+
+    db = ActivitiesDB
+    table_version = 3
 
     activity_id = Column(String, ForeignKey('activities.activity_id'))
     lap = Column(Integer)
@@ -195,9 +163,12 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
     # kms or miles
     distance = Column(Float)
     cycles = Column(Float)
-    #
+    # beats per minute
     avg_hr = Column(Integer)
     max_hr = Column(Integer)
+    # breaths per minute
+    avg_rr = Column(Float)
+    max_rr = Column(Float)
     calories = Column(Integer)
     avg_cadence = Column(Integer)
     max_cadence = Column(Integer)
@@ -216,27 +187,10 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
         PrimaryKeyConstraint("activity_id", "lap"),
     )
 
-    time_col_name = 'start_time'
-
     @classmethod
     def s_exists(cls, session, values_dict):
         """Return if a matching lap instance exists."""
         return session.query(exists().where(cls.activity_id == values_dict['activity_id']).where(cls.lap == values_dict['lap'])).scalar()
-
-    @classmethod
-    def s_find_one(cls, session, values_dict):
-        """Find a table row that matches the values in the values_dict."""
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.lap == values_dict['lap']).one_or_none()
-
-    @classmethod
-    def get(cls, db, activity_id):
-        """Return all laps for the activity with id activity_id."""
-        return cls.find(db, {'activity_id' : activity_id})
-
-    @classmethod
-    def s_get(cls, session, activity_id):
-        """Return all laps for the activity with id activity_id."""
-        return session.query(cls).filter(cls.activity_id == activity_id).all()
 
     @hybrid_property
     def start_loc(self):
@@ -253,39 +207,32 @@ class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
     """Encapsilates record for a single point in time from an activity."""
 
     __tablename__ = 'activity_records'
-    table_version = 2
+
+    db = ActivitiesDB
+    table_version = 3
 
     activity_id = Column(String, ForeignKey('activities.activity_id'))
     record = Column(Integer)
     timestamp = Column(DateTime)
-    # degrees
-    position_lat = Column(Float)
-    position_long = Column(Float)
+    position_lat = Column(Float)    # degrees
+    position_long = Column(Float)   # degrees
     distance = Column(Float)
     cadence = Column(Integer)
-    hr = Column(Integer)
-    # feet or meters
     altitude = Column(Float)
-    # kmph or mph
-    speed = Column(Float)
-    # C or F
-    temperature = Column(Float)
+    hr = Column(Integer)            # beats per minute
+    rr = Column(Float)              # breaths per minute
+    altitude = Column(Float)        # feet or meters
+    speed = Column(Float)           # kmph or mph
+    temperature = Column(Float)     # C or F
 
     __table_args__ = (
         PrimaryKeyConstraint("activity_id", "record"),
     )
 
-    time_col_name = 'timestamp'
-
     @classmethod
     def s_exists(cls, session, values_dict):
         """Return if a matching record exists in the database."""
         return session.query(exists().where(cls.activity_id == values_dict['activity_id']).where(cls.record == values_dict['record'])).scalar()
-
-    @classmethod
-    def s_find_one(cls, session, values_dict):
-        """Find a table row that matches the values in the values_dict."""
-        return session.query(cls).filter(cls.activity_id == values_dict['activity_id']).filter(cls.record == values_dict['record']).one_or_none()
 
     @hybrid_property
     def position(self):
@@ -301,8 +248,6 @@ class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
 class SportActivities(utilities.DBObject):
     """Base class for all sport based activity tables."""
 
-    match_col_names = ['activity_id']
-
     @declared_attr
     def activity_id(cls):
         return Column(String, ForeignKey(Activities.activity_id), primary_key=True)
@@ -313,8 +258,9 @@ class SportActivities(utilities.DBObject):
 
     @classmethod
     def _create_activity_view(cls, db, selectable):
-        logger.info("Creating activity view with %s", selectable)
-        cls.create_join_view(db, cls._get_default_view_name(), selectable, Activities, order_by=Activities.start_time.desc())
+        view_name = cls._get_default_view_name()
+        logger.info("Creating activity view %s if needed.", view_name)
+        cls.create_join_view(db, view_name, selectable, Activities, order_by=Activities.start_time.desc())
 
     @classmethod
     def _create_sport_view(cls, db, selectable, sport):
@@ -331,10 +277,6 @@ class SportActivities(utilities.DBObject):
         cls._create_activity_view(db, cls._view_selectable())
 
     @classmethod
-    def get(cls, db, activity_id):
-        return cls.find_one(db, {'activity_id' : activity_id})
-
-    @classmethod
     def google_map_loc(cls, label):
         """Return a literal column composed of a google map URL for either the start or stop location off the activity."""
         return literal_column(utilities.Location.google_maps_url('activities.%s_lat' % label, 'activities.%s_long' % label) + ' AS %s_loc' % label)
@@ -342,8 +284,10 @@ class SportActivities(utilities.DBObject):
 
 class StepsActivities(ActivitiesDB.Base, SportActivities):
     __tablename__ = 'steps_activities'
+
+    db = ActivitiesDB
     table_version = 3
-    view_version = 4
+    view_version = 5
 
     steps = Column(Integer)
     # pace in mins/mile
@@ -367,7 +311,8 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
     vo2_max = Column(Float)
 
     @classmethod
-    def _view_selectable(cls, include_sport=False, include_subsport=False, include_type=False, include_course=False):
+    def _view_selectable(cls, include_sport=False, include_subsport=False, include_type=False, include_course=False, include_rr=False,
+                         include_running_dynamics=False):
         # The query fails to genarate sql when using the func.round clause.
         selectable = [
             Activities.activity_id.label('activity_id'),
@@ -381,7 +326,7 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
         if include_type:
             selectable.append(Activities.type.label('type'))
         if include_course:
-            Activities.course_id.label('course_id')
+            selectable.append(Activities.course_id.label('course_id'))
         selectable += [
             Activities.start_time.label('start_time'),
             Activities.stop_time.label('stop_time'),
@@ -394,17 +339,26 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
             cls.round_col(cls.__tablename__ + '.avg_steps_per_min', 'avg_steps_per_min'),
             cls.round_col(cls.__tablename__ + '.max_steps_per_min', 'max_steps_per_min'),
             Activities.avg_hr.label('avg_hr'),
-            Activities.max_hr.label('max_hr'),
+            Activities.max_hr.label('max_hr')
+        ]
+        if include_rr:
+            selectable += [Activities.avg_rr.label('avg_rr'), Activities.max_rr.label('max_rr')]
+        selectable += [
             Activities.calories.label('calories'),
             cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
             cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
             cls.round_col(Activities.__tablename__ + '.max_speed', 'max_speed'),
             cls.round_col(cls.__tablename__ + '.avg_step_length', 'avg_step_length'),
-            cls.round_col(cls.__tablename__ + '.avg_vertical_ratio', 'avg_vertical_ratio'),
-            cls.avg_gct_balance.label('avg_gct_balance'),
-            cls.round_col(cls.__tablename__ + '.avg_vertical_oscillation', 'avg_vertical_oscillation'),
-            cls.avg_ground_contact_time.label('avg_ground_contact_time'),
-            cls.avg_stance_time_percent.label('avg_stance_time_percent'),
+        ]
+        if include_running_dynamics:
+            selectable += [
+                cls.round_col(cls.__tablename__ + '.avg_vertical_ratio', 'avg_vertical_ratio'),
+                cls.avg_gct_balance.label('avg_gct_balance'),
+                cls.round_col(cls.__tablename__ + '.avg_vertical_oscillation', 'avg_vertical_oscillation'),
+                cls.avg_ground_contact_time.label('avg_ground_contact_time'),
+                cls.avg_stance_time_percent.label('avg_stance_time_percent')
+            ]
+        selectable += [
             cls.vo2_max.label('vo2_max'),
             Activities.training_effect.label('training_effect'),
             Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
@@ -416,8 +370,9 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
     @classmethod
     def create_view(cls, db):
         cls._create_activity_view(db, cls._view_selectable(include_sport=True, include_subsport=True, include_type=True, include_course=True))
-        cls._create_sport_view(db, cls._view_selectable(include_type=True), "walking")
-        cls._create_sport_view(db, cls._view_selectable(include_course=True, include_subsport=True), "running")
+        cls._create_sport_view(db, cls._view_selectable(), "walking")
+        cls._create_sport_view(db, cls._view_selectable(include_course=True, include_subsport=True, include_rr=True,
+                                                        include_running_dynamics=True), "running")
         cls._create_sport_view(db, cls._view_selectable(), "hiking")
 
     @classmethod
@@ -441,6 +396,8 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
             cls.round_col(cls.__tablename__ + '.max_steps_per_min', 'max_steps_per_min'),
             Activities.avg_hr.label('avg_hr'),
             Activities.max_hr.label('max_hr'),
+            Activities.avg_rr.label('avg_rr'),
+            Activities.max_rr.label('max_rr'),
             Activities.calories.label('calories'),
             cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
             cls.round_col(Activities.__tablename__ + '.avg_speed', 'avg_speed'),
@@ -459,9 +416,12 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
 
 
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
+
     __tablename__ = 'paddle_activities'
+
+    db = ActivitiesDB
     table_version = 2
-    view_version = 4
+    view_version = 5
 
     strokes = Column(Integer)
     # m or ft
@@ -497,9 +457,12 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
 
 
 class CycleActivities(ActivitiesDB.Base, SportActivities):
+
     __tablename__ = 'cycle_activities'
+
+    db = ActivitiesDB
     table_version = 2
-    view_version = 5
+    view_version = 6
 
     strokes = Column(Integer)
     vo2_max = Column(Float)
@@ -518,6 +481,8 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
             cls.strokes.label('strokes'),
             Activities.avg_hr.label('avg_hr'),
             Activities.max_hr.label('max_hr'),
+            Activities.avg_rr.label('avg_rr'),
+            Activities.max_rr.label('max_rr'),
             Activities.calories.label('calories'),
             cls.round_col(Activities.__tablename__ + '.avg_temperature', 'avg_temperature'),
             Activities.avg_cadence.label('avg_rpms'),
@@ -533,9 +498,12 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
 
 
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
+
     __tablename__ = 'elliptical_activities'
+
+    db = ActivitiesDB
     table_version = 2
-    view_version = 4
+    view_version = 5
 
     steps = Column(Integer)
     # kms or miles
@@ -554,6 +522,8 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
             cls.round_col(Activities.__tablename__ + '.distance', 'distance'),
             Activities.avg_hr.label('avg_hr'),
             Activities.max_hr.label('max_hr'),
+            Activities.avg_rr.label('avg_rr'),
+            Activities.max_rr.label('max_rr'),
             Activities.calories.label('calories'),
             cls.round_col(Activities.__tablename__ + '.avg_cadence', 'avg_rpms'),
             cls.round_col(Activities.__tablename__ + '.max_cadence', 'max_rpms'),
@@ -561,12 +531,3 @@ class EllipticalActivities(ActivitiesDB.Base, SportActivities):
             Activities.training_effect.label('training_effect'),
             Activities.anaerobic_training_effect.label('anaerobic_training_effect')
         ]
-
-
-class ActivitiesExtraData(ActivitiesDB.Base, ExtraData):
-    __tablename__ = 'activities_extra_data'
-    table_version = 2
-
-    activity_id = Column(String, ForeignKey(Activities.activity_id), primary_key=True)
-
-    match_col_names = ['activity_id']

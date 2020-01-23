@@ -1,7 +1,8 @@
 sqlalchemy
 requests
 python-dateutil
-progressbar2
+cached-property
+tqdm
 PyInstaller
 matplotlib
 PyInstaller

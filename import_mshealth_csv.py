@@ -7,7 +7,7 @@ __license__ = "GPL"
 import sys
 import re
 import logging
-import progressbar
+from tqdm import tqdm
 
 from utilities import CsvImporter
 import MSHealthDB
@@ -75,11 +75,11 @@ class MSHealthData(object):
         return len(self.file_names)
 
     def __write_entry(self, db_entry):
-        MSHealthDB.DaysSummary.find_or_create(self.mshealth_db, db_entry)
+        MSHealthDB.DaysSummary.insert_or_update(self.mshealth_db, db_entry)
 
     def process_files(self):
         """Import files into the databse."""
-        for file_name in progressbar.progressbar(self.file_names):
+        for file_name in tqdm(self.file_names, unit='files'):
             logger.info("Processing file: " + file_name)
             csvimporter = CsvImporter(file_name, self.cols_map, self.__write_entry)
             csvimporter.process_file(not self.metric)
@@ -106,11 +106,14 @@ class MSVaultData(object):
         return len(self.file_names)
 
     def __write_entry(self, db_entry):
-        MSHealthDB.MSVaultWeight.find_or_create(self.mshealth_db, MSHealthDB.MSVaultWeight.intersection(db_entry))
+        try:
+            MSHealthDB.MSVaultWeight.insert_or_update(self.mshealth_db, MSHealthDB.MSVaultWeight.intersection(db_entry))
+        except Exception as e:
+            logger.error('Failed to save %r to db: %s', db_entry, e)
 
     def process_files(self):
         """Import files into the databse."""
-        for file_name in progressbar.progressbar(self.file_names):
+        for file_name in tqdm(self.file_names, unit='files'):
             logger.info("Processing file: " + file_name)
             csvimporter = CsvImporter(file_name, self.cols_map, self.__write_entry)
             csvimporter.process_file(not self.metric)

@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, Integer, DateTime, Time, Float, Enum, FLOAT, UniqueConstraint
+from sqlalchemy import Column, Integer, DateTime, Time, Float, Enum, FLOAT, UniqueConstraint, PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -21,46 +21,38 @@ class MonitoringDB(utilities.DB):
     """Class representing a databse storing daily health monitoring data from a Garmin device."""
 
     Base = declarative_base()
+
+    db_tables = []
     db_name = 'garmin_monitoring'
     db_version = 5
 
     class _DbVersion(Base, utilities.DbVersionObject):
-        pass
-
-    def __init__(self, db_params, debug=False):
-        """
-        Return an instance of MonitoringDB.
-
-        Paramters:
-            db_params (dict): Config data for accessing the database
-            debug (Boolean): enable debug logging
-        """
-        super().__init__(db_params, debug)
-        MonitoringDB.Base.metadata.create_all(self.engine)
-        self.version = MonitoringDB._DbVersion()
-        self.version.version_check(self, self.db_version)
-        #
-        self.tables = [MonitoringInfo, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb, Monitoring]
-        for table in self.tables:
-            self.version.table_version_check(self, table)
-            if not self.version.view_version_check(self, table):
-                table.delete_view(self)
+        """Stores version information for this databse and it's tables."""
 
 
 class MonitoringInfo(MonitoringDB.Base, utilities.DBObject):
     """Class representing data from a health monitoring file."""
 
     __tablename__ = 'monitoring_info'
+
+    db = MonitoringDB
     table_version = 1
 
-    timestamp = Column(DateTime, primary_key=True)
+    timestamp = Column(DateTime)
     file_id = Column(Integer, nullable=False)
     activity_type = Column(Enum(Fit.field_enums.ActivityType))
     resting_metabolic_rate = Column(Integer)
     cycles_to_distance = Column(FLOAT)
     cycles_to_calories = Column(FLOAT)
 
-    time_col_name = 'timestamp'
+    __table_args__ = (
+        PrimaryKeyConstraint("timestamp", "activity_type"),
+    )
+
+    @classmethod
+    def s_get_from_dict(cls, session, values_dict):
+        """Return a single DeviceInfo instance for the given id."""
+        return session.query(cls).filter(cls.timestamp == values_dict['timestamp']).filter(cls.activity_type == values_dict['activity_type']).one_or_none()
 
     @classmethod
     def get_daily_bmr(cls, db, day_ts):
@@ -80,20 +72,20 @@ class MonitoringHeartRate(MonitoringDB.Base, utilities.DBObject):
     """Class that reprsents a database table holding resting heart rate data."""
 
     __tablename__ = 'monitoring_hr'
+
+    db = MonitoringDB
     table_version = 1
 
     timestamp = Column(DateTime, primary_key=True)
     heart_rate = Column(Integer, nullable=False)
-
-    time_col_name = 'timestamp'
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dict of stats for table entries within the time span."""
         return {
             'hr_avg' : cls.s_get_col_avg(session, cls.heart_rate, start_ts, end_ts, True),
-            'hr_min' : cls._get_col_min(session, cls.heart_rate, start_ts, end_ts, True),
-            'hr_max' : cls._get_col_max(session, cls.heart_rate, start_ts, end_ts),
+            'hr_min' : cls.s_get_col_min(session, cls.heart_rate, start_ts, end_ts, True),
+            'hr_max' : cls.s_get_col_max(session, cls.heart_rate, start_ts, end_ts),
         }
 
     @classmethod
@@ -107,6 +99,8 @@ class MonitoringIntensity(MonitoringDB.Base, utilities.DBObject):
     """Class representing monitoring data about cardio minutes."""
 
     __tablename__ = 'monitoring_intensity'
+
+    db = MonitoringDB
     table_version = 1
 
     timestamp = Column(DateTime, primary_key=True)
@@ -116,8 +110,6 @@ class MonitoringIntensity(MonitoringDB.Base, utilities.DBObject):
     __table_args__ = (
         UniqueConstraint("timestamp", "moderate_activity_time", "vigorous_activity_time"),
     )
-
-    time_col_name = 'timestamp'
 
     @hybrid_property
     def intensity_time(self):
@@ -142,13 +134,14 @@ class MonitoringClimb(MonitoringDB.Base, utilities.DBObject):
     """Class representing monitoring data about elvation gained."""
 
     __tablename__ = 'monitoring_climb'
+
+    db = MonitoringDB
     table_version = 1
 
     feet_to_floors = 10
     meters_to_floors = 3
 
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime, nullable=False)
+    timestamp = Column(DateTime, primary_key=True)
     # meters or feet
     ascent = Column(Float)
     descent = Column(Float)
@@ -158,8 +151,6 @@ class MonitoringClimb(MonitoringDB.Base, utilities.DBObject):
     __table_args__ = (
         UniqueConstraint("timestamp", "ascent", "descent", "cum_ascent", "cum_descent"),
     )
-
-    time_col_name = 'timestamp'
 
     @classmethod
     def get_stats(cls, session, func, start_ts, end_ts, measurement_system):
@@ -177,7 +168,7 @@ class MonitoringClimb(MonitoringDB.Base, utilities.DBObject):
     @classmethod
     def get_daily_stats(cls, session, day_ts, measurement_system):
         """Return a dict of stats for table entries for the given day."""
-        stats = cls.get_stats(session, cls._get_col_max, day_ts, day_ts + datetime.timedelta(1), measurement_system)
+        stats = cls.get_stats(session, cls.s_get_col_max, day_ts, day_ts + datetime.timedelta(1), measurement_system)
         stats['day'] = day_ts
         return stats
 
@@ -190,8 +181,16 @@ class MonitoringClimb(MonitoringDB.Base, utilities.DBObject):
 
     @classmethod
     def get_monthly_stats(cls, session, first_day_ts, last_day_ts, measurement_system):
-        """Return a dict of stats for table entries for the month day."""
+        """Return a dict of stats for table entries for the month."""
         stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, last_day_ts, measurement_system)
+        stats['first_day'] = first_day_ts
+        return stats
+
+    @classmethod
+    def get_yearly_stats(cls, session, year, measurement_system):
+        """Return a dict of stats for table entries for the year."""
+        first_day_ts = datetime.datetime(year, 1, 1)
+        stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(365), measurement_system)
         stats['first_day'] = first_day_ts
         return stats
 
@@ -200,9 +199,10 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
     """A table containing monitoring data."""
 
     __tablename__ = 'monitoring'
-    table_version = 1
 
-    id = Column(Integer, primary_key=True)
+    db = MonitoringDB
+    table_version = 2
+
     timestamp = Column(DateTime, nullable=False)
     activity_type = Column(Enum(Fit.field_enums.ActivityType))
     intensity = Column(Integer)
@@ -215,10 +215,13 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
     cycles = Column(Float)
 
     __table_args__ = (
-        UniqueConstraint("timestamp", "activity_type", "intensity", "duration"),
+        PrimaryKeyConstraint("timestamp", "activity_type"),
     )
 
-    time_col_name = 'timestamp'
+    @classmethod
+    def s_get_from_dict(cls, session, values_dict):
+        """Return a single DeviceInfo instance for the given id."""
+        return session.query(cls).filter(cls.timestamp == values_dict['timestamp']).filter(cls.activity_type == values_dict['activity_type']).one_or_none()
 
     @classmethod
     def get_active_calories(cls, session, activity_type, start_ts, end_ts):
@@ -241,7 +244,7 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
     @classmethod
     def get_daily_stats(cls, session, day_ts):
         """Return a dict of stats for table entries for the given day."""
-        stats = cls.get_stats(session, cls._get_col_max, day_ts, day_ts + datetime.timedelta(1))
+        stats = cls.get_stats(session, cls.s_get_col_max, day_ts, day_ts + datetime.timedelta(1))
         stats['day'] = day_ts
         return stats
 
@@ -258,3 +261,45 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
         stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, last_day_ts)
         stats['first_day'] = first_day_ts
         return stats
+
+
+class MonitoringRespirationRate(MonitoringDB.Base, utilities.DBObject):
+    """Class that represents a database table holding respiration rate measured in breaths per minute."""
+
+    __tablename__ = 'monitoring_rr'
+
+    db = MonitoringDB
+    table_version = 1
+
+    timestamp = Column(DateTime, primary_key=True)
+    rr = Column(Float, nullable=False)
+
+    @classmethod
+    def get_stats(cls, session, start_ts, end_ts):
+        """Return a dict of stats for table entries within the time span."""
+        return {
+            'rr_avg' : cls.s_get_col_avg(session, cls.rr, start_ts, end_ts, True),
+            'rr_min' : cls.s_get_col_min(session, cls.rr, start_ts, end_ts, True),
+            'rr_max' : cls.s_get_col_max(session, cls.rr, start_ts, end_ts),
+        }
+
+
+class MonitoringPulseOx(MonitoringDB.Base, utilities.DBObject):
+    """Class that represents a database table holding pulse ox measurements in percent."""
+
+    __tablename__ = 'monitoring_pulse_ox'
+
+    db = MonitoringDB
+    table_version = 1
+
+    timestamp = Column(DateTime, primary_key=True)
+    pulse_ox = Column(Float, nullable=False)
+
+    @classmethod
+    def get_stats(cls, session, start_ts, end_ts):
+        """Return a dict of stats for table entries within the time span."""
+        return {
+            'pulse_ox_avg' : cls.s_get_col_avg(session, cls.pulse_ox, start_ts, end_ts, True),
+            'pulse_ox_min' : cls.s_get_col_min(session, cls.pulse_ox, start_ts, end_ts, True),
+            'pulse_ox_max' : cls.s_get_col_max(session, cls.pulse_ox, start_ts, end_ts),
+        }

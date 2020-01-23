@@ -7,7 +7,7 @@ __license__ = "GPL"
 import os
 import sys
 import shutil
-import progressbar
+from tqdm import tqdm
 import logging
 
 import Fit
@@ -34,7 +34,7 @@ class Copy(object):
         """Copy FIT files from a USB mounted Garmin device to the given directory."""
         file_names = FileProcessor.dir_to_files(src_dir, Fit.file.name_regex, latest)
         logger.info("Copying files from %s to %s", src_dir, dest_dir)
-        for file in progressbar.progressbar(file_names):
+        for file in tqdm(file_names, unit='files'):
             shutil.copy(file, dest_dir)
 
     def copy_activities(self, activities_dir, latest=False):

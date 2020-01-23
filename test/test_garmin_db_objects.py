@@ -38,8 +38,8 @@ class TestGarminDbObjects(unittest.TestCase):
             'serial_number' : file_serial_number,
         }
         logger.info("check_file_table: %r", file_dict)
-        GarminDB.File.find_or_create(garmindb, file_dict)
-        file = GarminDB.File.find_one(garmindb, file_dict)
+        GarminDB.File.insert_or_update(garmindb, file_dict)
+        file = GarminDB.File.get(garmindb, file_id)
         self.assertEqual(file.id, file_dict['id'])
         self.assertEqual(file.name, file_dict['name'])
         self.assertEqual(file.type, file_dict['type'])
@@ -64,7 +64,7 @@ class TestGarminDbObjects(unittest.TestCase):
 
     def test_file_type(self):
         file_types_list = list(GarminDB.File.FileType)
-        self.assertIn(GarminDB.File.FileType.convert(Fit.field_enums.FileType.goals), file_types_list)
+        self.assertIn(GarminDB.File.FileType.convert(Fit.FileType.goals), file_types_list)
 
 
 if __name__ == '__main__':

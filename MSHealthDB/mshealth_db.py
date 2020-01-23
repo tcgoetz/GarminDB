@@ -20,18 +20,13 @@ class MSHealthDB(utilities.DB):
     """Object representing a database for storing health data from Microsoft."""
 
     Base = declarative_base()
+
+    db_tables = []
     db_name = 'mshealth'
+    db_version = 1
 
-    def __init__(self, db_params, debug=False):
-        """
-        Return an instance of MSHealthDB.
-
-        Paramters:
-            db_params (dict): Config data for accessing the database
-            debug (Boolean): enable debug logging
-        """
-        super().__init__(db_params, debug)
-        MSHealthDB.Base.metadata.create_all(self.engine)
+    class _DbVersion(Base, utilities.DbVersionObject):
+        """Stores version information for this database and it's tables."""
 
 
 class Attributes(MSHealthDB.Base, utilities.KeyValueObject):
@@ -39,11 +34,17 @@ class Attributes(MSHealthDB.Base, utilities.KeyValueObject):
 
     __tablename__ = 'attributes'
 
+    db = MSHealthDB
+    table_version = 1
+
 
 class DaysSummary(MSHealthDB.Base, utilities.DBObject):
     """A table that holds summarized information about a day with one row per day."""
 
     __tablename__ = 'days_summary'
+
+    db = MSHealthDB
+    table_version = 1
 
     day = Column(Date, primary_key=True)
     calories = Column(Integer)
@@ -82,8 +83,6 @@ class DaysSummary(MSHealthDB.Base, utilities.DBObject):
     guided_workout_events = Column(Integer)
     guided_workout_calories = Column(Integer)
     guided_workout_secs = Column(Integer)
-
-    time_col_name = 'day'
 
     @classmethod
     def get_hr_stats(cls, db, start_ts, end_ts):
@@ -179,16 +178,30 @@ class DaysSummary(MSHealthDB.Base, utilities.DBObject):
         stats['first_day'] = first_day_ts
         return stats
 
+    @classmethod
+    def get_yearly_stats(cls, db, year):
+        first_day_ts = datetime.datetime(year, 1, 1)
+        last_day_ts = first_day_ts + datetime.timedelta(365)
+        stats = cls.get_activity_mins_stats(db, cls.get_col_sum, first_day_ts, last_day_ts)
+        stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
+        stats.update(cls.get_steps_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
+        stats.update(cls.get_hr_stats(db, first_day_ts, last_day_ts))
+        stats.update(cls.get_sleep_stats(db, first_day_ts, last_day_ts))
+        stats.update(cls.get_calories_stats(db, first_day_ts, last_day_ts))
+        stats['first_day'] = first_day_ts
+        return stats
+
 
 class MSVaultWeight(MSHealthDB.Base, utilities.DBObject):
     """Class for a databse table holding weight data from Microsoft Health Vault."""
 
     __tablename__ = 'weight'
 
+    db = MSHealthDB
+    table_version = 1
+
     timestamp = Column(DateTime, primary_key=True, unique=True)
     weight = Column(Float)
-
-    time_col_name = 'timestamp'
 
     @classmethod
     def get_stats(cls, db, start_ts, end_ts):

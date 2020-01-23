@@ -7,7 +7,7 @@ __license__ = "GPL"
 
 import sys
 import logging
-import progressbar
+from tqdm import tqdm
 
 import Fit
 from utilities import FileProcessor
@@ -47,13 +47,15 @@ class FitData(object):
     def process_files(self, db_params):
         """Import FIT files into the database."""
         fp = FitFileProcessor(db_params, self.debug)
-        for file_name in progressbar.progressbar(self.file_names):
+        for file_name in tqdm(self.file_names, unit='files'):
             try:
                 fit_file = Fit.file.File(file_name, self.measurement_system)
                 if self.fit_type is None or fit_file.type == self.fit_type:
                     fp.write_file(fit_file)
+                    root_logger.info("Wrote Fit file %s type %s to the database", file_name, fit_file.type)
                 else:
                     root_logger.info("skipping non %s file %s type %r message types %r",
-                                     self.fit_type, file_name, fit_file.type, fit_file.message_types())
-            except Fit.exceptions.FitFileError as e:
+                                     self.fit_type, file_name, fit_file.type, fit_file.message_types)
+            except Exception as e:
                 logger.error("Failed to parse %s: %s", file_name, e)
+                root_logger.error("Failed to parse %s: %s", file_name, e)
