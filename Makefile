@@ -146,7 +146,7 @@ export_activity:
 	$(PYTHON) garmin.py --export-activity $(EXPORT_ACTIVITY_ID)
 
 clean_garmin_dbs:
-	$(PYTHON) garmin.py --delete_db
+	$(PYTHON) garmin.py --delete_db --all
 
 clean_garmin_monitoring_dbs:
 	$(PYTHON) garmin.py --delete_db --monitoring
