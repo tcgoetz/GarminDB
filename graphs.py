@@ -8,7 +8,7 @@ __license__ = "GPL"
 
 import logging
 import sys
-import getopt
+import argparse
 import datetime
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -18,7 +18,8 @@ import dateutil.parser
 import HealthDB
 import GarminDB
 import garmin_db_config_manager as GarminDBConfigManager
-from version import print_version
+from version import format_version
+from garmin_db_config import Statistics
 
 
 logging.basicConfig(filename='graphs.log', filemode='w', level=logging.INFO)
@@ -217,6 +218,8 @@ class Graph(object):
 
     def graph_date(self, date):
         """Generate a graph for the given date."""
+        if date is None:
+            date = (datetime.datetime.now() - datetime.timedelta(days=1)).date()
         db_params = GarminDBConfigManager.get_db_params()
         mon_db = GarminDB.MonitoringDB(db_params, self.debug)
         start_ts = datetime.datetime.combine(date, datetime.datetime.min.time())
@@ -247,103 +250,49 @@ class Graph(object):
                           'Time of Day', 'heart rate', save_name=save_name)
 
 
-def __print_usage(program, error=None):
-    if error is not None:
-        print(error)
-        print
-    print('%s [--all | --rhr | --weight] [--latest <x days>]' % program)
-    print('    --all        : Graph data for all enabled stats.')
-    print('    --hr        : Graph resting heart rate data.')
-    print('    --itime      : Graph intensity time data.')
-    print('    --weight     : Graph weight data.')
-    print('    --steps      : Graph steps data.')
-    print('    --day        : Graph metric for the given date.')
-    print('    --latest     : Graph x most recent days.')
-    print('    --period     : days, weeks, or months.')
-    print('    --trace      : Turn on debug tracing. Extra logging will be written to log file.')
-    print('    ')
-    sys.exit()
-
-
 def main(argv):
     """Generate graphs based on commandline options."""
-    debug = 0
-    save = False
-    hr = False
-    hr_period = None
-    itime = False
-    itime_period = None
-    steps = False
-    steps_period = None
-    weight = False
-    weight_period = None
-    days = None
-    day = None
+    def date_from_string(date_string):
+        return dateutil.parser.parse(date_string).date()
 
-    try:
-        opts, args = getopt.getopt(argv, "adhHl:p:rsSt:wv", ["all", "day=", "latest=", "hr=", "itime", "save", "steps=", "trace=", "weight=", "version"])
-    except getopt.GetoptError as e:
-        __print_usage(sys.argv[0], str(e))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--version", help="print the program's version", action='version', version=format_version(sys.argv[0]))
+    parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
+    # stat types to operate on
+    stats_group = parser.add_argument_group('Statistics', 'Graph statistics over a period of time')
+    stats_group.add_argument("-A", "--all", help="Graph data for all enabled stats.", action='store_const', dest='stats', const=GarminDBConfigManager.enabled_stats(), default=[])
+    stats_group.add_argument("-m", "--monitoring", help="Graph monitoring data.", dest='stats', action='append_const', const=Statistics.monitoring)
+    stats_group.add_argument("-r", "--hr", help="Graph heart rate data.", dest='stats', action='append_const', const=Statistics.rhr)
+    stats_group.add_argument("-s", "--steps", help="Graph steps data.", dest='stats', action='append_const', const=Statistics.sleep)
+    stats_group.add_argument("-w", "--weight", help="Graph weight data.", dest='stats', action='append_const', const=Statistics.weight)
+    stats_group.add_argument("-p", "--period", help="Graph the latest data.", dest='period', type=int, default=None)
+    daily_group = parser.add_argument_group('Daily')
+    daily_group.add_argument("-d", "--day", help="Graph composite data for a single day.", type=date_from_string)
+    modifiers_group = parser.add_argument_group('Modifiers')
+    modifiers_group.add_argument("-l", "--latest", help="Graph the latest data.", dest='days', type=int, default=None)
+    args = parser.parse_args()
 
-    for opt, arg in opts:
-        if opt == '-h':
-            __print_usage(sys.argv[0])
-        elif opt in ("-v", "--version"):
-            print_version(sys.argv[0])
-        elif opt in ("-a", "--all"):
-            logger.info("All: " + arg)
-            hr = GarminDBConfigManager.is_stat_enabled('rhr')
-            steps = GarminDBConfigManager.is_stat_enabled('steps')
-            itime = GarminDBConfigManager.is_stat_enabled('itime')
-            weight = GarminDBConfigManager.is_stat_enabled('weight')
-            day = (datetime.datetime.now() - datetime.timedelta(days=1)).date()
-        elif opt in ("--day"):
-            day = dateutil.parser.parse(arg).date()
-            logging.debug("Day: %s", day)
-        elif opt in ("-l", "--latest"):
-            days = int(arg)
-        elif opt in ("-S", "--save"):
-            save = True
-        elif opt in ("-s", "--steps"):
-            logging.debug("Steps: %s", arg)
-            steps = True
-            steps_period = arg
-        elif opt in ("-H", "--hr"):
-            logging.debug("HR: %s", arg)
-            hr = True
-            hr_period = arg
-        elif opt in ("-i", "--itime"):
-            logging.debug("Intenist time: %s", arg)
-            itime = True
-            itime_period = arg
-        elif opt in ("-w", "--weight"):
-            logging.info("Weight: %s", arg)
-            weight = True
-            weight_period = arg
-        elif opt in ("-t", "--trace"):
-            debug = int(arg)
-
-    if debug > 0:
+    if args.trace > 0:
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)
 
-    graph = Graph(debug, save)
+    graph = Graph(args.trace, args.save)
 
-    if hr:
-        graph.graph_activity('hr', hr_period, days)
+    if Statistics.rhr in args.stats:
+        graph.graph_activity('hr', args.period, args.days)
 
-    if itime:
-        graph.graph_activity('itime', itime_period, days)
+    if Statistics.itime in args.stats:
+        graph.graph_activity('itime', args.period, args.days)
 
-    if steps:
-        graph.graph_activity('steps', steps_period, days)
+    if Statistics.steps in args.stats:
+        graph.graph_activity('steps', args.period, args.days)
 
-    if weight:
-        graph.graph_activity('weight', weight_period, days)
+    if Statistics.weight in args.stats:
+        graph.graph_activity('weight', args.period, args.days)
 
-    if day:
-        graph.graph_date(day)
+    if args.day:
+        graph.graph_date(args.day)
 
 
 if __name__ == "__main__":

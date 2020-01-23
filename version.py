@@ -11,9 +11,9 @@ from version_info import python_required, python_tested, version_info, prereleas
 version_string = uv.to_string(version_info, prerelease)
 
 
-def print_version(program):
+def format_version(program):
     """Print version information for the script."""
-    uv.display(program, version_string)
+    return uv.format(program, version_string)
 
 
 def log_version(program):
