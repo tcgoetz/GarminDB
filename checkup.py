@@ -89,10 +89,6 @@ class CheckUp(object):
 
 def main(argv):
     """Run a data checkup of the user's choice."""
-    debug = 0
-    goals = False
-    course = None
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--version", help="print the program's version", action='version', version=format_version(sys.argv[0]))
     parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
@@ -100,7 +96,7 @@ def main(argv):
     parser.add_argument("-c", "--course", help="Show statistics over all workouts for a single course.", type=int, default=None)
     args = parser.parse_args()
 
-    checkup = CheckUp(debug)
+    checkup = CheckUp(args.trace)
     if args.goals:
         checkup.goals()
     if args.course:
