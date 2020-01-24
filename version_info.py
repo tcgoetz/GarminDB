@@ -7,7 +7,7 @@ __license__ = "GPL"
 
 python_required = (3, 0, 0)
 python_tested = (3, 7, 5)
-version_info = (1, 3, 0)
+version_info = (1, 4, 0)
 prerelease = True
 
 
