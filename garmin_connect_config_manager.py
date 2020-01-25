@@ -7,7 +7,9 @@ __license__ = "GPL"
 import sys
 import platform
 import subprocess
+
 from utilities import JsonConfig
+from statistics import Statistics
 
 
 class GarminConnectConfigManager(JsonConfig):
@@ -17,6 +19,7 @@ class GarminConnectConfigManager(JsonConfig):
 
     def __init__(self):
         """Return a new GarminConnectConfigManager instance."""
+        self.enabled_statistics = None
         try:
             super().__init__(self.config_filename)
         except Exception as e:
@@ -74,3 +77,14 @@ class GarminConnectConfigManager(JsonConfig):
     def course_views(self, type):
         """Return a list of course ids to create views for for the given activitiy type."""
         return self.__get_node_value('course_views', type)
+
+    def is_stat_enabled(self, statistic):
+        """Return whether a particular statistic is enabled or not."""
+        return statistic in self.enabled_stats()
+
+    def enabled_stats(self):
+        """Return all enabled statistics as a list of string names."""
+        if not self.enabled_statistics:
+            json_enabled_stats_dict = self.config.get('enabled_stats', {stat_name: True for stat_name in list(Statistics)})
+            self.enabled_statistics = [Statistics.from_string(stat_name) for stat_name, stat_enabled in json_enabled_stats_dict.items() if stat_enabled]
+        return self.enabled_statistics

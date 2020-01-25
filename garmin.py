@@ -28,7 +28,7 @@ import HealthDB
 import GarminDB
 import garmin_db_config_manager as GarminDBConfigManager
 from garmin_connect_config_manager import GarminConnectConfigManager
-from garmin_db_config import Statistics
+from statistics import Statistics
 
 
 logging.basicConfig(filename='garmin.log', filemode='w', level=logging.INFO)
@@ -270,7 +270,7 @@ def main(argv):
     # stat types to operate on
     stats_group = parser.add_argument_group('Statistics')
     stats_group.add_argument("-A", "--all", help="Download and/or import data for all enabled stats.", action='store_const', dest='stats',
-                             const=GarminDBConfigManager.enabled_stats())
+                             const=gc_config.enabled_stats())
     stats_group.add_argument("-a", "--activities", help="Download and/or import activities data.", dest='stats', action='append_const', const=Statistics.activities)
     stats_group.add_argument("-m", "--monitoring", help="Download and/or import monitoring data.", dest='stats', action='append_const', const=Statistics.monitoring)
     stats_group.add_argument("-r", "--rhr", help="Download and/or import resting heart rate data.", dest='stats', action='append_const', const=Statistics.rhr)
@@ -288,6 +288,9 @@ def main(argv):
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)
+
+    logger.info("Enabled statistics: %r", args.stats)
+    root_logger.info("Enabled statistics: %r", args.stats)
 
     if args.delete_db:
         delete_dbs([stats_to_db_map[stat] for stat in args.stats])

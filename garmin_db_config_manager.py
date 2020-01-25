@@ -175,16 +175,6 @@ def get_metric():
     return GarminDBConfig.config['metric']
 
 
-def is_stat_enabled(stat_name):
-    """Return whether a particular statistic is enabled or not."""
-    return GarminDBConfig.enabled_stats[stat_name]
-
-
-def enabled_stats():
-    """Return all enabled statistics as a list of string names."""
-    return [stat_name for stat_name, stat_enabled in GarminDBConfig.enabled_stats.items() if stat_enabled]
-
-
 def device_settings_dir(mount_dir):
     """Return the full path to the settings file on a mounted device."""
     return mount_dir + os.sep + GarminDBConfig.device_directories['base'] + os.sep + GarminDBConfig.device_directories['settings']
