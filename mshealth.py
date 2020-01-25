@@ -7,13 +7,14 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 import sys
-import getopt
+import argparse
 import logging
 
 import MSHealthDB
 from import_mshealth_csv import MSHealthData, MSVaultData
 from analyze_mshealth import Analyze
 import garmin_db_config_manager as GarminDBConfigManager
+from version import format_version
 
 
 logging.basicConfig(filename='mshealth.log', filemode='w', level=logging.DEBUG)
@@ -29,49 +30,34 @@ def __usage(program):
 
 def main(argv):
     """Import and analyze Microsoft Health data."""
-    debug = False
-    input_file = None
-    _delete_db = False
-
-    try:
-        opts, args = getopt.getopt(argv, "hi:t", ["help", "delete_db", "trace", "input_file="])
-    except getopt.GetoptError:
-        print("Bad argument")
-        __usage(sys.argv[0])
-
-    for opt, arg in opts:
-        if opt == '-h':
-            __usage(sys.argv[0])
-        elif opt in ("--delete_db"):
-            logging.debug("Delete DB")
-            _delete_db = True
-        elif opt in ("-t", "--trace"):
-            logger.info("Trace:")
-            debug = True
-        elif opt in ("-i", "--input_file"):
-            logger.info("Input File: %s" % arg)
-            input_file = arg
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--version", help="print the program's version", action='version', version=format_version(sys.argv[0]))
+    parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
+    modes_group = parser.add_argument_group('Modes')
+    modes_group.add_argument("-i", "--input_file", help="Specifiy the CSV file to import into the database")
+    modes_group.add_argument("--delete_db", help="Delete FiBit db file.", action="store_true", default=False)
+    args = parser.parse_args()
 
     root_logger = logging.getLogger()
-    if debug:
+    if args.trace:
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)
 
     db_params = GarminDBConfigManager.get_db_params()
 
-    if _delete_db:
+    if args.delete_db:
         MSHealthDB.MSHealthDB.delete_db(db_params)
         sys.exit()
 
     mshealth_dir = GarminDBConfigManager.get_or_create_mshealth_dir()
     metric = GarminDBConfigManager.get_metric()
 
-    msd = MSHealthData(input_file, mshealth_dir, db_params, metric, debug)
+    msd = MSHealthData(args.input_file, mshealth_dir, db_params, metric, args.trace)
     if msd.file_count() > 0:
         msd.process_files()
 
-    mshv = MSVaultData(input_file, mshealth_dir, db_params, metric, debug)
+    mshv = MSVaultData(args.input_file, mshealth_dir, db_params, metric, args.trace)
     if mshv.file_count() > 0:
         mshv.process_files()
 
