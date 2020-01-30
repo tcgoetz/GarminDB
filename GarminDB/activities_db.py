@@ -192,6 +192,11 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
         """Return if a matching lap instance exists."""
         return session.query(exists().where(cls.activity_id == values_dict['activity_id']).where(cls.lap == values_dict['lap'])).scalar()
 
+    @classmethod
+    def s_get_activity(cls, session, activity_id):
+        """Return all laps for a given activity_id."""
+        return session.query(cls).filter(cls.activity_id == activity_id).all()
+
     @hybrid_property
     def start_loc(self):
         """Return the lap start location."""
@@ -233,6 +238,11 @@ class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
     def s_exists(cls, session, values_dict):
         """Return if a matching record exists in the database."""
         return session.query(exists().where(cls.activity_id == values_dict['activity_id']).where(cls.record == values_dict['record'])).scalar()
+
+    @classmethod
+    def s_get_activity(cls, session, activity_id):
+        """Return all records for a given activity_id."""
+        return session.query(cls).filter(cls.activity_id == activity_id).all()
 
     @hybrid_property
     def position(self):

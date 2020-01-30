@@ -14,6 +14,8 @@ import logging
 import sys
 import argparse
 import datetime
+import os
+import tempfile
 
 from version import format_version, python_version_check, log_version
 from download_garmin import Download
@@ -29,6 +31,8 @@ import GarminDB
 import garmin_db_config_manager as GarminDBConfigManager
 from garmin_connect_config_manager import GarminConnectConfigManager
 from statistics import Statistics
+from open_with_basecamp import OpenWithBaseCamp
+from open_with_google_earth import OpenWithGoogleEarth
 
 
 logging.basicConfig(filename='garmin.log', filemode='w', level=logging.INFO)
@@ -243,14 +247,28 @@ def delete_dbs(delete_db_list=[]):
         db.delete_db(db_params_dict)
 
 
-def export_activity(debug, export_activity_id):
-    """Export an activity given its databse id."""
+def export_activity(debug, directory, export_activity_id):
+    """Export an activity given its database id."""
     db_params_dict = GarminDBConfigManager.get_db_params()
     garmindb = GarminDB.GarminDB(db_params_dict)
     measurement_system = GarminDB.Attributes.measurements_type(garmindb)
-    ae = ActivityExporter(export_activity_id, measurement_system, debug)
+    ae = ActivityExporter(directory, export_activity_id, measurement_system, debug)
     ae.process(db_params_dict)
-    ae.write('activity_%s.tcx' % export_activity_id)
+    return ae.write('activity_%s.tcx' % export_activity_id)
+
+
+def basecamp_activity(debug, export_activity_id):
+    """Export an activity given its database id."""
+    file_with_path = export_activity(debug, tempfile.mkdtemp(), export_activity_id)
+    logger.info("Opening activity %d (%s) in BaseCamp", export_activity_id, file_with_path)
+    OpenWithBaseCamp.open(file_with_path)
+
+
+def google_earth_activity(debug, export_activity_id):
+    """Export an activity given its database id."""
+    file_with_path = export_activity(debug, tempfile.mkdtemp(), export_activity_id)
+    logger.info("Opening activity %d (%s) in GoogleEarth", export_activity_id, file_with_path)
+    OpenWithGoogleEarth.open(file_with_path)
 
 
 def main(argv):
@@ -267,6 +285,8 @@ def main(argv):
     modes_group.add_argument("--analyze", help="Analyze data in the db and create summary and derived tables.", dest='analyze_data', action="store_true", default=False)
     modes_group.add_argument("--delete_db", help="Delete Garmin DB db files for the selected activities.", action="store_true", default=False)
     modes_group.add_argument("-e", "--export-activity", help="Export an activity to a TCX file based on the activity\'s id", type=int)
+    modes_group.add_argument("-b", "--basecamp-activity", help="Export an activity to Garmin BaseCamp", type=int)
+    modes_group.add_argument("-g", "--google-earth-activity", help="Export an activity to Google Earth", type=int)
     # stat types to operate on
     stats_group = parser.add_argument_group('Statistics')
     stats_group.add_argument("-A", "--all", help="Download and/or import data for all enabled stats.", action='store_const', dest='stats',
@@ -309,7 +329,13 @@ def main(argv):
         analyze_data(args.trace)
 
     if args.export_activity:
-        export_activity(args.trace, args.export_activity)
+        export_activity(args.trace, os.getcwd(), args.export_activity)
+
+    if args.basecamp_activity:
+        basecamp_activity(args.trace, args.basecamp_activity)
+
+    if args.google_earth_activity:
+        google_earth_activity(args.trace, args.google_earth_activity)
 
 
 if __name__ == "__main__":

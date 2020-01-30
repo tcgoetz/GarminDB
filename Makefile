@@ -145,6 +145,14 @@ copy_garmin_latest:
 export_activity:
 	$(PYTHON) garmin.py --export-activity $(EXPORT_ACTIVITY_ID)
 
+# define EXPORT_ACTIVITY_ID in my-defines.mk
+basecamp_activity:
+	$(PYTHON) garmin.py --basecamp-activity $(EXPORT_ACTIVITY_ID)
+
+# define EXPORT_ACTIVITY_ID in my-defines.mk
+google_earth_activity:
+	$(PYTHON) garmin.py --google-earth-activity $(EXPORT_ACTIVITY_ID)
+
 clean_garmin_dbs:
 	$(PYTHON) garmin.py --delete_db --all
 
