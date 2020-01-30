@@ -15,7 +15,7 @@ from utilities import DBObject
 class SummaryBase(DBObject):
     """Base class for implementing summary databse objects."""
 
-    view_version = 9
+    view_version = 10
 
     hr_avg = Column(Float)
     hr_min = Column(Float)
@@ -48,6 +48,8 @@ class SummaryBase(DBObject):
     calories_bmr_avg = Column(Integer)
     calories_active_avg = Column(Integer)
     calories_goal = Column(Integer)
+    calories_active_avg = Column(Integer)
+    calories_consumed_avg = Column(Integer)
     activities = Column(Integer)
     activities_calories = Column(Integer)
     activities_distance = Column(Integer)
@@ -141,6 +143,7 @@ class SummaryBase(DBObject):
             cls.round_col(cls.__tablename__ + '.calories_avg', 'calories_avg'),
             cls.round_col(cls.__tablename__ + '.calories_bmr_avg', 'calories_bmr_avg'),
             cls.round_col(cls.__tablename__ + '.calories_active_avg', 'calories_active_avg'),
+            cls.round_col(cls.__tablename__ + '.calories_consumed_avg', 'calories_consumed_avg'),
             cls.round_col(cls.__tablename__ + '.calories_goal', 'calories_goal'),
             cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
             cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
@@ -190,6 +193,7 @@ class SummaryBase(DBObject):
             cls.round_col(cls.__tablename__ + '.calories_avg', 'calories_avg'),
             cls.round_col(cls.__tablename__ + '.calories_bmr_avg', 'calories_bmr_avg'),
             cls.round_col(cls.__tablename__ + '.calories_active_avg', 'calories_active_avg'),
+            cls.round_col(cls.__tablename__ + '.calories_consumed_avg', 'calories_consumed_avg'),
             cls.round_col(cls.__tablename__ + '.calories_goal', 'calories_goal'),
             cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
             cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
