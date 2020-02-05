@@ -30,11 +30,11 @@ class FitData(object):
         input_dir (string): directory (full path) to check for monitoring data files
         debug (Boolean): enable debug logging
         latest (Boolean): check for latest files only
-        fit_type (Fit.field_enums.FileType): check for this file type only
+        fit_types (Fit.field_enums.FileType): check for this file type only
         measurement_system (enum): which measurement system to use when importing the files
 
         """
-        logger.info("Processing %r FIT data from %s", fit_types, input_dir)
+        logger.info("Processing %s FIT data from %s", fit_types, input_dir)
         self.measurement_system = measurement_system
         self.debug = debug
         self.fit_types = fit_types
@@ -54,8 +54,8 @@ class FitData(object):
                     fp.write_file(fit_file)
                     root_logger.info("Wrote Fit file %s type %s to the database", file_name, fit_file.type)
                 else:
-                    root_logger.info("skipping non %s file %s type %r message types %r",
-                                     self.fit_type, file_name, fit_file.type, fit_file.message_types)
+                    root_logger.info("skipping non-matching %s file %s type %r message types %r",
+                                     self.fit_types, file_name, fit_file.type, fit_file.message_types)
             except Exception as e:
                 logger.error("Failed to parse %s: %s", file_name, e)
                 root_logger.error("Failed to parse %s: %s", file_name, e)
