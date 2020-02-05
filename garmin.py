@@ -59,29 +59,24 @@ def __get_date_and_days(db, latest, table, col, stat_name):
         last_ts = table.latest_time(db, col)
         if last_ts is None:
             date, days = gc_config.stat_start_date(stat_name)
-            logger.info("Automatic date not found, using: %s : %s for %s", date, days, stat_name)
+            logger.info("Recent %s data not found, using: %s : %s", stat_name, date, days)
         else:
             # start from the day before the last day in the DB
-            logger.info("Automatically downloading %s data from: %s", stat_name, last_ts)
-            if stat_name == 'monitoring':
-                date = last_ts.date()
-                days = max((datetime.datetime.now() - last_ts).days, 1)
-            else:
-                date = last_ts
-                days = (datetime.date.today() - last_ts).days
+            logger.info("Downloading latest %s data from: %s", stat_name, last_ts)
+            date = last_ts.date() if isinstance(last_ts, datetime.datetime) else last_ts
+            days = max((datetime.date.today() - date).days, 1)
     else:
         date, days = gc_config.stat_start_date(stat_name)
-        max_days = (datetime.date.today() - date).days
-        if days > max_days:
-            days = max_days
+        days = min((datetime.date.today() - date).days, days)
     if date is None or days is None:
-        print("Missing config: need %s_start_date and download_days. Edit GarminConnectConfig.py." % stat_name)
+        logger.error("Missing config: need %s_start_date and download_days. Edit GarminConnectConfig.py.", stat_name)
         sys.exit()
     return (date, days)
 
 
 def copy_data(overwite, latest, stats):
     """Copy data from a mounted Garmin USB device to files."""
+    logger.info("___Copying Data___")
     copy = Copy(gc_config.device_mount_dir())
 
     settings_dir = GarminDBConfigManager.get_or_create_fit_files_dir()
@@ -106,6 +101,7 @@ def copy_data(overwite, latest, stats):
 
 def download_data(overwite, latest, stats):
     """Download selected activity types from Garmin Connect and save the data in files. Overwrite previously downloaded data if indicated."""
+    logger.info("___Downloading %s Data___", 'Latest' if latest else 'All')
     db_params_dict = GarminDBConfigManager.get_db_params()
 
     download = Download()
@@ -162,6 +158,7 @@ def download_data(overwite, latest, stats):
 
 def import_data(debug, latest, stats):
     """Import previously downloaded Garmin data into the database."""
+    logger.info("___Importing %s Data___", 'Latest' if latest else 'All')
     db_params_dict = GarminDBConfigManager.get_db_params()
 
     # Import the user profile and/or settings FIT file first so that we can get the measurement system and some other things sorted out first.
@@ -231,6 +228,7 @@ def import_data(debug, latest, stats):
 
 def analyze_data(debug):
     """Analyze the downloaded and imported Garmin data and create summary tables."""
+    logger.info("___Analyzing Data___")
     db_params_dict = GarminDBConfigManager.get_db_params()
     analyze = Analyze(db_params_dict, debug - 1)
     analyze.get_stats()
@@ -309,7 +307,6 @@ def main(argv):
     else:
         root_logger.setLevel(logging.INFO)
 
-    logger.info("Enabled statistics: %r", args.stats)
     root_logger.info("Enabled statistics: %r", args.stats)
 
     if args.delete_db:

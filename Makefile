@@ -114,6 +114,8 @@ checkup: update_garmin
 checkup_course:
 	$(PYTHON) checkup.py --course $(CHECKUP_COURSE_ID)
 
+daily: all checkup graph_yesterday
+
 #
 # Garmin targets
 #
@@ -231,4 +233,4 @@ regression_test: flake8 rebuild_dbs
 bugreport:
 	./bugreport.sh
 
-.PHONY: all setup update deps create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release clean test test_clean
+.PHONY: all setup update deps create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release clean test test_clean daily

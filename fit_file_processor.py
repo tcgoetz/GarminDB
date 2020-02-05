@@ -543,4 +543,7 @@ class FitFileProcessor(object):
         root_logger.debug("set message: %r", message_fields)
 
     def _write_watchface_settings_entry(self, fit_file, message_fields):
-        root_logger.debug("watchface message: %r", message_fields)
+        root_logger.debug("watchface settings message: %r", message_fields)
+
+    def _write_personal_record_entry(self, fit_file, message_fields):
+        logger.info("personal record message: %r", message_fields)

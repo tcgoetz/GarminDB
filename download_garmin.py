@@ -100,7 +100,6 @@ class Download(object):
             'clientId'                          : 'GarminConnect',
             'rememberMeShown'                   : 'true',
             'rememberMeChecked'                 : 'false',
-            # 'customerId'                        : '',
             'createAccountShown'                : 'true',
             'openCreateAccount'                 : 'false',
             'displayNameShown'                  : 'false',

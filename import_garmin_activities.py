@@ -38,7 +38,7 @@ class GarminActivitiesFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, debug, latest, False, Fit.FileType.activity, measurement_system)
+        super().__init__(input_dir, debug, latest, False, [Fit.FileType.activity], measurement_system)
 
 
 class GarminTcxData(object):
@@ -334,7 +334,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
         return 1
 
     def process(self):
-        """Import data from files into the databse."""
+        """Import data from files into the database."""
         with self.garmin_act_db.managed_session() as self.garmin_act_db_session:
             self._process_files()
 
@@ -437,6 +437,6 @@ class GarminJsonDetailsData(JsonFileProcessor):
         return 1
 
     def process(self):
-        """Import data from files into the databse."""
+        """Import data from files into the database."""
         with self.garmin_act_db.managed_session() as self.garmin_act_db_session:
             self._process_files()
