@@ -14,6 +14,8 @@ import logging
 import sys
 import argparse
 import datetime
+import os
+import tempfile
 
 from version import format_version, python_version_check, log_version
 from download_garmin import Download
@@ -28,7 +30,9 @@ import HealthDB
 import GarminDB
 import garmin_db_config_manager as GarminDBConfigManager
 from garmin_connect_config_manager import GarminConnectConfigManager
-from garmin_db_config import Statistics
+from statistics import Statistics
+from open_with_basecamp import OpenWithBaseCamp
+from open_with_google_earth import OpenWithGoogleEarth
 
 
 logging.basicConfig(filename='garmin.log', filemode='w', level=logging.INFO)
@@ -55,29 +59,24 @@ def __get_date_and_days(db, latest, table, col, stat_name):
         last_ts = table.latest_time(db, col)
         if last_ts is None:
             date, days = gc_config.stat_start_date(stat_name)
-            logger.info("Automatic date not found, using: %s : %s for %s", date, days, stat_name)
+            logger.info("Recent %s data not found, using: %s : %s", stat_name, date, days)
         else:
             # start from the day before the last day in the DB
-            logger.info("Automatically downloading %s data from: %s", stat_name, last_ts)
-            if stat_name == 'monitoring':
-                date = last_ts.date()
-                days = max((datetime.datetime.now() - last_ts).days, 1)
-            else:
-                date = last_ts
-                days = (datetime.date.today() - last_ts).days
+            logger.info("Downloading latest %s data from: %s", stat_name, last_ts)
+            date = last_ts.date() if isinstance(last_ts, datetime.datetime) else last_ts
+            days = max((datetime.date.today() - date).days, 1)
     else:
         date, days = gc_config.stat_start_date(stat_name)
-        max_days = (datetime.date.today() - date).days
-        if days > max_days:
-            days = max_days
+        days = min((datetime.date.today() - date).days, days)
     if date is None or days is None:
-        print("Missing config: need %s_start_date and download_days. Edit GarminConnectConfig.py." % stat_name)
+        logger.error("Missing config: need %s_start_date and download_days. Edit GarminConnectConfig.py.", stat_name)
         sys.exit()
     return (date, days)
 
 
 def copy_data(overwite, latest, stats):
     """Copy data from a mounted Garmin USB device to files."""
+    logger.info("___Copying Data___")
     copy = Copy(gc_config.device_mount_dir())
 
     settings_dir = GarminDBConfigManager.get_or_create_fit_files_dir()
@@ -102,6 +101,7 @@ def copy_data(overwite, latest, stats):
 
 def download_data(overwite, latest, stats):
     """Download selected activity types from Garmin Connect and save the data in files. Overwrite previously downloaded data if indicated."""
+    logger.info("___Downloading %s Data___", 'Latest' if latest else 'All')
     db_params_dict = GarminDBConfigManager.get_db_params()
 
     download = Download()
@@ -158,6 +158,7 @@ def download_data(overwite, latest, stats):
 
 def import_data(debug, latest, stats):
     """Import previously downloaded Garmin data into the database."""
+    logger.info("___Importing %s Data___", 'Latest' if latest else 'All')
     db_params_dict = GarminDBConfigManager.get_db_params()
 
     # Import the user profile and/or settings FIT file first so that we can get the measurement system and some other things sorted out first.
@@ -227,6 +228,7 @@ def import_data(debug, latest, stats):
 
 def analyze_data(debug):
     """Analyze the downloaded and imported Garmin data and create summary tables."""
+    logger.info("___Analyzing Data___")
     db_params_dict = GarminDBConfigManager.get_db_params()
     analyze = Analyze(db_params_dict, debug - 1)
     analyze.get_stats()
@@ -243,14 +245,28 @@ def delete_dbs(delete_db_list=[]):
         db.delete_db(db_params_dict)
 
 
-def export_activity(debug, export_activity_id):
-    """Export an activity given its databse id."""
+def export_activity(debug, directory, export_activity_id):
+    """Export an activity given its database id."""
     db_params_dict = GarminDBConfigManager.get_db_params()
     garmindb = GarminDB.GarminDB(db_params_dict)
     measurement_system = GarminDB.Attributes.measurements_type(garmindb)
-    ae = ActivityExporter(export_activity_id, measurement_system, debug)
+    ae = ActivityExporter(directory, export_activity_id, measurement_system, debug)
     ae.process(db_params_dict)
-    ae.write('activity_%s.tcx' % export_activity_id)
+    return ae.write('activity_%s.tcx' % export_activity_id)
+
+
+def basecamp_activity(debug, export_activity_id):
+    """Export an activity given its database id."""
+    file_with_path = export_activity(debug, tempfile.mkdtemp(), export_activity_id)
+    logger.info("Opening activity %d (%s) in BaseCamp", export_activity_id, file_with_path)
+    OpenWithBaseCamp.open(file_with_path)
+
+
+def google_earth_activity(debug, export_activity_id):
+    """Export an activity given its database id."""
+    file_with_path = export_activity(debug, tempfile.mkdtemp(), export_activity_id)
+    logger.info("Opening activity %d (%s) in GoogleEarth", export_activity_id, file_with_path)
+    OpenWithGoogleEarth.open(file_with_path)
 
 
 def main(argv):
@@ -267,10 +283,12 @@ def main(argv):
     modes_group.add_argument("--analyze", help="Analyze data in the db and create summary and derived tables.", dest='analyze_data', action="store_true", default=False)
     modes_group.add_argument("--delete_db", help="Delete Garmin DB db files for the selected activities.", action="store_true", default=False)
     modes_group.add_argument("-e", "--export-activity", help="Export an activity to a TCX file based on the activity\'s id", type=int)
+    modes_group.add_argument("-b", "--basecamp-activity", help="Export an activity to Garmin BaseCamp", type=int)
+    modes_group.add_argument("-g", "--google-earth-activity", help="Export an activity to Google Earth", type=int)
     # stat types to operate on
     stats_group = parser.add_argument_group('Statistics')
     stats_group.add_argument("-A", "--all", help="Download and/or import data for all enabled stats.", action='store_const', dest='stats',
-                             const=GarminDBConfigManager.enabled_stats())
+                             const=gc_config.enabled_stats())
     stats_group.add_argument("-a", "--activities", help="Download and/or import activities data.", dest='stats', action='append_const', const=Statistics.activities)
     stats_group.add_argument("-m", "--monitoring", help="Download and/or import monitoring data.", dest='stats', action='append_const', const=Statistics.monitoring)
     stats_group.add_argument("-r", "--rhr", help="Download and/or import resting heart rate data.", dest='stats', action='append_const', const=Statistics.rhr)
@@ -289,6 +307,8 @@ def main(argv):
     else:
         root_logger.setLevel(logging.INFO)
 
+    root_logger.info("Enabled statistics: %r", args.stats)
+
     if args.delete_db:
         delete_dbs([stats_to_db_map[stat] for stat in args.stats])
         sys.exit()
@@ -306,7 +326,13 @@ def main(argv):
         analyze_data(args.trace)
 
     if args.export_activity:
-        export_activity(args.trace, args.export_activity)
+        export_activity(args.trace, os.getcwd(), args.export_activity)
+
+    if args.basecamp_activity:
+        basecamp_activity(args.trace, args.basecamp_activity)
+
+    if args.google_earth_activity:
+        google_earth_activity(args.trace, args.google_earth_activity)
 
 
 if __name__ == "__main__":

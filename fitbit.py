@@ -7,7 +7,7 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 import sys
-import getopt
+import argparse
 import logging
 
 
@@ -15,6 +15,7 @@ import FitBitDB
 from import_fitbit_csv import FitBitData
 from analyze_fitbit import Analyze
 import garmin_db_config_manager as GarminDBConfigManager
+from version import format_version
 
 
 logging.basicConfig(filename='fitbit.log', filemode='w', level=logging.DEBUG)
@@ -31,42 +32,29 @@ def usage(program):
 
 def main(argv):
     """Import into a DB and summarize CSV formatted FitBit export data."""
-    debug = False
-    input_file = None
-    _delete_db = False
-
-    try:
-        opts, args = getopt.getopt(argv, "dhi:", ["debug", "delete_db", "input_file="])
-    except getopt.GetoptError:
-        usage(sys.argv[0])
-
-    for opt, arg in opts:
-        if opt == '-h':
-            usage(sys.argv[0])
-        elif opt in ("-d", "--debug"):
-            debug = True
-        elif opt in ("--delete_db"):
-            logging.debug("Delete DB")
-            _delete_db = True
-        elif opt in ("-i", "--input_file"):
-            logging.debug("Input File: %s" % arg)
-            input_file = arg
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--version", help="print the program's version", action='version', version=format_version(sys.argv[0]))
+    parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
+    modes_group = parser.add_argument_group('Modes')
+    modes_group.add_argument("-i", "--input_file", help="Specifiy the CSV file to import into the database")
+    modes_group.add_argument("--delete_db", help="Delete FiBit db file.", action="store_true", default=False)
+    args = parser.parse_args()
 
     root_logger = logging.getLogger()
-    if debug:
+    if args.trace > 0:
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)
 
     db_params = GarminDBConfigManager.get_db_params()
 
-    if _delete_db:
+    if args.delete_db:
         FitBitDB.FitBitDB.delete_db(db_params)
         sys.exit()
 
     fitbit_dir = GarminDBConfigManager.get_or_create_fitbit_dir()
     metric = GarminDBConfigManager.get_metric()
-    fd = FitBitData(input_file, fitbit_dir, db_params, metric, debug)
+    fd = FitBitData(args.input_file, fitbit_dir, db_params, metric, args.trace)
     if fd.file_count() > 0:
         fd.process_files()
 

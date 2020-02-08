@@ -100,7 +100,6 @@ class Download(object):
             'clientId'                          : 'GarminConnect',
             'rememberMeShown'                   : 'true',
             'rememberMeChecked'                 : 'false',
-            # 'customerId'                        : '',
             'createAccountShown'                : 'true',
             'openCreateAccount'                 : 'false',
             'displayNameShown'                  : 'false',
@@ -182,7 +181,7 @@ class Download(object):
                         logger.error('Failed to unzip %s to %s: %s', full_pathname, outdir, e)
 
     def __get_stat(self, stat_function, directory, date, days, overwite):
-        for day in tqdm(range(0, days + 1), unit='days'):
+        for day in tqdm(range(0, days), unit='days'):
             download_date = date + datetime.timedelta(days=day)
             # always overwrite for yesterday and today since the last download may have been a partial result
             delta = datetime.datetime.now().date() - download_date

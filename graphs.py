@@ -19,13 +19,16 @@ import HealthDB
 import GarminDB
 import garmin_db_config_manager as GarminDBConfigManager
 from version import format_version
-from garmin_db_config import Statistics
+from statistics import Statistics
+from garmin_connect_config_manager import GarminConnectConfigManager
 
 
 logging.basicConfig(filename='graphs.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
+
+gc_config = GarminConnectConfigManager()
 
 
 class YAxisLabelPostion(enum.Enum):
@@ -258,9 +261,10 @@ def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--version", help="print the program's version", action='version', version=format_version(sys.argv[0]))
     parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
+    parser.add_argument("-S", "--save", help="Save graphs to images files.", action="store_true", default=False)
     # stat types to operate on
     stats_group = parser.add_argument_group('Statistics', 'Graph statistics over a period of time')
-    stats_group.add_argument("-A", "--all", help="Graph data for all enabled stats.", action='store_const', dest='stats', const=GarminDBConfigManager.enabled_stats(), default=[])
+    stats_group.add_argument("-A", "--all", help="Graph data for all enabled statistics.", action='store_const', dest='stats', const=gc_config.enabled_stats(), default=[])
     stats_group.add_argument("-m", "--monitoring", help="Graph monitoring data.", dest='stats', action='append_const', const=Statistics.monitoring)
     stats_group.add_argument("-r", "--hr", help="Graph heart rate data.", dest='stats', action='append_const', const=Statistics.rhr)
     stats_group.add_argument("-s", "--steps", help="Graph steps data.", dest='stats', action='append_const', const=Statistics.sleep)

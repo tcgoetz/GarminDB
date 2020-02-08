@@ -70,7 +70,7 @@ class GarminMonitoringFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, debug, latest, True, Fit.FileType.monitoring_b, measurement_system)
+        super().__init__(input_dir, debug, latest, True, [Fit.FileType.monitoring_b], measurement_system)
 
 
 class GarminSettingsFitData(FitData):
@@ -85,7 +85,7 @@ class GarminSettingsFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, debug, fit_type=Fit.FileType.settings)
+        super().__init__(input_dir, debug, fit_types=[Fit.FileType.settings])
 
 
 class SleepActivityLevels(enum.Enum):

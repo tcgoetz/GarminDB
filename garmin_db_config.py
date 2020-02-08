@@ -5,21 +5,6 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 
-import enum
-
-
-class Statistics(enum.Enum):
-    """The types of statistics that can be downloaded and analyzed."""
-
-    monitoring = 1
-    steps = 2
-    itime = 3
-    sleep = 3
-    rhr = 4
-    weight = 5
-    activities = 6
-
-
 class GarminDBConfig(object):
     """Class that encapsilates config data for the application."""
 
@@ -42,15 +27,6 @@ class GarminDBConfig(object):
     }
     config = {
         'metric'                : False
-    }
-    enabled_stats = {
-        Statistics.monitoring            : True,
-        Statistics.steps                 : True,
-        Statistics.itime                 : True,
-        Statistics.sleep                 : True,
-        Statistics.rhr                   : True,
-        Statistics.weight                : True,
-        Statistics.activities            : True
     }
     device_directories = {
         'base'                  : 'garmin',

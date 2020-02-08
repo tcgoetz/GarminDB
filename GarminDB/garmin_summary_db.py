@@ -43,13 +43,14 @@ class YearsSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     __tablename__ = 'years_summary'
 
     db = GarminSummaryDB
-    table_version = 3
+    table_version = 4
     view_version = HealthDB.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
 
     @classmethod
     def create_view(cls, db):
+        """Create the default database view for the table."""
         cls.create_years_view(db)
 
 
@@ -59,13 +60,14 @@ class MonthsSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     __tablename__ = 'months_summary'
 
     db = GarminSummaryDB
-    table_version = 3
+    table_version = 4
     view_version = HealthDB.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
 
     @classmethod
     def create_view(cls, db):
+        """Create the default database view for the table."""
         cls.create_months_view(db)
 
 
@@ -75,13 +77,14 @@ class WeeksSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     __tablename__ = 'weeks_summary'
 
     db = GarminSummaryDB
-    table_version = 3
+    table_version = 4
     view_version = HealthDB.SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
 
     @classmethod
     def create_view(cls, db):
+        """Create the default database view for the table."""
         cls.create_weeks_view(db)
 
 
@@ -91,13 +94,14 @@ class DaysSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
     __tablename__ = 'days_summary'
 
     db = GarminSummaryDB
-    table_version = 3
+    table_version = 4
     view_version = HealthDB.SummaryBase.view_version
 
     day = Column(Date, primary_key=True)
 
     @classmethod
     def create_view(cls, db):
+        """Create the default database view for the table."""
         cls.create_days_view(db)
 
 

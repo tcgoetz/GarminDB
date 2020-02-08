@@ -396,6 +396,7 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
             'calories_avg'              : cls.s_get_col_avg(session, cls.calories_total, start_ts, end_ts),
             'calories_bmr_avg'          : cls.s_get_col_avg(session, cls.calories_bmr, start_ts, end_ts),
             'calories_active_avg'       : cls.s_get_col_avg(session, cls.calories_active, start_ts, end_ts),
+            'calories_consumed_avg'     : cls.s_get_col_avg(session, cls.calories_consumed, start_ts, end_ts),
             'hydration_goal'            : cls.s_get_col_sum(session, cls.hydration_goal, start_ts, end_ts),
             'hydration_avg'             : cls.s_get_col_avg(session, cls.hydration_intake, start_ts, end_ts),
             'hydration_intake'          : cls.s_get_col_sum(session, cls.hydration_intake, start_ts, end_ts),

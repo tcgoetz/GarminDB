@@ -315,10 +315,10 @@ class Analyze(object):
 
     def summary(self):
         """Summarize Garmin health data. Daily, weekly, and monthly, tables will be generated."""
-        logger.info("___Summary Table Generation___")
+        logger.info("Summary Tables Generation:")
         years = GarminDB.Monitoring.get_years(self.garmin_mon_db)
         for year in years:
-            logger.info("Generating %s", year)
+            logger.info("Generating table entries for %s", year)
             self.__calculate_year(year)
 
     def create_dynamic_views(self):

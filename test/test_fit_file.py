@@ -88,7 +88,7 @@ class TestFitFile(unittest.TestCase):
 
     def check_timestamp(self, fit_file, message):
         # Garmin Connect generated files can have device dates far in the future
-        if message.type != Fit.MessageType.device_info and message.fields.product != Fit.GarminProduct.connect:
+        if (message.type != Fit.MessageType.device_info or message.type != Fit.MessageType.file_id) and message.fields.product != Fit.GarminProduct.connect:
             self.check_value_range(fit_file, message, 'timestamp',
                                    datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc),
                                    datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc))
@@ -104,7 +104,7 @@ class TestFitFile(unittest.TestCase):
         self.assertGreaterEqual(start_time, self.start_time, 'timestamp before file start')
         self.assertLessEqual(end_time, self.end_time, 'timestamp after end of file')
         total_seconds_in_file = (end_time - start_time).total_seconds()
-        self.assertGreaterEqual(total_seconds_in_file, bounds[0], 'time span is negative')
+        self.assertGreaterEqual(total_seconds_in_file, bounds[0], f'time span ({start_time}, {end_time}) is negative')
         self.assertLessEqual(total_seconds_in_file, bounds[1], f'time for {fit_file.filename} span ({start_time}, {end_time}) greater than bound')
 
     def check_file_id(self, fit_file, file_type):
@@ -112,7 +112,8 @@ class TestFitFile(unittest.TestCase):
         self.assertLessEqual(fit_file.utc_offset, +46800, 'Is not a valid time zone offset')
         # file contains less than a day span of time
         (self.start_time, self.end_time) = fit_file.date_span()
-        self.check_timestamp_delta(fit_file, self.start_time, self.end_time, (0, 86400))
+        if fit_file.product != Fit.GarminProduct.connect:
+            self.check_timestamp_delta(fit_file, self.start_time, self.end_time, (0, 86400))
         for message in fit_file.file_id:
             self.check_value(fit_file, message, 'manufacturer', Fit.Manufacturer.Garmin)
             self.check_value(fit_file, message, 'type', file_type)
@@ -122,10 +123,12 @@ class TestFitFile(unittest.TestCase):
         self.check_type(fit_file, message, 'sub_sport', Fit.SubSport)
 
     def check_sport(self, fit_file):
+        sport = None
+        sub_sport = None
         for sport_message in fit_file.sport:
             self.check_sport_value(fit_file, sport_message)
-        sport = fit_file.sport[0].fields.sport
-        sub_sport = fit_file.sport[0].fields.sub_sport
+            sport = sport_message.fields.sport
+            sub_sport = sport_message.fields.sub_sport
         logger.info("%s: %r %r", fit_file.filename, sport, sub_sport)
         return (sport, sub_sport)
 

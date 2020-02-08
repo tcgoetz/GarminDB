@@ -114,6 +114,8 @@ checkup: update_garmin
 checkup_course:
 	$(PYTHON) checkup.py --course $(CHECKUP_COURSE_ID)
 
+daily: all checkup graph_yesterday
+
 #
 # Garmin targets
 #
@@ -144,6 +146,14 @@ copy_garmin_latest:
 # define EXPORT_ACTIVITY_ID in my-defines.mk
 export_activity:
 	$(PYTHON) garmin.py --export-activity $(EXPORT_ACTIVITY_ID)
+
+# define EXPORT_ACTIVITY_ID in my-defines.mk
+basecamp_activity:
+	$(PYTHON) garmin.py --basecamp-activity $(EXPORT_ACTIVITY_ID)
+
+# define EXPORT_ACTIVITY_ID in my-defines.mk
+google_earth_activity:
+	$(PYTHON) garmin.py --google-earth-activity $(EXPORT_ACTIVITY_ID)
 
 clean_garmin_dbs:
 	$(PYTHON) garmin.py --delete_db --all
@@ -223,4 +233,4 @@ regression_test: flake8 rebuild_dbs
 bugreport:
 	./bugreport.sh
 
-.PHONY: all setup update deps create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release clean test test_clean
+.PHONY: all setup update deps create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release clean test test_clean daily

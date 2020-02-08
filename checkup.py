@@ -9,7 +9,7 @@ __license__ = "GPL"
 import sys
 import logging
 import argparse
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 
 import Fit
 import GarminDB
@@ -41,25 +41,46 @@ class CheckUp(object):
         start_ts = end_ts - timedelta(days=look_back_days)
         results = GarminDB.DailySummary.get_for_period(self.garmin_db, start_ts, end_ts)
         step_goal_days = 0
+        step_goal_days_in_week = 0
         floors_goal_days = 0
-        intensity_days = 0
+        floor_goal_days_in_week = 0
+        days_in_week = 0
+        intensity_time = time.min
+        intensity_time_goal = time.min
         intensity_weeks = 0
-        intensity_time_goal_percent = 0
         intensity_goal_weeks = 0
         for result in results:
+            if result.day.weekday() == 0:
+                days_in_week = 0
+                step_goal_days_in_week = 0
+                floor_goal_days_in_week = 0
+                intensity_time = time.min
+                intensity_time_goal = time.min
+            days_in_week += 1
             if result.steps_goal_percent >= 100:
                 step_goal_days += 1
+                step_goal_days_in_week += 1
+            else:
+                logger.debug('Steps: goal not met on %s', result.day)
             if result.floors_goal_percent >= 100:
                 floors_goal_days += 1
-            if result.day.weekday() == 0:
-                intensity_days = 0
-            intensity_time_goal_percent += result.intensity_time_goal_percent
-            intensity_days += 1
+                floor_goal_days_in_week += 1
+            else:
+                logger.debug('Floors: goal not met on %s', result.day)
+            intensity_time = Fit.conversions.add_time(intensity_time, result.intensity_time)
+            intensity_time_goal = Fit.conversions.add_time(intensity_time_goal, result.intensity_time_goal)
             if result.day.weekday() == 6:
-                if intensity_days == 7:
+                if days_in_week == 7:
                     intensity_weeks += 1
-                    if intensity_time_goal_percent >= 100:
+                    if step_goal_days_in_week < days_in_week:
+                        logger.info('Steps: goal not met %d days for week ending in %s', days_in_week - step_goal_days_in_week, result.day)
+                    if floor_goal_days_in_week < days_in_week:
+                        logger.info('Floors: goal not met %d days for week ending in %s', days_in_week - floor_goal_days_in_week, result.day)
+                    if intensity_time >= intensity_time_goal:
                         intensity_goal_weeks += 1
+                    else:
+                        logger.info('Intensity mins: goal not met for week ending in %s', result.day)
+        logger.info('Summary:')
         logger.info('Steps: met goal %d of last %d days', step_goal_days, look_back_days)
         logger.info('Floors: met goal %d of last %d days', floors_goal_days, look_back_days)
         logger.info('Intensity mins: met goal %d of last %d weeks', intensity_goal_weeks, intensity_weeks)

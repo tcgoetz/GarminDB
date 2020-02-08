@@ -4,6 +4,7 @@ __author__ = "Tom Goetz"
 __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
+import os
 
 from Fit import Distance, Speed
 import GarminDB
@@ -13,8 +14,9 @@ from garmin_db_tcx import GarminDbTcx
 class ActivityExporter(object):
     """Export activities as TCX files from database data."""
 
-    def __init__(self, activity_id, measurement_system, debug):
+    def __init__(self, directory, activity_id, measurement_system, debug):
         """Return a instance of ActivityExporter ready to write a TCX file."""
+        self.directory = directory
         self.activity_id = activity_id
         self.measurement_system = measurement_system
         self.debug = debug
@@ -26,15 +28,16 @@ class ActivityExporter(object):
             activity = GarminDB.Activities.s_get(garmin_act_db_session, self.activity_id)
             self.tcx = GarminDbTcx()
             self.tcx.create(activity.sport, activity.start_time)
-            laps = GarminDB.ActivityLaps.s_get(garmin_act_db_session, self.activity_id)
+            laps = GarminDB.ActivityLaps.s_get_activity(garmin_act_db_session, self.activity_id)
+            records = GarminDB.ActivityRecords.s_get_activity(garmin_act_db_session, self.activity_id)
             for lap in laps:
                 distance = Distance.from_meters_or_feet(lap.distance, self.measurement_system)
                 track = self.tcx.add_lap(lap.start_time, lap.stop_time, distance, lap.calories)
-                records = GarminDB.ActivityRecords.s_get_for_period(garmin_act_db_session, lap.start_time, lap.stop_time)
                 for record in records:
-                    alititude = Distance.from_meters_or_feet(record.altitude, self.measurement_system)
-                    speed = Speed.from_kph_or_mph(record.speed, self.measurement_system)
-                    self.tcx.add_point(track, record.timestamp, record.position, alititude.to_meters(), record.hr, speed.to_mps())
+                    if record.timestamp >= lap.start_time and record.timestamp <= lap.stop_time:
+                        alititude = Distance.from_meters_or_feet(record.altitude, self.measurement_system)
+                        speed = Speed.from_kph_or_mph(record.speed, self.measurement_system)
+                        self.tcx.add_point(track, record.timestamp, record.position, alititude, record.hr, speed)
         garmindb = GarminDB.GarminDB(db_params)
         with garmindb.managed_session() as garmin_db_session:
             file = GarminDB.File.s_get(garmin_db_session, self.activity_id)
@@ -43,4 +46,6 @@ class ActivityExporter(object):
 
     def write(self, filename):
         """Write the TCX file to disk."""
-        self.tcx.write(filename)
+        full_path = self.directory + os.path.sep + filename
+        self.tcx.write(full_path)
+        return full_path
