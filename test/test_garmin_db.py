@@ -105,7 +105,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         self.check_col_stats(
             self.garmindb, GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True, True,
             (1, 10000000),
-            (datetime.time(2), datetime.time(4)),           # max
+            (datetime.time(2), datetime.time(8)),           # max
             (datetime.time(0), datetime.time(2)),           # min
             (datetime.time(minute=30), datetime.time(6)),   # avg
             (datetime.time(minute=10), datetime.time(6))    # latest
