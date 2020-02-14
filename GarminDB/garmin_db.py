@@ -87,7 +87,7 @@ class DeviceInfo(GarminDB.Base, utilities.DBObject):
 
     db = GarminDB
     table_version = 4
-    view_version = 5
+    view_version = 6
 
     timestamp = Column(DateTime, nullable=False)
     file_id = Column(String, ForeignKey('files.id'))
@@ -117,7 +117,8 @@ class DeviceInfo(GarminDB.Base, utilities.DBObject):
             cls.software_version.label('software_version'),
             Device.manufacturer.label('manufacturer'),
             Device.product.label('product'),
-            Device.hardware_version.label('hardware_version')
+            Device.hardware_version.label('hardware_version'),
+            cls.battery_status.label('battery_status')
         ]
         cls.create_join_view(db, cls._get_default_view_name(), cols, Device, order_by=cls.timestamp.desc())
 
