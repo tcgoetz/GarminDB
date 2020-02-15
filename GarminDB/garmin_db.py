@@ -301,7 +301,7 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
     __tablename__ = 'daily_summary'
 
     db = GarminDB
-    table_version = 3
+    table_version = 4
 
     day = Column(Date, primary_key=True)
     hr_min = Column(Integer)
@@ -324,6 +324,7 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
     calories_consumed = Column(Integer)
     hydration_goal = Column(Integer)
     hydration_intake = Column(Integer)
+    sweat_loss = Column(Integer)
     spo2_avg = Column(Float)
     spo2_min = Column(Float)
     rr_waking_avg = Column(Float)
@@ -401,6 +402,8 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
             'hydration_goal'            : cls.s_get_col_sum(session, cls.hydration_goal, start_ts, end_ts),
             'hydration_avg'             : cls.s_get_col_avg(session, cls.hydration_intake, start_ts, end_ts),
             'hydration_intake'          : cls.s_get_col_sum(session, cls.hydration_intake, start_ts, end_ts),
+            'sweat_loss_avg'            : cls.s_get_col_avg(session, cls.sweat_loss, start_ts, end_ts),
+            'sweat_loss'                : cls.s_get_col_sum(session, cls.sweat_loss, start_ts, end_ts),
             'spo2_avg'                  : cls.s_get_col_avg(session, cls.spo2_avg, start_ts, end_ts),
             'spo2_min'                  : cls.s_get_col_min(session, cls.spo2_min, start_ts, end_ts),
             'rr_waking_avg'             : cls.s_get_col_avg(session, cls.rr_waking_avg, start_ts, end_ts),
