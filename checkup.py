@@ -95,7 +95,7 @@ class CheckUp(object):
         return '%s: "%s" %s in %s (%s)' % (activity.start_time, activity.name, activity.distance, activity.elapsed_time, activity.avg_speed)
 
     def activity_course(self, course_id):
-        """Run a checkup on all activities matcing the course_id."""
+        """Run a checkup on all activities matching the course_id."""
         activity_db = GarminDB.ActivitiesDB(self.db_params, self.debug)
         activities = GarminDB.Activities.get_by_course_id(activity_db, course_id)
         activities_count = len(activities)
@@ -107,21 +107,35 @@ class CheckUp(object):
         logger.info('  fastest: %s', self.__activity_string(activity_db, fastest_activity))
         logger.info('  slowest: %s', self.__activity_string(activity_db, slowest_activity))
 
+    def battery_status(self):
+        """Check for devices with low battery status."""
+        devices = GarminDB.Device.get_all(self.garmin_db)
+        for device in devices:
+            battery_level = GarminDB.DeviceInfo.get_col_latest_where(self.garmin_db, GarminDB.DeviceInfo.battery_status,
+                                                                     [GarminDB.DeviceInfo.serial_number == device.serial_number,
+                                                                      GarminDB.DeviceInfo.battery_status != Fit.field_enums.BatteryStatus.invalid])
+            if battery_level is Fit.field_enums.BatteryStatus.low:
+                logger.info("Device %s %s (%s) has a low battery", device.manufacturer, device.product, device.serial_number)
+
 
 def main(argv):
     """Run a data checkup of the user's choice."""
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--version", help="print the program's version", action='version', version=format_version(sys.argv[0]))
     parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
-    parser.add_argument("-g", "--goals", help="Run a checkup on the user\'s goals.", action="store_true", default=False)
-    parser.add_argument("-c", "--course", help="Show statistics over all workouts for a single course.", type=int, default=None)
+    checks_group = parser.add_argument_group('Checks')
+    checks_group.add_argument("-b", "--battery", help="Check for low battery levels.", action="store_true", default=False)
+    checks_group.add_argument("-c", "--course", help="Show statistics from all workouts for a single course.", type=int, default=None)
+    checks_group.add_argument("-g", "--goals", help="Run a checkup on the user\'s goals.", action="store_true", default=False)
     args = parser.parse_args()
 
     checkup = CheckUp(args.trace)
-    if args.goals:
-        checkup.goals()
+    if args.battery:
+        checkup.battery_status()
     if args.course:
         checkup.activity_course(args.course)
+    if args.goals:
+        checkup.goals()
 
 
 if __name__ == "__main__":

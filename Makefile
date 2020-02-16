@@ -108,6 +108,7 @@ graph_yesterday:
 	$(PYTHON) graphs.py --day $(YESTERDAY)
 
 checkup: update_garmin
+	$(PYTHON) checkup.py --battery
 	$(PYTHON) checkup.py --goals
 
 # define CHECKUP_COURSE_ID in my-defines.mk
