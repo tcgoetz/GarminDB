@@ -98,7 +98,7 @@ VERSION=$(shell $(PYTHON) -c 'from version_info import version_string; print(ver
 BIN_FILES=$(DIST)/garmin $(DIST)/graphs $(DIST)/checkup $(DIST)/fitbit $(DIST)/mshealth
 ZIP_FILES=dist_files/Readme_MacOS.txt dist_files/download_create_dbs.sh dist_files/download_update_dbs.sh dist_files/copy_create_dbs.sh \
 	dist_files/copy_update_dbs.sh bugreport.sh
-zip_packages: validate_garmin_package package_fitbit package_mshealth
+zip_packages: validate_garmin_package validate_fitbit_package validate_mshealth_package
 	zip -j -r GarminDb_$(PLATFORM)_$(VERSION).zip GarminConnectConfig.json.example $(BIN_FILES) $(ZIP_FILES)
 
 graphs:
@@ -175,6 +175,8 @@ $(DIST)/garmin:
 
 validate_garmin_package: $(DIST)/garmin
 	$(DIST)/garmin -v
+	$(DIST)/graphs -v
+	$(DIST)/checkup -v
 
 
 #
@@ -186,8 +188,11 @@ fitbit:
 clean_fitbit_db:
 	$(PYTHON) fitbit.py --delete_db
 
-package_fitbit:
-	pyinstaller $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile fitbit.py
+$(DIST)/fitbit:
+	$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile fitbit.py
+
+validate_fitbit_package: $(DIST)/fitbit
+	$(DIST)/fitbit -v
 
 
 #
@@ -199,8 +204,11 @@ mshealth: $(MSHEALTH_DB)
 clean_mshealth_db:
 	$(PYTHON) mshealth.py --delete_db
 
-package_mshealth:
+$(DIST)/mshealth:
 	$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile mshealth.py
+
+validate_mshealth_package: $(DIST)/mshealth
+	$(DIST)/mshealth -v
 
 
 #
