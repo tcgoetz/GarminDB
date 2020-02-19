@@ -56,6 +56,8 @@ class SummaryBase(DBObject):
     hydration_goal = Column(Integer)
     hydration_avg = Column(Integer)
     hydration_intake = Column(Integer)
+    sweat_loss_avg = Column(Integer)
+    sweat_loss = Column(Integer)
     spo2_avg = Column(Float)
     spo2_min = Column(Float)
     rr_waking_avg = Column(Float)
@@ -149,6 +151,7 @@ class SummaryBase(DBObject):
             cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
             cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
             cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
+            cls.round_col(cls.__tablename__ + '.sweat_loss_avg', 'sweat_loss_avg'),
             cls.round_col(cls.__tablename__ + '.spo2_avg', 'spo2_avg'),
             cls.round_col(cls.__tablename__ + '.spo2_min', 'spo2_min'),
             cls.round_col(cls.__tablename__ + '.rr_waking_avg', 'rr_waking_avg')
@@ -199,6 +202,7 @@ class SummaryBase(DBObject):
             cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
             cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
             cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
+            cls.round_col(cls.__tablename__ + '.sweat_loss_avg', 'sweat_loss_avg'),
             cls.round_col(cls.__tablename__ + '.spo2_avg', 'spo2_avg'),
             cls.round_col(cls.__tablename__ + '.spo2_min', 'spo2_min'),
             cls.round_col(cls.__tablename__ + '.rr_waking_avg', 'rr_waking_avg'),

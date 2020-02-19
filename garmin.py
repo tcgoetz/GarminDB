@@ -53,6 +53,8 @@ stats_to_db_map = {
     Statistics.activities            : GarminDB.ActivitiesDB
 }
 
+summary_dbs = [GarminDB.GarminSummaryDB, HealthDB.SummaryDB]
+
 
 def __get_date_and_days(db, latest, table, col, stat_name):
     if latest:
@@ -288,7 +290,7 @@ def main(argv):
     # stat types to operate on
     stats_group = parser.add_argument_group('Statistics')
     stats_group.add_argument("-A", "--all", help="Download and/or import data for all enabled stats.", action='store_const', dest='stats',
-                             const=gc_config.enabled_stats())
+                             const=gc_config.enabled_stats(), default=[])
     stats_group.add_argument("-a", "--activities", help="Download and/or import activities data.", dest='stats', action='append_const', const=Statistics.activities)
     stats_group.add_argument("-m", "--monitoring", help="Download and/or import monitoring data.", dest='stats', action='append_const', const=Statistics.monitoring)
     stats_group.add_argument("-r", "--rhr", help="Download and/or import resting heart rate data.", dest='stats', action='append_const', const=Statistics.rhr)
@@ -310,7 +312,7 @@ def main(argv):
     root_logger.info("Enabled statistics: %r", args.stats)
 
     if args.delete_db:
-        delete_dbs([stats_to_db_map[stat] for stat in args.stats])
+        delete_dbs([stats_to_db_map[stat] for stat in args.stats] + summary_dbs)
         sys.exit()
 
     if args.copy_data:
