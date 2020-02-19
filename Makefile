@@ -73,7 +73,7 @@ $(SUBDIRS:%=%-clean):
 clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -f *.pyc
 	rm -f *.log
-	rm -rf dist
+	rm -rf $(DIST)
 	rm -rf build
 	rm -f *.spec
 	rm -f *.zip
@@ -95,10 +95,10 @@ backup: $(BACKUP_DIR)
 	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
 
 VERSION=$(shell $(PYTHON) -c 'from version_info import version_string; print(version_string())')
-BIN_FILES=dist/garmin dist/graphs dist/checkup dist/fitbit dist/mshealth
+BIN_FILES=$(DIST)/garmin $(DIST)/graphs $(DIST)/checkup $(DIST)/fitbit $(DIST)/mshealth
 ZIP_FILES=dist_files/Readme_MacOS.txt dist_files/download_create_dbs.sh dist_files/download_update_dbs.sh dist_files/copy_create_dbs.sh \
 	dist_files/copy_update_dbs.sh bugreport.sh
-zip_packages: package_garmin package_fitbit package_mshealth
+zip_packages: validate_garmin_package package_fitbit package_mshealth
 	zip -j -r GarminDb_$(PLATFORM)_$(VERSION).zip GarminConnectConfig.json.example $(BIN_FILES) $(ZIP_FILES)
 
 graphs:
@@ -165,11 +165,16 @@ clean_garmin_monitoring_dbs:
 clean_garmin_activities_dbs:
 	$(PYTHON) garmin.py --delete_db --activities
 
-package_garmin:
-	pyinstaller --clean --noconfirm --onefile garmin.py
-	pyinstaller --clean --noconfirm --onefile graphs.py
-	pyinstaller --clean --noconfirm --onefile checkup.py
+PYINSTALLER_OPTS=--clean --noconfirm
+#PYINSTALLER_EXCLUDES=--exclude-module tkinter --exclude-module TkAgg
+PYINSTALLER_EXCLUDES=
+$(DIST)/garmin:
+	$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile garmin.py
+	$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile graphs.py
+	$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile checkup.py
 
+validate_garmin_package: $(DIST)/garmin
+	$(DIST)/garmin -v
 
 
 #
@@ -182,7 +187,7 @@ clean_fitbit_db:
 	$(PYTHON) fitbit.py --delete_db
 
 package_fitbit:
-	pyinstaller --clean --noconfirm --onefile fitbit.py
+	pyinstaller $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile fitbit.py
 
 
 #
@@ -195,7 +200,7 @@ clean_mshealth_db:
 	$(PYTHON) mshealth.py --delete_db
 
 package_mshealth:
-	pyinstaller --clean --noconfirm --onefile mshealth.py
+	$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile mshealth.py
 
 
 #
@@ -223,7 +228,7 @@ $(SUBMODULES:%=%-flake8):
 	$(MAKE) -C $(subst -flake8,,$@) flake8
 
 flake8: $(SUBMODULES:%=%-flake8)
-	flake8 *.py GarminDB/*.py HealthDB/*.py FitBitDB/*.py MSHealthDB/*.py --max-line-length=180 --ignore=E203,E221,E241,W503
+	$(FLAKE8) *.py GarminDB/*.py HealthDB/*.py FitBitDB/*.py MSHealthDB/*.py --max-line-length=180 --ignore=E203,E221,E241,W503
 
 regression_test: flake8 rebuild_dbs
 	grep ERROR garmin.log

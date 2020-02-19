@@ -1,6 +1,8 @@
 
 -include my-defines.mk
 
+DIST=dist
+
 PLATFORM=$(shell uname)
 
 #
@@ -32,6 +34,10 @@ PYTHON3=$(shell which python3)
 
 endif
 
+FLAKE8 ?= $(shell which flake8)
+PYINSTALLER ?= $(shell which pyinstaller)
+
+
 
 #PYTHON ?= ${PYTHON2}
 PYTHON ?= $(PYTHON3)
@@ -60,4 +66,4 @@ $(error pip not found)
 endif
 
 
-export TIME PLATFORM PYTHON PIP PIP_INSTALL_OPT YESTERDAY
+export TIME PLATFORM PYTHON PIP PIP_INSTALL_OPT YESTERDAY PYINSTALLER FLAKE8
