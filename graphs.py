@@ -10,9 +10,10 @@ import logging
 import sys
 import argparse
 import datetime
+import enum
+
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import enum
 import dateutil.parser
 
 import HealthDB
@@ -138,7 +139,7 @@ class Graph(object):
         axes.set_yticks([])
         # then graph the data that appears on top
         colors = [Colors.r.name, Colors.b.name]
-        for index, data in enumerate(over_data_dicts):
+        for index, _ in enumerate(over_data_dicts):
             over_data_dict = over_data_dicts[index]
             color = colors[index]
             label = over_data_dict['label']

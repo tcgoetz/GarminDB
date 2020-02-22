@@ -180,6 +180,7 @@ class DaysSummary(MSHealthDB.Base, utilities.DBObject):
 
     @classmethod
     def get_yearly_stats(cls, db, year):
+        """Return a dictionary of aggregate statistics for the given year."""
         first_day_ts = datetime.datetime(year, 1, 1)
         last_day_ts = first_day_ts + datetime.timedelta(365)
         stats = cls.get_activity_mins_stats(db, cls.get_col_sum, first_day_ts, last_day_ts)

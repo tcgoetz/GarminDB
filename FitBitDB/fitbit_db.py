@@ -81,35 +81,35 @@ class DaysSummary(FitBitDB.Base, utilities.DBObject):
         if vigorous_activity_time:
             intensity_time = Fit.conversions.add_time(intensity_time, vigorous_activity_time, 2)
         stats = {
-            'intensity_time'            : intensity_time,
-            'moderate_activity_time'    : moderate_activity_time,
-            'vigorous_activity_time'    : vigorous_activity_time,
+            'intensity_time': intensity_time,
+            'moderate_activity_time': moderate_activity_time,
+            'vigorous_activity_time': vigorous_activity_time,
         }
         return stats
 
     @classmethod
     def get_floors_stats(cls, db, func, start_ts, end_ts):
-        return {'floors' : func(db, cls.floors, start_ts, end_ts)}
+        return {'floors': func(db, cls.floors, start_ts, end_ts)}
 
     @classmethod
     def get_steps_stats(cls, db, func, start_ts, end_ts):
-        return {'steps' : func(db, cls.steps, start_ts, end_ts)}
+        return {'steps': func(db, cls.steps, start_ts, end_ts)}
 
     @classmethod
     def get_weight_stats(cls, db, start_ts, end_ts):
         stats = {
-            'weight_avg' : cls.get_col_avg(db, cls.weight, start_ts, end_ts, True),
-            'weight_min' : cls.get_col_min(db, cls.weight, start_ts, end_ts, True),
-            'weight_max' : cls.get_col_max(db, cls.weight, start_ts, end_ts),
+            'weight_avg': cls.get_col_avg(db, cls.weight, start_ts, end_ts, True),
+            'weight_min': cls.get_col_min(db, cls.weight, start_ts, end_ts, True),
+            'weight_max': cls.get_col_max(db, cls.weight, start_ts, end_ts),
         }
         return stats
 
     @classmethod
     def get_sleep_stats(cls, db, start_ts, end_ts):
         return {
-            'sleep_avg' : Fit.conversions.min_to_dt_time(cls.get_col_avg(db, cls.asleep_mins, start_ts, end_ts, True)),
-            'sleep_min' : Fit.conversions.min_to_dt_time(cls.get_col_min(db, cls.asleep_mins, start_ts, end_ts, True)),
-            'sleep_max' : Fit.conversions.min_to_dt_time(cls.get_col_max(db, cls.asleep_mins, start_ts, end_ts)),
+            'sleep_avg': Fit.conversions.min_to_dt_time(cls.get_col_avg(db, cls.asleep_mins, start_ts, end_ts, True)),
+            'sleep_min': Fit.conversions.min_to_dt_time(cls.get_col_min(db, cls.asleep_mins, start_ts, end_ts, True)),
+            'sleep_max': Fit.conversions.min_to_dt_time(cls.get_col_max(db, cls.asleep_mins, start_ts, end_ts)),
         }
 
     @classmethod
@@ -121,9 +121,9 @@ class DaysSummary(FitBitDB.Base, utilities.DBObject):
         else:
             calories_avg = None
         return {
-            'calories_avg'          : calories_avg,
-            'calories_bmr_avg'      : calories_bmr_avg,
-            'calories_active_avg'   : calories_active_avg,
+            'calories_avg': calories_avg,
+            'calories_bmr_avg': calories_bmr_avg,
+            'calories_active_avg': calories_active_avg,
         }
 
     @classmethod
