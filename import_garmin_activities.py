@@ -31,6 +31,7 @@ class GarminActivitiesFitData(FitData):
         Return an instance of GarminActivitiesFitData.
 
         Parameters:
+        ----------
         db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only
@@ -49,6 +50,7 @@ class GarminTcxData(object):
         Return an instance of GarminTcxData.
 
         Parameters:
+        ----------
         db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only
@@ -175,6 +177,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
         Return an instance of GarminTcxData.
 
         Parameters:
+        ----------
         db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only
@@ -347,6 +350,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
         Return an instance of GarminJsonDetailsData.
 
         Parameters:
+        ----------
         db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only

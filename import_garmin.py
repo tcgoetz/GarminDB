@@ -30,6 +30,7 @@ class GarminWeightData(JsonFileProcessor):
         Return an instance of GarminWeightData.
 
         Parameters:
+        ----------
         db_params (object): configuration data for accessing the database
         input_dir (string): directory (full path) to check for weight data files
         latest (Boolean): check for latest files only
@@ -64,6 +65,7 @@ class GarminMonitoringFitData(FitData):
         Return an instance of GarminMonitoringFitData.
 
         Parameters:
+        ----------
         input_dir (string): directory (full path) to check for monitoring data files
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
@@ -81,6 +83,7 @@ class GarminSettingsFitData(FitData):
         Return an instance of GarminSettingsFitData.
 
         Parameters:
+        ----------
         input_dir (string): directory (full path) to check for settings data files
         debug (Boolean): enable debug logging
 
@@ -115,6 +118,7 @@ class GarminSleepData(JsonFileProcessor):
         Return an instance of GarminSleepData.
 
         Parameters:
+        ----------
         db_params (object): configuration data for accessing the database
         input_dir (string): directory (full path) to check for sleep data files
         latest (Boolean): check for latest files only
@@ -187,6 +191,7 @@ class GarminRhrData(JsonFileProcessor):
         Return an instance of GarminRhrData.
 
         Parameters:
+        ----------
         db_params (object): configuration data for accessing the database
         input_dir (string): directory (full path) to check for resting heart rate data files
         latest (Boolean): check for latest files only
@@ -220,6 +225,7 @@ class GarminProfile(JsonFileProcessor):
         Return an instance of GarminProfile.
 
         Parameters:
+        ----------
         db_params (object): configuration data for accessing the database
         input_dir (string): directory (full path) to check for profile data files
         debug (Boolean): enable debug logging
@@ -251,6 +257,7 @@ class GarminSummaryData(JsonFileProcessor):
         Return an instance of GarminSummaryData.
 
         Parameters:
+        ----------
         db_params (dict): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only
@@ -312,6 +319,7 @@ class GarminHydrationData(JsonFileProcessor):
         Return an instance of GarminHydrationData.
 
         Parameters:
+        ----------
         db_params (object): configuration data for accessing the database
         input_dir (string): directory (full path) to check for data files
         latest (Boolean): check for latest files only
