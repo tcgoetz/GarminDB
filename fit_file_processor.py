@@ -532,8 +532,8 @@ class FitFileProcessor(object):
             pulse_ox = self.__get_field_value(message_fields, 'pulse_ox')
             if pulse_ox is not None:
                 pulse_ox_entry = {
-                    'timestamp'     : fit_file.utc_datetime_to_local(message_fields.timestamp),
-                    'pulse_ox'      : pulse_ox,
+                    'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),
+                    'pulse_ox': pulse_ox,
                 }
                 GarminDB.MonitoringPulseOx.s_insert_or_update(self.garmin_mon_db_session, pulse_ox_entry)
         else:
