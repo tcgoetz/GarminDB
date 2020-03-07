@@ -122,7 +122,7 @@ class SummaryBase(DBObject):
     @classmethod
     def create_summary_view(cls, db, selectable):
         """Create a view in the database from the passed in selectable."""
-        cls.create_view_from_selectable(db, cls._get_default_view_name(), selectable, cls.time_col.desc())
+        cls._create_view_from_selectable(db, cls._get_default_view_name(), selectable, cls.time_col.desc())
 
     @classmethod
     def __create_weeks_months_years_selectable(cls, days_count):

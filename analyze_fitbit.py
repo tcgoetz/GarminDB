@@ -53,6 +53,7 @@ class Analyze(object):
         stat_logger.info("%s Months (%d): %s", year, len(months), months)
 
     def get_years(self):
+        """Generate stats for FitBit database data by iterating over years and the mmonths and days in those years."""
         years = FitBitDB.DaysSummary.get_years(self.fitbitdb)
         stat_logger.info("Years (%d): %s", len(years), years)
         for year in years:
@@ -60,6 +61,7 @@ class Analyze(object):
             self.__get_days(year)
 
     def summary(self):
+        """Generate a summary for FitBit data in the database."""
         years = FitBitDB.DaysSummary.get_years(self.fitbitdb)
         for year in years:
             days = FitBitDB.DaysSummary.get_days(self.fitbitdb, year)

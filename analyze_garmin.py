@@ -274,7 +274,7 @@ class Analyze(object):
         HealthDB.MonthsSummary.s_insert_or_update(sum_session, stats)
 
     def __calculate_months(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
-        months = GarminDB.Monitoring._get_months(garmin_mon_session, year)
+        months = GarminDB.Monitoring.s_get_months(garmin_mon_session, year)
         for month in tqdm(months, unit='months'):
             start_day_date = datetime.date(year, month, 1)
             end_day_date = datetime.date(year, month, calendar.monthrange(year, month)[1])

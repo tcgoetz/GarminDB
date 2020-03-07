@@ -29,6 +29,7 @@ rebuild_act_db: clean_garmin_activities_dbs build_garmin_activities
 
 # update the exisitng dbs by downloading data files for dates after the last in the dbs and update the dbs
 update_dbs: update_garmin
+update_dbs_bin: update_garmin_bin
 update_copy_dbs: copy_garmin_latest
 
 release: flake8 zip_packages
@@ -140,6 +141,9 @@ copy_garmin:
 
 update_garmin:
 	$(TIME) $(PYTHON) garmin.py --all --download --import --analyze --latest
+
+update_garmin_bin: $(DIST)/garmin
+	$(DIST)/garmin --all --download --import --analyze --latest
 
 copy_garmin_latest:
 	$(TIME) $(PYTHON) garmin.py --all --copy --import --analyze --latest

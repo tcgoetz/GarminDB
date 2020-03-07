@@ -4,6 +4,7 @@ __author__ = "Tom Goetz"
 __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
+
 import logging
 import datetime
 from sqlalchemy import Column, Integer, DateTime, Time, Float, Enum, FLOAT, UniqueConstraint, PrimaryKeyConstraint
@@ -118,7 +119,7 @@ class MonitoringIntensity(MonitoringDB.Base, utilities.DBObject):
 
     @intensity_time.expression
     def intensity_time(cls):
-        return cls.time_from_secs(2 * cls._secs_from_time(cls.vigorous_activity_time) + cls._secs_from_time(cls.moderate_activity_time))
+        return cls._time_from_secs(2 * cls._secs_from_time(cls.vigorous_activity_time) + cls._secs_from_time(cls.moderate_activity_time))
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
@@ -233,8 +234,8 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
     def get_stats(cls, session, func, start_ts, end_ts):
         """Return a dict of stats for table entries within the time span."""
         return {
-            'steps'                 : func(session, cls.steps, start_ts, end_ts),
-            'calories_active_avg'   : (
+            'steps': func(session, cls.steps, start_ts, end_ts),
+            'calories_active_avg': (
                 cls.get_active_calories(session, Fit.field_enums.ActivityType.running, start_ts, end_ts)
                 + cls.get_active_calories(session, Fit.field_enums.ActivityType.cycling, start_ts, end_ts)
                 + cls.get_active_calories(session, Fit.field_enums.ActivityType.walking, start_ts, end_ts)

@@ -340,7 +340,7 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
     @intensity_time.expression
     def intensity_time(cls):
         """Return intensity_time computed from moderate_activity_time and vigorous_activity_time."""
-        return cls.time_from_secs(2 * cls._secs_from_time(cls.vigorous_activity_time) + cls._secs_from_time(cls.moderate_activity_time))
+        return cls._time_from_secs(2 * cls._secs_from_time(cls.vigorous_activity_time) + cls._secs_from_time(cls.moderate_activity_time))
 
     @hybrid_property
     def intensity_time_goal_percent(self):
@@ -416,7 +416,7 @@ class DailySummary(GarminDB.Base, utilities.DBObject):
         """Return a dictionary of aggregate statistics for the given day."""
         stats = cls.get_stats(session, day_ts, day_ts + datetime.timedelta(1))
         # intensity_time_goal is a weekly goal, so the daily value is 1/7 of the weekly goal
-        stats['intensity_time_goal'] = cls.time_from_secs(cls._secs_from_time(stats['intensity_time_goal']) / 7)
+        stats['intensity_time_goal'] = cls._time_from_secs(cls._secs_from_time(stats['intensity_time_goal']) / 7)
         stats['day'] = day_ts
         return stats
 
