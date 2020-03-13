@@ -65,4 +65,4 @@ Find out who's using GarminDb on what platforms, OSes, and python versions [here
 
 # Contributing
 
-Please submit a merge request targeting the develop branch and add your self to the contributors file.
+Please submit a pull request targeting the develop branch and add your self to the contributors file. Run `make flake8` at the top level and fix all errors before submitting your pull request.
