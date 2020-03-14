@@ -78,7 +78,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
             self.check_sport(activity)
 
     def __fit_file_import(self):
-        gfd = GarminActivitiesFitData('test_files/fit/activity', latest=False, measurement_system=self.measurement_system, debug=2)
+        gfd = GarminActivitiesFitData('test_files/fit/activity', latest=False, measurement_system=self.measurement_system, ignore_dev_fields=False, debug=2)
         self.gfd_file_count = gfd.file_count()
         if gfd.file_count() > 0:
             gfd.process_files(self.test_db_params)

@@ -33,6 +33,12 @@ class GarminConnectConfigManager(JsonConfig):
         if node is not None:
             return node.get(leaf)
 
+    def __get_node_value_default(self, node, leaf, default):
+        node = self.config.get(node)
+        if node is not None:
+            return node.get(leaf, default)
+        return default
+
     def get_secure_password(self):
         """Return the Garmin Connect password from secure storage. On MacOS that si the KeyChain."""
         system = platform.system()
@@ -88,3 +94,7 @@ class GarminConnectConfigManager(JsonConfig):
             json_enabled_stats_dict = self.config.get('enabled_stats', {stat_name: True for stat_name in list(Statistics)})
             self.enabled_statistics = [Statistics.from_string(stat_name) for stat_name, stat_enabled in json_enabled_stats_dict.items() if stat_enabled]
         return self.enabled_statistics
+
+    def ignore_dev_fields(self):
+        """Return all enabled statistics as a list of string names."""
+        return self.__get_node_value_default('modes', 'ignore_dev_fields', False)
