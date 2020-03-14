@@ -42,7 +42,6 @@ class FitFileProcessor(object):
         else:
             self.field_prefixes = ['']
 
-
     def __write_generic(self, fit_file, message_type, messages):
         """Write all messages of a given message type to the database."""
         handler_name = '_write_' + message_type.name + '_entry'
