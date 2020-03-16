@@ -28,7 +28,7 @@
     "course_views": {
         "steps"                         : []
     },
-    "config": {
+    "modes": {
         "ignore_dev_fields"             : false
     }
 }
