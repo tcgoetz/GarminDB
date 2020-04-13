@@ -385,13 +385,15 @@ class FitFileProcessor(object):
         for attribute_name in attribute_names:
             self._write_attribute(timestamp, message_fields, attribute_name)
 
+    def _write_measurement_ssytem_attributes(self, timestamp, message_fields):
+        for attribute_name in ['dist_setting', 'speed_setting', 'height_setting', 'temperature_setting']:
+            self._write_attribute(timestamp, message_fields, attribute_name, 'measurement_system')
+
     def _write_device_settings_entry(self, fit_file, message_fields):
         root_logger.debug("device settings message: %r", message_fields)
         timestamp = fit_file.time_created_local
-        attribute_names = [
-            'active_time_zone', 'date_mode'
-        ]
-        self._write_attributes(timestamp, message_fields, attribute_names)
+        self._write_attributes(timestamp, message_fields, ['active_time_zone', 'date_mode'])
+        self._write_measurement_ssytem_attributes(timestamp, message_fields)
         self._write_attribute(timestamp, message_fields, 'active_time_zone', 'time_zone')
         self._write_attribute(timestamp, message_fields, 'date_mode', 'date_format')
 
@@ -440,7 +442,7 @@ class FitFileProcessor(object):
             'speed_setting'
         ]
         self._write_attributes(timestamp, message_fields, attribute_names)
-        self._write_attribute(timestamp, message_fields, 'dist_setting', 'measurement_system')
+        self._write_measurement_ssytem_attributes(timestamp, message_fields)
 
     def _write_activity_entry(self, fit_file, message_fields):
         root_logger.debug("activity message: %r", message_fields)
