@@ -20,8 +20,7 @@ import tempfile
 from version import format_version, python_version_check, log_version
 from download_garmin import Download
 from copy_garmin import Copy
-from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepData, \
-    GarminRhrData, GarminSettingsFitData, GarminHydrationData
+from import_garmin import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepData, GarminRhrData, GarminSettingsFitData, GarminHydrationData
 from import_garmin_activities import GarminJsonSummaryData, GarminJsonDetailsData, GarminTcxData, GarminActivitiesFitData
 from analyze_garmin import Analyze
 from export_activities import ActivityExporter
@@ -163,13 +162,15 @@ def import_data(debug, latest, stats):
     logger.info("___Importing %s Data___", 'Latest' if latest else 'All')
     db_params_dict = GarminDBConfigManager.get_db_params()
 
+    ignore_dev_fields = gc_config.ignore_dev_fields()
+
     # Import the user profile and/or settings FIT file first so that we can get the measurement system and some other things sorted out first.
     fit_files_dir = GarminDBConfigManager.get_or_create_fit_files_dir()
     gp = GarminProfile(db_params_dict, fit_files_dir, debug)
     if gp.file_count() > 0:
         gp.process()
 
-    gsfd = GarminSettingsFitData(fit_files_dir, debug)
+    gsfd = GarminSettingsFitData(fit_files_dir, ignore_dev_fields, debug)
     if gsfd.file_count() > 0:
         gsfd.process_files(db_params_dict)
 
@@ -192,7 +193,7 @@ def import_data(debug, latest, stats):
         if ghd.file_count() > 0:
             ghd.process()
 
-        gfd = GarminMonitoringFitData(monitoring_dir, latest, measurement_system, debug)
+        gfd = GarminMonitoringFitData(monitoring_dir, latest, measurement_system, ignore_dev_fields, debug)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
 
@@ -223,7 +224,7 @@ def import_data(debug, latest, stats):
         if gdjd.file_count() > 0:
             gdjd.process()
 
-        gfd = GarminActivitiesFitData(activities_dir, latest, measurement_system, debug)
+        gfd = GarminActivitiesFitData(activities_dir, latest, measurement_system, ignore_dev_fields, debug)
         if gfd.file_count() > 0:
             gfd.process_files(db_params_dict)
 

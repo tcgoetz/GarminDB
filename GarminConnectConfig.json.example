@@ -27,5 +27,8 @@
     },
     "course_views": {
         "steps"                         : []
+    },
+    "modes": {
+        "ignore_dev_fields"             : false
     }
 }

@@ -64,7 +64,7 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
             self.assertLess(datetime.datetime.now() - latest, datetime.timedelta(days=2))
 
     def fit_file_import(self, db_params):
-        gfd = GarminMonitoringFitData('test_files/fit/monitoring', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
+        gfd = GarminMonitoringFitData('test_files/fit/monitoring', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, ignore_dev_fields=False, debug=2)
         self.gfd_file_count = gfd.file_count()
         if gfd.file_count() > 0:
             gfd.process_files(db_params)

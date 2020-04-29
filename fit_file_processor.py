@@ -22,19 +22,25 @@ root_logger = logging.getLogger()
 class FitFileProcessor(object):
     """Class that takes a parsed FIT file object and imports it into a database."""
 
-    def __init__(self, db_params, debug):
+    def __init__(self, db_params, ignore_dev_fields, debug):
         """
         Return a new FitFileProcessor instance.
 
         Paramters:
         db_params (dict): database access configuration
+        ignore_dev_fields (Boolean): If True, then ignore develoepr fields in Fit files
         debug (Boolean): if True, debug logging is enabled
         """
-        root_logger.info("Debug: %s", debug)
+        root_logger.info("Ignore dev fields: %s Debug: %s", ignore_dev_fields, debug)
         self.debug = debug
         self.garmin_db = GarminDB.GarminDB(db_params, debug - 1)
         self.garmin_mon_db = GarminDB.MonitoringDB(db_params, self.debug - 1)
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
+        self.ignore_dev_fields = ignore_dev_fields
+        if not self.ignore_dev_fields:
+            self.field_prefixes = ['dev_', '']
+        else:
+            self.field_prefixes = ['']
 
     def __write_generic(self, fit_file, message_type, messages):
         """Write all messages of a given message type to the database."""
@@ -103,17 +109,17 @@ class FitFileProcessor(object):
             self.garmin_db_session.commit()
 
     def __get_field_value(self, message_fields, field_name):
-        prefixes = ['dev_', '']
-        for prefix in prefixes:
+        for prefix in self.field_prefixes:
             prefixed_field_name = prefix + field_name
             if prefixed_field_name in message_fields:
                 return message_fields[prefixed_field_name]
 
     def __get_field_list_value(self, message_fields, dev_field_name_list, field_name_list):
-        for field_name in dev_field_name_list:
-            dev_field_name = 'dev_' + field_name
-            if dev_field_name in message_fields:
-                return message_fields[dev_field_name]
+        if not self.ignore_dev_fields:
+            for field_name in dev_field_name_list:
+                dev_field_name = 'dev_' + field_name
+                if dev_field_name in message_fields:
+                    return message_fields[dev_field_name]
         for field_name in field_name_list:
             value = self.__get_field_value(message_fields, field_name)
             if value is not None:
@@ -379,13 +385,15 @@ class FitFileProcessor(object):
         for attribute_name in attribute_names:
             self._write_attribute(timestamp, message_fields, attribute_name)
 
+    def _write_measurement_ssytem_attributes(self, timestamp, message_fields):
+        for attribute_name in ['dist_setting', 'speed_setting', 'height_setting', 'temperature_setting']:
+            self._write_attribute(timestamp, message_fields, attribute_name, 'measurement_system')
+
     def _write_device_settings_entry(self, fit_file, message_fields):
         root_logger.debug("device settings message: %r", message_fields)
         timestamp = fit_file.time_created_local
-        attribute_names = [
-            'active_time_zone', 'date_mode'
-        ]
-        self._write_attributes(timestamp, message_fields, attribute_names)
+        self._write_attributes(timestamp, message_fields, ['active_time_zone', 'date_mode'])
+        self._write_measurement_ssytem_attributes(timestamp, message_fields)
         self._write_attribute(timestamp, message_fields, 'active_time_zone', 'time_zone')
         self._write_attribute(timestamp, message_fields, 'date_mode', 'date_format')
 
@@ -434,7 +442,7 @@ class FitFileProcessor(object):
             'speed_setting'
         ]
         self._write_attributes(timestamp, message_fields, attribute_names)
-        self._write_attribute(timestamp, message_fields, 'dist_setting', 'measurement_system')
+        self._write_measurement_ssytem_attributes(timestamp, message_fields)
 
     def _write_activity_entry(self, fit_file, message_fields):
         root_logger.debug("activity message: %r", message_fields)

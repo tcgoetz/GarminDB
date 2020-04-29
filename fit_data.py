@@ -22,7 +22,7 @@ root_logger = logging.getLogger()
 class FitData(object):
     """Class for importing FIT files into a database."""
 
-    def __init__(self, input_dir, debug, latest=False, recursive=False, fit_types=None, measurement_system=Fit.field_enums.DisplayMeasure.metric):
+    def __init__(self, input_dir, ignore_dev_fields, debug, latest=False, recursive=False, fit_types=None, measurement_system=Fit.field_enums.DisplayMeasure.metric):
         """
         Return an instance of FitData.
 
@@ -36,6 +36,7 @@ class FitData(object):
         """
         logger.info("Processing %s FIT data from %s", fit_types, input_dir)
         self.measurement_system = measurement_system
+        self.ignore_dev_fields = ignore_dev_fields
         self.debug = debug
         self.fit_types = fit_types
         self.file_names = FileProcessor.dir_to_files(input_dir, Fit.file.name_regex, latest, recursive)
@@ -46,7 +47,7 @@ class FitData(object):
 
     def process_files(self, db_params):
         """Import FIT files into the database."""
-        fp = FitFileProcessor(db_params, self.debug)
+        fp = FitFileProcessor(db_params, self.ignore_dev_fields, self.debug)
         for file_name in tqdm(self.file_names, unit='files'):
             try:
                 fit_file = Fit.file.File(file_name, self.measurement_system)

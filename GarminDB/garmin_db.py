@@ -41,9 +41,9 @@ class Attributes(GarminDB.Base, utilities.KeyValueObject):
     table_version = 1
 
     @classmethod
-    def measurements_type(cls, db):
+    def measurements_type(cls, db, default=None):
         """Return the database units type (metric, statute, etc)."""
-        return Fit.field_enums.DisplayMeasure.from_string(cls.get(db, 'measurement_system'))
+        return Fit.field_enums.DisplayMeasure.from_string(cls.get_string(db, 'measurement_system', default))
 
     @classmethod
     def measurements_type_metric(cls, db):
@@ -72,7 +72,7 @@ class Device(GarminDB.Base, utilities.DBObject):
     @property
     def product_as_enum(self):
         """Convert the product attribute from a string to an enum and return it."""
-        return Fit.field_enums.product_enum(self.manufacturer, self.product)
+        return Fit.product_enum(self.manufacturer, self.product)
 
     @classmethod
     def local_device_serial_number(cls, serial_number, device_type):
@@ -143,12 +143,7 @@ class File(GarminDB.Base, utilities.DBObject):
     @classmethod
     def s_get_id(cls, session, pathname):
         """Return the id of a file given it's pathname."""
-        return cls.s_find_id(session, {File.name : os.path.basename(pathname)})
-
-    @classmethod
-    def s_get(cls, session, file_id):
-        """Return the file record given it's id."""
-        return session.query(cls).filter(cls.id == file_id).one_or_none()
+        return cls.s_find_id(session, {File.name: os.path.basename(pathname)})
 
     @classmethod
     def create_view(cls, db):
@@ -194,9 +189,9 @@ class Weight(GarminDB.Base, utilities.DBObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
         stats = {
-            'weight_avg' : cls.s_get_col_avg(session, cls.weight, start_ts, end_ts, True),
-            'weight_min' : cls.s_get_col_min(session, cls.weight, start_ts, end_ts, True),
-            'weight_max' : cls.s_get_col_max(session, cls.weight, start_ts, end_ts),
+            'weight_avg': cls.s_get_col_avg(session, cls.weight, start_ts, end_ts, True),
+            'weight_min': cls.s_get_col_min(session, cls.weight, start_ts, end_ts, True),
+            'weight_max': cls.s_get_col_max(session, cls.weight, start_ts, end_ts),
         }
         return stats
 
@@ -216,7 +211,7 @@ class Stress(GarminDB.Base, utilities.DBObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
         stats = {
-            'stress_avg' : cls.s_get_col_avg(session, cls.stress, start_ts, end_ts, True),
+            'stress_avg': cls.s_get_col_avg(session, cls.stress, start_ts, end_ts, True),
         }
         return stats
 
@@ -288,9 +283,9 @@ class RestingHeartRate(GarminDB.Base, utilities.DBObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
         stats = {
-            'rhr_avg' : cls.s_get_col_avg(session, cls.resting_heart_rate, start_ts, end_ts, ignore_le_zero=True),
-            'rhr_min' : cls.s_get_col_min(session, cls.resting_heart_rate, start_ts, end_ts, ignore_le_zero=True),
-            'rhr_max' : cls.s_get_col_max(session, cls.resting_heart_rate, start_ts, end_ts),
+            'rhr_avg': cls.s_get_col_avg(session, cls.resting_heart_rate, start_ts, end_ts, ignore_le_zero=True),
+            'rhr_min': cls.s_get_col_min(session, cls.resting_heart_rate, start_ts, end_ts, ignore_le_zero=True),
+            'rhr_max': cls.s_get_col_max(session, cls.resting_heart_rate, start_ts, end_ts),
         }
         return stats
 

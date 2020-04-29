@@ -60,7 +60,7 @@ class GarminWeightData(JsonFileProcessor):
 class GarminMonitoringFitData(FitData):
     """Class for importing monitoring FIT files into a database."""
 
-    def __init__(self, input_dir, latest, measurement_system, debug):
+    def __init__(self, input_dir, latest, measurement_system, ignore_dev_fields, debug):
         """
         Return an instance of GarminMonitoringFitData.
 
@@ -69,26 +69,28 @@ class GarminMonitoringFitData(FitData):
         input_dir (string): directory (full path) to check for monitoring data files
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
+        ignore_dev_fields (Boolean): if True, then ignore developer fields in Fit file
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, debug, latest, True, [Fit.FileType.monitoring_b], measurement_system)
+        super().__init__(input_dir, ignore_dev_fields, debug, latest, True, [Fit.FileType.monitoring_b], measurement_system)
 
 
 class GarminSettingsFitData(FitData):
     """Class for importing settings FIT files into a database."""
 
-    def __init__(self, input_dir, debug):
+    def __init__(self, input_dir, ignore_dev_fields, debug):
         """
         Return an instance of GarminSettingsFitData.
 
         Parameters:
         ----------
         input_dir (string): directory (full path) to check for settings data files
+        ignore_dev_fields (Boolean): if True, then ignore developer fields in Fit file
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, debug, fit_types=[Fit.FileType.settings])
+        super().__init__(input_dir, ignore_dev_fields, debug, fit_types=[Fit.FileType.settings])
 
 
 class SleepActivityLevels(enum.Enum):
