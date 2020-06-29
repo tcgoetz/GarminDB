@@ -12,7 +12,7 @@ PLATFORM=$(shell uname)
 ifeq ($(PLATFORM), Linux)
 
 TIME ?= $(shell which time)
-YESTERDAY = $(shell date --date yesterday "%m/%d/%Y")
+YESTERDAY = $(shell date --date yesterday +"%m/%d/%Y")
 PYTHON2=$(shell which python)
 PIP3=$(shell which pip3)
 PYTHON3=$(shell which python3)
