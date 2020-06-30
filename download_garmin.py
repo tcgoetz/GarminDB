@@ -123,7 +123,7 @@ class Download(object):
             return False
         found = re.search(r"name=\"_csrf\" value=\"(\w*)", response.text, re.M)
         if not found:
-            logger.error("_csrf not found.", response.status_code)
+            logger.error("_csrf not found: %s", response.status_code)
             RestClient.save_binary_file('login_get.html', response)
             return False
         logger.debug("_csrf found (%s).", found.group(1))
@@ -168,7 +168,7 @@ class Download(object):
 
     def __unzip_files(self, outdir):
         """Unzip and downloaded zipped files into the directory supplied."""
-        logger.info("unzip_files: from %s to %s", self.temp_dir, outdir)
+        root_logger.info("unzip_files: from %s to %s", self.temp_dir, outdir)
         for filename in os.listdir(self.temp_dir):
             match = re.search(r'.*\.zip', filename)
             if match:
