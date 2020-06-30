@@ -35,7 +35,7 @@ def main(argv):
     parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
     modes_group = parser.add_argument_group('Modes')
     modes_group.add_argument("-i", "--input_file", help="Specifiy the CSV file to import into the database")
-    modes_group.add_argument("--delete_db", help="Delete FiBit db file.", action="store_true", default=False)
+    modes_group.add_argument("--delete_db", help="Delete MSHealth db file.", action="store_true", default=False)
     args = parser.parse_args()
 
     root_logger = logging.getLogger()
