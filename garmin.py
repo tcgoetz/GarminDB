@@ -69,6 +69,7 @@ def __get_date_and_days(db, latest, table, col, stat_name):
     else:
         date, days = gc_config.stat_start_date(stat_name)
         days = min((datetime.date.today() - date).days, days)
+        logger.info("Downloading all %s data from: %s [%d]", stat_name, date, days)
     if date is None or days is None:
         logger.error("Missing config: need %s_start_date and download_days. Edit GarminConnectConfig.py.", stat_name)
         sys.exit()
@@ -119,18 +120,15 @@ def download_data(overwite, latest, stats):
         root_logger.info("Fetching %d activities to %s", activity_count, activities_dir)
         download.get_activity_types(activities_dir, overwite)
         download.get_activities(activities_dir, activity_count, overwite)
-        download.unzip_files(activities_dir)
 
     if Statistics.monitoring in stats:
         date, days = __get_date_and_days(GarminDB.MonitoringDB(db_params_dict), latest, GarminDB.MonitoringHeartRate, GarminDB.MonitoringHeartRate.heart_rate, 'monitoring')
         if days > 0:
-            monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_dir(date.year)
-            root_logger.info("Date range to update: %s (%d) to %s", date, days, monitoring_dir)
-            download.get_daily_summaries(monitoring_dir, date, days, overwite)
-            download.get_hydration(monitoring_dir, date, days, overwite)
-            download.get_monitoring(date, days)
-            download.unzip_files(monitoring_dir)
-            root_logger.info("Saved monitoring files for %s (%d) to %s for processing", date, days, monitoring_dir)
+            root_logger.info("Date range to update: %s (%d) to %s", date, days, GarminDBConfigManager.get_monitoring_base_dir())
+            download.get_daily_summaries(GarminDBConfigManager.get_or_create_monitoring_dir, date, days, overwite)
+            download.get_hydration(GarminDBConfigManager.get_or_create_monitoring_dir, date, days, overwite)
+            download.get_monitoring(GarminDBConfigManager.get_or_create_monitoring_dir, date, days)
+            root_logger.info("Saved monitoring files for %s (%d) to %s for processing", date, days, GarminDBConfigManager.get_monitoring_base_dir())
 
     if Statistics.sleep in stats:
         date, days = __get_date_and_days(GarminDB.GarminDB(db_params_dict), latest, GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'sleep')

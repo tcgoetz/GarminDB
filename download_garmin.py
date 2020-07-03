@@ -57,8 +57,7 @@ class Download(object):
 
     def __init__(self):
         """Create a new Download class instance."""
-        self.temp_dir = tempfile.mkdtemp()
-        logger.debug("__init__: temp_dir=%s", self.temp_dir)
+        logger.debug("__init__")
         self.session = requests.session()
         self.sso_rest_client = RestClient(self.session, 'sso.garmin.com', 'sso')
         self.modern_rest_client = RestClient(self.session, 'connect.garmin.com', 'modern')
@@ -124,7 +123,7 @@ class Download(object):
             return False
         found = re.search(r"name=\"_csrf\" value=\"(\w*)", response.text, re.M)
         if not found:
-            logger.error("_csrf not found.", response.status_code)
+            logger.error("_csrf not found: %s", response.status_code)
             RestClient.save_binary_file('login_get.html', response)
             return False
         logger.debug("_csrf found (%s).", found.group(1))
@@ -167,9 +166,9 @@ class Download(object):
         root_logger.info("login: %s (%s)", self.full_name, self.display_name)
         return True
 
-    def unzip_files(self, outdir):
+    def __unzip_files(self, outdir):
         """Unzip and downloaded zipped files into the directory supplied."""
-        logger.info("unzip_files: " + outdir)
+        root_logger.info("unzip_files: from %s to %s", self.temp_dir, outdir)
         for filename in os.listdir(self.temp_dir):
             match = re.search(r'.*\.zip', filename)
             if match:
@@ -189,7 +188,7 @@ class Download(object):
             # pause for a second between every page access
             time.sleep(1)
 
-    def __get_summary_day(self, directory, date, overwite=False):
+    def __get_summary_day(self, directory_func, date, overwite=False):
         root_logger.info("get_summary_day: %s", date)
         date_str = date.strftime('%Y-%m-%d')
         params = {
@@ -197,19 +196,19 @@ class Download(object):
             '_'         : str(conversions.dt_to_epoch_ms(conversions.date_to_dt(date)))
         }
         url = f'{self.garmin_connect_daily_summary_url}/{self.display_name}'
-        json_filename = f'{directory}/daily_summary_{date_str}'
+        json_filename = f'{directory_func(date.year)}/daily_summary_{date_str}'
         try:
             self.modern_rest_client.download_json_file(url, json_filename, overwite, params)
         except RestException as e:
             root_logger.error("Exception geting daily summary: %s", e)
 
-    def get_daily_summaries(self, directory, date, days, overwite):
+    def get_daily_summaries(self, directory_func, date, days, overwite):
         """Download the daily summary data from Garmin Connect and save to a JSON file."""
         root_logger.info("Geting daily summaries: %s (%d)", date, days)
-        self.__get_stat(self.__get_summary_day, directory, date, days, overwite)
+        self.__get_stat(self.__get_summary_day, directory_func, date, days, overwite)
 
     def __get_monitoring_day(self, date):
-        root_logger.info("get_monitoring_day: %s", date)
+        root_logger.info("get_monitoring_day: %s to %s", date, self.temp_dir)
         zip_filename = f'{self.temp_dir}/{date}.zip'
         url = f'wellness/{date.strftime("%Y-%m-%d")}'
         try:
@@ -217,12 +216,14 @@ class Download(object):
         except RestException as e:
             root_logger.error("Exception geting daily summary: %s", e)
 
-    def get_monitoring(self, date, days):
+    def get_monitoring(self, directory_func, date, days):
         """Download the daily monitoring data from Garmin Connect, unzip and save the raw files."""
         root_logger.info("Geting monitoring: %s (%d)", date, days)
         for day in tqdm(range(0, days + 1), unit='days'):
             day_date = date + datetime.timedelta(day)
+            self.temp_dir = tempfile.mkdtemp()
             self.__get_monitoring_day(day_date)
+            self.__unzip_files(directory_func(day_date.year))
             # pause for a second between every page access
             time.sleep(1)
 
@@ -276,7 +277,8 @@ class Download(object):
 
     def get_activities(self, directory, count, overwite=False):
         """Download activities files from Garmin Connect and save the raw files."""
-        logger.info("Geting activities: '%s' (%d)", directory, count)
+        self.temp_dir = tempfile.mkdtemp()
+        logger.info("Geting activities: '%s' (%d) temp %s", directory, count, self.temp_dir)
         activities = self.__get_activity_summaries(0, count)
         for activity in tqdm(activities, unit='activities'):
             activity_id_str = str(activity['activityId'])
@@ -291,6 +293,7 @@ class Download(object):
                     self.__save_activity_file(activity_id_str)
                 # pause for a second between every page access
                 time.sleep(1)
+        self.__unzip_files(directory)
 
     def get_activity_types(self, directory, overwite):
         """Download the activity types from Garmin Connect and save to a JSON file."""
@@ -337,16 +340,16 @@ class Download(object):
         root_logger.info("Geting rhr: %s (%d)", date, days)
         self.__get_stat(self.__get_rhr_day, directory, date, days, overwite)
 
-    def __get_hydration_day(self, directory, day, overwite=False):
+    def __get_hydration_day(self, directory_func, day, overwite=False):
         date_str = day.strftime('%Y-%m-%d')
-        json_filename = f'{directory}/hydration_{date_str}'
+        json_filename = f'{directory_func(day.year)}/hydration_{date_str}'
         url = f'{self.garmin_connect_daily_hydration_url}/{date_str}'
         try:
             self.modern_rest_client.download_json_file(url, json_filename, overwite)
         except RestException as e:
             root_logger.error("Exception geting hydration: %s", e)
 
-    def get_hydration(self, directory, date, days, overwite):
+    def get_hydration(self, directory_func, date, days, overwite):
         """Download the hydration data from Garmin Connect and save to a JSON file."""
         root_logger.info("Geting hydration: %s (%d)", date, days)
-        self.__get_stat(self.__get_hydration_day, directory, date, days, overwite)
+        self.__get_stat(self.__get_hydration_day, directory_func, date, days, overwite)

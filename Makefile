@@ -17,6 +17,9 @@ setup: update deps
 
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs
 
+# Use for an intial download or when the start dates have been changed.
+download_all: download_all_garmin
+
 # build dbs from already downloaded data files
 build_dbs: build_garmin mshealth fitbit
 create_dbs: garmin mshealth fitbit
@@ -121,6 +124,9 @@ daily: all checkup graph_yesterday
 #
 # Garmin targets
 #
+download_all_garmin:
+	$(TIME) $(PYTHON) garmin.py --all --download
+
 garmin:
 	$(TIME) $(PYTHON) garmin.py --all --download --import --analyze
 
