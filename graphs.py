@@ -268,7 +268,7 @@ def main(argv):
     stats_group.add_argument("-A", "--all", help="Graph data for all enabled statistics.", action='store_const', dest='stats', const=gc_config.enabled_stats(), default=[])
     stats_group.add_argument("-m", "--monitoring", help="Graph monitoring data.", dest='stats', action='append_const', const=Statistics.monitoring)
     stats_group.add_argument("-r", "--hr", help="Graph heart rate data.", dest='stats', action='append_const', const=Statistics.rhr)
-    stats_group.add_argument("-s", "--steps", help="Graph steps data.", dest='stats', action='append_const', const=Statistics.sleep)
+    stats_group.add_argument("-s", "--steps", help="Graph steps data.", dest='stats', action='append_const', const=Statistics.steps)
     stats_group.add_argument("-w", "--weight", help="Graph weight data.", dest='stats', action='append_const', const=Statistics.weight)
     stats_group.add_argument("-p", "--period", help="Graph period granularity.", dest='period', type=str, default=None, choices=['days', 'weeks', 'months'])
     daily_group = parser.add_argument_group('Daily')
