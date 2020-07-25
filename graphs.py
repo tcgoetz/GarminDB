@@ -171,7 +171,7 @@ class Graph(object):
         self.__graph_multiple(time, [steps, steps_goal_percent], 'Steps', period, ['Steps', 'Step Goal Percent'], yrange_list, self.save)
 
     def _graph_hr(self, time, data, period):
-        rhr = [entry.rhr_avg for entry in data]
+        rhr = self.__remove_discontinuities([entry.rhr_avg for entry in data])
         inactive_hr = self.__remove_discontinuities([entry.inactive_hr_avg for entry in data])
         self.__graph_multiple(time, [rhr, inactive_hr], 'Heart Rate', period, ['RHR', 'Inactive hr'], [(30, 100), (30, 100)], self.save)
 
