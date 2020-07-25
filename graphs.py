@@ -87,7 +87,7 @@ class Graph(object):
         return data
 
     @classmethod
-    def __graph_mulitple_single_axes(cls, time, data_list, stat_name, ylabel, save):
+    def __graph_multiple_single_axes(cls, time, data_list, stat_name, ylabel, save):
         title = f'{stat_name} Over Time'
         figure = plt.figure(figsize=GarminDBConfigManager.graphs('size'))
         for index, data in enumerate(data_list):
@@ -103,7 +103,7 @@ class Graph(object):
         plt.show()
 
     @classmethod
-    def __graph_mulitple(cls, time, data_list, stat_name, period, ylabel_list, yrange_list, save):
+    def __graph_multiple(cls, time, data_list, stat_name, period, ylabel_list, yrange_list, save):
         title = f'{stat_name} by {period}'
         figure = plt.figure(figsize=GarminDBConfigManager.graphs('size'))
         for index, data in enumerate(data_list):
@@ -168,24 +168,24 @@ class Graph(object):
         steps = self.__remove_discontinuities([entry.steps for entry in data])
         steps_goal_percent = self.__remove_discontinuities([entry.steps_goal_percent for entry in data])
         yrange_list = [(0, max(steps) * 1.1), (0, max(steps_goal_percent) * 2)]
-        self.__graph_mulitple(time, [steps, steps_goal_percent], 'Steps', period, ['Steps', 'Step Goal Percent'], yrange_list, self.save)
+        self.__graph_multiple(time, [steps, steps_goal_percent], 'Steps', period, ['Steps', 'Step Goal Percent'], yrange_list, self.save)
 
     def _graph_hr(self, time, data, period):
-        rhr = [entry.rhr_avg for entry in data]
+        rhr = self.__remove_discontinuities([entry.rhr_avg for entry in data])
         inactive_hr = self.__remove_discontinuities([entry.inactive_hr_avg for entry in data])
-        self.__graph_mulitple(time, [rhr, inactive_hr], 'Heart Rate', period, ['RHR', 'Inactive hr'], [(30, 100), (30, 100)], self.save)
+        self.__graph_multiple(time, [rhr, inactive_hr], 'Heart Rate', period, ['RHR', 'Inactive hr'], [(30, 100), (30, 100)], self.save)
 
     def _graph_itime(self, time, data, period):
         itime = [entry.intensity_time_mins for entry in data]
         itime_goal_percent = self.__remove_discontinuities([entry.intensity_time_goal_percent for entry in data])
         itime_goal_max = max([entry.intensity_time_goal_mins for entry in data])
         yrange_list = [(0, itime_goal_max * 5), (0, max(itime_goal_percent) * 1.1)]
-        self.__graph_mulitple(time, [itime, itime_goal_percent], 'Intensity Minutes', period, ['Intensity Minutes', 'Intensity Minutes Goal Percent'],
+        self.__graph_multiple(time, [itime, itime_goal_percent], 'Intensity Minutes', period, ['Intensity Minutes', 'Intensity Minutes Goal Percent'],
                               yrange_list, self.save)
 
     def _graph_weight(self, time, data, period):
         weight = [entry.weight_avg for entry in data]
-        self.__graph_mulitple_single_axes(time, [weight], 'Weight', 'weight', self.save)
+        self.__graph_multiple_single_axes(time, [weight], 'Weight', 'weight', self.save)
 
     def graph_activity(self, activity, period, days):
         """Generate a graph for the given activity with points every period spanning days."""
@@ -268,7 +268,7 @@ def main(argv):
     stats_group.add_argument("-A", "--all", help="Graph data for all enabled statistics.", action='store_const', dest='stats', const=gc_config.enabled_stats(), default=[])
     stats_group.add_argument("-m", "--monitoring", help="Graph monitoring data.", dest='stats', action='append_const', const=Statistics.monitoring)
     stats_group.add_argument("-r", "--hr", help="Graph heart rate data.", dest='stats', action='append_const', const=Statistics.rhr)
-    stats_group.add_argument("-s", "--steps", help="Graph steps data.", dest='stats', action='append_const', const=Statistics.sleep)
+    stats_group.add_argument("-s", "--steps", help="Graph steps data.", dest='stats', action='append_const', const=Statistics.steps)
     stats_group.add_argument("-w", "--weight", help="Graph weight data.", dest='stats', action='append_const', const=Statistics.weight)
     stats_group.add_argument("-p", "--period", help="Graph period granularity.", dest='period', type=str, default=None, choices=['days', 'weeks', 'months'])
     daily_group = parser.add_argument_group('Daily')
