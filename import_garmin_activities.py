@@ -170,7 +170,70 @@ class GarminTcxData(object):
                 self.garmin_act_db_session.commit()
 
 
-class GarminJsonSummaryData(JsonFileProcessor):
+class GarminJsonActivityData(JsonFileProcessor):
+    """Base class for importing Garmin activity data from JSON formatted Garmin Connect details downloads."""
+
+    def __init__(self, db_params, file_regex, input_dir, latest, measurement_system, debug):
+        """
+        Return an instance of GarminJsonDetailsData.
+
+        Parameters:
+        ----------
+        db_params (dict): configuration data for accessing the database
+        input_dir (string): directory (full path) to check for data files
+        latest (Boolean): check for latest files only
+        measurement_system (enum): which measurement system to use when importing the files
+        debug (Boolean): enable debug logging
+
+        """
+        super().__init__(file_regex, input_dir=input_dir, latest=latest, debug=debug)
+        self.measurement_system = measurement_system
+        self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
+        self.conversions = {}
+
+    def _commit(self):
+        self.garmin_act_db_session.commit()
+
+    def _process_common(self, json_data):
+        distance = self._get_field_obj(json_data, 'distance', Fit.Distance.from_meters)
+        ascent = self._get_field_obj(json_data, 'elevationGain', Fit.Distance.from_meters)
+        descent = self._get_field_obj(json_data, 'elevationLoss', Fit.Distance.from_meters)
+        avg_speed = self._get_field_obj(json_data, 'averageSpeed', Fit.Speed.from_mps)
+        max_speed = self._get_field_obj(json_data, 'maxSpeed', Fit.Speed.from_mps)
+        max_temperature = self._get_field_obj(json_data, 'maxTemperature', Fit.Temperature.from_celsius)
+        min_temperature = self._get_field_obj(json_data, 'minTemperature', Fit.Temperature.from_celsius)
+        avg_temperature = self._get_field_obj(json_data, 'averageTemperature', Fit.Temperature.from_celsius)
+        start_time = dateutil.parser.parse(self._get_field(json_data, 'startTimeLocal'), ignoretz=True)
+        elapsed_time = Fit.conversions.secs_to_dt_time(self._get_field(json_data, 'elapsedDuration', int))
+        return {
+            'start_time'                : start_time,
+            'stop_time'                 : start_time + Fit.conversions.time_to_timedelta(elapsed_time),
+            'elapsed_time'              : elapsed_time,
+            'moving_time'               : Fit.conversions.secs_to_dt_time(self._get_field(json_data, 'movingDuration', int)),
+            'start_lat'                 : self._get_field(json_data, 'startLatitude', float),
+            'start_long'                : self._get_field(json_data, 'startLongitude', float),
+            'stop_lat'                  : self._get_field(json_data, 'endLatitude', float),
+            'stop_long'                 : self._get_field(json_data, 'endLongitude', float),
+            'distance'                  : distance.kms_or_miles(self.measurement_system),
+            'laps'                      : self._get_field(json_data, 'lapCount'),
+            'avg_hr'                    : self._get_field(json_data, 'averageHR', float),
+            'max_hr'                    : self._get_field(json_data, 'maxHR', float),
+            'calories'                  : self._get_field(json_data, 'calories', float),
+            'avg_speed'                 : avg_speed.kph_or_mph(self.measurement_system),
+            'max_speed'                 : max_speed.kph_or_mph(self.measurement_system),
+            'ascent'                    : ascent.meters_or_feet(self.measurement_system) if ascent is not None else None,
+            'descent'                   : descent.meters_or_feet(self.measurement_system) if descent is not None else None,
+            'max_temperature'           : max_temperature.c_or_f(self.measurement_system) if max_temperature is not None else None,
+            'min_temperature'           : min_temperature.c_or_f(self.measurement_system) if min_temperature is not None else None,
+            'avg_temperature'           : avg_temperature.c_or_f(self.measurement_system) if avg_temperature is not None else None,
+            'training_effect'           : self._get_field(json_data, 'aerobicTrainingEffect', float),
+            'anaerobic_training_effect' : self._get_field(json_data, 'anaerobicTrainingEffect', float),
+            'max_rr'                    : self._get_field(json_data, 'maxRespirationRate', float),
+            'avg_rr'                    : self._get_field(json_data, 'avgRespirationRate', float),
+        }
+
+
+class GarminJsonSummaryData(GarminJsonActivityData):
     """Class for importing Garmin activity data from JSON formatted Garmin Connect summary downloads."""
 
     def __init__(self, db_params, input_dir, latest, measurement_system, debug):
@@ -187,14 +250,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
 
         """
         logger.info("Processing %s activities summary data from %s", 'latest' if latest else 'all', input_dir)
-        super().__init__(r'activity_\d*\.json', input_dir=input_dir, latest=latest, debug=debug)
-        self.input_dir = input_dir
-        self.measurement_system = measurement_system
-        self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
-        self.conversions = {}
-
-    def _commit(self):
-        self.garmin_act_db_session.commit()
+        super().__init__(db_params, r'activity_\d*\.json', input_dir, latest, measurement_system, debug)
 
     def _process_steps_activity(self, activity_id, activity_summary):
         root_logger.debug("process_steps_activity for %s", activity_id)
@@ -273,8 +329,8 @@ class GarminJsonSummaryData(JsonFileProcessor):
         }
         GarminDB.CycleActivities.s_insert_or_update(self.garmin_act_db_session, ride, ignore_none=True)
 
-    def _process_mountain_biking(self, activity_id, activity_summary):
-        return self._process_cycling(activity_id, activity_summary)
+    def _process_mountain_biking(self, sub_sport, activity_id, activity_summary):
+        return self._process_cycling(sub_sport, activity_id, activity_summary)
 
     def _process_elliptical(self, sub_sport, activity_id, activity_summary):
         if activity_summary is not None:
@@ -296,13 +352,6 @@ class GarminJsonSummaryData(JsonFileProcessor):
 
     def _process_json(self, json_data):
         activity_id = json_data['activityId']
-        distance = self._get_field_obj(json_data, 'distance', Fit.Distance.from_meters)
-        ascent = self._get_field_obj(json_data, 'elevationGain', Fit.Distance.from_meters)
-        descent = self._get_field_obj(json_data, 'elevationLoss', Fit.Distance.from_meters)
-        avg_speed = self._get_field_obj(json_data, 'averageSpeed', Fit.Speed.from_mps)
-        max_speed = self._get_field_obj(json_data, 'maxSpeed', Fit.Speed.from_mps)
-        max_temperature = self._get_field_obj(json_data, 'maxTemperature', Fit.Temperature.from_celsius)
-        min_temperature = self._get_field_obj(json_data, 'minTemperature', Fit.Temperature.from_celsius)
         event = GarminConnectEnums.Event.from_json(json_data)
         sport, sub_sport = GarminConnectEnums.get_summary_sport(json_data)
         activity = {
@@ -312,27 +361,9 @@ class GarminJsonSummaryData(JsonFileProcessor):
             'type'                      : event.name,
             'sport'                     : sport.name,
             'sub_sport'                 : sub_sport.name,
-            'start_time'                : dateutil.parser.parse(self._get_field(json_data, 'startTimeLocal'), ignoretz=True),
-            'elapsed_time'              : Fit.conversions.secs_to_dt_time(self._get_field(json_data, 'elapsedDuration', int)),
-            'moving_time'               : Fit.conversions.secs_to_dt_time(self._get_field(json_data, 'movingDuration', int)),
-            'start_lat'                 : self._get_field(json_data, 'startLatitude', float),
-            'start_long'                : self._get_field(json_data, 'startLongitude', float),
-            'stop_lat'                  : self._get_field(json_data, 'endLatitude', float),
-            'stop_long'                 : self._get_field(json_data, 'endLongitude', float),
-            'distance'                  : distance.kms_or_miles(self.measurement_system),
             'laps'                      : self._get_field(json_data, 'lapCount'),
-            'avg_hr'                    : self._get_field(json_data, 'averageHR', float),
-            'max_hr'                    : self._get_field(json_data, 'maxHR', float),
-            'calories'                  : self._get_field(json_data, 'calories', float),
-            'avg_speed'                 : avg_speed.kph_or_mph(self.measurement_system),
-            'max_speed'                 : max_speed.kph_or_mph(self.measurement_system),
-            'ascent'                    : ascent.meters_or_feet(self.measurement_system),
-            'descent'                   : descent.meters_or_feet(self.measurement_system),
-            'max_temperature'           : max_temperature.c_or_f(self.measurement_system),
-            'min_temperature'           : min_temperature.c_or_f(self.measurement_system),
-            'training_effect'           : self._get_field(json_data, 'aerobicTrainingEffect', float),
-            'anaerobic_training_effect' : self._get_field(json_data, 'anaerobicTrainingEffect', float),
         }
+        activity.update(self._process_common(json_data))
         GarminDB.Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
         self._call_process_func(sport.name, sub_sport, activity_id, json_data)
         return 1
@@ -343,7 +374,7 @@ class GarminJsonSummaryData(JsonFileProcessor):
             self._process_files()
 
 
-class GarminJsonDetailsData(JsonFileProcessor):
+class GarminJsonDetailsData(GarminJsonActivityData):
     """Class for importing Garmin activity data from JSON formatted Garmin Connect details downloads."""
 
     def __init__(self, db_params, input_dir, latest, measurement_system, debug):
@@ -360,13 +391,7 @@ class GarminJsonDetailsData(JsonFileProcessor):
 
         """
         logger.info("Processing activities detail data")
-        super().__init__(r'activity_details_\d*\.json', input_dir=input_dir, latest=latest, debug=debug)
-        self.measurement_system = measurement_system
-        self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
-        self.conversions = {}
-
-    def _commit(self):
-        self.garmin_act_db_session.commit()
+        super().__init__(db_params, r'activity_details_\d*\.json', input_dir, latest, measurement_system, debug)
 
     def _process_steps_activity(self, sub_sport, activity_id, json_data):
         summary_dto = json_data['summaryDTO']
@@ -431,12 +456,11 @@ class GarminJsonDetailsData(JsonFileProcessor):
         metadata_dto = json_data['metadataDTO']
         summary_dto = json_data['summaryDTO']
         sport, sub_sport = GarminConnectEnums.get_details_sport(json_data)
-        avg_temperature = self._get_field_obj(summary_dto, 'averageTemperature', Fit.Temperature.from_celsius)
         activity = {
             'activity_id'               : activity_id,
-            'course_id'                 : self._get_field(metadata_dto, 'associatedCourseId', int),
-            'avg_temperature'           : avg_temperature.c_or_f(self.measurement_system) if avg_temperature is not None else None,
+            'course_id'                 : self._get_field(metadata_dto, 'associatedCourseId', int)
         }
+        activity.update(self._process_common(summary_dto))
         GarminDB.Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
         self._call_process_func(sport.name, sub_sport, activity_id, json_data)
         return 1
