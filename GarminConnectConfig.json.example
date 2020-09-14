@@ -8,10 +8,8 @@
         "sleep_start_date"              : "01/01/2019",
         "rhr_start_date"                : "01/01/2019",
         "monitoring_start_date"         : "01/01/2019",
-        "download_days"                 : 31,
-        "download_latest_activities"    : 10,
-        "download_all_activities"       : 1000,
-        "download_days_overlap"         : 3
+        "download_latest_activities"    : 25,
+        "download_all_activities"       : 1000
     },
     "copy": {
         "mount_dir"                     : "/Volumes/GARMIN"
