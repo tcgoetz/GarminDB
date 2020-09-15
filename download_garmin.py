@@ -64,7 +64,7 @@ class Download(object):
         self.activity_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/activity-service/activity")
         self.download_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/download-service/files")
         self.gc_config = GarminConnectConfigManager()
-        self.download_days_overlap = 3 # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
+        self.download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
 
     def __get_json(self, page_html, key):
         found = re.search(key + r" = JSON.parse\(\"(.*)\"\);", page_html, re.M)
