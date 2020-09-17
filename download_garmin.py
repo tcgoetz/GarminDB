@@ -64,7 +64,7 @@ class Download(object):
         self.activity_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/activity-service/activity")
         self.download_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/download-service/files")
         self.gc_config = GarminConnectConfigManager()
-        self.download_days_overlap = self.gc_config.download_days_overlap()
+        self.download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
 
     def __get_json(self, page_html, key):
         found = re.search(key + r" = JSON.parse\(\"(.*)\"\);", page_html, re.M)
@@ -192,8 +192,8 @@ class Download(object):
         root_logger.info("get_summary_day: %s", date)
         date_str = date.strftime('%Y-%m-%d')
         params = {
-            'calendarDate' : date_str,
-            '_'         : str(conversions.dt_to_epoch_ms(conversions.date_to_dt(date)))
+            'calendarDate': date_str,
+            '_': str(conversions.dt_to_epoch_ms(conversions.date_to_dt(date)))
         }
         url = f'{self.garmin_connect_daily_summary_url}/{self.display_name}'
         json_filename = f'{directory_func(date.year)}/daily_summary_{date_str}'
