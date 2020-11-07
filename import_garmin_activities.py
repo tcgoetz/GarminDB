@@ -219,8 +219,8 @@ class GarminJsonActivityData(JsonFileProcessor):
             'avg_hr'                    : self._get_field(json_data, 'averageHR', float),
             'max_hr'                    : self._get_field(json_data, 'maxHR', float),
             'calories'                  : self._get_field(json_data, 'calories', float),
-            'avg_speed'                 : avg_speed.kph_or_mph(self.measurement_system),
-            'max_speed'                 : max_speed.kph_or_mph(self.measurement_system),
+            'avg_speed'                 : avg_speed.kph_or_mph(self.measurement_system) if avg_speed is not None else None,
+            'max_speed'                 : max_speed.kph_or_mph(self.measurement_system) if max_speed is not None else None,
             'ascent'                    : ascent.meters_or_feet(self.measurement_system) if ascent is not None else None,
             'descent'                   : descent.meters_or_feet(self.measurement_system) if descent is not None else None,
             'max_temperature'           : max_temperature.c_or_f(self.measurement_system) if max_temperature is not None else None,
@@ -231,6 +231,11 @@ class GarminJsonActivityData(JsonFileProcessor):
             'max_rr'                    : self._get_field(json_data, 'maxRespirationRate', float),
             'avg_rr'                    : self._get_field(json_data, 'avgRespirationRate', float),
         }
+
+    def process(self):
+        """Import data from files into the database."""
+        with self.garmin_act_db.managed_session() as self.garmin_act_db_session:
+            self._process_files()
 
 
 class GarminJsonSummaryData(GarminJsonActivityData):
@@ -368,11 +373,6 @@ class GarminJsonSummaryData(GarminJsonActivityData):
         self._call_process_func(sport.name, sub_sport, activity_id, json_data)
         return 1
 
-    def process(self):
-        """Import data from files into the database."""
-        with self.garmin_act_db.managed_session() as self.garmin_act_db_session:
-            self._process_files()
-
 
 class GarminJsonDetailsData(GarminJsonActivityData):
     """Class for importing Garmin activity data from JSON formatted Garmin Connect details downloads."""
@@ -464,8 +464,3 @@ class GarminJsonDetailsData(GarminJsonActivityData):
         GarminDB.Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
         self._call_process_func(sport.name, sub_sport, activity_id, json_data)
         return 1
-
-    def process(self):
-        """Import data from files into the database."""
-        with self.garmin_act_db.managed_session() as self.garmin_act_db_session:
-            self._process_files()

@@ -70,7 +70,7 @@ class GarminConnectConfigManager(JsonConfig):
     def stat_start_date(self, stat_type):
         """Return a tuple containing the start date and the number of days to fetch stats from."""
         date = self.__get_node_value('data', stat_type + '_start_date')
-        days = (datetime.datetime.now() - date).days
+        days = (datetime.datetime.now().date() - date).days
         return (date, days)
 
     def device_mount_dir(self):
