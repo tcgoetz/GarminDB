@@ -3,6 +3,5 @@ requests
 python-dateutil
 cached-property
 tqdm
-PyInstaller
-matplotlib
+matplotlib==3.2.2
 PyInstaller
