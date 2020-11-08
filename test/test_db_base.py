@@ -47,3 +47,7 @@ class TestDBBase(object):
 
     def test_not_none_cols(self):
         self.check_not_none_cols(self.db, self.table_not_none_cols_dict)
+
+    def check_col_type(self, db, table, col, type):
+        for value in table.get_col_distinct(db, col):
+            self.assertEqual(str(type(value)), value, f'table {table} col {col} has type {type} mismatch for {value}')

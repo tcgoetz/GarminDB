@@ -20,6 +20,16 @@ import utilities
 logger = logging.getLogger(__name__)
 
 
+class GarminDbError(Exception):
+    """Base exception for GarminDb exceptions"""
+    pass
+
+
+class GarminDbError_IdNotFound(GarminDbError):
+    """File id not found"""
+    pass
+
+
 class GarminDB(utilities.DB):
     """Object representing a database for storing health data from a Garmin device."""
 
@@ -166,16 +176,15 @@ class File(GarminDB.Base, utilities.DBObject):
     def name_and_id_from_path(cls, pathname):
         """Return the name and id of a file given it's pathname."""
         filename = os.path.basename(pathname)
-        found = re.search(r"(\d+).*\.\S+", filename, re.M)
+        found = re.match(r"(\d+).*\.\S+", filename)
         if found:
             return (found.group(1), filename)
-        print(f"not found for {filename}")
-        return None, None
+        raise GarminDbError_IdNotFound()
 
     @classmethod
     def id_from_path(cls, pathname):
         """Return the id of a file given it's pathname."""
-        name, id = cls.name_and_id_from_path(pathname)
+        id, _ = cls.name_and_id_from_path(pathname)
         return id
 
 

@@ -52,7 +52,7 @@ class FitFileProcessor(object):
                     function(fit_file, message.fields)
                 except Exception as e:
                     logger.error("Failed to write message %r type %r: %s", message_type, message, e)
-                    root_logger.error("Failed to write message %r type %r: %s", message_type, message, e)
+                    root_logger.error("Failed to write message %r type %r: %s", message_type, message, traceback.format_exc())
         elif isinstance(message_type, Fit.UnknownMessageType) or message_type.is_unknown():
             root_logger.debug("No entry handler %s for message type %r (%d) from %s: %s",
                               handler_name, message_type, len(messages), fit_file.filename, messages[0])

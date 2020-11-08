@@ -39,11 +39,12 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
             'cycle_activities_table' : GarminDB.CycleActivities,
             'elliptical_activities_table' : GarminDB.EllipticalActivities
         }
-        super().setUpClass(cls.garmin_act_db, table_dict, {GarminDB.Activities : [GarminDB.Activities.name]})
+        super().setUpClass(cls.garmin_act_db, table_dict, {GarminDB.Activities : [GarminDB.Activities.activity_id]})
         cls.test_db_params = GarminDBConfigManager.get_db_params(test_db=True)
         cls.test_mon_db = GarminDB.GarminDB(cls.test_db_params)
         cls.test_act_db = GarminDB.ActivitiesDB(cls.test_db_params)
         cls.measurement_system = Fit.field_enums.DisplayMeasure.statute
+        print(f"db params {repr(cls.test_db_params)}")
 
     def test_garmin_act_db_tables_exists(self):
         self.assertGreater(GarminDB.Activities.row_count(self.garmin_act_db), 0)
@@ -76,6 +77,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
     def check_activities(self):
         for activity in GarminDB.Activities.get_all(self.test_act_db):
             self.check_sport(activity)
+        self.check_col_type(self.test_act_db, GarminDB.Activities, GarminDB.Activities.activity_id, int)
 
     def __fit_file_import(self):
         gfd = GarminActivitiesFitData('test_files/fit/activity', latest=False, measurement_system=self.measurement_system, ignore_dev_fields=False, debug=2)

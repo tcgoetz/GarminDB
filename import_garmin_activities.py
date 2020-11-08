@@ -133,6 +133,7 @@ class GarminTcxData(object):
         GarminDB.File.s_insert_or_update(self.garmin_db_session, file)
         activity = {
             'activity_id'               : file_id,
+            'name'                      : file_id,
             'start_time'                : start_time,
             'stop_time'                 : tcx.end_time,
             'laps'                      : tcx.lap_count,
