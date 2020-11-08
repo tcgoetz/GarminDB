@@ -7,6 +7,7 @@ __license__ = "GPL"
 import os
 import datetime
 import logging
+import re
 from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enum, ForeignKey, func, PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -164,14 +165,18 @@ class File(GarminDB.Base, utilities.DBObject):
     @classmethod
     def name_and_id_from_path(cls, pathname):
         """Return the name and id of a file given it's pathname."""
-        name = os.path.basename(pathname)
-        id = name.split('.')[0]
-        return (id, name)
+        filename = os.path.basename(pathname)
+        found = re.search(r"(\d+).*\.\S+", filename, re.M)
+        if found:
+            return (found.group(1), filename)
+        print(f"not found for {filename}")
+        return None, None
 
     @classmethod
     def id_from_path(cls, pathname):
         """Return the id of a file given it's pathname."""
-        return os.path.basename(pathname).split('.')[0]
+        name, id = cls.name_and_id_from_path(pathname)
+        return id
 
 
 class Weight(GarminDB.Base, utilities.DBObject):
