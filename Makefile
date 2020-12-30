@@ -248,8 +248,10 @@ $(SUBMODULES:%=%-flake8):
 flake8: $(SUBMODULES:%=%-flake8)
 	$(FLAKE8) *.py GarminDB/*.py HealthDB/*.py FitBitDB/*.py MSHealthDB/*.py --max-line-length=180 --ignore=E203,E221,E241,W503
 
-regression_test: flake8 rebuild_dbs
+regression_test_run: flake8 rebuild_dbs
 	grep ERROR garmin.log || [ $$? -eq 1 ]
+
+regression_test: regression_test_run test
 
 #
 # bugreport target
