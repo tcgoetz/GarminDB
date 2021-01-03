@@ -27,7 +27,7 @@ from export_activities import ActivityExporter
 
 import HealthDB
 import GarminDB
-import garmin_db_config_manager as GarminDBConfigManager
+from garmin_db_config_manager import GarminDBConfigManager
 from garmin_connect_config_manager import GarminConnectConfigManager
 from statistics import Statistics
 from open_with_basecamp import OpenWithBaseCamp
@@ -302,6 +302,8 @@ def main(argv):
     args = parser.parse_args()
 
     log_version(sys.argv[0])
+
+    GarminDBConfigManager.create_dev_db()
 
     if args.trace > 0:
         root_logger.setLevel(logging.DEBUG)

@@ -40,7 +40,7 @@ class GarminDB(utilities.DB):
     db_version = 13
 
     class _DbVersion(Base, utilities.DbVersionObject):
-        """Stores version information for this databse and it's tables."""
+        """Stores version information for this database and it's tables."""
 
 
 class Attributes(GarminDB.Base, utilities.KeyValueObject):

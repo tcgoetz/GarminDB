@@ -88,7 +88,7 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 #
 # Fitness System independant targets
 #
-HEALTH_DATA_DIR=$(shell $(PYTHON) -c 'from garmin_db_config_manager import get_base_dir; print(get_base_dir())')
+HEALTH_DATA_DIR=$(shell $(PYTHON) -c 'from garmin_db_config_manager import GarminDBConfigManager; print(GarminDBConfigManager.get_base_dir())')
 DB_DIR=$(HEALTH_DATA_DIR)/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 $(BACKUP_DIR):

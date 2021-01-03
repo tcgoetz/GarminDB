@@ -12,6 +12,7 @@ import datetime
 import Fit
 import GarminDB
 import utilities
+from garmin_db_config_manager import GarminDBConfigManager
 
 
 logger = logging.getLogger(__file__)
@@ -36,6 +37,7 @@ class FitFileProcessor(object):
         self.garmin_db = GarminDB.GarminDB(db_params, debug - 1)
         self.garmin_mon_db = GarminDB.MonitoringDB(db_params, self.debug - 1)
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
+        self.garmin_dev_db = GarminDBConfigManager.get_dev_db(db_params, self.debug - 1)
         self.ignore_dev_fields = ignore_dev_fields
         if not self.ignore_dev_fields:
             self.field_prefixes = ['dev_', '']
@@ -98,11 +100,28 @@ class FitFileProcessor(object):
             if message_type not in priority_message_types:
                 self.__write_message_type(fit_file, message_type)
 
+    def __write_dynamic_message_type(self, fit_file, message_type, message_type_mapping):
+        messages = fit_file[message_type]
+        for message in messages:
+            entry = {}
+            for field, col in message_type_mapping.get('field_to_col'):
+                entry[col] = message[field]
+            self.garmin_dev_db
+            table = GarminDBConfigManager.get_dev_table(message_type_mapping.get('table'))
+            table.s_insert_or_update(self.garmin_db_session, entry)
+
+    def __write_dynamic_fields(self, fit_file, message_types):
+        """Write mapped dev fields from the FIT file to the database."""
+        root_logger.info("Importing %s (%s) [%s] dynamic mapped fields", fit_file.filename, fit_file.time_created_local, fit_file.type)
+        for message_type, message_type_config in GarminDBConfigManager.dev_field_mapping.items():
+            self.__write_dynamic_message_type(fit_file, message_type, message_type_config)
+
     def write_file(self, fit_file):
         """Given a Fit File object, write all of its messages to the DB."""
         with self.garmin_db.managed_session() as self.garmin_db_session, self.garmin_mon_db.managed_session() as self.garmin_mon_db_session, \
                 self.garmin_act_db.managed_session() as self.garmin_act_db_session:
             self.__write_message_types(fit_file, fit_file.message_types)
+            self.__write_dynamic_fields(fit_file, fit_file.message_types)
             # Now write a file's worth of data to the DB
             self.garmin_act_db_session.commit()
             self.garmin_mon_db_session.commit()
