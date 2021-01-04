@@ -12,7 +12,7 @@ import logging
 
 import Fit
 from utilities import FileProcessor
-import garmin_db_config_manager as GarminDBConfigManager
+from garmin_db_config_manager import GarminDBConfigManager
 
 
 logger = logging.getLogger(__file__)

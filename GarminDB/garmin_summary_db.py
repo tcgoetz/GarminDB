@@ -5,7 +5,6 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 import logging
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Date, DateTime
 
 import HealthDB
@@ -15,26 +14,10 @@ import utilities
 logger = logging.getLogger(__name__)
 
 
-class GarminSummaryDB(utilities.DB):
-    """Object representing a database for storing health summary data from a Garmin device."""
-
-    Base = declarative_base()
-
-    db_tables = []
-    db_name = 'garmin_summary'
-    db_version = 7
-
-    class _DbVersion(Base, utilities.DbVersionObject):
-        """Stores version information for this databse and it's tables."""
+GarminSummaryDB = utilities.DynamicDb.Create('garmin_summary', 7, "Database for storing health summary data from a Garmin device.")
 
 
-class Summary(GarminSummaryDB.Base, utilities.KeyValueObject):
-    """A table holding statistics about health data as key-value pairs."""
-
-    __tablename__ = 'summary'
-
-    db = GarminSummaryDB
-    table_version = 1
+Summary = utilities.DynamicDb.CreateTable('summary', GarminSummaryDB, 1, base=utilities.KeyValueObject)
 
 
 class YearsSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
@@ -89,7 +72,7 @@ class WeeksSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
 
 
 class DaysSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
-    """A table holding summarizzed data with one row per day."""
+    """A table holding summarized data with one row per day."""
 
     __tablename__ = 'days_summary'
 

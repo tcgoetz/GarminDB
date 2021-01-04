@@ -21,6 +21,8 @@ class GarminDBConfigManager(GarminDBConfig, GarminDbSchema, GarminDBMappings):
     """Provides accessors to the base class config."""
 
     temp_dir = tempfile.mkdtemp()
+    dev_db = None
+    dev_tables = {}
 
     @classmethod
     def get_db_type(cls):
@@ -43,12 +45,15 @@ class GarminDBConfigManager(GarminDBConfig, GarminDbSchema, GarminDBMappings):
         return cls.db['host']
 
     @classmethod
-    def create_dev_db(cls):
+    def _create_dev_db(cls):
         """Create a developer fields database according to the mapping provided in the config."""
         dev_db_name = 'garmin_dev'
         dev_db_version = cls.dev_db_config.get('version')
         logger.info("Creating dev db %s version %s", dev_db_name, dev_db_version)
         cls.dev_db = DynamicDb.Create(dev_db_name, dev_db_version)
+
+    @classmethod
+    def _create_dev_tables(cls):
         tables = cls.dev_db_config.get('tables')
         cls.dev_tables = {}
         for dev_table_name, dev_table_config in tables.items():
@@ -60,11 +65,15 @@ class GarminDBConfigManager(GarminDBConfig, GarminDbSchema, GarminDBMappings):
     @classmethod
     def get_dev_db(cls, db_params_dict, debug_level=0):
         """Return a instantiated developer field database object."""
+        if not cls.dev_db:
+            cls._create_dev_db()
         return cls.dev_db(db_params_dict, debug_level)
 
     @classmethod
     def get_dev_table(cls, dev_table_name):
         """Return a developer field database table class object."""
+        if not len(cls.dev_tables):
+            cls._create_dev_tables()
         return cls.dev_tables.get(dev_table_name)
 
     @classmethod

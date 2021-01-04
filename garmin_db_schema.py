@@ -5,7 +5,7 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 
-from sqlalchemy import Integer, Date, DateTime, Time, Float, String, Enum
+from sqlalchemy import Integer
 
 
 class GarminDbSchema(object):
@@ -14,7 +14,7 @@ class GarminDbSchema(object):
     dev_db_config = {
         'version': 1,
         'tables': {
-            'dev_table': {
+            'hrv': {
                 'version': 1,
                 'pk': 'id',
                 'cols': {

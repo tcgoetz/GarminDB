@@ -7,7 +7,7 @@ __license__ = "GPL"
 import logging
 import datetime
 from sqlalchemy import Column, String, Float, Integer, DateTime, Time, ForeignKey, PrimaryKeyConstraint, desc, exists, literal_column
-from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -18,17 +18,7 @@ import utilities
 logger = logging.getLogger(__name__)
 
 
-class ActivitiesDB(utilities.DB):
-    """Object representing a database for storing activities data."""
-
-    Base = declarative_base()
-
-    db_tables = []
-    db_name = 'garmin_activities'
-    db_version = 12
-
-    class _DbVersion(Base, utilities.DbVersionObject):
-        """Stores version information for this database and it's tables."""
+ActivitiesDB = utilities.DynamicDb.Create('garmin_activities', 12, "Database for storing activities data.")
 
 
 class ActivitiesLocationSegment(utilities.DBObject):
@@ -43,7 +33,7 @@ class ActivitiesLocationSegment(utilities.DBObject):
     @hybrid_property
     def start_loc(self):
         """Return the starting location of activity segment as a Location instance."""
-        return HealthDB.Location(self.start_lat, self.start_long)
+        return utilities.Location(self.start_lat, self.start_long)
 
     @start_loc.setter
     def start_loc(self, start_location):
@@ -53,7 +43,7 @@ class ActivitiesLocationSegment(utilities.DBObject):
     @hybrid_property
     def stop_loc(self):
         """Return the ending location of activity segment as a Location instance."""
-        return HealthDB.Location(self.stop_lat, self.stop_long)
+        return utilities.Location(self.stop_lat, self.stop_long)
 
     @stop_loc.setter
     def stop_loc(self, stop_location):
@@ -293,6 +283,8 @@ class SportActivities(utilities.DBObject):
 
 
 class StepsActivities(ActivitiesDB.Base, SportActivities):
+    """Step based activity table."""
+
     __tablename__ = 'steps_activities'
 
     db = ActivitiesDB
@@ -426,6 +418,7 @@ class StepsActivities(ActivitiesDB.Base, SportActivities):
 
 
 class PaddleActivities(ActivitiesDB.Base, SportActivities):
+    """Paddle based activity table."""
 
     __tablename__ = 'paddle_activities'
 
@@ -467,6 +460,7 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
 
 
 class CycleActivities(ActivitiesDB.Base, SportActivities):
+    """Cycle based activity table."""
 
     __tablename__ = 'cycle_activities'
 
@@ -508,6 +502,7 @@ class CycleActivities(ActivitiesDB.Base, SportActivities):
 
 
 class EllipticalActivities(ActivitiesDB.Base, SportActivities):
+    """Elliptical based activity table."""
 
     __tablename__ = 'elliptical_activities'
 

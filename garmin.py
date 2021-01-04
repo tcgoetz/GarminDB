@@ -303,8 +303,6 @@ def main(argv):
 
     log_version(sys.argv[0])
 
-    GarminDBConfigManager.create_dev_db()
-
     if args.trace > 0:
         root_logger.setLevel(logging.DEBUG)
     else:

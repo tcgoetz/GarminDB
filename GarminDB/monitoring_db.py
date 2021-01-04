@@ -8,7 +8,6 @@ __license__ = "GPL"
 import logging
 import datetime
 from sqlalchemy import Column, Integer, DateTime, Time, Float, Enum, FLOAT, UniqueConstraint, PrimaryKeyConstraint
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import Fit
@@ -18,17 +17,7 @@ import utilities
 logger = logging.getLogger(__name__)
 
 
-class MonitoringDB(utilities.DB):
-    """Class representing a databse storing daily health monitoring data from a Garmin device."""
-
-    Base = declarative_base()
-
-    db_tables = []
-    db_name = 'garmin_monitoring'
-    db_version = 5
-
-    class _DbVersion(Base, utilities.DbVersionObject):
-        """Stores version information for this databse and it's tables."""
+MonitoringDB = utilities.DynamicDb.Create('garmin_monitoring', 5, "Database for storing daily health monitoring data from a Garmin device.")
 
 
 class MonitoringInfo(MonitoringDB.Base, utilities.DBObject):

@@ -11,7 +11,7 @@ import datetime
 from test_db_base import TestDBBase
 import GarminDB
 import Fit
-import garmin_db_config_manager as GarminDBConfigManager
+from garmin_db_config_manager import GarminDBConfigManager
 from import_garmin import GarminMonitoringFitData, GarminSummaryData
 
 

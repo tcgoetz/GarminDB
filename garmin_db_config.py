@@ -5,9 +5,6 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 
-from sqlalchemy import Integer, Date, DateTime, Time, Float, String, Enum
-
-
 class GarminDBConfig(object):
     """Class that encapsilates config data for the application."""
 

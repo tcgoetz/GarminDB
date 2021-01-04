@@ -9,7 +9,6 @@ import datetime
 import logging
 import re
 from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enum, ForeignKey, func, PrimaryKeyConstraint
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import Fit
@@ -30,17 +29,7 @@ class GarminDbError_IdNotFound(GarminDbError):
     pass
 
 
-class GarminDB(utilities.DB):
-    """Object representing a database for storing health data from a Garmin device."""
-
-    Base = declarative_base()
-
-    db_tables = []
-    db_name = 'garmin'
-    db_version = 13
-
-    class _DbVersion(Base, utilities.DbVersionObject):
-        """Stores version information for this database and it's tables."""
+GarminDB = utilities.DynamicDb.Create('garmin', 13, "Database for storing health data from a Garmin device.")
 
 
 class Attributes(GarminDB.Base, utilities.KeyValueObject):
@@ -202,12 +191,11 @@ class Weight(GarminDB.Base, utilities.DBObject):
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
-        stats = {
+        return {
             'weight_avg': cls.s_get_col_avg(session, cls.weight, start_ts, end_ts, True),
             'weight_min': cls.s_get_col_min(session, cls.weight, start_ts, end_ts, True),
-            'weight_max': cls.s_get_col_max(session, cls.weight, start_ts, end_ts),
+            'weight_max': cls.s_get_col_max(session, cls.weight, start_ts, end_ts)
         }
-        return stats
 
 
 class Stress(GarminDB.Base, utilities.DBObject):
@@ -224,10 +212,9 @@ class Stress(GarminDB.Base, utilities.DBObject):
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
-        stats = {
+        return {
             'stress_avg': cls.s_get_col_avg(session, cls.stress, start_ts, end_ts, True),
         }
-        return stats
 
 
 class Sleep(GarminDB.Base, utilities.DBObject):
@@ -296,12 +283,11 @@ class RestingHeartRate(GarminDB.Base, utilities.DBObject):
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
-        stats = {
+        return {
             'rhr_avg': cls.s_get_col_avg(session, cls.resting_heart_rate, start_ts, end_ts, ignore_le_zero=True),
             'rhr_min': cls.s_get_col_min(session, cls.resting_heart_rate, start_ts, end_ts, ignore_le_zero=True),
             'rhr_max': cls.s_get_col_max(session, cls.resting_heart_rate, start_ts, end_ts),
         }
-        return stats
 
 
 class DailySummary(GarminDB.Base, utilities.DBObject):

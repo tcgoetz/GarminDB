@@ -5,11 +5,14 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 
+import Fit
+
+
 class GarminDBMappings(object):
     """Class that encapsilates config data for the application."""
 
     dev_field_mapping = {
-        'message_type': {
+        Fit.FileType.records: {
             'db': 'dev_data',
             'table': 'dev_table',
             'field_to_col': {

@@ -12,7 +12,7 @@ from test_db_base import TestDBBase
 import GarminDB
 import Fit
 from import_garmin_activities import GarminActivitiesFitData, GarminTcxData, GarminJsonSummaryData, GarminJsonDetailsData
-import garmin_db_config_manager as GarminDBConfigManager
+from garmin_db_config_manager import GarminDBConfigManager
 
 
 root_logger = logging.getLogger()

@@ -7,6 +7,7 @@ __license__ = "GPL"
 
 import sys
 import logging
+import traceback
 from tqdm import tqdm
 
 import Fit
@@ -59,4 +60,4 @@ class FitData(object):
                                      self.fit_types, file_name, fit_file.type, fit_file.message_types)
             except Exception as e:
                 logger.error("Failed to parse %s: %s", file_name, e)
-                root_logger.error("Failed to parse %s: %s", file_name, e)
+                root_logger.error("Failed to parse %s: %s - %s", file_name, e, traceback.format_exc())

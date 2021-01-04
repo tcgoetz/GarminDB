@@ -101,14 +101,14 @@ class FitFileProcessor(object):
                 self.__write_message_type(fit_file, message_type)
 
     def __write_dynamic_message_type(self, fit_file, message_type, message_type_mapping):
-        messages = fit_file[message_type]
-        for message in messages:
+        root_logger.info("Importing dynamic mapped fields from %s", message_type)
+        for message in fit_file[message_type]:
             entry = {}
             for field, col in message_type_mapping.get('field_to_col'):
                 entry[col] = message[field]
             self.garmin_dev_db
             table = GarminDBConfigManager.get_dev_table(message_type_mapping.get('table'))
-            table.s_insert_or_update(self.garmin_db_session, entry)
+            table.insert_or_update(self.garmin_dev_db, entry)
 
     def __write_dynamic_fields(self, fit_file, message_types):
         """Write mapped dev fields from the FIT file to the database."""
@@ -175,7 +175,7 @@ class FitFileProcessor(object):
             'id'            : file_id,
             'name'          : file_name,
             'type'          : GarminDB.File.FileType.convert(message_fields.type),
-            'serial_number' : self.serial_number,
+            'serial_number' : self.serial_number
         }
         GarminDB.File.s_insert_or_update(self.garmin_db_session, file)
 
@@ -201,7 +201,7 @@ class FitFileProcessor(object):
                 'device_type'       : Fit.field_enums.name_for_enum(device_type),
                 'manufacturer'      : manufacturer,
                 'product'           : Fit.field_enums.name_for_enum(product),
-                'hardware_version'  : message_fields.hardware_version,
+                'hardware_version'  : message_fields.hardware_version
             }
             GarminDB.Device.s_insert_or_update(self.garmin_db_session, device, ignore_none=True)
             device_info = {
@@ -211,14 +211,14 @@ class FitFileProcessor(object):
                 'cum_operating_time'    : message_fields.cum_operating_time,
                 'battery_status'        : message_fields.battery_status,
                 'battery_voltage'       : message_fields.battery_voltage,
-                'software_version'      : message_fields.software_version,
+                'software_version'      : message_fields.software_version
             }
             GarminDB.DeviceInfo.s_insert_or_update(self.garmin_db_session, device_info, ignore_none=True)
 
     def _write_stress_level_entry(self, fit_file, message_fields):
         stress = {
             'timestamp' : message_fields.local_timestamp,
-            'stress'    : message_fields.stress_level,
+            'stress'    : message_fields.stress_level
         }
         GarminDB.Stress.s_insert_or_update(self.garmin_db_session, stress)
 
