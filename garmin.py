@@ -32,6 +32,7 @@ from garmin_connect_config_manager import GarminConnectConfigManager
 from statistics import Statistics
 from open_with_basecamp import OpenWithBaseCamp
 from open_with_google_earth import OpenWithGoogleEarth
+from garmin_db_plugin import GarminDbPluginManager
 
 
 logging.basicConfig(filename='garmin.log', filemode='w', level=logging.INFO)
@@ -40,6 +41,8 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 gc_config = GarminConnectConfigManager()
+db_params_dict = GarminDBConfigManager.get_db_params()
+plugin_manager = GarminDbPluginManager(GarminDBConfigManager.get_or_create_plugins_dir(), db_params_dict)
 
 
 stats_to_db_map = {
@@ -104,7 +107,6 @@ def copy_data(overwite, latest, stats):
 def download_data(overwite, latest, stats):
     """Download selected activity types from Garmin Connect and save the data in files. Overwrite previously downloaded data if indicated."""
     logger.info("___Downloading %s Data___", 'Latest' if latest else 'All')
-    db_params_dict = GarminDBConfigManager.get_db_params()
 
     download = Download()
     if not download.login():
@@ -158,7 +160,6 @@ def download_data(overwite, latest, stats):
 def import_data(debug, latest, stats):
     """Import previously downloaded Garmin data into the database."""
     logger.info("___Importing %s Data___", 'Latest' if latest else 'All')
-    db_params_dict = GarminDBConfigManager.get_db_params()
 
     ignore_dev_fields = gc_config.ignore_dev_fields()
 
@@ -170,7 +171,7 @@ def import_data(debug, latest, stats):
 
     gsfd = GarminSettingsFitData(fit_files_dir, ignore_dev_fields, debug)
     if gsfd.file_count() > 0:
-        gsfd.process_files(db_params_dict)
+        gsfd.process_files(db_params_dict, plugin_manager)
 
     garmindb = GarminDB.GarminDB(db_params_dict)
     measurement_system = GarminDB.Attributes.measurements_type(garmindb)
@@ -193,7 +194,7 @@ def import_data(debug, latest, stats):
 
         gfd = GarminMonitoringFitData(monitoring_dir, latest, measurement_system, ignore_dev_fields, debug)
         if gfd.file_count() > 0:
-            gfd.process_files(db_params_dict)
+            gfd.process_files(db_params_dict, plugin_manager)
 
     if Statistics.sleep in stats:
         sleep_dir = GarminDBConfigManager.get_or_create_sleep_dir()
@@ -224,13 +225,12 @@ def import_data(debug, latest, stats):
 
         gfd = GarminActivitiesFitData(activities_dir, latest, measurement_system, ignore_dev_fields, debug)
         if gfd.file_count() > 0:
-            gfd.process_files(db_params_dict)
+            gfd.process_files(db_params_dict, plugin_manager)
 
 
 def analyze_data(debug):
     """Analyze the downloaded and imported Garmin data and create summary tables."""
     logger.info("___Analyzing Data___")
-    db_params_dict = GarminDBConfigManager.get_db_params()
     analyze = Analyze(db_params_dict, debug - 1)
     analyze.get_stats()
     analyze.summary()
@@ -239,7 +239,6 @@ def analyze_data(debug):
 
 def delete_dbs(delete_db_list=[]):
     """Delete selected, or all if none selected GarminDB, database files."""
-    db_params_dict = GarminDBConfigManager.get_db_params()
     if len(delete_db_list) == 0:
         delete_db_list = [GarminDB.GarminDB, GarminDB.MonitoringDB, GarminDB.ActivitiesDB, GarminDB.GarminSummaryDB, HealthDB.SummaryDB]
     for db in delete_db_list:
@@ -248,7 +247,6 @@ def delete_dbs(delete_db_list=[]):
 
 def export_activity(debug, directory, export_activity_id):
     """Export an activity given its database id."""
-    db_params_dict = GarminDBConfigManager.get_db_params()
     garmindb = GarminDB.GarminDB(db_params_dict)
     measurement_system = GarminDB.Attributes.measurements_type(garmindb)
     ae = ActivityExporter(directory, export_activity_id, measurement_system, debug)

@@ -12,7 +12,6 @@ import datetime
 import Fit
 import GarminDB
 import utilities
-from garmin_db_config_manager import GarminDBConfigManager
 
 
 logger = logging.getLogger(__file__)
@@ -23,7 +22,7 @@ root_logger = logging.getLogger()
 class FitFileProcessor(object):
     """Class that takes a parsed FIT file object and imports it into a database."""
 
-    def __init__(self, db_params, ignore_dev_fields, debug):
+    def __init__(self, db_params, plugin_manager, ignore_dev_fields, debug):
         """
         Return a new FitFileProcessor instance.
 
@@ -33,11 +32,11 @@ class FitFileProcessor(object):
         debug (Boolean): if True, debug logging is enabled
         """
         root_logger.info("Ignore dev fields: %s Debug: %s", ignore_dev_fields, debug)
+        self.plugin_manager = plugin_manager
         self.debug = debug
         self.garmin_db = GarminDB.GarminDB(db_params, debug - 1)
         self.garmin_mon_db = GarminDB.MonitoringDB(db_params, self.debug - 1)
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
-        self.garmin_dev_db = GarminDBConfigManager.get_dev_db(db_params, self.debug - 1)
         self.ignore_dev_fields = ignore_dev_fields
         if not self.ignore_dev_fields:
             self.field_prefixes = ['dev_', '']
@@ -88,8 +87,7 @@ class FitFileProcessor(object):
 
     def __write_message_types(self, fit_file, message_types):
         """Write all messages from the FIT file to the database ordered by message type."""
-        root_logger.info("Importing %s (%s) [%s] with message types: %s",
-                         fit_file.filename, fit_file.time_created_local, fit_file.type, message_types)
+        root_logger.info("Importing %s (%s) [%s] with message types: %s", fit_file.filename, fit_file.time_created_local, fit_file.type, message_types)
         #
         # Some ordering is important: 1. create new file entries 2. create new device entries
         #
@@ -100,28 +98,16 @@ class FitFileProcessor(object):
             if message_type not in priority_message_types:
                 self.__write_message_type(fit_file, message_type)
 
-    def __write_dynamic_message_type(self, fit_file, message_type, message_type_mapping):
-        root_logger.info("Importing dynamic mapped fields from %s", message_type)
-        for message in fit_file[message_type]:
-            entry = {}
-            for field, col in message_type_mapping.get('field_to_col'):
-                entry[col] = message[field]
-            self.garmin_dev_db
-            table = GarminDBConfigManager.get_dev_table(message_type_mapping.get('table'))
-            table.insert_or_update(self.garmin_dev_db, entry)
-
-    def __write_dynamic_fields(self, fit_file, message_types):
-        """Write mapped dev fields from the FIT file to the database."""
-        root_logger.info("Importing %s (%s) [%s] dynamic mapped fields", fit_file.filename, fit_file.time_created_local, fit_file.type)
-        for message_type, message_type_config in GarminDBConfigManager.dev_field_mapping.items():
-            self.__write_dynamic_message_type(fit_file, message_type, message_type_config)
+    def __setup_plugins(self, fit_file):
+        self.activity_plugins = [plugin for plugin in self.plugin_manager.get_activity_processors(fit_file).values()]
+        root_logger.info("Loaded %d activity plugins %r", len(self.activity_plugins), self.activity_plugins)
 
     def write_file(self, fit_file):
         """Given a Fit File object, write all of its messages to the DB."""
+        self.__setup_plugins(fit_file)
         with self.garmin_db.managed_session() as self.garmin_db_session, self.garmin_mon_db.managed_session() as self.garmin_mon_db_session, \
                 self.garmin_act_db.managed_session() as self.garmin_act_db_session:
             self.__write_message_types(fit_file, fit_file.message_types)
-            self.__write_dynamic_fields(fit_file, fit_file.message_types)
             # Now write a file's worth of data to the DB
             self.garmin_act_db_session.commit()
             self.garmin_mon_db_session.commit()
@@ -392,6 +378,8 @@ class FitFileProcessor(object):
                     root_logger.warning("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_fields)
             except Exception as e:
                 root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
+        for plugin in self.activity_plugins:
+            plugin.write_session_entry(self.garmin_act_db_session, fit_file, activity_id, message_fields)
 
     def _write_attribute(self, timestamp, message_fields, attribute_name, db_attribute_name=None):
         attribute = message_fields.get(attribute_name)
@@ -489,6 +477,8 @@ class FitFileProcessor(object):
                 'temperature'                       : self.__get_field_value(message_fields, 'temperature'),
             }
             self.garmin_act_db_session.add(GarminDB.ActivityRecords(**record))
+        for plugin in self.activity_plugins:
+            plugin.write_record_entry(self.garmin_act_db_session, fit_file, activity_id, message_fields, record_num)
 
     def _write_dev_data_id_entry(self, fit_file, message_fields):
         root_logger.debug("dev_data_id message: %r", message_fields)

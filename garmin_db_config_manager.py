@@ -9,15 +9,13 @@ import logging
 import tempfile
 
 from garmin_db_config import GarminDBConfig
-from garmin_db_schema import GarminDbSchema
-from garmin_db_mappings import GarminDBMappings
-from utilities import DbParams, DynamicDb
+from utilities import DbParams
 
 
 logger = logging.getLogger(__name__)
 
 
-class GarminDBConfigManager(GarminDBConfig, GarminDbSchema, GarminDBMappings):
+class GarminDBConfigManager(GarminDBConfig):
     """Provides accessors to the base class config."""
 
     temp_dir = tempfile.mkdtemp()
@@ -43,38 +41,6 @@ class GarminDBConfigManager(GarminDBConfig, GarminDbSchema, GarminDBMappings):
     def get_db_host(cls):
         """Return the configured hostname of the database."""
         return cls.db['host']
-
-    @classmethod
-    def _create_dev_db(cls):
-        """Create a developer fields database according to the mapping provided in the config."""
-        dev_db_name = 'garmin_dev'
-        dev_db_version = cls.dev_db_config.get('version')
-        logger.info("Creating dev db %s version %s", dev_db_name, dev_db_version)
-        cls.dev_db = DynamicDb.Create(dev_db_name, dev_db_version)
-
-    @classmethod
-    def _create_dev_tables(cls):
-        tables = cls.dev_db_config.get('tables')
-        cls.dev_tables = {}
-        for dev_table_name, dev_table_config in tables.items():
-            dev_table_version = dev_table_config.get('version')
-            logger.info("Creating dev db table %s version %s", dev_table_name, dev_table_version)
-            dev_table = DynamicDb.CreateTable(dev_table_name, cls.dev_db, dev_table_version, dev_table_config.get('pk'), dev_table_config.get('cols'))
-            cls.dev_tables[dev_table_name] = dev_table
-
-    @classmethod
-    def get_dev_db(cls, db_params_dict, debug_level=0):
-        """Return a instantiated developer field database object."""
-        if not cls.dev_db:
-            cls._create_dev_db()
-        return cls.dev_db(db_params_dict, debug_level)
-
-    @classmethod
-    def get_dev_table(cls, dev_table_name):
-        """Return a developer field database table class object."""
-        if not len(cls.dev_tables):
-            cls._create_dev_tables()
-        return cls.dev_tables.get(dev_table_name)
 
     @classmethod
     def _create_dir_if_needed(cls, dir):
@@ -180,8 +146,18 @@ class GarminDBConfigManager(GarminDBConfig, GarminDbSchema, GarminDBMappings):
 
     @classmethod
     def get_or_create_mshealth_dir(cls, test_dir=False):
-        """Return the configured directory of where the Microsoft Health files will be stored creating it if needed."""
+        """Return the configured directory where the Microsoft Health files will be stored creating it if needed."""
         return cls._create_dir_if_needed(cls.get_mshealth_dir(test_dir))
+
+    @classmethod
+    def get_plugins_dir(cls):
+        """Return the configured directory where the plugin files are located."""
+        return cls.get_base_dir() + os.sep + cls.directories['plugins_dir']
+
+    @classmethod
+    def get_or_create_plugins_dir(cls):
+        """Return the configured directory where the plugin files are located creating it if needed."""
+        return cls._create_dir_if_needed(cls.get_plugins_dir())
 
     @classmethod
     def get_db_dir(cls, test_db=False):

@@ -13,6 +13,7 @@ import GarminDB
 import Fit
 from import_garmin_activities import GarminActivitiesFitData, GarminTcxData, GarminJsonSummaryData, GarminJsonDetailsData
 from garmin_db_config_manager import GarminDBConfigManager
+from garmin_db_plugin import GarminDbPluginManager
 
 
 root_logger = logging.getLogger()
@@ -21,7 +22,10 @@ root_logger.setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
 
-do_single_import_tests = True
+do_fit_import_test = True
+do_tcx_import_tests = True
+do_summary_import_tests = True
+do_details_import_tests = True
 do_multiple_import_tests = True
 
 
@@ -41,6 +45,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         }
         super().setUpClass(cls.garmin_act_db, table_dict, {GarminDB.Activities : [GarminDB.Activities.activity_id]})
         cls.test_db_params = GarminDBConfigManager.get_db_params(test_db=True)
+        cls.plugin_manager = GarminDbPluginManager(GarminDBConfigManager.get_or_create_plugins_dir(), cls.test_db_params)
         cls.test_mon_db = GarminDB.GarminDB(cls.test_db_params)
         cls.test_act_db = GarminDB.ActivitiesDB(cls.test_db_params)
         cls.measurement_system = Fit.field_enums.DisplayMeasure.statute
@@ -83,7 +88,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         gfd = GarminActivitiesFitData('test_files/fit/activity', latest=False, measurement_system=self.measurement_system, ignore_dev_fields=False, debug=2)
         self.gfd_file_count = gfd.file_count()
         if gfd.file_count() > 0:
-            gfd.process_files(self.test_db_params)
+            gfd.process_files(self.test_db_params, self.plugin_manager)
 
     def fit_file_import(self):
         self.profile_function('fit_activities_import', self.__fit_file_import)
@@ -109,7 +114,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
     #
     # The actual tests
     #
-    @unittest.skipIf(not do_single_import_tests, "Skipping single import test")
+    @unittest.skipIf(not do_fit_import_test, "Skipping fit import test")
     def test_fit_file_import(self):
         GarminDB.ActivitiesDB.delete_db(self.test_db_params)
         self.fit_file_import()
@@ -117,20 +122,20 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         self.check_activities()
         self.check_activities_field_value(GarminDB.Activities.avg_speed, 0, 50)
 
-    @unittest.skipIf(not do_single_import_tests, "Skipping single import test")
+    @unittest.skipIf(not do_tcx_import_tests, "Skipping tcx import test")
     def test_tcx_file_import(self):
         GarminDB.ActivitiesDB.delete_db(self.test_db_params)
         self.tcx_file_import()
         self.check_activities_fields([GarminDB.Activities.sport, GarminDB.Activities.laps])
 
-    @unittest.skipIf(not do_single_import_tests, "Skipping single import test")
+    @unittest.skipIf(not do_summary_import_tests, "Skipping summary import test")
     def test_summary_json_file_import(self):
         GarminDB.ActivitiesDB.delete_db(self.test_db_params)
         self.summary_json_file_import()
         self.check_activities_fields([GarminDB.Activities.name, GarminDB.Activities.type, GarminDB.Activities.sport, GarminDB.Activities.sub_sport])
         self.check_activities_field_value(GarminDB.Activities.avg_speed, 0, 50)
 
-    @unittest.skipIf(not do_single_import_tests, "Skipping single import test")
+    @unittest.skipIf(not do_details_import_tests, "Skipping details import test")
     def test_details_json_file_import(self):
         GarminDB.ActivitiesDB.delete_db(self.test_db_params)
         self.details_json_file_import()

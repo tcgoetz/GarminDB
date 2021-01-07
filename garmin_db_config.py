@@ -15,6 +15,7 @@ class GarminDBConfig(object):
     directories = {
         'relative_to_home'      : True,
         'base_dir'              : 'HealthData',
+        'plugins_dir'           : "./Plugins",
         'fit_file_dir'          : 'FitFiles',
         'fitbit_file_dir'       : 'FitBitFiles',
         'mshealth_file_dir'     : 'MSHealth',

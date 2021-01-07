@@ -204,9 +204,7 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
     strokes = Column(Integer)
     cycles = Column(Float)
 
-    __table_args__ = (
-        PrimaryKeyConstraint("timestamp", "activity_type"),
-    )
+    __table_args__ = (PrimaryKeyConstraint("timestamp", "activity_type"),)
 
     @classmethod
     def s_get_from_dict(cls, session, values_dict):
