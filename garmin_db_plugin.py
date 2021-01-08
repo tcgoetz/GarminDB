@@ -17,30 +17,8 @@ class GarminDbPlugin(utilities.Plugin):
     """Base class for all GarminDb plugins."""
 
     def __init__(self):
-        """Base class for all GarminDb plugins."""
+        """Instantiate base class for all GarminDb plugins."""
         super().__init__(utilities.DynamicDb, GarminDB.ActivitiesDB)
-
-    @classmethod
-    def _load_custom_db(cls, db_name, db_version):
-        return utilities.DynamicDb.Create(db_name, db_version)
-
-    @classmethod
-    def _load_custom_table(cls, db, table_name, table_version, table_pk, table_cols):
-        return utilities.DynamicDb.CreateTable(table_name, db, table_version, table_pk, table_cols)
-
-    def write_message_type(self, fit_file, message_type, message):
-        handler_name = '_write_' + message_type.name + '_entry'
-        function = getattr(self, handler_name, None)
-        if function:
-            function(fit_file, message.fields)
-
-    @classmethod
-    def _pre_message_handler(cls):
-        pass
-
-    @classmethod
-    def _post_message_handler(cls):
-        pass
 
 
 class GarminDbPluginManager(utilities.PluginManager):
@@ -51,10 +29,10 @@ class GarminDbPluginManager(utilities.PluginManager):
         logger.info("Loading GarminDb plugins from %s", plugin_dir)
         super().__init__(plugin_dir, GarminDbPlugin, {'db_params': db_params})
 
-    def get_activity_processors(self, fit_file):
+    def get_activity_file_processors(self, fit_file):
         """Return a dict of all plugins that handle FIT file messages."""
         result = {}
         for plugin_name, plugin in self.plugins.items():
-            if plugin.matches_activity(fit_file):
+            if plugin.matches_activity_file(fit_file):
                 result[plugin_name] = plugin
         return result

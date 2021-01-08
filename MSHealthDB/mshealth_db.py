@@ -7,7 +7,6 @@ __license__ = "GPL"
 import datetime
 import logging
 from sqlalchemy import Column, Integer, Date, DateTime, Float
-from sqlalchemy.ext.declarative import declarative_base
 
 import Fit.conversions as conversions
 import utilities
@@ -15,27 +14,8 @@ import utilities
 
 logger = logging.getLogger(__name__)
 
-
-class MSHealthDB(utilities.DB):
-    """Object representing a database for storing health data from Microsoft."""
-
-    Base = declarative_base()
-
-    db_tables = []
-    db_name = 'mshealth'
-    db_version = 1
-
-    class _DbVersion(Base, utilities.DbVersionObject):
-        """Stores version information for this database and it's tables."""
-
-
-class Attributes(MSHealthDB.Base, utilities.KeyValueObject):
-    """A table that holds attributes about the user as key-value pairs."""
-
-    __tablename__ = 'attributes'
-
-    db = MSHealthDB
-    table_version = 1
+MSHealthDB = utilities.DynamicDb.Create('mshealth', 1, "Database for storing health data from Microsoft Health.")
+Attributes = utilities.DynamicDb.CreateTable('attributes', MSHealthDB, 1, base=utilities.KeyValueObject, doc="key-value data from a Microsoft Health device.")
 
 
 class DaysSummary(MSHealthDB.Base, utilities.DBObject):

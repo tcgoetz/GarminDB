@@ -253,6 +253,10 @@ regression_test_run: flake8 rebuild_dbs
 
 regression_test: regression_test_run test
 
+PLUGIN_DIR=$(shell $(PYTHON) -c 'from garmin_db_config_manager import GarminDBConfigManager; print(GarminDBConfigManager.get_plugins_dir())')
+publish_plugins:
+	cp ./Plugins/*.py $(PLUGIN_DIR)/.
+
 #
 # bugreport target
 #

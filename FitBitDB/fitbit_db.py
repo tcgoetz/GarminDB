@@ -6,7 +6,6 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Date, Float, Time
 
 import Fit
@@ -15,27 +14,9 @@ import utilities
 
 logger = logging.getLogger(__name__)
 
+FitBitDB = utilities.DynamicDb.Create('fitbit', 1, "Database for storing health data from FitBit.")
 
-class FitBitDB(utilities.DB):
-    """Object representing a database for storing health data from FitBit."""
-
-    Base = declarative_base()
-
-    db_tables = []
-    db_name = 'fitbit'
-    db_version = 1
-
-    class _DbVersion(Base, utilities.DbVersionObject):
-        """Stores version information for this database and it's tables."""
-
-
-class Attributes(FitBitDB.Base, utilities.KeyValueObject):
-    """Object representing generic key-value data from a FitBit device."""
-
-    __tablename__ = 'attributes'
-
-    db = FitBitDB
-    table_version = 1
+Attributes = utilities.DynamicDb.CreateTable('attributes', FitBitDB, 1, base=utilities.KeyValueObject, doc="key-value data from a FitBit device.")
 
 
 class DaysSummary(FitBitDB.Base, utilities.DBObject):

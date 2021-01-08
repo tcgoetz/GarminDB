@@ -243,12 +243,14 @@ class SportActivities(utilities.DBObject):
 
     @classmethod
     def _create_activity_view(cls, db, selectable):
+        """Create a database view for a activity type."""
         view_name = cls._get_default_view_name()
         logger.info("Creating activity view %s if needed.", view_name)
         cls.create_join_view(db, view_name, selectable, Activities, order_by=Activities.start_time.desc())
 
     @classmethod
     def _create_sport_view(cls, db, selectable, sport):
+        """Create a database view for a sport based activity type."""
         filter = literal_column(f'{Activities.sport} == "{sport}"')
         cls.create_join_view(db, f'{sport}_activities_view', selectable, Activities, filter, Activities.start_time.desc())
 
@@ -259,6 +261,7 @@ class SportActivities(utilities.DBObject):
 
     @classmethod
     def create_view(cls, db):
+        """Create a database view for a sport based activity type."""
         cls._create_activity_view(db, cls._view_selectable())
 
     @classmethod

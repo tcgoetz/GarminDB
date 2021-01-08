@@ -99,8 +99,10 @@ class FitFileProcessor(object):
                 self.__write_message_type(fit_file, message_type)
 
     def __setup_plugins(self, fit_file):
-        self.activity_plugins = [plugin for plugin in self.plugin_manager.get_activity_processors(fit_file).values()]
-        root_logger.info("Loaded %d activity plugins %r", len(self.activity_plugins), self.activity_plugins)
+        self.activity_file_plugins = [plugin for plugin in self.plugin_manager.get_activity_file_processors(fit_file).values()]
+        for plugin in self.activity_file_plugins:
+            plugin.create_activity_view(self.garmin_act_db, GarminDB.Activities)
+        root_logger.info("Loaded %d activity plugins %r", len(self.activity_file_plugins), self.activity_file_plugins)
 
     def write_file(self, fit_file):
         """Given a Fit File object, write all of its messages to the DB."""
@@ -378,7 +380,7 @@ class FitFileProcessor(object):
                     root_logger.warning("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_fields)
             except Exception as e:
                 root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
-        for plugin in self.activity_plugins:
+        for plugin in self.activity_file_plugins:
             plugin.write_session_entry(self.garmin_act_db_session, fit_file, activity_id, message_fields)
 
     def _write_attribute(self, timestamp, message_fields, attribute_name, db_attribute_name=None):
@@ -477,7 +479,7 @@ class FitFileProcessor(object):
                 'temperature'                       : self.__get_field_value(message_fields, 'temperature'),
             }
             self.garmin_act_db_session.add(GarminDB.ActivityRecords(**record))
-        for plugin in self.activity_plugins:
+        for plugin in self.activity_file_plugins:
             plugin.write_record_entry(self.garmin_act_db_session, fit_file, activity_id, message_fields, record_num)
 
     def _write_dev_data_id_entry(self, fit_file, message_fields):
