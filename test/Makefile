@@ -43,4 +43,7 @@ clean:
 $(TEST_GROUPS):
 	$(PYTHON) test_$@.py
 
+test_%:
+	$(PYTHON) -m unittest -v $@
+
 .PHONY: all db file_parse db_objects clean

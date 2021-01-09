@@ -33,10 +33,10 @@ class FitFileProcessor(object):
         """
         root_logger.info("Ignore dev fields: %s Debug: %s", ignore_dev_fields, debug)
         self.plugin_manager = plugin_manager
+        self.db_params = db_params
         self.debug = debug
         self.garmin_db = GarminDB.GarminDB(db_params, debug - 1)
         self.garmin_mon_db = GarminDB.MonitoringDB(db_params, self.debug - 1)
-        self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
         self.ignore_dev_fields = ignore_dev_fields
         if not self.ignore_dev_fields:
             self.field_prefixes = ['dev_', '']
@@ -98,15 +98,12 @@ class FitFileProcessor(object):
             if message_type not in priority_message_types:
                 self.__write_message_type(fit_file, message_type)
 
-    def __setup_plugins(self, fit_file):
-        self.activity_file_plugins = [plugin for plugin in self.plugin_manager.get_activity_file_processors(fit_file).values()]
-        for plugin in self.activity_file_plugins:
-            plugin.create_activity_view(self.garmin_act_db, GarminDB.Activities)
-        root_logger.info("Loaded %d activity plugins %r", len(self.activity_file_plugins), self.activity_file_plugins)
-
     def write_file(self, fit_file):
         """Given a Fit File object, write all of its messages to the DB."""
-        self.__setup_plugins(fit_file)
+        self.activity_file_plugins = [plugin for plugin in self.plugin_manager.get_activity_file_processors(fit_file).values()]
+        root_logger.info("Loaded %d activity plugins %r", len(self.activity_file_plugins), self.activity_file_plugins)
+        # Create the db after setting up the plugins so that plugin tables are handled properly
+        self.garmin_act_db = GarminDB.ActivitiesDB(self.db_params, self.debug - 1)
         with self.garmin_db.managed_session() as self.garmin_db_session, self.garmin_mon_db.managed_session() as self.garmin_mon_db_session, \
                 self.garmin_act_db.managed_session() as self.garmin_act_db_session:
             self.__write_message_types(fit_file, fit_file.message_types)
