@@ -100,8 +100,12 @@ class FitFileProcessor(object):
 
     def write_file(self, fit_file):
         """Given a Fit File object, write all of its messages to the DB."""
-        self.activity_file_plugins = [plugin for plugin in self.plugin_manager.get_activity_file_processors(fit_file).values()]
-        root_logger.info("Loaded %d activity plugins %r", len(self.activity_file_plugins), self.activity_file_plugins)
+        if fit_file.type is Fit.FileType.activity:
+            self.activity_file_plugins = [plugin for plugin in self.plugin_manager.get_activity_file_processors(fit_file).values()]
+            if len(self.activity_file_plugins):
+                root_logger.info("Loaded %d activity plugins %r for file %s", len(self.activity_file_plugins), self.activity_file_plugins, fit_file)
+        else:
+            self.activity_file_plugins = []
         # Create the db after setting up the plugins so that plugin tables are handled properly
         self.garmin_act_db = GarminDB.ActivitiesDB(self.db_params, self.debug - 1)
         with self.garmin_db.managed_session() as self.garmin_db_session, self.garmin_mon_db.managed_session() as self.garmin_mon_db_session, \
@@ -357,6 +361,8 @@ class FitFileProcessor(object):
             'training_effect'                   : self.__get_field_value(message_fields, 'total_training_effect'),
             'anaerobic_training_effect'         : self.__get_field_value(message_fields, 'total_anaerobic_training_effect')
         }
+        for plugin in self.activity_file_plugins:
+            activity.update(plugin.write_session_entry(self.garmin_act_db_session, fit_file, activity_id, message_fields))
         # json metadata gives better values for sport and subsport, so use existing value if set
         current = GarminDB.Activities.s_get(self.garmin_act_db_session, activity_id)
         if current:
@@ -377,8 +383,6 @@ class FitFileProcessor(object):
                     root_logger.warning("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_fields)
             except Exception as e:
                 root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
-        for plugin in self.activity_file_plugins:
-            plugin.write_session_entry(self.garmin_act_db_session, fit_file, activity_id, message_fields)
 
     def _write_attribute(self, timestamp, message_fields, attribute_name, db_attribute_name=None):
         attribute = message_fields.get(attribute_name)
@@ -407,6 +411,10 @@ class FitFileProcessor(object):
         # we don't get laps data from multiple sources so we don't need to coellesce data in the DB.
         # It's fastest to just write new data out if the it doesn't currently exist.
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
+        plugin_lap = {}
+        for plugin in self.activity_file_plugins:
+            if hasattr(plugin, 'write_lap_entry'):
+                plugin_lap.update(plugin.write_record_entry(self.garmin_act_db_session, fit_file, activity_id, message_fields, lap_num))
         if not GarminDB.ActivityLaps.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'lap' : lap_num}):
             lap = {
                 'activity_id'                       : GarminDB.File.id_from_path(fit_file.filename),
@@ -435,6 +443,7 @@ class FitFileProcessor(object):
                 'max_temperature'                   : self.__get_field_value(message_fields, 'max_temperature'),
                 'avg_temperature'                   : self.__get_field_value(message_fields, 'avg_temperature'),
             }
+            lap.update(plugin_lap)
             self.garmin_act_db_session.add(GarminDB.ActivityLaps(**lap))
 
     def _write_battery_entry(self, fit_file, message_fields):
@@ -460,6 +469,10 @@ class FitFileProcessor(object):
         # We don't get record data from multiple sources so we don't need to coellesce data in the DB.
         # It's fastest to just write the new data out if it doesn't currently exist.
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
+        plugin_record = {}
+        for plugin in self.activity_file_plugins:
+            if hasattr(plugin, 'write_record_entry'):
+                plugin_record.update(plugin.write_record_entry(self.garmin_act_db_session, fit_file, activity_id, message_fields, record_num))
         if not GarminDB.ActivityRecords.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'record' : record_num}):
             record = {
                 'activity_id'                       : activity_id,
@@ -475,9 +488,8 @@ class FitFileProcessor(object):
                 'speed'                             : self.__get_field_value(message_fields, 'speed'),
                 'temperature'                       : self.__get_field_value(message_fields, 'temperature'),
             }
+            record.update(plugin_record)
             self.garmin_act_db_session.add(GarminDB.ActivityRecords(**record))
-        for plugin in self.activity_file_plugins:
-            plugin.write_record_entry(self.garmin_act_db_session, fit_file, activity_id, message_fields, record_num)
 
     def _write_dev_data_id_entry(self, fit_file, message_fields):
         root_logger.debug("dev_data_id message: %r", message_fields)

@@ -245,7 +245,7 @@ class SportActivities(utilities.DBObject):
     def _create_activity_view(cls, db, selectable):
         """Create a database view for a activity type."""
         view_name = cls._get_default_view_name()
-        logger.info("Creating activity view %s if needed.", view_name)
+        logger.debug("Creating activity view %s if needed.", view_name)
         cls.create_join_view(db, view_name, selectable, Activities, order_by=Activities.start_time.desc())
 
     @classmethod

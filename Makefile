@@ -257,6 +257,12 @@ PLUGIN_DIR=$(shell $(PYTHON) -c 'from garmin_db_config_manager import GarminDBCo
 publish_plugins:
 	cp ./Plugins/*.py $(PLUGIN_DIR)/.
 
+clean_plugins:
+	rm $(PLUGIN_DIR)/*.py
+
+republish_plugins: clean_plugins publish_plugins
+
+
 #
 # bugreport target
 #
