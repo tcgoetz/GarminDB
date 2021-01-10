@@ -59,7 +59,7 @@ class GarminWeightData(JsonFileProcessor):
 class GarminMonitoringFitData(FitData):
     """Class for importing monitoring FIT files into a database."""
 
-    def __init__(self, input_dir, latest, measurement_system, ignore_dev_fields, debug):
+    def __init__(self, input_dir, latest, measurement_system, debug):
         """
         Return an instance of GarminMonitoringFitData.
 
@@ -72,13 +72,13 @@ class GarminMonitoringFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, ignore_dev_fields, debug, latest, True, [Fit.FileType.monitoring_b], measurement_system)
+        super().__init__(input_dir, debug, latest, True, [Fit.FileType.monitoring_b], measurement_system)
 
 
 class GarminSettingsFitData(FitData):
     """Class for importing settings FIT files into a database."""
 
-    def __init__(self, input_dir, ignore_dev_fields, debug):
+    def __init__(self, input_dir, debug):
         """
         Return an instance of GarminSettingsFitData.
 
@@ -89,7 +89,7 @@ class GarminSettingsFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, ignore_dev_fields, debug, fit_types=[Fit.FileType.settings])
+        super().__init__(input_dir, debug, fit_types=[Fit.FileType.settings])
 
 
 class SleepActivityLevels(enum.Enum):
@@ -335,7 +335,7 @@ class GarminHydrationData(JsonFileProcessor):
         debug (Boolean): enable debug logging
 
         """
-        logger.info("Processing daily hydration data")
+        logger.debug("Processing daily hydration data")
         super().__init__(r'hydration_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug, recursive=True)
         self.input_dir = input_dir
         self.measurement_system = measurement_system

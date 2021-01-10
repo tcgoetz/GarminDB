@@ -251,7 +251,7 @@ flake8: $(SUBMODULES:%=%-flake8)
 regression_test_run: flake8 rebuild_dbs
 	grep ERROR garmin.log || [ $$? -eq 1 ]
 
-regression_test: regression_test_run test
+regression_test: clean regression_test_run test
 
 PLUGIN_DIR=$(shell $(PYTHON) -c 'from garmin_db_config_manager import GarminDBConfigManager; print(GarminDBConfigManager.get_plugins_dir())')
 publish_plugins:

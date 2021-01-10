@@ -13,6 +13,7 @@ import GarminDB
 import Fit
 from garmin_db_config_manager import GarminDBConfigManager
 from import_garmin import GarminMonitoringFitData, GarminSummaryData
+from monitoring_fit_file_processor import MonitoringFitFileProcessor
 from garmin_db_plugin import GarminDbPluginManager
 
 
@@ -57,19 +58,19 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
 
     def test_garmin_mon_db_uptodate(self):
         uptodate_tables = {
-                'monitoring_hr_table'   : GarminDB.MonitoringHeartRate,
-                'monitoring_table'      : GarminDB.Monitoring,
-            }
+            'monitoring_hr_table'   : GarminDB.MonitoringHeartRate,
+            'monitoring_table'      : GarminDB.Monitoring,
+        }
         for table_name, table in uptodate_tables.items():
             latest = GarminDB.MonitoringHeartRate.latest_time(self.db, GarminDB.MonitoringHeartRate.heart_rate)
             logger.info("Latest data for %s: %s", table_name, latest)
             self.assertLess(datetime.datetime.now() - latest, datetime.timedelta(days=2))
 
     def fit_file_import(self, db_params):
-        gfd = GarminMonitoringFitData('test_files/fit/monitoring', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, ignore_dev_fields=False, debug=2)
+        gfd = GarminMonitoringFitData('test_files/fit/monitoring', latest=False, measurement_system=Fit.field_enums.DisplayMeasure.statute, debug=2)
         self.gfd_file_count = gfd.file_count()
         if gfd.file_count() > 0:
-            gfd.process_files(db_params, self.plugin_manager)
+            gfd.process_files(MonitoringFitFileProcessor(db_params, self.plugin_manager))
 
     def test_fit_file_import(self):
         db_params = GarminDBConfigManager.get_db_params(test_db=True)

@@ -12,9 +12,9 @@ from test_db_base import TestDBBase
 import GarminDB
 import Fit
 from import_garmin_activities import GarminActivitiesFitData, GarminTcxData, GarminJsonSummaryData, GarminJsonDetailsData
+from activity_fit_file_processor import ActivityFitFileProcessor
 from garmin_db_config_manager import GarminDBConfigManager
 from garmin_db_plugin import GarminDbPluginManager
-
 
 root_logger = logging.getLogger()
 root_logger.addHandler(logging.FileHandler('activities_db.log', 'w'))
@@ -41,7 +41,6 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
             'run_activities_table' : GarminDB.StepsActivities,
             'paddle_activities_table' : GarminDB.PaddleActivities,
             'cycle_activities_table' : GarminDB.CycleActivities,
-            'elliptical_activities_table' : GarminDB.EllipticalActivities
         }
         super().setUpClass(cls.garmin_act_db, table_dict, {GarminDB.Activities : [GarminDB.Activities.activity_id]})
         cls.test_db_params = GarminDBConfigManager.get_db_params(test_db=True)
@@ -58,7 +57,6 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         self.assertGreater(GarminDB.StepsActivities.row_count(self.garmin_act_db), 0)
         self.assertGreater(GarminDB.PaddleActivities.row_count(self.garmin_act_db), 0)
         self.assertGreater(GarminDB.CycleActivities.row_count(self.garmin_act_db), 0)
-        self.assertGreater(GarminDB.EllipticalActivities.row_count(self.garmin_act_db), 0)
 
     def check_activities_fields(self, fields_list):
         self.check_not_none_cols(self.test_act_db, {GarminDB.Activities : fields_list})
@@ -85,10 +83,10 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         self.check_col_type(self.test_act_db, GarminDB.Activities, GarminDB.Activities.activity_id, int)
 
     def __fit_file_import(self):
-        gfd = GarminActivitiesFitData('test_files/fit/activity', latest=False, measurement_system=self.measurement_system, ignore_dev_fields=False, debug=2)
+        gfd = GarminActivitiesFitData('test_files/fit/activity', latest=False, measurement_system=self.measurement_system, debug=2)
         self.gfd_file_count = gfd.file_count()
         if gfd.file_count() > 0:
-            gfd.process_files(self.test_db_params, self.plugin_manager)
+            gfd.process_files(ActivityFitFileProcessor(self.test_db_params, self.plugin_manager))
 
     def fit_file_import(self):
         self.profile_function('fit_activities_import', self.__fit_file_import)
