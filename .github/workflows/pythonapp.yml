@@ -22,4 +22,4 @@ jobs:
         make flake8
     - name: Test
       run: |
-        make test_commit
+        make verify_commit

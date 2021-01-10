@@ -29,7 +29,7 @@ file_parse: $(FILE_PARSE_TEST_GROUPS)
 
 db_objects: $(DB_OBJECTS_TEST_GROUPS)
 
-test_commit: db_objects
+verify_commit: db_objects
 
 clean:
 	rm -f *.pyc

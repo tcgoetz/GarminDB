@@ -230,11 +230,11 @@ $(SUBMODULES:%=%-test):
 test: $(SUBMODULES:%=%-test)
 	$(MAKE) -C test all
 
-$(SUBMODULES:%=%-test_commit):
-	$(MAKE) -C $(subst -test_commit,,$@) test_commit
+$(SUBMODULES:%=%-verify_commit):
+	$(MAKE) -C $(subst -verify_commit,,$@) verify_commit
 
-test_commit: $(SUBMODULES:%=%-test)
-	$(MAKE) -C test test_commit
+verify_commit: $(SUBMODULES:%=%-test)
+	$(MAKE) -C test verify_commit
 
 $(SUBMODULES:%=%-test_clean):
 	$(MAKE) -C $(subst -test_clean,,$@) clean
