@@ -9,4 +9,4 @@
 	url = ../Tcx.git
 [submodule "Plugins"]
 	path = Plugins
-	url = git@github.com:tcgoetz/GarminDbPlugins.git
+	url = ../GarminDbPlugins.git
