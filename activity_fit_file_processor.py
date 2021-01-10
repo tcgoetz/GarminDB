@@ -33,6 +33,14 @@ class ActivityFitFileProcessor(FitFileProcessor):
             self.garmin_act_db_session.commit()
             self.garmin_db_session.commit()
 
+    def _plugin_dispatch(self, handler_name, *args, **kwargs):
+        result = {}
+        for plugin in self.activity_file_plugins:
+            function = getattr(plugin, handler_name, None)
+            if function:
+                result.update(function(*args, **kwargs))
+        return result
+
     def _write_lap(self, fit_file, message_type, messages):
         """Write all lap messages to the database."""
         for lap_num, message in enumerate(messages):
@@ -47,10 +55,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
         # We don't get record data from multiple sources so we don't need to coellesce data in the DB.
         # It's fastest to just write the new data out if it doesn't currently exist.
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
-        plugin_record = {}
-        for plugin in self.activity_file_plugins:
-            if hasattr(plugin, 'write_record_entry'):
-                plugin_record.update(plugin.write_record_entry(self.garmin_act_db_session, fit_file, activity_id, message_fields, record_num))
+        plugin_record = self._plugin_dispatch('write_record_entry', self.garmin_act_db_session, fit_file, activity_id, message_fields, record_num)
         if not GarminDB.ActivityRecords.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'record' : record_num}):
             record = {
                 'activity_id'                       : activity_id,
@@ -73,10 +78,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
         # we don't get laps data from multiple sources so we don't need to coellesce data in the DB.
         # It's fastest to just write new data out if the it doesn't currently exist.
         activity_id = GarminDB.File.id_from_path(fit_file.filename)
-        plugin_lap = {}
-        for plugin in self.activity_file_plugins:
-            if hasattr(plugin, 'write_lap_entry'):
-                plugin_lap.update(plugin.write_record_entry(self.garmin_act_db_session, fit_file, activity_id, message_fields, lap_num))
+        plugin_lap = self._plugin_dispatch('write_lap_entry', self.garmin_act_db_session, fit_file, activity_id, message_fields, lap_num)
         if not GarminDB.ActivityLaps.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'lap' : lap_num}):
             lap = {
                 'activity_id'                       : GarminDB.File.id_from_path(fit_file.filename),
@@ -123,7 +125,8 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'avg_ground_contact_time'           : self._get_field_value(message_fields, 'avg_stance_time'),
             'avg_stance_time_percent'           : self._get_field_value(message_fields, 'avg_stance_time_percent'),
         }
-        root_logger.info("steps: %r", steps)
+        steps.update(self._plugin_dispatch('write_steps_entry', self.garmin_act_db_session, fit_file, activity_id, sub_sport, message_fields))
+        root_logger.debug("_write_steps_entry: %r", steps)
         GarminDB.StepsActivities.s_insert_or_update(self.garmin_act_db_session, steps, ignore_none=True, ignore_zero=True)
 
     def _write_running_entry(self, fit_file, activity_id, sub_sport, message_fields):
@@ -140,6 +143,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'activity_id'   : activity_id,
             'strokes'       : self._get_field_value(message_fields, 'total_strokes'),
         }
+        ride.update(self._plugin_dispatch('write_cycle_entry', self.garmin_act_db_session, fit_file, activity_id, sub_sport, message_fields))
         GarminDB.CycleActivities.s_insert_or_update(self.garmin_act_db_session, ride, ignore_none=True, ignore_zero=True)
 
     def _write_stand_up_paddleboarding_entry(self, fit_file, activity_id, sub_sport, message_fields):
@@ -149,6 +153,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'strokes'               : self._get_field_value(message_fields, 'total_strokes'),
             'avg_stroke_distance'   : self._get_field_value(message_fields, 'avg_stroke_distance'),
         }
+        paddle.update(self._plugin_dispatch('write_paddle_entry', self.garmin_act_db_session, fit_file, activity_id, sub_sport, message_fields))
         GarminDB.PaddleActivities.s_insert_or_update(self.garmin_act_db_session, paddle, ignore_none=True, ignore_zero=True)
 
     def _write_rowing_entry(self, fit_file, activity_id, sub_sport, message_fields):
@@ -222,8 +227,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'training_effect'                   : self._get_field_value(message_fields, 'total_training_effect'),
             'anaerobic_training_effect'         : self._get_field_value(message_fields, 'total_anaerobic_training_effect')
         }
-        for plugin in self.activity_file_plugins:
-            activity.update(plugin.write_session_entry(self.garmin_act_db_session, fit_file, activity_id, message_fields))
+        activity.update(self._plugin_dispatch('write_session_entry', self.garmin_act_db_session, fit_file, activity_id, message_fields))
         # json metadata gives better values for sport and subsport, so use existing value if set
         current = GarminDB.Activities.s_get(self.garmin_act_db_session, activity_id)
         if current:
