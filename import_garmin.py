@@ -354,7 +354,7 @@ class GarminHydrationData(JsonFileProcessor):
             'hydration_goal': hydration_goal.ml_or_oz(self.measurement_system, rounded=True),
             'sweat_loss': sweat_loss.ml_or_oz(self.measurement_system, rounded=True)
         }
-        root_logger.info("Processing daily hydration data %r", summary)
+        root_logger.debug("Processing daily hydration data %r", summary)
         GarminDB.DailySummary.insert_or_update(
             self.garmin_db, summary, ignore_none=True)
         return 1

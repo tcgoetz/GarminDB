@@ -14,12 +14,11 @@ import utilities
 
 logger = logging.getLogger(__name__)
 
-FitBitDB = utilities.DynamicDb.Create('fitbit', 1, "Database for storing health data from FitBit.")
+FitBitDB = utilities.DB.create('fitbit', 2, "Database for storing health data from FitBit.")
+Attributes = utilities.DbObject.create('attributes', FitBitDB, 1, base=utilities.KeyValueObject, doc="key-value data from a FitBit device.")
 
-Attributes = utilities.DynamicDb.CreateTable('attributes', FitBitDB, 1, base=utilities.KeyValueObject, doc="key-value data from a FitBit device.")
 
-
-class DaysSummary(FitBitDB.Base, utilities.DBObject):
+class DaysSummary(FitBitDB.Base, utilities.DbObject):
     """A table that holds summarized information about a day with one row per day."""
 
     __tablename__ = 'days_summary'

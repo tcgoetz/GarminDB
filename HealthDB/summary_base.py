@@ -9,10 +9,10 @@ from sqlalchemy import Column, Float, Time, Integer, func
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import Fit.conversions as conversions
-from utilities import DBObject
+from utilities import DbObject
 
 
-class SummaryBase(DBObject):
+class SummaryBase(DbObject):
     """Base class for implementing summary databse objects."""
 
     view_version = 10

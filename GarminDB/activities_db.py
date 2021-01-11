@@ -16,11 +16,10 @@ import utilities
 
 logger = logging.getLogger(__name__)
 
+ActivitiesDB = utilities.DB.create('garmin_activities', 13, "Database for storing activities data.")
 
-ActivitiesDB = utilities.DynamicDb.Create('garmin_activities', 12, "Database for storing activities data.")
 
-
-class ActivitiesLocationSegment(utilities.DBObject):
+class ActivitiesLocationSegment(utilities.DbObject):
     """Object representing a databse object for storing location segnment from an activity."""
 
     # degrees
@@ -190,7 +189,7 @@ class ActivityLaps(ActivitiesDB.Base, ActivitiesLocationSegment):
         self.start_long = start_location.long_deg
 
 
-class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
+class ActivityRecords(ActivitiesDB.Base, utilities.DbObject):
     """Encapsilates record for a single point in time from an activity."""
 
     __tablename__ = 'activity_records'
@@ -230,7 +229,7 @@ class ActivityRecords(ActivitiesDB.Base, utilities.DBObject):
         self.position_long = location.long_deg
 
 
-class SportActivities(utilities.DBObject):
+class SportActivities(utilities.DbObject):
     """Base class for all sport based activity tables."""
 
     @declared_attr
@@ -434,7 +433,7 @@ class PaddleActivities(ActivitiesDB.Base, SportActivities):
             Activities.max_cadence.label('max_cadence'),
             Activities.avg_hr.label('avg_hr'),
             Activities.max_hr.label('max_hr'),
-            Activities.calories.label('calories'),
+            cls.round_ext_col(Activities, 'calories'),
             cls.round_ext_col(Activities, 'avg_temperature'),
             cls.round_ext_col(Activities, 'avg_speed'),
             cls.round_ext_col(Activities, 'max_speed'),

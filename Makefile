@@ -127,6 +127,9 @@ daily: all checkup graph_yesterday
 download_all_garmin:
 	$(TIME) $(PYTHON) garmin.py --all --download
 
+redownload_garmin_activities:
+	$(TIME) $(PYTHON) garmin.py --activities --download --overwrite
+
 garmin:
 	$(TIME) $(PYTHON) garmin.py --all --download --import --analyze
 

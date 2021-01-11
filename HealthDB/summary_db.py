@@ -13,8 +13,8 @@ import HealthDB.summary_base as sb
 
 logger = logging.getLogger(__name__)
 
-SummaryDB = utilities.DynamicDb.Create('summary', 6, "Database for storing summarizing health data.")
-Summary = utilities.DynamicDb.CreateTable('summary', SummaryDB, 1, base=utilities.KeyValueObject)
+SummaryDB = utilities.DB.create('summary', 7, "Database for storing summarizing health data.")
+Summary = utilities.DbObject.create('summary', SummaryDB, 1, base=utilities.KeyValueObject)
 
 
 class YearsSummary(SummaryDB.Base, sb.SummaryBase):

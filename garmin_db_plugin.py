@@ -27,6 +27,6 @@ class GarminDbPluginManager(utilities.PluginManager):
         for plugin_name, plugin in self.plugins.items():
             if plugin.matches_activity_file(fit_file):
                 logger.info("Plugin %s matches file %s", plugin_name, fit_file)
-                plugin.init_activity(utilities.DynamicDb, GarminDB.ActivitiesDB, GarminDB.Activities)
+                plugin.init_activity(GarminDB.ActivitiesDB, GarminDB.Activities)
                 result[plugin_name] = plugin
         return result

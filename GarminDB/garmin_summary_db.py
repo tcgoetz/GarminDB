@@ -13,11 +13,8 @@ import utilities
 
 logger = logging.getLogger(__name__)
 
-
-GarminSummaryDB = utilities.DynamicDb.Create('garmin_summary', 7, "Database for storing health summary data from a Garmin device.")
-
-
-Summary = utilities.DynamicDb.CreateTable('summary', GarminSummaryDB, 1, base=utilities.KeyValueObject)
+GarminSummaryDB = utilities.DB.create('garmin_summary', 8, "Database for storing health summary data from a Garmin device.")
+Summary = utilities.DbObject.create('summary', GarminSummaryDB, 1, base=utilities.KeyValueObject)
 
 
 class YearsSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
@@ -88,7 +85,7 @@ class DaysSummary(GarminSummaryDB.Base, HealthDB.SummaryBase):
         cls.create_days_view(db)
 
 
-class IntensityHR(GarminSummaryDB.Base, utilities.DBObject):
+class IntensityHR(GarminSummaryDB.Base, utilities.DbObject):
     """Monitoring heart rate values that fall within a intensity period."""
 
     __tablename__ = 'intensity_hr'

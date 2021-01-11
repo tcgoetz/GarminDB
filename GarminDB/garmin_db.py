@@ -21,15 +21,13 @@ logger = logging.getLogger(__name__)
 
 class GarminDbError(Exception):
     """Base exception for GarminDb exceptions"""
-    pass
 
 
 class GarminDbError_IdNotFound(GarminDbError):
     """File id not found"""
-    pass
 
 
-GarminDB = utilities.DynamicDb.Create('garmin', 13, "Database for storing health data from a Garmin device.")
+GarminDB = utilities.DB.create('garmin', 14, "Database for storing health data from a Garmin device.")
 
 
 class Attributes(GarminDB.Base, utilities.KeyValueObject):
@@ -51,7 +49,7 @@ class Attributes(GarminDB.Base, utilities.KeyValueObject):
         return (cls.measurements_type(db) == Fit.field_enums.DisplayMeasure.metric)
 
 
-class Device(GarminDB.Base, utilities.DBObject):
+class Device(GarminDB.Base, utilities.DbObject):
     """Class representing a Garmin device."""
 
     __tablename__ = 'devices'
@@ -80,7 +78,7 @@ class Device(GarminDB.Base, utilities.DBObject):
         return '%s%06d' % (serial_number, device_type.value)
 
 
-class DeviceInfo(GarminDB.Base, utilities.DBObject):
+class DeviceInfo(GarminDB.Base, utilities.DbObject):
     """Class representing a Garmin device info message from a FIT file."""
 
     __tablename__ = 'device_info'
@@ -123,7 +121,7 @@ class DeviceInfo(GarminDB.Base, utilities.DBObject):
         cls.create_join_view(db, cls._get_default_view_name(), cols, Device, order_by=cls.timestamp.desc())
 
 
-class File(GarminDB.Base, utilities.DBObject):
+class File(GarminDB.Base, utilities.DbObject):
     """Class representing a data file."""
 
     __tablename__ = 'files'
@@ -177,7 +175,7 @@ class File(GarminDB.Base, utilities.DBObject):
         return id
 
 
-class Weight(GarminDB.Base, utilities.DBObject):
+class Weight(GarminDB.Base, utilities.DbObject):
     """Class representing a weight entry."""
 
     __tablename__ = 'weight'
@@ -198,7 +196,7 @@ class Weight(GarminDB.Base, utilities.DBObject):
         }
 
 
-class Stress(GarminDB.Base, utilities.DBObject):
+class Stress(GarminDB.Base, utilities.DbObject):
     """Class representing a stress reading."""
 
     __tablename__ = 'stress'
@@ -217,7 +215,7 @@ class Stress(GarminDB.Base, utilities.DBObject):
         }
 
 
-class Sleep(GarminDB.Base, utilities.DBObject):
+class Sleep(GarminDB.Base, utilities.DbObject):
     """Class representing a sleep session."""
 
     __tablename__ = 'sleep'
@@ -247,7 +245,7 @@ class Sleep(GarminDB.Base, utilities.DBObject):
         }
 
 
-class SleepEvents(GarminDB.Base, utilities.DBObject):
+class SleepEvents(GarminDB.Base, utilities.DbObject):
     """Table that stores events recorded druing sleep."""
 
     __tablename__ = 'sleep_events'
@@ -269,13 +267,14 @@ class SleepEvents(GarminDB.Base, utilities.DBObject):
             return values[0][0]
 
 
-class RestingHeartRate(GarminDB.Base, utilities.DBObject):
+class RestingHeartRate(GarminDB.Base, utilities.DbObject):
     """Class representing a daily resting heart rate reading."""
 
     __tablename__ = 'resting_hr'
 
     db = GarminDB
     table_version = 1
+    _col_units = {'resting_heart_rate': 'bpm'}
 
     day = Column(Date, primary_key=True)
     resting_heart_rate = Column(Float)
@@ -290,13 +289,14 @@ class RestingHeartRate(GarminDB.Base, utilities.DBObject):
         }
 
 
-class DailySummary(GarminDB.Base, utilities.DBObject):
+class DailySummary(GarminDB.Base, utilities.DbObject):
     """Class representing a Garmin daily summary."""
 
     __tablename__ = 'daily_summary'
 
     db = GarminDB
     table_version = 4
+    _col_units = {'hr_min': 'bpm', 'hr_max': 'bpm', 'rhr': 'bpm'}
 
     day = Column(Date, primary_key=True)
     hr_min = Column(Integer)
