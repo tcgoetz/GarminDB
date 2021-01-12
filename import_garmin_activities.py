@@ -337,20 +337,6 @@ class GarminJsonSummaryData(GarminJsonActivityData):
     def _process_mountain_biking(self, sub_sport, activity_id, activity_summary):
         return self._process_cycling(sub_sport, activity_id, activity_summary)
 
-    def _process_elliptical(self, sub_sport, activity_id, activity_summary):
-        if activity_summary is not None:
-            activity = {
-                'activity_id'               : activity_id,
-                'avg_cadence'               : self._get_field(activity_summary, 'averageRunningCadenceInStepsPerMinute', float),
-                'max_cadence'               : self._get_field(activity_summary, 'maxRunningCadenceInStepsPerMinute', float),
-            }
-            GarminDB.Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
-            workout = {
-                'activity_id'               : activity_id,
-                'steps'                     : self._get_field(activity_summary, 'steps', float),
-            }
-            GarminDB.EllipticalActivities.s_insert_or_update(self.garmin_act_db_session, workout, ignore_none=True)
-
     def _process_fitness_equipment(self, sub_sport, activity_id, activity_summary):
         root_logger.debug("process_fitness_equipment (%s) for %s", sub_sport, activity_id)
         self._call_process_func(sub_sport.name, None, activity_id, activity_summary)
@@ -395,11 +381,14 @@ class GarminJsonDetailsData(GarminJsonActivityData):
 
     def _process_steps_activity(self, sub_sport, activity_id, json_data):
         summary_dto = json_data['summaryDTO']
-        avg_moving_speed_mps = summary_dto.get('averageMovingSpeed')
-        avg_moving_speed = Fit.conversions.mps_to_mph(avg_moving_speed_mps)
+        avg_speed = Fit.conversions.mps_to_mph(summary_dto.get('averageSpeed'))
+        avg_moving_speed = Fit.conversions.mps_to_mph(summary_dto.get('averageMovingSpeed'))
+        max_speed = Fit.conversions.mps_to_mph(summary_dto.get('maxSpeed'))
         run = {
             'activity_id'       : activity_id,
+            'avg_pace'          : Fit.conversions.perhour_speed_to_pace(avg_speed),
             'avg_moving_pace'   : Fit.conversions.perhour_speed_to_pace(avg_moving_speed),
+            'max_pace'          : Fit.conversions.perhour_speed_to_pace(max_speed),
         }
         root_logger.debug("steps_activity for %d: %r", activity_id, run)
         GarminDB.StepsActivities.s_insert_or_update(self.garmin_act_db_session, run, ignore_none=True)
@@ -457,8 +446,8 @@ class GarminJsonDetailsData(GarminJsonActivityData):
         summary_dto = json_data['summaryDTO']
         sport, sub_sport = GarminConnectEnums.get_details_sport(json_data)
         activity = {
-            'activity_id'               : activity_id,
-            'course_id'                 : self._get_field(metadata_dto, 'associatedCourseId', int)
+            'activity_id'   : activity_id,
+            'course_id'     : self._get_field(metadata_dto, 'associatedCourseId', int)
         }
         activity.update(self._process_common(summary_dto))
         GarminDB.Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)

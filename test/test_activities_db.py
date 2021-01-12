@@ -18,7 +18,7 @@ from garmin_db_plugin import GarminDbPluginManager
 
 root_logger = logging.getLogger()
 root_logger.addHandler(logging.FileHandler('activities_db.log', 'w'))
-root_logger.setLevel(logging.INFO)
+root_logger.setLevel(logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         cls.test_db_params = GarminDBConfigManager.get_db_params(test_db=True)
         cls.plugin_manager = GarminDbPluginManager(GarminDBConfigManager.get_or_create_plugins_dir(), cls.test_db_params)
         cls.test_mon_db = GarminDB.GarminDB(cls.test_db_params)
-        cls.test_act_db = GarminDB.ActivitiesDB(cls.test_db_params)
+        cls.test_act_db = GarminDB.ActivitiesDB(cls.test_db_params, debug_level=1)
         cls.measurement_system = Fit.field_enums.DisplayMeasure.statute
         print(f"db params {repr(cls.test_db_params)}")
 

@@ -72,6 +72,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
                 'temperature'                       : self._get_field_value(message_fields, 'temperature'),
             }
             record.update(plugin_record)
+            root_logger.info("_write_record_entry activity_id %s, record %s doesn't exist", activity_id, record_num)
             self.garmin_act_db_session.add(GarminDB.ActivityRecords(**record))
 
     def _write_lap_entry(self, fit_file, message_fields, lap_num):
