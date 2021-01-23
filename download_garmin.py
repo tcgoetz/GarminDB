@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 import Fit.conversions as conversions
 from garmin_connect_config_manager import GarminConnectConfigManager
-import garmin_db_config_manager as GarminDBConfigManager
+from garmin_db_config_manager import GarminDBConfigManager
 from utilities import RestClient, RestException, RestResponseException
 
 

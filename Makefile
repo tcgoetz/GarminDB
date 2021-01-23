@@ -88,7 +88,7 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 #
 # Fitness System independant targets
 #
-HEALTH_DATA_DIR=$(shell $(PYTHON) -c 'from garmin_db_config_manager import get_base_dir; print(get_base_dir())')
+HEALTH_DATA_DIR=$(shell $(PYTHON) -c 'from garmin_db_config_manager import GarminDBConfigManager; print(GarminDBConfigManager.get_base_dir())')
 DB_DIR=$(HEALTH_DATA_DIR)/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 $(BACKUP_DIR):
@@ -126,6 +126,9 @@ daily: all checkup graph_yesterday
 #
 download_all_garmin:
 	$(TIME) $(PYTHON) garmin.py --all --download
+
+redownload_garmin_activities:
+	$(TIME) $(PYTHON) garmin.py --activities --download --overwrite
 
 garmin:
 	$(TIME) $(PYTHON) garmin.py --all --download --import --analyze
@@ -230,11 +233,11 @@ $(SUBMODULES:%=%-test):
 test: $(SUBMODULES:%=%-test)
 	$(MAKE) -C test all
 
-$(SUBMODULES:%=%-test_commit):
-	$(MAKE) -C $(subst -test_commit,,$@) test_commit
+$(SUBMODULES:%=%-verify_commit):
+	$(MAKE) -C $(subst -verify_commit,,$@) verify_commit
 
-test_commit: $(SUBMODULES:%=%-test)
-	$(MAKE) -C test test_commit
+verify_commit: $(SUBMODULES:%=%-test)
+	$(MAKE) -C test verify_commit
 
 $(SUBMODULES:%=%-test_clean):
 	$(MAKE) -C $(subst -test_clean,,$@) clean
@@ -248,8 +251,20 @@ $(SUBMODULES:%=%-flake8):
 flake8: $(SUBMODULES:%=%-flake8)
 	$(FLAKE8) *.py GarminDB/*.py HealthDB/*.py FitBitDB/*.py MSHealthDB/*.py --max-line-length=180 --ignore=E203,E221,E241,W503
 
-regression_test: flake8 rebuild_dbs
+regression_test_run: flake8 rebuild_dbs
 	grep ERROR garmin.log || [ $$? -eq 1 ]
+
+regression_test: clean regression_test_run test
+
+PLUGIN_DIR=$(shell $(PYTHON) -c 'from garmin_db_config_manager import GarminDBConfigManager; print(GarminDBConfigManager.get_plugins_dir())')
+publish_plugins:
+	cp ./Plugins/*.py $(PLUGIN_DIR)/.
+
+clean_plugins:
+	rm $(PLUGIN_DIR)/*.py
+
+republish_plugins: clean_plugins publish_plugins
+
 
 #
 # bugreport target

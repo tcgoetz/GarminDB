@@ -9,7 +9,7 @@ import logging
 import datetime
 
 from copy_garmin import Copy
-import garmin_db_config_manager as GarminDBConfigManager
+from garmin_db_config_manager import GarminDBConfigManager
 from garmin_connect_config_manager import GarminConnectConfigManager
 
 

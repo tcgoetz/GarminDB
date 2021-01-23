@@ -8,7 +8,6 @@ __license__ = "GPL"
 import logging
 import datetime
 from sqlalchemy import Column, Integer, DateTime, Time, Float, Enum, FLOAT, UniqueConstraint, PrimaryKeyConstraint
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import Fit
@@ -17,21 +16,10 @@ import utilities
 
 logger = logging.getLogger(__name__)
 
-
-class MonitoringDB(utilities.DB):
-    """Class representing a databse storing daily health monitoring data from a Garmin device."""
-
-    Base = declarative_base()
-
-    db_tables = []
-    db_name = 'garmin_monitoring'
-    db_version = 5
-
-    class _DbVersion(Base, utilities.DbVersionObject):
-        """Stores version information for this databse and it's tables."""
+MonitoringDB = utilities.DB.create('garmin_monitoring', 6, "Database for storing daily health monitoring data from a Garmin device.")
 
 
-class MonitoringInfo(MonitoringDB.Base, utilities.DBObject):
+class MonitoringInfo(MonitoringDB.Base, utilities.DbObject):
     """Class representing data from a health monitoring file."""
 
     __tablename__ = 'monitoring_info'
@@ -69,7 +57,7 @@ class MonitoringInfo(MonitoringDB.Base, utilities.DBObject):
         return stats
 
 
-class MonitoringHeartRate(MonitoringDB.Base, utilities.DBObject):
+class MonitoringHeartRate(MonitoringDB.Base, utilities.DbObject):
     """Class that reprsents a database table holding resting heart rate data."""
 
     __tablename__ = 'monitoring_hr'
@@ -96,7 +84,7 @@ class MonitoringHeartRate(MonitoringDB.Base, utilities.DBObject):
         return cls.get_col_min(db, cls.heart_rate, start_ts, wake_ts, True)
 
 
-class MonitoringIntensity(MonitoringDB.Base, utilities.DBObject):
+class MonitoringIntensity(MonitoringDB.Base, utilities.DbObject):
     """Class representing monitoring data about cardio minutes."""
 
     __tablename__ = 'monitoring_intensity'
@@ -131,7 +119,7 @@ class MonitoringIntensity(MonitoringDB.Base, utilities.DBObject):
         }
 
 
-class MonitoringClimb(MonitoringDB.Base, utilities.DBObject):
+class MonitoringClimb(MonitoringDB.Base, utilities.DbObject):
     """Class representing monitoring data about elvation gained."""
 
     __tablename__ = 'monitoring_climb'
@@ -196,7 +184,7 @@ class MonitoringClimb(MonitoringDB.Base, utilities.DBObject):
         return stats
 
 
-class Monitoring(MonitoringDB.Base, utilities.DBObject):
+class Monitoring(MonitoringDB.Base, utilities.DbObject):
     """A table containing monitoring data."""
 
     __tablename__ = 'monitoring'
@@ -215,9 +203,7 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
     strokes = Column(Integer)
     cycles = Column(Float)
 
-    __table_args__ = (
-        PrimaryKeyConstraint("timestamp", "activity_type"),
-    )
+    __table_args__ = (PrimaryKeyConstraint("timestamp", "activity_type"),)
 
     @classmethod
     def s_get_from_dict(cls, session, values_dict):
@@ -264,7 +250,7 @@ class Monitoring(MonitoringDB.Base, utilities.DBObject):
         return stats
 
 
-class MonitoringRespirationRate(MonitoringDB.Base, utilities.DBObject):
+class MonitoringRespirationRate(MonitoringDB.Base, utilities.DbObject):
     """Class that represents a database table holding respiration rate measured in breaths per minute."""
 
     __tablename__ = 'monitoring_rr'
@@ -285,7 +271,7 @@ class MonitoringRespirationRate(MonitoringDB.Base, utilities.DBObject):
         }
 
 
-class MonitoringPulseOx(MonitoringDB.Base, utilities.DBObject):
+class MonitoringPulseOx(MonitoringDB.Base, utilities.DbObject):
     """Class that represents a database table holding pulse ox measurements in percent."""
 
     __tablename__ = 'monitoring_pulse_ox'

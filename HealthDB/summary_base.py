@@ -9,13 +9,15 @@ from sqlalchemy import Column, Float, Time, Integer, func
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import Fit.conversions as conversions
-from utilities import DBObject
+from utilities import DbObject
 
 
-class SummaryBase(DBObject):
-    """Base class for implementing summary databse objects."""
+class SummaryBase(DbObject):
+    """Base class for implementing summary database objects."""
 
     view_version = 10
+    _col_units = {'hr_avg': 'bpm', 'hr_min': 'bpm', 'hr_max': 'bpm', 'rhr_avg': 'bpm', 'rhr_min': 'bpm', 'rhr_max': 'bpm', 'rr_waking_avg': 'brpm', 'rr_max': 'brpm',
+                  'rr_min': 'brpm'}
 
     hr_avg = Column(Float)
     hr_min = Column(Float)
@@ -128,33 +130,35 @@ class SummaryBase(DBObject):
     def __create_weeks_months_years_selectable(cls, days_count):
         selectable = [
             cls.time_col.label('first_day'),
-            cls.round_col(cls.__tablename__ + '.rhr_avg', 'rhr'),
-            cls.round_col(cls.__tablename__ + '.inactive_hr_avg', 'inactive_hr'),
-            cls.round_col(cls.__tablename__ + '.weight_avg', 'weight'),
+            cls.round_col('rhr_avg', 'rhr'),
+            cls.round_col('inactive_hr_avg', 'inactive_hr'),
+            cls.round_col('weight_avg', 'weight'),
             cls.intensity_time.label('intensity_time'),
             cls.moderate_activity_time.label('moderate_activity_time'),
             cls.vigorous_activity_time.label('vigorous_activity_time'),
             cls.steps.label('total_steps'),
-            cls.round_col(f'round(steps / {days_count})', 'steps_avg'),
-            cls.round_col('round((steps * 100) / steps_goal)', 'steps_goal_percent'),
-            cls.round_col(cls.__tablename__ + '.floors', 'total_floors'),
-            cls.round_col(f'round(floors / {days_count})', 'floors_avg'),
-            cls.round_col('round((floors * 100) / floors_goal)', 'floors_goal_percent'),
-            cls.sleep_avg.label('sleep_avg'), cls.rem_sleep_avg.label('rem_sleep_avg'),
-            cls.round_col(cls.__tablename__ + '.stress_avg', 'stress_avg'),
-            cls.round_col(cls.__tablename__ + '.calories_avg', 'calories_avg'),
-            cls.round_col(cls.__tablename__ + '.calories_bmr_avg', 'calories_bmr_avg'),
-            cls.round_col(cls.__tablename__ + '.calories_active_avg', 'calories_active_avg'),
-            cls.round_col(cls.__tablename__ + '.calories_consumed_avg', 'calories_consumed_avg'),
-            cls.round_col(cls.__tablename__ + '.calories_goal', 'calories_goal'),
-            cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
-            cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
-            cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
-            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
-            cls.round_col(cls.__tablename__ + '.sweat_loss_avg', 'sweat_loss_avg'),
-            cls.round_col(cls.__tablename__ + '.spo2_avg', 'spo2_avg'),
-            cls.round_col(cls.__tablename__ + '.spo2_min', 'spo2_min'),
-            cls.round_col(cls.__tablename__ + '.rr_waking_avg', 'rr_waking_avg')
+            cls.round_col_txt(f'round(steps / {days_count})', 'steps_avg'),
+            cls.round_col_txt('round((steps * 100) / steps_goal)', 'steps_goal_percent'),
+            cls.round_col_txt('floors', 'total_floors'),
+            cls.round_col_txt(f'round(floors / {days_count})', 'floors_avg'),
+            cls.round_col_txt('round((floors * 100) / floors_goal)', 'floors_goal_percent'),
+            cls.sleep_avg.label('sleep_avg'),
+            cls.rem_sleep_avg.label('rem_sleep_avg'),
+            cls.round_col('stress_avg'),
+            cls.round_col('calories_avg'),
+            cls.round_col('calories_bmr_avg'),
+            cls.round_col('calories_active_avg'),
+            cls.round_col('calories_consumed_avg'),
+            cls.round_col('calories_goal'),
+            cls.activities.label('activities'),
+            cls.round_col('activities_calories'),
+            cls.round_col('activities_distance'),
+            cls.round_col('hydration_goal'),
+            cls.round_col('hydration_avg'),
+            cls.round_col('sweat_loss_avg'),
+            cls.round_col('sweat_loss_avg'),
+            cls.round_col('spo2_avg'),
+            cls.round_col('rr_waking_avg'),
         ]
         return selectable
 
@@ -178,35 +182,37 @@ class SummaryBase(DBObject):
         """Create a daily summary view in the database."""
         cols = [
             cls.time_col.label('day'),
-            cls.round_col(cls.__tablename__ + '.hr_avg', 'hr_avg'),
-            cls.round_col(cls.__tablename__ + '.hr_min', 'hr_min'),
-            cls.round_col(cls.__tablename__ + '.hr_max', 'hr_max'),
-            cls.round_col(cls.__tablename__ + '.rhr_avg', 'rhr'),
-            cls.round_col(cls.__tablename__ + '.inactive_hr_avg', 'inactive_hr'),
-            cls.round_col(cls.__tablename__ + '.weight_avg', 'weight'),
+            cls.round_col('hr_avg'),
+            cls.round_col('hr_min'),
+            cls.round_col('hr_max'),
+            cls.round_col('rhr_avg', 'rhr'),
+            cls.round_col('inactive_hr_avg', 'inactive_hr'),
+            cls.round_col('weight_avg', 'weight'),
             cls.intensity_time.label('intensity_time'), cls.moderate_activity_time.label('moderate_activity_time'), cls.vigorous_activity_time.label('vigorous_activity_time'),
             cls.steps.label('steps'),
             # cls.steps_goal_percent,
-            cls.round_col('round((steps * 100) / steps_goal)', 'steps_goal_percent'),
-            cls.round_col(cls.__tablename__ + '.floors', 'floors'),
+            cls.round_col_txt('round((steps * 100) / steps_goal)', 'steps_goal_percent'),
+            cls.round_col('floors'),
             # cls.floors_goal_percent,
-            cls.round_col('round((floors * 100) / floors_goal)', 'floors_goal_percent'),
-            cls.sleep_avg.label('sleep_avg'), cls.rem_sleep_avg.label('rem_sleep_avg'),
-            cls.round_col(cls.__tablename__ + '.stress_avg', 'stress_avg'),
-            cls.round_col(cls.__tablename__ + '.calories_avg', 'calories_avg'),
-            cls.round_col(cls.__tablename__ + '.calories_bmr_avg', 'calories_bmr_avg'),
-            cls.round_col(cls.__tablename__ + '.calories_active_avg', 'calories_active_avg'),
-            cls.round_col(cls.__tablename__ + '.calories_consumed_avg', 'calories_consumed_avg'),
-            cls.round_col(cls.__tablename__ + '.calories_goal', 'calories_goal'),
-            cls.activities.label('activities'), cls.activities_calories.label('activities_calories'),
-            cls.round_col(cls.__tablename__ + '.activities_distance', 'activities_distance'),
-            cls.round_col(cls.__tablename__ + '.hydration_goal', 'hydration_goal'),
-            cls.round_col(cls.__tablename__ + '.hydration_avg', 'hydration_avg'),
-            cls.round_col(cls.__tablename__ + '.sweat_loss_avg', 'sweat_loss_avg'),
-            cls.round_col(cls.__tablename__ + '.spo2_avg', 'spo2_avg'),
-            cls.round_col(cls.__tablename__ + '.spo2_min', 'spo2_min'),
-            cls.round_col(cls.__tablename__ + '.rr_waking_avg', 'rr_waking_avg'),
-            cls.round_col(cls.__tablename__ + '.rr_max', 'rr_max'),
-            cls.round_col(cls.__tablename__ + '.rr_min', 'rr_min')
+            cls.round_col_txt('round((floors * 100) / floors_goal)', 'floors_goal_percent'),
+            cls.sleep_avg.label('sleep_avg'),
+            cls.rem_sleep_avg.label('rem_sleep_avg'),
+            cls.round_col('stress_avg'),
+            cls.round_col('calories_avg'),
+            cls.round_col('calories_bmr_avg'),
+            cls.round_col('calories_active_avg'),
+            cls.round_col('calories_consumed_avg'),
+            cls.round_col('calories_goal'),
+            cls.activities.label('activities'),
+            cls.round_col('activities_calories'),
+            cls.round_col('activities_distance'),
+            cls.round_col('hydration_goal'),
+            cls.round_col('hydration_avg'),
+            cls.round_col('sweat_loss_avg'),
+            cls.round_col('spo2_avg'),
+            cls.round_col('spo2_min'),
+            cls.round_col('rr_waking_avg'),
+            cls.round_col('rr_max'),
+            cls.round_col('rr_min')
         ]
         cls.create_summary_view(db, cols)

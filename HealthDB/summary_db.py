@@ -6,37 +6,15 @@ __license__ = "GPL"
 
 import logging
 from sqlalchemy import Column, Date
-from sqlalchemy.ext.declarative import declarative_base
 
-from utilities import db
+import utilities
 import HealthDB.summary_base as sb
-from utilities import db_version as dbv
-from utilities import key_value
 
 
 logger = logging.getLogger(__name__)
 
-
-class SummaryDB(db.DB):
-    """Objects representing a database summarizing health data."""
-
-    Base = declarative_base()
-
-    db_tables = []
-    db_name = 'summary'
-    db_version = 6
-
-    class _DbVersion(Base, dbv.DbVersionObject):
-        """Stores version information for this databse and it's tables."""
-
-
-class Summary(SummaryDB.Base, key_value.KeyValueObject):
-    """Object representing health data statistics."""
-
-    __tablename__ = 'summary'
-
-    db = SummaryDB
-    table_version = 1
+SummaryDB = utilities.DB.create('summary', 7, "Database for storing summarizing health data.")
+Summary = utilities.DbObject.create('summary', SummaryDB, 1, base=utilities.KeyValueObject)
 
 
 class YearsSummary(SummaryDB.Base, sb.SummaryBase):

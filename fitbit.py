@@ -14,7 +14,7 @@ import logging
 import FitBitDB
 from import_fitbit_csv import FitBitData
 from analyze_fitbit import Analyze
-import garmin_db_config_manager as GarminDBConfigManager
+from garmin_db_config_manager import GarminDBConfigManager
 from version import format_version
 
 

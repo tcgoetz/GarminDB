@@ -7,3 +7,6 @@
 [submodule "Tcx"]
 	path = Tcx
 	url = ../Tcx.git
+[submodule "Plugins"]
+	path = Plugins
+	url = ../GarminDbPlugins.git

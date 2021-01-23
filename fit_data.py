@@ -7,11 +7,11 @@ __license__ = "GPL"
 
 import sys
 import logging
+import traceback
 from tqdm import tqdm
 
 import Fit
 from utilities import FileProcessor
-from fit_file_processor import FitFileProcessor
 
 
 logger = logging.getLogger(__file__)
@@ -22,7 +22,7 @@ root_logger = logging.getLogger()
 class FitData(object):
     """Class for importing FIT files into a database."""
 
-    def __init__(self, input_dir, ignore_dev_fields, debug, latest=False, recursive=False, fit_types=None, measurement_system=Fit.field_enums.DisplayMeasure.metric):
+    def __init__(self, input_dir, debug, latest=False, recursive=False, fit_types=None, measurement_system=Fit.field_enums.DisplayMeasure.metric):
         """
         Return an instance of FitData.
 
@@ -36,7 +36,6 @@ class FitData(object):
         """
         logger.info("Processing %s FIT data from %s", fit_types, input_dir)
         self.measurement_system = measurement_system
-        self.ignore_dev_fields = ignore_dev_fields
         self.debug = debug
         self.fit_types = fit_types
         self.file_names = FileProcessor.dir_to_files(input_dir, Fit.file.name_regex, latest, recursive)
@@ -45,18 +44,16 @@ class FitData(object):
         """Return the number of files that will be processed."""
         return len(self.file_names)
 
-    def process_files(self, db_params):
+    def process_files(self, fit_file_processor):
         """Import FIT files into the database."""
-        fp = FitFileProcessor(db_params, self.ignore_dev_fields, self.debug)
         for file_name in tqdm(self.file_names, unit='files'):
             try:
                 fit_file = Fit.file.File(file_name, self.measurement_system)
                 if self.fit_types is None or fit_file.type in self.fit_types:
-                    fp.write_file(fit_file)
-                    root_logger.info("Wrote Fit file %s type %s to the database", file_name, fit_file.type)
+                    fit_file_processor.write_file(fit_file)
+                    root_logger.debug("Wrote %s to the database", fit_file)
                 else:
-                    root_logger.info("skipping non-matching %s file %s type %r message types %r",
-                                     self.fit_types, file_name, fit_file.type, fit_file.message_types)
+                    root_logger.info("skipping non-matching %s", fit_file)
             except Exception as e:
                 logger.error("Failed to parse %s: %s", file_name, e)
-                root_logger.error("Failed to parse %s: %s", file_name, e)
+                root_logger.error("Failed to parse %s: %s - %s", file_name, e, traceback.format_exc())

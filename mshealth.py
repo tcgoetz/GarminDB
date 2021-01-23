@@ -13,7 +13,7 @@ import logging
 import MSHealthDB
 from import_mshealth_csv import MSHealthData, MSVaultData
 from analyze_mshealth import Analyze
-import garmin_db_config_manager as GarminDBConfigManager
+from garmin_db_config_manager import GarminDBConfigManager
 from version import format_version
 
 

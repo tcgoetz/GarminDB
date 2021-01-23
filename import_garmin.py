@@ -9,11 +9,10 @@ import sys
 import logging
 import datetime
 import enum
-import dateutil.parser
 
 import Fit
 import GarminDB
-from utilities import JsonFileProcessor
+from utilities import JsonFileProcessor, Conversions
 from fit_data import FitData
 
 
@@ -42,15 +41,15 @@ class GarminWeightData(JsonFileProcessor):
         super().__init__(r'weight_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
         self.measurement_system = measurement_system
         self.garmin_db = GarminDB.GarminDB(db_params)
-        self.conversions = {'startDate': dateutil.parser.parse}
+        self.conversions = {'startDate': self._parse_date}
 
     def _process_json(self, json_data):
         weight_list = json_data['dateWeightList']
         if len(weight_list) > 0:
             weight = Fit.Weight.from_grams(weight_list[0]['weight'])
             point = {
-                'day'       : json_data['startDate'].date(),
-                'weight'    : weight.kgs_or_lbs(self.measurement_system)
+                'day': json_data['startDate'].date(),
+                'weight': weight.kgs_or_lbs(self.measurement_system)
             }
             GarminDB.Weight.insert_or_update(self.garmin_db, point)
             return 1
@@ -60,7 +59,7 @@ class GarminWeightData(JsonFileProcessor):
 class GarminMonitoringFitData(FitData):
     """Class for importing monitoring FIT files into a database."""
 
-    def __init__(self, input_dir, latest, measurement_system, ignore_dev_fields, debug):
+    def __init__(self, input_dir, latest, measurement_system, debug):
         """
         Return an instance of GarminMonitoringFitData.
 
@@ -73,13 +72,13 @@ class GarminMonitoringFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, ignore_dev_fields, debug, latest, True, [Fit.FileType.monitoring_b], measurement_system)
+        super().__init__(input_dir, debug, latest, True, [Fit.FileType.monitoring_b], measurement_system)
 
 
 class GarminSettingsFitData(FitData):
     """Class for importing settings FIT files into a database."""
 
-    def __init__(self, input_dir, ignore_dev_fields, debug):
+    def __init__(self, input_dir, debug):
         """
         Return an instance of GarminSettingsFitData.
 
@@ -90,7 +89,7 @@ class GarminSettingsFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, ignore_dev_fields, debug, fit_types=[Fit.FileType.settings])
+        super().__init__(input_dir, debug, fit_types=[Fit.FileType.settings])
 
 
 class SleepActivityLevels(enum.Enum):
@@ -131,16 +130,16 @@ class GarminSleepData(JsonFileProcessor):
         super().__init__(r'sleep_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
         self.garmin_db = GarminDB.GarminDB(db_params)
         self.conversions = {
-            'calendarDate'              : dateutil.parser.parse,
-            'sleepTimeSeconds'          : Fit.conversions.secs_to_dt_time,
-            'sleepStartTimestampGMT'    : Fit.conversions.epoch_ms_to_dt,
-            'sleepEndTimestampGMT'      : Fit.conversions.epoch_ms_to_dt,
-            'deepSleepSeconds'          : Fit.conversions.secs_to_dt_time,
-            'lightSleepSeconds'         : Fit.conversions.secs_to_dt_time,
-            'remSleepSeconds'           : Fit.conversions.secs_to_dt_time,
-            'awakeSleepSeconds'         : Fit.conversions.secs_to_dt_time,
-            'startGMT'                  : dateutil.parser.parse,
-            'endGMT'                    : dateutil.parser.parse
+            'calendarDate': self._parse_date,
+            'sleepTimeSeconds': Fit.conversions.secs_to_dt_time,
+            'sleepStartTimestampGMT': Conversions.epoch_ms_to_dt,
+            'sleepEndTimestampGMT': Conversions.epoch_ms_to_dt,
+            'deepSleepSeconds': Fit.conversions.secs_to_dt_time,
+            'lightSleepSeconds': Fit.conversions.secs_to_dt_time,
+            'remSleepSeconds': Fit.conversions.secs_to_dt_time,
+            'awakeSleepSeconds': Fit.conversions.secs_to_dt_time,
+            'startGMT': self._parse_date,
+            'endGMT': self._parse_date
         }
 
     def _process_json(self, json_data):
@@ -158,7 +157,7 @@ class GarminSleepData(JsonFileProcessor):
             root_logger.info("Importing %s without REM data", day)
             sleep_activity_levels = SleepActivityLevels
         day_data = {
-            'day' : day,
+            'day': day,
             'start': daily_sleep.get('sleepStartTimestampGMT'),
             'end': daily_sleep.get('sleepEndTimestampGMT'),
             'total_sleep': daily_sleep.get('sleepTimeSeconds'),
@@ -167,7 +166,8 @@ class GarminSleepData(JsonFileProcessor):
             'rem_sleep': daily_sleep.get('remSleepSeconds'),
             'awake': daily_sleep.get('awakeSleepSeconds')
         }
-        GarminDB.Sleep.insert_or_update(self.garmin_db, day_data, ignore_none=True)
+        GarminDB.Sleep.insert_or_update(
+            self.garmin_db, day_data, ignore_none=True)
         sleep_levels = json_data.get('sleepLevels')
         if sleep_levels is None:
             return 0
@@ -181,7 +181,8 @@ class GarminSleepData(JsonFileProcessor):
                 'event': event.name,
                 'duration': duration
             }
-            GarminDB.SleepEvents.insert_or_update(self.garmin_db, level_data, ignore_none=True)
+            GarminDB.SleepEvents.insert_or_update(
+                self.garmin_db, level_data, ignore_none=True)
         return len(sleep_levels)
 
 
@@ -203,7 +204,7 @@ class GarminRhrData(JsonFileProcessor):
         logger.info("Processing rhr data")
         super().__init__(r'rhr_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
         self.garmin_db = GarminDB.GarminDB(db_params)
-        self.conversions = {'statisticsStartDate': dateutil.parser.parse}
+        self.conversions = {'statisticsStartDate': self._parse_date}
 
     def _process_json(self, json_data):
         rhr_list = json_data['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
@@ -211,10 +212,11 @@ class GarminRhrData(JsonFileProcessor):
             rhr = rhr_list[0].get('value')
             if rhr:
                 point = {
-                    'day'                   : json_data['statisticsStartDate'].date(),
-                    'resting_heart_rate'    : rhr
+                    'day': json_data['statisticsStartDate'].date(),
+                    'resting_heart_rate': rhr
                 }
-                GarminDB.RestingHeartRate.insert_or_update(self.garmin_db, point, ignore_none=True)
+                GarminDB.RestingHeartRate.insert_or_update(
+                    self.garmin_db, point, ignore_none=True)
                 return 1
         return 0
 
@@ -236,18 +238,20 @@ class GarminProfile(JsonFileProcessor):
         logger.info("Processing profile data")
         super().__init__(r'profile\.json', input_dir=input_dir, latest=False, debug=debug)
         self.garmin_db = GarminDB.GarminDB(db_params)
-        self.conversions = {'calendarDate' : dateutil.parser.parse}
+        self.conversions = {'calendarDate': self._parse_date}
 
     def _process_json(self, json_data):
-        measurement_system = Fit.field_enums.DisplayMeasure.from_string(json_data['measurementSystem'])
+        measurement_system = Fit.field_enums.DisplayMeasure.from_string(
+            json_data['measurementSystem'])
         attributes = {
-            'name'                  : json_data['displayName'].replace('_', ' '),
-            'time_zone'             : json_data['timeZone'],
-            'measurement_system'    : str(measurement_system),
-            'date_format'           : json_data['dateFormat']['formatKey']
+            'name': json_data['displayName'].replace('_', ' '),
+            'time_zone': json_data['timeZone'],
+            'measurement_system': str(measurement_system),
+            'date_format': json_data['dateFormat']['formatKey']
         }
         for attribute_name, attribute_value in attributes.items():
-            GarminDB.Attributes.set_newer(self.garmin_db, attribute_name, attribute_value)
+            GarminDB.Attributes.set_newer(
+                self.garmin_db, attribute_name, attribute_value)
         return len(attributes)
 
 
@@ -273,43 +277,45 @@ class GarminSummaryData(JsonFileProcessor):
         self.measurement_system = measurement_system
         self.garmin_db = GarminDB.GarminDB(db_params)
         self.conversions = {
-            'calendarDate'              : dateutil.parser.parse,
-            'moderateIntensityMinutes'  : Fit.conversions.min_to_dt_time,
-            'vigorousIntensityMinutes'  : Fit.conversions.min_to_dt_time,
-            'intensityMinutesGoal'      : Fit.conversions.min_to_dt_time,
+            'calendarDate': self._parse_date,
+            'moderateIntensityMinutes': Fit.conversions.min_to_dt_time,
+            'vigorousIntensityMinutes': Fit.conversions.min_to_dt_time,
+            'intensityMinutesGoal': Fit.conversions.min_to_dt_time,
         }
 
     def _process_json(self, json_data):
         day = json_data['calendarDate'].date()
-        distance = Fit.Distance.from_meters(self._get_field(json_data, 'totalDistanceMeters', int))
+        distance = Fit.Distance.from_meters(
+            self._get_field(json_data, 'totalDistanceMeters', int))
         summary = {
-            'day'                       : day,
-            'hr_min'                    : self._get_field(json_data, 'minHeartRate', float),
-            'hr_max'                    : self._get_field(json_data, 'maxHeartRate', float),
-            'rhr'                       : self._get_field(json_data, 'restingHeartRate', float),
-            'stress_avg'                : self._get_field(json_data, 'averageStressLevel', float),
-            'step_goal'                 : self._get_field(json_data, 'dailyStepGoal', int),
-            'steps'                     : self._get_field(json_data, 'totalSteps', int),
-            'floors_goal'               : self._get_field(json_data, 'userFloorsAscendedGoal', float),
-            'moderate_activity_time'    : json_data.get('moderateIntensityMinutes'),
-            'vigorous_activity_time'    : json_data.get('vigorousIntensityMinutes'),
-            'intensity_time_goal'       : json_data.get('intensityMinutesGoal'),
-            'floors_up'                 : self._get_field(json_data, 'floorsAscended', float),
-            'floors_down'               : self._get_field(json_data, 'floorsDescended', float),
-            'distance'                  : distance.kms_or_miles(self.measurement_system),
-            'calories_goal'             : self._get_field(json_data, 'netCalorieGoal', float),
-            'calories_total'            : self._get_field(json_data, 'totalKilocalories', float),
-            'calories_bmr'              : self._get_field(json_data, 'bmrKilocalories', float),
-            'calories_active'           : self._get_field(json_data, 'activeKilocalories', float),
-            'calories_consumed'         : self._get_field(json_data, 'consumedKilocalories', float),
-            'spo2_avg'                  : self._get_field(json_data, 'averageSpo2', float),
-            'spo2_min'                  : self._get_field(json_data, 'lowestSpo2', float),
-            'rr_waking_avg'             : self._get_field(json_data, 'avgWakingRespirationValue', float),
-            'rr_max'                    : self._get_field(json_data, 'highestRespirationValue', float),
-            'rr_min'                    : self._get_field(json_data, 'lowestRespirationValue', float),
-            'description'               : self._get_field(json_data, 'wellnessDescription'),
+            'day': day,
+            'hr_min': self._get_field(json_data, 'minHeartRate', float),
+            'hr_max': self._get_field(json_data, 'maxHeartRate', float),
+            'rhr': self._get_field(json_data, 'restingHeartRate', float),
+            'stress_avg': self._get_field(json_data, 'averageStressLevel', float),
+            'step_goal': self._get_field(json_data, 'dailyStepGoal', int),
+            'steps': self._get_field(json_data, 'totalSteps', int),
+            'floors_goal': self._get_field(json_data, 'userFloorsAscendedGoal', float),
+            'moderate_activity_time': json_data.get('moderateIntensityMinutes'),
+            'vigorous_activity_time': json_data.get('vigorousIntensityMinutes'),
+            'intensity_time_goal': json_data.get('intensityMinutesGoal'),
+            'floors_up': self._get_field(json_data, 'floorsAscended', float),
+            'floors_down': self._get_field(json_data, 'floorsDescended', float),
+            'distance': distance.kms_or_miles(self.measurement_system),
+            'calories_goal': self._get_field(json_data, 'netCalorieGoal', float),
+            'calories_total': self._get_field(json_data, 'totalKilocalories', float),
+            'calories_bmr': self._get_field(json_data, 'bmrKilocalories', float),
+            'calories_active': self._get_field(json_data, 'activeKilocalories', float),
+            'calories_consumed': self._get_field(json_data, 'consumedKilocalories', float),
+            'spo2_avg': self._get_field(json_data, 'averageSpo2', float),
+            'spo2_min': self._get_field(json_data, 'lowestSpo2', float),
+            'rr_waking_avg': self._get_field(json_data, 'avgWakingRespirationValue', float),
+            'rr_max': self._get_field(json_data, 'highestRespirationValue', float),
+            'rr_min': self._get_field(json_data, 'lowestRespirationValue', float),
+            'description': self._get_field(json_data, 'wellnessDescription'),
         }
-        GarminDB.DailySummary.insert_or_update(self.garmin_db, summary, ignore_none=True)
+        GarminDB.DailySummary.insert_or_update(
+            self.garmin_db, summary, ignore_none=True)
         return 1
 
 
@@ -329,13 +335,13 @@ class GarminHydrationData(JsonFileProcessor):
         debug (Boolean): enable debug logging
 
         """
-        logger.info("Processing daily hydration data")
+        logger.debug("Processing daily hydration data")
         super().__init__(r'hydration_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug, recursive=True)
         self.input_dir = input_dir
         self.measurement_system = measurement_system
         self.garmin_db = GarminDB.GarminDB(db_params)
         self.conversions = {
-            'calendarDate': dateutil.parser.parse
+            'calendarDate': self._parse_date
         }
 
     def _process_json(self, json_data):
@@ -343,11 +349,12 @@ class GarminHydrationData(JsonFileProcessor):
         hydration_goal = Fit.Volume.from_milliliters(json_data['baseGoalInML'])
         sweat_loss = Fit.Volume.from_milliliters(json_data['sweatLossInML'])
         summary = {
-            'day'                       : json_data['calendarDate'].date(),
-            'hydration_intake'          : hydration_intake.ml_or_oz(self.measurement_system, rounded=True),
-            'hydration_goal'            : hydration_goal.ml_or_oz(self.measurement_system, rounded=True),
-            'sweat_loss'                : sweat_loss.ml_or_oz(self.measurement_system, rounded=True)
+            'day': json_data['calendarDate'].date(),
+            'hydration_intake': hydration_intake.ml_or_oz(self.measurement_system, rounded=True),
+            'hydration_goal': hydration_goal.ml_or_oz(self.measurement_system, rounded=True),
+            'sweat_loss': sweat_loss.ml_or_oz(self.measurement_system, rounded=True)
         }
-        root_logger.info("Processing daily hydration data %r", summary)
-        GarminDB.DailySummary.insert_or_update(self.garmin_db, summary, ignore_none=True)
+        root_logger.debug("Processing daily hydration data %r", summary)
+        GarminDB.DailySummary.insert_or_update(
+            self.garmin_db, summary, ignore_none=True)
         return 1

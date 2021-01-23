@@ -9,7 +9,7 @@ import logging
 
 from test_summary_db_base import TestSummaryDBBase
 import HealthDB
-import garmin_db_config_manager as GarminDBConfigManager
+from garmin_db_config_manager import GarminDBConfigManager
 
 
 root_logger = logging.getLogger()

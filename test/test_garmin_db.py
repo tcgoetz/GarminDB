@@ -11,7 +11,7 @@ import datetime
 from test_db_base import TestDBBase
 import Fit
 import GarminDB
-import garmin_db_config_manager as GarminDBConfigManager
+from garmin_db_config_manager import GarminDBConfigManager
 
 
 root_logger = logging.getLogger()
