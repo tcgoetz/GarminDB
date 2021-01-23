@@ -44,6 +44,10 @@ The scripts are automated with [Make](https://www.gnu.org/software/make/manual/m
 
 More [usage](https://github.com/tcgoetz/GarminDB/wiki/Usage)
 
+# Plugins #
+
+Plugins allow the user to expand the types of data that are processed and stored in the database. Read more about plugins [here](https://github.com/tcgoetz/GarminDbPlugins).
+
 # Success Stories
 
 Find out who's using GarminDb on what platforms, OSes, and python versions [here](https://github.com/tcgoetz/GarminDB/wiki/Success-Stories). If you're using GarminDB and your scenario isn't listed send me a message or file an issue with your success case.
