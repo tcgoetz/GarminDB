@@ -12,12 +12,9 @@ What they can do:
 * Automatically download and import Garmin daily monitoring files (all day heart rate, activity, climb/descend, stress, and intensity minutes) from the user's Garmin Connect "Daily Summary" page.
 * Extract sleep, weight, and resting heart rate data from Garmin Connect, store it as JSON files, and import it into the DB.
 * Download and import activity files from Garmin Connect. A summary table for all activities and more detailed data for some activity types. Lap and record entries for activities.
-* Copy daily monitoring and/or activities Fit files from a USB connected Garmin device.
-* Import Fitbit daily summary CSV files (files with one summary entry per day).
-* Import MS Health daily summary CSV files and MS Health Vault weight export CSV files.
 * Summarizing data into `stats.txt` and a common DB with tables containing daily summaries, weekly summaries, and monthly summaries.
 * Graph your data.
-* Retain data as JSON files or FIT files so that the DB can be regenerated without connecting to Garmin.
+* Retain data as JSON files or FIT files so that the DB can be regenerated without connecting or redownloading data from Garmin Connect.
 * Export activities as TCX files.
 
 Once you have your data in the DB, I recommend using a SQLite browser like [SQLite Studio](http://sqlitestudio.pl) or [DB Browser for SQLite](https://sqlitebrowser.org/) for browsing and working with the data. The scripts create some default [views](http://www.tutorialspoint.com/sqlite/sqlite_views.htm) in the DBs that make browsing the data easier.
@@ -27,22 +24,23 @@ Once you have your data in the DB, I recommend using a SQLite browser like [SQLi
 ## Binary Release
 
 Binary releases are available for MacOS. Binary release for other platforms may be added. You can download releases from the [release page](https://github.com/tcgoetz/GarminDB/releases).
-For the MacOS binary release:
-* Download the zip file and unzip it into a directory where you want to keep it and run it from.
+
+Downloading and installing the MacOS binary release:
+* Download the release zip file and unzip it into a directory where you want to keep the program and run it from.
 * Follow the directions in the `Readme_MacOS.txt` in the zip file.
 
 ## From Source
 
 The scripts are automated with [Make](https://www.gnu.org/software/make/manual/make.html). Run the Make commands in a terminal window.
 
-* Git clone GarminDB repo using the SSH clone method. The submodules require you to use SSH and not HTTPS. Get the command from the green button on the project home page.
-* Run `make setup` get the scripts ready to process data.
-* Copy `GarminConnectConfig.json.example` to `GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password and adjust the start dates to when your data starts from.
-* Run `make create_dbs` for your first run.
-* Keep all of your local data up to date by running only one command: `make`.
-* Run `make backup` to backup your DBs.
+* Git clone GarminDB repo using the [SSH clone method](https://github.com/git-guides/git-clone#git-clone-with-ssh). The submodules require you to use SSH and not HTTPS. Get the command from the green button on the project home page.
+* Run `make setup` in the cloned tree to get the scripts ready to process data.
+* Copy `GarminConnectConfig.json.example` to `GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password and adjust the start dates to match the dats of your data in Garmin Connect.
+* Run `make create_dbs` once to fetch and process for you data.
+* Keep all of your local data up to date by periodically running only one command: `make`.
+* Ocassionally run `make backup` to backup your DBs files.
 
-More [usage](https://github.com/tcgoetz/GarminDB/wiki/Usage)
+There  is more help on [using the program](https://github.com/tcgoetz/GarminDB/wiki/Usage) in the wiki.
 
 # Plugins #
 
