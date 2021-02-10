@@ -89,7 +89,7 @@ class Graph(object):
     @classmethod
     def __graph_multiple_single_axes(cls, time, data_list, stat_name, ylabel, save):
         title = f'{stat_name} Over Time'
-        figure = plt.figure(figsize=GarminDBConfigManager.graphs('size'))
+        figure = plt.figure(figsize=GarminDBConfigManager.get_graphs('size'))
         for index, data in enumerate(data_list):
             color = Colors.from_integer(index).name
             axes = figure.add_subplot(111, frame_on=(index == 0))
@@ -105,7 +105,7 @@ class Graph(object):
     @classmethod
     def __graph_multiple(cls, time, data_list, stat_name, period, ylabel_list, yrange_list, save):
         title = f'{stat_name} by {period}'
-        figure = plt.figure(figsize=GarminDBConfigManager.graphs('size'))
+        figure = plt.figure(figsize=GarminDBConfigManager.get_graphs('size'))
         for index, data in enumerate(data_list):
             color = Colors.from_integer(index).name
             axes = figure.add_subplot(111, label=ylabel_list[index], frame_on=(index == 0))
@@ -130,7 +130,7 @@ class Graph(object):
 
     @classmethod
     def __graph_over(cls, date, over_data_dicts, under_data_dict, title, xlabel, ylabel, save_name=None):
-        figure = plt.figure(figsize=GarminDBConfigManager.graphs('size'))
+        figure = plt.figure(figsize=GarminDBConfigManager.get_graphs('size'))
         # First graph the data that appears under
         axes = figure.add_subplot(111, frame_on=True)
         axes.fill_between(under_data_dict['time'], under_data_dict['data'], 0, color=Colors.c.name)

@@ -210,6 +210,11 @@ class GarminDBConfigManager(GarminDBConfig):
         return mount_dir + os.sep + cls.device_directories['base'] + os.sep + cls.device_directories['activities']
 
     @classmethod
+    def get_graphs(cls, key):
+        """Return a graph config item."""
+        return cls.graphs.get(key)
+
+    @classmethod
     def graphs_activity_config(cls, activity, key):
         """Return a config value for the graphing capability given it's key name."""
         activity = cls.graphs.get(activity)
