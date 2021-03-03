@@ -81,9 +81,11 @@ class FitFileProcessor(object):
         priority_message_types = [Fit.MessageType.file_id, Fit.MessageType.device_info]
         for message_type in priority_message_types:
             self.__write_message_type(fit_file, message_type)
+            self.garmin_db_session.commit()
         for message_type in message_types:
             if message_type not in priority_message_types:
                 self.__write_message_type(fit_file, message_type)
+                self.garmin_db_session.commit()
 
     def write_file(self, fit_file):
         with self.garmin_db.managed_session() as self.garmin_db_session:

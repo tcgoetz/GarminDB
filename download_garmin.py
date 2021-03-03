@@ -55,12 +55,14 @@ class Download(object):
 
     # https://connect.garmin.com/modern/proxy/usersummary-service/usersummary/hydration/allData/2019-11-29
 
+    garmin_headers = {'NK': 'NT'}
+
     def __init__(self):
         """Create a new Download class instance."""
         logger.debug("__init__")
         self.session = requests.session()
-        self.sso_rest_client = RestClient(self.session, 'sso.garmin.com', 'sso')
-        self.modern_rest_client = RestClient(self.session, 'connect.garmin.com', 'modern')
+        self.sso_rest_client = RestClient(self.session, 'sso.garmin.com', 'sso', aditional_headers=self.garmin_headers)
+        self.modern_rest_client = RestClient(self.session, 'connect.garmin.com', 'modern', aditional_headers=self.garmin_headers)
         self.activity_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/activity-service/activity")
         self.download_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/download-service/files")
         self.gc_config = GarminConnectConfigManager()
@@ -280,7 +282,7 @@ class Download(object):
         self.temp_dir = tempfile.mkdtemp()
         logger.info("Geting activities: '%s' (%d) temp %s", directory, count, self.temp_dir)
         activities = self.__get_activity_summaries(0, count)
-        for activity in tqdm(activities, unit='activities'):
+        for activity in tqdm(activities or [], unit='activities'):
             activity_id_str = str(activity['activityId'])
             activity_name_str = conversions.printable(activity['activityName'])
             root_logger.info("get_activities: %s (%s)", activity_name_str, activity_id_str)
