@@ -249,6 +249,7 @@ def convert_gc_sport_to_fit(gc_sport, gc_sub_sport):
         Sport.ccr_diving                              : Sport.ccr_diving,
         Sport.auto_racing                             : Sport.auto_racing,
         Sport.breathwork                              : Sport.breathwork,
+        Sport.other                                   : Sport.other,
     }
     special_remaps = {
         Sport.other                                   : remap_gc_sport_to_fit.get(gc_sub_sport),
