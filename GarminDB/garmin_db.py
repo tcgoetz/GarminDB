@@ -163,7 +163,10 @@ class File(GarminDB.Base, utilities.DbObject):
     def name_and_id_from_path(cls, pathname):
         """Return the name and id of a file given it's pathname."""
         filename = os.path.basename(pathname)
-        found = re.match(r"(\d+).*\.\S+", filename)
+        found = re.match(r"(\d+).*\.(fit|FIT)", filename)
+        if found:
+            return (found.group(1), filename)
+        found = re.match(r"(.+)\.(fit|FIT)", filename)
         if found:
             return (found.group(1), filename)
         raise GarminDbError_IdNotFound()

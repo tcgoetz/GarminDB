@@ -61,6 +61,14 @@ class TestGarminDbObjects(unittest.TestCase):
         file_serial_number = 987654321
         self.check_file_obj(filename_with_path, file_type, file_serial_number)
 
+    def test_file_good_with_watch_name(self):
+        file_id = 'SBK82515'
+        filename = '%s.fit' % file_id
+        filename_with_path = '/test/directory/' + filename
+        file_type = GarminDB.File.FileType.fit_goals
+        file_serial_number = 987654321
+        self.check_file_obj(filename_with_path, file_type, file_serial_number)
+
     def test_file_bad_type(self):
         file_id = 123345678
         filename = '%d.fit' % file_id
