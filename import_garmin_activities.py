@@ -9,6 +9,7 @@ import sys
 import logging
 from tqdm import tqdm
 import dateutil.parser
+import traceback
 
 import Fit
 import GarminDB
@@ -165,9 +166,8 @@ class GarminTcxData(object):
                 try:
                     self.__process_file(file_name)
                 except Exception as e:
-                    logger.error('Failed to processes file %s: %s', file_name, e)
-                self.garmin_db_session.commit()
-                self.garmin_act_db_session.commit()
+                    logger.error('Failed to processes TCX file %s: %s', file_name, e)
+                    root_logger.error('Failed to processes TCX file %s: %s', file_name, traceback.format_exc())
 
 
 class GarminJsonActivityData(JsonFileProcessor):
@@ -190,9 +190,6 @@ class GarminJsonActivityData(JsonFileProcessor):
         self.measurement_system = measurement_system
         self.garmin_act_db = GarminDB.ActivitiesDB(db_params, self.debug - 1)
         self.conversions = {}
-
-    def _commit(self):
-        self.garmin_act_db_session.commit()
 
     def _process_common(self, json_data):
         distance = self._get_field_obj(json_data, 'distance', Fit.Distance.from_meters)

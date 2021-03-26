@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import unittest
 import logging
-from sqlalchemy.exc import IntegrityError
+# from sqlalchemy.exc import LookupError
 
 import GarminDB
 import Fit
@@ -69,13 +69,13 @@ class TestGarminDbObjects(unittest.TestCase):
         file_serial_number = 987654321
         self.check_file_obj(filename_with_path, file_type, file_serial_number)
 
-    def test_file_bad_type(self):
+    def test_file_xbad_type(self):
         file_id = 123345678
         filename = '%d.fit' % file_id
         filename_with_path = '/test/directory/' + filename
         file_type = 'xxxxx'
         file_serial_number = 987654321
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(LookupError):
             self.check_file_obj(filename_with_path, file_type, file_serial_number)
 
     def test_file_type(self):

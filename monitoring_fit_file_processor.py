@@ -40,9 +40,6 @@ class MonitoringFitFileProcessor(FitFileProcessor):
         """Given a Fit File object, write all of its messages to the DB."""
         with self.garmin_db.managed_session() as self.garmin_db_session, self.garmin_mon_db.managed_session() as self.garmin_mon_db_session:
             self._write_message_types(fit_file, fit_file.message_types)
-            # Now write a file's worth of data to the DB
-            self.garmin_mon_db_session.commit()
-            self.garmin_db_session.commit()
 
     def _write_monitoring_info_entry(self, fit_file, message_fields):
         activity_types = message_fields.activity_type

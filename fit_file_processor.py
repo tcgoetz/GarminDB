@@ -86,10 +86,9 @@ class FitFileProcessor(object):
                 self.__write_message_type(fit_file, message_type)
 
     def write_file(self, fit_file):
+        """Write all data from the FIT file to database files."""
         with self.garmin_db.managed_session() as self.garmin_db_session:
             self._write_message_types(fit_file, fit_file.message_types)
-            # Now write a file's worth of data to the DB
-            self.garmin_db_session.commit()
 
     def _get_field_value(self, message_fields, field_name):
         for prefix in self.field_prefixes:
