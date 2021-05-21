@@ -59,7 +59,7 @@ class MonitoringFitFileProcessor(FitFileProcessor):
         # Only include not None values so that we match and update only if a table's columns if it has values.
         entry = utilities.list_and_dict.dict_filter_none_values(message_fields)
         timestamp = fit_file.utc_datetime_to_local(message_fields.timestamp)
-        # Hack: daily monitoring summaries appear at 00:00:00 localtime for the PREVIOUS day. Subtract a second so they appear int he previous day.
+        # Hack: daily monitoring summaries appear at 00:00:00 localtime for the PREVIOUS day. Subtract a second so they appear in the previous day.
         if timestamp.time() == datetime.time.min:
             timestamp = timestamp - datetime.timedelta(seconds=1)
         entry['timestamp'] = timestamp

@@ -6,3 +6,4 @@ tqdm
 PyInstaller
 matplotlib
 PyInstaller
+cloudscraper
