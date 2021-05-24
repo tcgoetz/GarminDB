@@ -29,9 +29,6 @@ class ActivityFitFileProcessor(FitFileProcessor):
         self.garmin_act_db = GarminDB.ActivitiesDB(self.db_params, self.debug - 1)
         with self.garmin_db.managed_session() as self.garmin_db_session, self.garmin_act_db.managed_session() as self.garmin_act_db_session:
             self._write_message_types(fit_file, fit_file.message_types)
-            # Now write a file's worth of data to the DB
-            self.garmin_act_db_session.commit()
-            self.garmin_db_session.commit()
 
     def _plugin_dispatch(self, handler_name, *args, **kwargs):
         result = {}

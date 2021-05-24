@@ -5,3 +5,4 @@ cached-property
 tqdm
 matplotlib==3.2.2
 PyInstaller
+cloudscraper

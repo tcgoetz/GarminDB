@@ -13,7 +13,7 @@ import time
 import tempfile
 import zipfile
 import json
-import requests
+import cloudscraper
 from tqdm import tqdm
 
 import Fit.conversions as conversions
@@ -60,7 +60,7 @@ class Download(object):
     def __init__(self):
         """Create a new Download class instance."""
         logger.debug("__init__")
-        self.session = requests.session()
+        self.session = cloudscraper.CloudScraper()
         self.sso_rest_client = RestClient(self.session, 'sso.garmin.com', 'sso', aditional_headers=self.garmin_headers)
         self.modern_rest_client = RestClient(self.session, 'connect.garmin.com', 'modern', aditional_headers=self.garmin_headers)
         self.activity_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/activity-service/activity")

@@ -40,9 +40,6 @@ class MonitoringFitFileProcessor(FitFileProcessor):
         """Given a Fit File object, write all of its messages to the DB."""
         with self.garmin_db.managed_session() as self.garmin_db_session, self.garmin_mon_db.managed_session() as self.garmin_mon_db_session:
             self._write_message_types(fit_file, fit_file.message_types)
-            # Now write a file's worth of data to the DB
-            self.garmin_mon_db_session.commit()
-            self.garmin_db_session.commit()
 
     def _write_monitoring_info_entry(self, fit_file, message_fields):
         activity_types = message_fields.activity_type
@@ -62,7 +59,7 @@ class MonitoringFitFileProcessor(FitFileProcessor):
         # Only include not None values so that we match and update only if a table's columns if it has values.
         entry = utilities.list_and_dict.dict_filter_none_values(message_fields)
         timestamp = fit_file.utc_datetime_to_local(message_fields.timestamp)
-        # Hack: daily monitoring summaries appear at 00:00:00 localtime for the PREVIOUS day. Subtract a second so they appear int he previous day.
+        # Hack: daily monitoring summaries appear at 00:00:00 localtime for the PREVIOUS day. Subtract a second so they appear in the previous day.
         if timestamp.time() == datetime.time.min:
             timestamp = timestamp - datetime.timedelta(seconds=1)
         entry['timestamp'] = timestamp
