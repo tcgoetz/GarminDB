@@ -34,7 +34,6 @@ PYTHON3=$(shell which python3)
 
 endif
 
-FLAKE8 ?= $(shell which flake8)
 PYINSTALLER ?= $(shell which pyinstaller)
 
 

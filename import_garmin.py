@@ -68,7 +68,6 @@ class GarminMonitoringFitData(FitData):
         input_dir (string): directory (full path) to check for monitoring data files
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
-        ignore_dev_fields (Boolean): if True, then ignore developer fields in Fit file
         debug (Boolean): enable debug logging
 
         """
@@ -85,7 +84,6 @@ class GarminSettingsFitData(FitData):
         Parameters:
         ----------
         input_dir (string): directory (full path) to check for settings data files
-        ignore_dev_fields (Boolean): if True, then ignore developer fields in Fit file
         debug (Boolean): enable debug logging
 
         """

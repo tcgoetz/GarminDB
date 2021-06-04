@@ -23,17 +23,16 @@ root_logger = logging.getLogger()
 class MonitoringFitFileProcessor(FitFileProcessor):
     """Class that takes a parsed monitoring FIT file object and imports it into a database."""
 
-    def __init__(self, db_params, plugin_manager, ignore_dev_fields=False, debug=0):
+    def __init__(self, db_params, plugin_manager, debug=0):
         """
         Return a new FitFileProcessor instance.
 
         Paramters:
         db_params (dict): database access configuration
-        ignore_dev_fields (Boolean): If True, then ignore develoepr fields in Fit files
         debug (Boolean): if True, debug logging is enabled
         """
-        root_logger.info("Ignore dev fields: %s Debug: %s", ignore_dev_fields, debug)
-        super().__init__(db_params, plugin_manager, ignore_dev_fields, debug)
+        root_logger.info("Debug: %s", debug)
+        super().__init__(db_params, plugin_manager, debug)
         self.garmin_mon_db = GarminDB.MonitoringDB(db_params, self.debug - 1)
 
     def write_file(self, fit_file):
@@ -49,7 +48,7 @@ class MonitoringFitFileProcessor(FitFileProcessor):
                     'file_id'                   : GarminDB.File.s_get_id(self.garmin_db_session, fit_file.filename),
                     'timestamp'                 : message_fields.local_timestamp,
                     'activity_type'             : activity_type,
-                    'resting_metabolic_rate'    : self._get_field_value(message_fields, 'resting_metabolic_rate'),
+                    'resting_metabolic_rate'    : message_fields.get('resting_metabolic_rate'),
                     'cycles_to_distance'        : message_fields.cycles_to_distance[index],
                     'cycles_to_calories'        : message_fields.cycles_to_calories[index]
                 }
@@ -84,7 +83,7 @@ class MonitoringFitFileProcessor(FitFileProcessor):
 
     def _write_respiration_entry(self, fit_file, message_fields):
         logger.debug("respiration message: %r", message_fields)
-        rr = self._get_field_value(message_fields, 'respiration_rate')
+        rr = message_fields.get('respiration_rate')
         if rr > 0:
             respiration = {
                 'timestamp' : fit_file.utc_datetime_to_local(message_fields.timestamp),
@@ -98,7 +97,7 @@ class MonitoringFitFileProcessor(FitFileProcessor):
     def _write_pulse_ox_entry(self, fit_file, message_fields):
         logger.debug("pulse_ox message: %r", message_fields)
         if fit_file.type is Fit.FileType.monitoring_b:
-            pulse_ox = self._get_field_value(message_fields, 'pulse_ox')
+            pulse_ox = message_fields.get('pulse_ox')
             if pulse_ox is not None:
                 pulse_ox_entry = {
                     'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),

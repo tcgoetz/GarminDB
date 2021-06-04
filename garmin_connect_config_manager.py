@@ -95,7 +95,3 @@ class GarminConnectConfigManager(JsonConfig):
             json_enabled_stats_dict = self.config.get('enabled_stats', {stat_name: True for stat_name in list(Statistics)})
             self.enabled_statistics = [Statistics.from_string(stat_name) for stat_name, stat_enabled in json_enabled_stats_dict.items() if stat_enabled]
         return self.enabled_statistics
-
-    def ignore_dev_fields(self):
-        """Return all enabled statistics as a list of string names."""
-        return self.__get_node_value_default('modes', 'ignore_dev_fields', False)

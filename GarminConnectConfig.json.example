@@ -27,6 +27,5 @@
         "steps"                         : []
     },
     "modes": {
-        "ignore_dev_fields"             : false
     }
 }
