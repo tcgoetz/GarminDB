@@ -20,25 +20,19 @@ root_logger = logging.getLogger()
 class FitFileProcessor(object):
     """Class that takes a parsed FIT file object and imports it into a database."""
 
-    def __init__(self, db_params, plugin_manager, ignore_dev_fields=False, debug=0):
+    def __init__(self, db_params, plugin_manager, debug=0):
         """
         Return a new FitFileProcessor instance.
 
         Paramters:
         db_params (dict): database access configuration
-        ignore_dev_fields (Boolean): If True, then ignore develoepr fields in Fit files
         debug (Boolean): if True, debug logging is enabled
         """
-        root_logger.info("Ignore dev fields: %s Debug: %s", ignore_dev_fields, debug)
+        root_logger.info("Debug: %s", debug)
         self.plugin_manager = plugin_manager
         self.db_params = db_params
         self.debug = debug
         self.garmin_db = GarminDB.GarminDB(db_params, debug - 1)
-        self.ignore_dev_fields = ignore_dev_fields
-        if not self.ignore_dev_fields:
-            self.field_prefixes = ['dev_', '']
-        else:
-            self.field_prefixes = ['']
 
     def __write_generic(self, fit_file, message_type, messages):
         """Write all messages of a given message type to the database."""
@@ -89,12 +83,6 @@ class FitFileProcessor(object):
         """Write all data from the FIT file to database files."""
         with self.garmin_db.managed_session() as self.garmin_db_session:
             self._write_message_types(fit_file, fit_file.message_types)
-
-    def _get_field_value(self, message_fields, field_name):
-        for prefix in self.field_prefixes:
-            prefixed_field_name = prefix + field_name
-            if prefixed_field_name in message_fields:
-                return message_fields[prefixed_field_name]
 
     #
     # Message type handlers

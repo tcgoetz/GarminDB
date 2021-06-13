@@ -98,10 +98,10 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         self.check_col_stats(
             self.garmin_db, GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'Sleep', True, True,
             (1, 10000000),
-            (datetime.time(8), datetime.time(12)),
+            (datetime.time(8), datetime.time(16)),
             (datetime.time(0), datetime.time(4)),
             (datetime.time(4), datetime.time(10)),
-            (datetime.time(2), datetime.time(12))
+            (datetime.time(2), datetime.time(16))
         )
         self.check_col_stats(
             self.garmin_db, GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True, True,

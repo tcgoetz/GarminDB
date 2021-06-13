@@ -164,8 +164,6 @@ def import_data(debug, latest, stats):
     """Import previously downloaded Garmin data into the database."""
     logger.info("___Importing %s Data___", 'Latest' if latest else 'All')
 
-    ignore_dev_fields = gc_config.ignore_dev_fields()
-
     # Import the user profile and/or settings FIT file first so that we can get the measurement system and some other things sorted out first.
     fit_files_dir = GarminDBConfigManager.get_or_create_fit_files_dir()
     gp = GarminProfile(db_params_dict, fit_files_dir, debug)
@@ -174,7 +172,7 @@ def import_data(debug, latest, stats):
 
     gsfd = GarminSettingsFitData(fit_files_dir, debug)
     if gsfd.file_count() > 0:
-        gsfd.process_files(FitFileProcessor(db_params_dict, plugin_manager, ignore_dev_fields, debug))
+        gsfd.process_files(FitFileProcessor(db_params_dict, plugin_manager, debug))
 
     garmindb = GarminDB.GarminDB(db_params_dict)
     measurement_system = GarminDB.Attributes.measurements_type(garmindb)
@@ -197,7 +195,7 @@ def import_data(debug, latest, stats):
 
         gfd = GarminMonitoringFitData(monitoring_dir, latest, measurement_system, debug)
         if gfd.file_count() > 0:
-            gfd.process_files(MonitoringFitFileProcessor(db_params_dict, plugin_manager, ignore_dev_fields, debug))
+            gfd.process_files(MonitoringFitFileProcessor(db_params_dict, plugin_manager, debug))
 
     if Statistics.sleep in stats:
         sleep_dir = GarminDBConfigManager.get_or_create_sleep_dir()
@@ -228,7 +226,7 @@ def import_data(debug, latest, stats):
 
         gfd = GarminActivitiesFitData(activities_dir, latest, measurement_system, debug)
         if gfd.file_count() > 0:
-            gfd.process_files(ActivityFitFileProcessor(db_params_dict, plugin_manager, ignore_dev_fields, debug))
+            gfd.process_files(ActivityFitFileProcessor(db_params_dict, plugin_manager, debug))
 
 
 def analyze_data(debug):
