@@ -13,7 +13,7 @@ include defines.mk
 all: update_dbs
 
 # install all needed code
-setup: update deps
+setup: $(PROJECT_BASE)/.venv update deps
 
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs
 
@@ -44,6 +44,9 @@ release: flake8 zip_packages
 SUBMODULES=Fit Tcx utilities
 SUBDIRS=FitBitDB GarminDB HealthDB MSHealthDB
 
+$(PROJECT_BASE)/.venv:
+	python3 -m venv $(PROJECT_BASE)/.venv
+
 update: submodules_update
 	git pull --rebase
 
@@ -55,8 +58,8 @@ $(SUBMODULES:%=%-deps):
 	$(MAKE) -C $(subst -deps,,$@) deps
 
 deps: $(SUBMODULES:%=%-deps)
-	$(PIP) install $(PIP_INSTALL_OPT) --upgrade --requirement requirements.txt
-	$(PIP) install $(PIP_INSTALL_OPT) --upgrade --requirement dev-requirements.txt
+	$(PIP) install --upgrade --requirement requirements.txt
+	$(PIP) install --upgrade --requirement dev-requirements.txt
 
 $(SUBMODULES:%=%-remove_deps):
 	$(MAKE) -C $(subst -remove_deps,,$@) remove_deps

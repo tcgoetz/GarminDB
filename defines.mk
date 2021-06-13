@@ -14,26 +14,23 @@ ifeq ($(PLATFORM), Linux)
 TIME ?= $(shell which time)
 YESTERDAY = $(shell date --date yesterday +"%m/%d/%Y")
 PYTHON2=$(shell which python)
-PIP3=$(shell which pip3)
-PYTHON3=$(shell which python3)
 
 else ifeq ($(PLATFORM), Darwin) # MacOS
 
 TIME ?= time
 YESTERDAY = $(shell date -v-1d +"%m/%d/%Y")
 PYTHON2=$(shell which python)
-PIP3=$(shell which pip3)
-PYTHON3=$(shell which python3)
 
 else
 
 TIME ?= $(shell which time)
 PYTHON2=$(shell which python)
-PIP3=$(shell which pip3)
-PYTHON3=$(shell which python3)
 
 endif
 
+
+PYTHON3=$(shell which python3)
+PIP3=$(shell which pip3)
 PYINSTALLER ?= $(shell which pyinstaller)
 
 
@@ -41,20 +38,6 @@ PYINSTALLER ?= $(shell which pyinstaller)
 #PYTHON ?= ${PYTHON2}
 PYTHON ?= $(PYTHON3)
 PIP ?= $(PIP3)
-
-
-#
-# Install pip packages as user for devs and to system for pipeline runner
-#
-ifeq ($(USER), runner)
-
-PIP_INSTALL_OPT ?=
-
-else
-
-PIP_INSTALL_OPT ?= --user
-
-endif
 
 
 ifeq ($(PYTHON),)
@@ -65,4 +48,4 @@ $(error pip not found)
 endif
 
 
-export TIME PLATFORM PYTHON PIP PIP_INSTALL_OPT YESTERDAY PYINSTALLER FLAKE8
+export TIME PLATFORM PYTHON PIP YESTERDAY PYINSTALLER FLAKE8
