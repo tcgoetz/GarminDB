@@ -7,3 +7,4 @@ PyInstaller
 matplotlib
 PyInstaller
 cloudscraper
+ipykernel
