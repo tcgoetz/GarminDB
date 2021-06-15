@@ -5,6 +5,5 @@ cached-property
 tqdm
 PyInstaller
 matplotlib
-PyInstaller
 cloudscraper
 ipykernel

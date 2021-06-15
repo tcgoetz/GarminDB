@@ -13,7 +13,7 @@ include defines.mk
 all: update_dbs
 
 # install all needed code
-setup: $(PROJECT_BASE)/.venv update deps
+setup: $(PROJECT_BASE)/.venv update deps install_all
 
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs
 
@@ -54,6 +54,22 @@ submodules_update:
 	git submodule init
 	git submodule update
 
+$(SUBMODULES:%=%-install):
+	$(MAKE) -C $(subst -install,,$@) install
+
+install: $(SUBMODULES:%=%-install)
+	$(PYTHON) setup.py install
+
+install_all: $(SUBMODULES:%=%-install) install
+
+$(SUBMODULES:%=%-uninstall):
+	$(MAKE) -C $(subst -uninstall,,$@) uninstall
+
+uninstall:
+	$(PIP) uninstall -y garmindb
+
+uninstall_all: uninstall $(SUBMODULES:%=%-install)
+
 $(SUBMODULES:%=%-deps):
 	$(MAKE) -C $(subst -deps,,$@) deps
 
@@ -85,13 +101,18 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -f *.spec
 	rm -f *.zip
 	rm -f *.png
+	rm -f ms_stats.txt
+	rm -f stats.txt
 	rm -rf __pycache__
+	rm -rf GarminDb.egg-info
+	rm -rf build
+	rm -rf dist
 
 
 #
 # Fitness System independant targets
 #
-HEALTH_DATA_DIR=$(shell $(PYTHON) -c 'from garmin_db_config_manager import GarminDBConfigManager; print(GarminDBConfigManager.get_base_dir())')
+HEALTH_DATA_DIR=$(shell $(PYTHON) -c 'from garmindb import ConfigManager; print(ConfigManager.get_base_dir())')
 DB_DIR=$(HEALTH_DATA_DIR)/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 $(BACKUP_DIR):
@@ -109,18 +130,18 @@ zip_packages: validate_garmin_package validate_fitbit_package validate_mshealth_
 	zip -j -r GarminDb_$(PLATFORM)_$(VERSION).zip GarminConnectConfig.json.example $(BIN_FILES) $(ZIP_FILES)
 
 graphs:
-	$(PYTHON) graphs.py --all
+	garmin_graphs.py --all
 
 graph_yesterday:
-	$(PYTHON) graphs.py --day $(YESTERDAY)
+	garmin_graphs.py --day $(YESTERDAY)
 
 checkup: update_garmin
-	$(PYTHON) checkup.py --battery
-	$(PYTHON) checkup.py --goals
+	garmin_checkup.py --battery
+	garmin_checkup.py --goals
 
 # define CHECKUP_COURSE_ID in my-defines.mk
 checkup_course:
-	$(PYTHON) checkup.py --course $(CHECKUP_COURSE_ID)
+	garmin_heckup.py --course $(CHECKUP_COURSE_ID)
 
 daily: all checkup graph_yesterday
 
@@ -128,84 +149,65 @@ daily: all checkup graph_yesterday
 # Garmin targets
 #
 download_all_garmin:
-	$(TIME) $(PYTHON) garmin.py --all --download
+	garmin.py --all --download
 
 redownload_garmin_activities:
-	$(TIME) $(PYTHON) garmin.py --activities --download --overwrite
+	garmin.py --activities --download --overwrite
 
 garmin:
-	$(TIME) $(PYTHON) garmin.py --all --download --import --analyze
+	garmin.py --all --download --import --analyze
 
 build_garmin:
-	$(TIME) $(PYTHON) garmin.py --all --import --analyze
+	garmin.py --all --import --analyze
 
 build_garmin_monitoring:
-	$(TIME) $(PYTHON) garmin.py --monitoring --import --analyze
+	garmin.py --monitoring --import --analyze
 
 build_garmin_activities:
-	$(TIME) $(PYTHON) garmin.py --activities --import --analyze
+	garmin.py --activities --import --analyze
 
 copy_garmin_settings:
-	$(TIME) $(PYTHON) garmin.py --copy
+	garmin.py --copy
 
 copy_garmin:
-	$(TIME) $(PYTHON) garmin.py --all --copy --import --analyze
+	garmin.py --all --copy --import --analyze
 
 update_garmin:
-	$(TIME) $(PYTHON) garmin.py --all --download --import --analyze --latest
-
-update_garmin_bin: $(DIST)/garmin
-	$(DIST)/garmin --all --download --import --analyze --latest
+	garmin.py --all --download --import --analyze --latest
 
 copy_garmin_latest:
-	$(TIME) $(PYTHON) garmin.py --all --copy --import --analyze --latest
+	garmin.py --all --copy --import --analyze --latest
 
 # define EXPORT_ACTIVITY_ID in my-defines.mk
 export_activity:
-	$(PYTHON) garmin.py --export-activity $(EXPORT_ACTIVITY_ID)
+	garmin.py --export-activity $(EXPORT_ACTIVITY_ID)
 
 # define EXPORT_ACTIVITY_ID in my-defines.mk
 basecamp_activity:
-	$(PYTHON) garmin.py --basecamp-activity $(EXPORT_ACTIVITY_ID)
+	garmin.py --basecamp-activity $(EXPORT_ACTIVITY_ID)
 
 # define EXPORT_ACTIVITY_ID in my-defines.mk
 google_earth_activity:
-	$(PYTHON) garmin.py --google-earth-activity $(EXPORT_ACTIVITY_ID)
+	garmin.py --google-earth-activity $(EXPORT_ACTIVITY_ID)
 
 clean_garmin_dbs:
-	$(PYTHON) garmin.py --delete_db --all
+	garmin.py --delete_db --all
 
 clean_garmin_monitoring_dbs:
-	$(PYTHON) garmin.py --delete_db --monitoring
+	garmin.py --delete_db --monitoring
 
 clean_garmin_activities_dbs:
-	$(PYTHON) garmin.py --delete_db --activities
-
-PYINSTALLER_OPTS=--clean --noconfirm
-#PYINSTALLER_EXCLUDES=--exclude-module tkinter --exclude-module TkAgg
-PYINSTALLER_EXCLUDES=
-$(DIST)/garmin:
-	$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile garmin.py
-	$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile graphs.py
-	$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile checkup.py
-
-validate_garmin_package: $(DIST)/garmin
-	$(DIST)/garmin -v
-	$(DIST)/graphs -v
-	$(DIST)/checkup -v
+	garmin.py --delete_db --activities
 
 
 #
 # FitBit target
 #
 fitbit:
-	$(PYTHON) fitbit.py
+	fitbit.py
 
 clean_fitbit_db:
-	$(PYTHON) fitbit.py --delete_db
-
-$(DIST)/fitbit:
-	$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile fitbit.py
+	fitbit.py --delete_db
 
 validate_fitbit_package: $(DIST)/fitbit
 	$(DIST)/fitbit -v
@@ -215,13 +217,10 @@ validate_fitbit_package: $(DIST)/fitbit
 # MS Health target
 #
 mshealth: $(MSHEALTH_DB)
-	$(PYTHON) mshealth.py
+	mshealth.py
 
 clean_mshealth_db:
-	$(PYTHON) mshealth.py --delete_db
-
-$(DIST)/mshealth:
-	$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_EXCLUDES) --onefile mshealth.py
+	mshealth.py --delete_db
 
 validate_mshealth_package: $(DIST)/mshealth
 	$(DIST)/mshealth -v
@@ -252,14 +251,14 @@ $(SUBMODULES:%=%-flake8):
 	$(MAKE) -C $(subst -flake8,,$@) flake8
 
 flake8: $(SUBMODULES:%=%-flake8)
-	$(PYTHON) -m flake8 *.py GarminDB/*.py HealthDB/*.py FitBitDB/*.py MSHealthDB/*.py --max-line-length=180 --ignore=E203,E221,E241,W503
+	$(PYTHON) -m flake8 garmindb/*.py garmindb/garmindb/*.py garmindb/summarydb/*.py garmindb/fitbitdb/*.py garmindb/mshealthdb/*.py --max-line-length=180 --ignore=E203,E221,E241,W503
 
 regression_test_run: flake8 rebuild_dbs
 	grep ERROR garmin.log || [ $$? -eq 1 ]
 
 regression_test: clean regression_test_run test
 
-PLUGIN_DIR=$(shell $(PYTHON) -c 'from garmin_db_config_manager import GarminDBConfigManager; print(GarminDBConfigManager.get_plugins_dir())')
+PLUGIN_DIR=$(shell $(PYTHON) -c 'from config_manager import ConfigManager; print(ConfigManager.get_plugins_dir())')
 publish_plugins:
 	cp ./Plugins/*.py $(PLUGIN_DIR)/.
 

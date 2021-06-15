@@ -8,7 +8,8 @@ import unittest
 import logging
 
 from utilities import FileProcessor
-from garmin_db_tcx import GarminDbTcx
+
+from garmindb import Tcx
 
 
 root_logger = logging.getLogger()
@@ -28,7 +29,7 @@ class TestTcxFile(unittest.TestCase):
         cls.tcx_filename_regex = r'.*\.tcx'
 
     def check_activity_file(self, filename):
-        tcx = GarminDbTcx()
+        tcx = Tcx()
         tcx.read(filename)
         (manufacturer, product) = tcx.get_manufacturer_and_product()
         logger.info("%s: sport %r end_time %r start_time %r manufacturer %r product %r serial_number %r laps %r distance %r calories %r start %r end %r "
