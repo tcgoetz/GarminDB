@@ -6,8 +6,6 @@ PROJECT_BASE ?= $(CURDIR)/../.
 
 include $(PROJECT_BASE)/defines.mk
 
-PYTHONPATH=${PROJECT_BASE}
-export PYTHONPATH
 
 DB_TEST_GROUPS=garmin_db activities_db monitoring_db garmin_summary_db summary_db
 DB_OBJECTS_TEST_GROUPS=garmin_db_objects

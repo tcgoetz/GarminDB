@@ -13,7 +13,11 @@ include defines.mk
 all: update_dbs
 
 # install all needed code
-setup: $(PROJECT_BASE)/.venv submodules_update deps install_all
+setup_repo: $(CONF_DIR)/GarminConnectConfig.json $(PROJECT_BASE)/.venv submodules_update
+
+setup_install: devdeps install_all
+
+setup: setup_repo setup_install
 
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs
 
@@ -35,8 +39,6 @@ update_dbs: update_garmin
 update_dbs_bin: update_garmin_bin
 update_copy_dbs: copy_garmin_latest
 
-release: flake8 zip_packages
-
 
 #
 # Project maintainance targets
@@ -44,8 +46,14 @@ release: flake8 zip_packages
 SUBMODULES=Fit Tcx utilities
 SUBDIRS=FitBitDB GarminDB HealthDB MSHealthDB
 
+$(CONF_DIR):
+	mkdir $(CONF_DIR)
+
+$(CONF_DIR)/GarminConnectConfig.json: $(CONF_DIR)
+	cp GarminConnectConfig.json.example $(CONF_DIR)/GarminConnectConfig.json
+
 $(PROJECT_BASE)/.venv:
-	python3 -m venv $(PROJECT_BASE)/.venv
+	$(PYTHON) -m venv $(PROJECT_BASE)/.venv
 
 update: submodules_update
 	git pull --rebase
@@ -57,7 +65,7 @@ submodules_update:
 $(SUBMODULES:%=%-install):
 	$(MAKE) -C $(subst -install,,$@) install
 
-install: $(SUBMODULES:%=%-install)
+install:
 	$(PYTHON) setup.py install
 
 install_all: $(SUBMODULES:%=%-install) install
@@ -75,6 +83,11 @@ $(SUBMODULES:%=%-deps):
 
 deps: $(SUBMODULES:%=%-deps)
 	$(PIP) install --upgrade --requirement requirements.txt
+
+$(SUBMODULES:%=%-devdeps):
+	$(MAKE) -C $(subst -devdeps,,$@) devdeps
+
+devdeps: $(SUBMODULES:%=%-devdeps)
 	$(PIP) install --upgrade --requirement dev-requirements.txt
 
 $(SUBMODULES:%=%-remove_deps):
@@ -96,7 +109,6 @@ $(SUBDIRS:%=%-clean):
 clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -f *.pyc
 	rm -f *.log
-	rm -rf $(DIST)
 	rm -rf build
 	rm -f *.spec
 	rm -f *.zip
@@ -108,11 +120,9 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -rf build
 	rm -rf dist
 
-
 #
 # Fitness System independant targets
 #
-HEALTH_DATA_DIR=$(shell $(PYTHON) -c 'from garmindb import ConfigManager; print(ConfigManager.get_base_dir())')
 DB_DIR=$(HEALTH_DATA_DIR)/DBs
 BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
 $(BACKUP_DIR):
@@ -121,13 +131,6 @@ $(BACKUP_DIR):
 EPOCH=$(shell date +'%s')
 backup: $(BACKUP_DIR)
 	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
-
-VERSION=$(shell $(PYTHON) -c 'from version_info import version_string; print(version_string())')
-BIN_FILES=$(DIST)/garmin $(DIST)/graphs $(DIST)/checkup $(DIST)/fitbit $(DIST)/mshealth
-ZIP_FILES=dist_files/Readme_MacOS.txt dist_files/download_create_dbs.sh dist_files/download_update_dbs.sh dist_files/copy_create_dbs.sh \
-	dist_files/copy_update_dbs.sh bugreport.sh
-zip_packages: validate_garmin_package validate_fitbit_package validate_mshealth_package
-	zip -j -r GarminDb_$(PLATFORM)_$(VERSION).zip GarminConnectConfig.json.example $(BIN_FILES) $(ZIP_FILES)
 
 graphs:
 	garmin_graphs.py --all
@@ -209,9 +212,6 @@ fitbit:
 clean_fitbit_db:
 	fitbit.py --delete_db
 
-validate_fitbit_package: $(DIST)/fitbit
-	$(DIST)/fitbit -v
-
 
 #
 # MS Health target
@@ -221,9 +221,6 @@ mshealth: $(MSHEALTH_DB)
 
 clean_mshealth_db:
 	mshealth.py --delete_db
-
-validate_mshealth_package: $(DIST)/mshealth
-	$(DIST)/mshealth -v
 
 
 #
@@ -258,7 +255,7 @@ regression_test_run: flake8 rebuild_dbs
 
 regression_test: clean regression_test_run test
 
-PLUGIN_DIR=$(shell $(PYTHON) -c 'from config_manager import ConfigManager; print(ConfigManager.get_plugins_dir())')
+PLUGIN_DIR=$(shell python3 -c 'from garmindb import ConfigManager; print(ConfigManager.get_plugins_dir())')
 publish_plugins:
 	cp ./Plugins/*.py $(PLUGIN_DIR)/.
 
@@ -274,4 +271,4 @@ republish_plugins: clean_plugins publish_plugins
 bugreport:
 	./bugreport.sh
 
-.PHONY: all setup update deps create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release clean test test_clean daily
+.PHONY: all setup install install_all uninstall uninstall_all update deps create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release clean test test_clean daily flake8 $(SUBMODULES:%=%-flake8)

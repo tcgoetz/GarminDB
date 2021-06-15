@@ -1,9 +1,7 @@
 
 -include my-defines.mk
 
-DIST=dist
-
-PLATFORM=$(shell uname)
+CONF_DIR=$(HOME)/.GarminDb
 
 #
 # Handle multiple Python installs. What python are we using?
@@ -11,31 +9,31 @@ PLATFORM=$(shell uname)
 
 ifeq ($(PLATFORM), Linux)
 
+SHELL=/usr/bin/bash
 TIME ?= $(shell which time)
 YESTERDAY = $(shell date --date yesterday +"%m/%d/%Y")
-PYTHON2=$(shell which python)
 
 else ifeq ($(PLATFORM), Darwin) # MacOS
 
+SHELL=/usr/local/bin/bash
 TIME ?= time
 YESTERDAY = $(shell date -v-1d +"%m/%d/%Y")
-PYTHON2=$(shell which python)
 
 else
 
 TIME ?= $(shell which time)
-PYTHON2=$(shell which python)
 
 endif
 
+PLATFORM=$(shell uname)
 
-PYTHON3=$(shell which python3)
-PIP3=$(shell which pip3)
-PYINSTALLER ?= $(shell which pyinstaller)
+HEALTH_DATA_DIR=$(shell python3 -c 'from garmindb import ConfigManager; print(ConfigManager.get_base_dir())')
 
+# PYTHON3=$(shell which python3)
+PYTHON3=python3
+# PIP3=$(shell which pip3)
+PIP3=pip3
 
-
-#PYTHON ?= ${PYTHON2}
 PYTHON ?= $(PYTHON3)
 PIP ?= $(PIP3)
 
@@ -48,4 +46,4 @@ $(error pip not found)
 endif
 
 
-export TIME PLATFORM PYTHON PIP YESTERDAY PYINSTALLER FLAKE8
+export TIME PLATFORM PYTHON PIP YESTERDAY FLAKE8
