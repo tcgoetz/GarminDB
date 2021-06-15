@@ -13,7 +13,7 @@ include defines.mk
 all: update_dbs
 
 # install all needed code
-setup: $(PROJECT_BASE)/.venv update deps install_all
+setup: $(PROJECT_BASE)/.venv submodules_update deps install_all
 
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs
 
