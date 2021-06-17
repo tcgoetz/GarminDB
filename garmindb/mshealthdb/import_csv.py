@@ -9,8 +9,8 @@ import re
 import logging
 from tqdm import tqdm
 
-from utilities import CsvImporter
-from utilities import FileProcessor
+from idbutils import CsvImporter
+from idbutils import FileProcessor
 
 from .mshealth_db import MSHealthDb, MSVaultWeight, DaysSummary
 

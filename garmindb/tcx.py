@@ -7,14 +7,14 @@ __license__ = "GPL"
 import re
 from cached_property import cached_property
 
-import tcx
-from utilities import Location
+import tcxfile
+from idbutils import Location
 from fitfile import Distance, Speed, conversions
 
 from .garmindb import Device
 
 
-class Tcx(tcx.Tcx):
+class Tcx(tcxfile.Tcx):
     """Read and write TCX files."""
 
     __product_to_manufactuer_cache = {}

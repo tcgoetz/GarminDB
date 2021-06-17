@@ -11,7 +11,7 @@ from tqdm import tqdm
 import logging
 
 import fitfile
-from utilities import FileProcessor
+from idbutils import FileProcessor
 
 from .config_manager import ConfigManager
 

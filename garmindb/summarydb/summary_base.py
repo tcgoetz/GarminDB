@@ -9,7 +9,7 @@ from sqlalchemy import Column, Float, Time, Integer, func
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import fitfile.conversions as conversions
-from utilities import DbObject
+from idbutils import DbObject
 
 
 class SummaryBase(DbObject):

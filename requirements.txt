@@ -7,3 +7,5 @@ matplotlib
 cloudscraper
 ipykernel
 fitfile
+tcxfile
+idbutils

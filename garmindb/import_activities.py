@@ -12,7 +12,7 @@ import dateutil.parser
 import traceback
 
 import fitfile
-from utilities import FileProcessor, JsonFileProcessor
+from idbutils import FileProcessor, JsonFileProcessor
 
 from .garmin_connect_enums import Event, get_summary_sport, get_details_sport
 from .garmindb import GarminDb, Device, File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, StepsActivities, PaddleActivities, CycleActivities

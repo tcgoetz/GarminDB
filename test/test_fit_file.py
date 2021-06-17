@@ -10,7 +10,7 @@ import datetime
 import re
 
 import fitfile
-from utilities import FileProcessor
+from idbutils import FileProcessor
 
 
 root_logger = logging.getLogger()

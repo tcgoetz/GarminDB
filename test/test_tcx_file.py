@@ -7,7 +7,7 @@ __license__ = "GPL"
 import unittest
 import logging
 
-from utilities import FileProcessor
+from idbutils import FileProcessor
 
 from garmindb import Tcx
 

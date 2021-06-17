@@ -8,8 +8,8 @@ import sys
 import logging
 from tqdm import tqdm
 
-from utilities import CsvImporter
-from utilities import FileProcessor
+from idbutils import CsvImporter
+from idbutils import FileProcessor
 
 from .fitbit_db import FitBitDb, DaysSummary
 

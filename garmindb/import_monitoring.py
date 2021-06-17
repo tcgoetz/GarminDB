@@ -11,7 +11,7 @@ import datetime
 import enum
 
 import fitfile
-from utilities import JsonFileProcessor, Conversions
+from idbutils import JsonFileProcessor, Conversions
 
 from .garmindb import GarminDb, Attributes, Weight, Sleep, SleepEvents, RestingHeartRate, DailySummary
 from .fit_data import FitData

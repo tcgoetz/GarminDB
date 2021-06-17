@@ -9,7 +9,7 @@ import platform
 import subprocess
 import datetime
 
-from utilities import JsonConfig
+from idbutils import JsonConfig
 
 from .statistics import Statistics
 from .config_manager import ConfigManager

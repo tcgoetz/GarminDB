@@ -126,14 +126,15 @@ def main(argv):
     checks_group.add_argument("-b", "--battery", help="Check for low battery levels.", action="store_true", default=False)
     checks_group.add_argument("-c", "--course", help="Show statistics from all workouts for a single course.", type=int, default=None)
     checks_group.add_argument("-g", "--goals", help="Run a checkup on the user\'s goals.", action="store_true", default=False)
+    checks_group.add_argument("-a", "--all", help="Run a checkup on all of the the user\'s stats.", action="store_true", default=False)
     args = parser.parse_args()
 
     checkup = CheckUp(args.trace)
-    if args.battery:
+    if args.all or args.battery:
         checkup.battery_status()
     if args.course:
         checkup.activity_course(args.course)
-    if args.goals:
+    if args.all or args.goals:
         checkup.goals()
 
 

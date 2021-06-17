@@ -11,15 +11,15 @@ from sqlalchemy import Column, Integer, DateTime, Time, Float, Enum, FLOAT, Uniq
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import fitfile
-import utilities
+import idbutils
 
 
 logger = logging.getLogger(__name__)
 
-MonitoringDb = utilities.DB.create('garmin_monitoring', 6, "Database for storing daily health monitoring data from a Garmin device.")
+MonitoringDb = idbutils.DB.create('garmin_monitoring', 6, "Database for storing daily health monitoring data from a Garmin device.")
 
 
-class MonitoringInfo(MonitoringDb.Base, utilities.DbObject):
+class MonitoringInfo(MonitoringDb.Base, idbutils.DbObject):
     """Class representing data from a health monitoring file."""
 
     __tablename__ = 'monitoring_info'
@@ -57,7 +57,7 @@ class MonitoringInfo(MonitoringDb.Base, utilities.DbObject):
         return stats
 
 
-class MonitoringHeartRate(MonitoringDb.Base, utilities.DbObject):
+class MonitoringHeartRate(MonitoringDb.Base, idbutils.DbObject):
     """Class that reprsents a database table holding resting heart rate data."""
 
     __tablename__ = 'monitoring_hr'
@@ -84,7 +84,7 @@ class MonitoringHeartRate(MonitoringDb.Base, utilities.DbObject):
         return cls.get_col_min(db, cls.heart_rate, start_ts, wake_ts, True)
 
 
-class MonitoringIntensity(MonitoringDb.Base, utilities.DbObject):
+class MonitoringIntensity(MonitoringDb.Base, idbutils.DbObject):
     """Class representing monitoring data about cardio minutes."""
 
     __tablename__ = 'monitoring_intensity'
@@ -119,7 +119,7 @@ class MonitoringIntensity(MonitoringDb.Base, utilities.DbObject):
         }
 
 
-class MonitoringClimb(MonitoringDb.Base, utilities.DbObject):
+class MonitoringClimb(MonitoringDb.Base, idbutils.DbObject):
     """Class representing monitoring data about elvation gained."""
 
     __tablename__ = 'monitoring_climb'
@@ -184,7 +184,7 @@ class MonitoringClimb(MonitoringDb.Base, utilities.DbObject):
         return stats
 
 
-class Monitoring(MonitoringDb.Base, utilities.DbObject):
+class Monitoring(MonitoringDb.Base, idbutils.DbObject):
     """A table containing monitoring data."""
 
     __tablename__ = 'monitoring'
@@ -250,7 +250,7 @@ class Monitoring(MonitoringDb.Base, utilities.DbObject):
         return stats
 
 
-class MonitoringRespirationRate(MonitoringDb.Base, utilities.DbObject):
+class MonitoringRespirationRate(MonitoringDb.Base, idbutils.DbObject):
     """Class that represents a database table holding respiration rate measured in breaths per minute."""
 
     __tablename__ = 'monitoring_rr'
@@ -271,7 +271,7 @@ class MonitoringRespirationRate(MonitoringDb.Base, utilities.DbObject):
         }
 
 
-class MonitoringPulseOx(MonitoringDb.Base, utilities.DbObject):
+class MonitoringPulseOx(MonitoringDb.Base, idbutils.DbObject):
     """Class that represents a database table holding pulse ox measurements in percent."""
 
     __tablename__ = 'monitoring_pulse_ox'

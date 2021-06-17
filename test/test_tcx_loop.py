@@ -9,7 +9,7 @@ import logging
 import datetime
 
 from fitfile import GarminProduct, Distance, Speed, Sport
-from utilities import Location
+from idbutils import Location
 
 from garmindb import Tcx
 

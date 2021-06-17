@@ -12,7 +12,7 @@ from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enu
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import fitfile
-import utilities
+import idbutils
 
 
 logger = logging.getLogger(__name__)
@@ -26,10 +26,10 @@ class GarminDbError_IdNotFound(GarminDbError):
     """File id not found"""
 
 
-GarminDb = utilities.DB.create('garmin', 14, "Database for storing health data from a Garmin device.")
+GarminDb = idbutils.DB.create('garmin', 14, "Database for storing health data from a Garmin device.")
 
 
-class Attributes(GarminDb.Base, utilities.KeyValueObject):
+class Attributes(GarminDb.Base, idbutils.KeyValueObject):
     """Object representing generic key-value data from a Garmin device."""
 
     __tablename__ = 'attributes'
@@ -48,7 +48,7 @@ class Attributes(GarminDb.Base, utilities.KeyValueObject):
         return (cls.measurements_type(db) == fitfile.field_enums.DisplayMeasure.metric)
 
 
-class Device(GarminDb.Base, utilities.DbObject):
+class Device(GarminDb.Base, idbutils.DbObject):
     """Class representing a Garmin device."""
 
     __tablename__ = 'devices'
@@ -57,7 +57,7 @@ class Device(GarminDb.Base, utilities.DbObject):
     table_version = 4
     unknown_device_serial_number = 9999999999
 
-    Manufacturer = utilities.derived_enum.derive('Manufacturer', fitfile.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
+    Manufacturer = idbutils.derived_enum.derive('Manufacturer', fitfile.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
 
     serial_number = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
@@ -77,7 +77,7 @@ class Device(GarminDb.Base, utilities.DbObject):
         return '%s%06d' % (serial_number, device_type.value)
 
 
-class DeviceInfo(GarminDb.Base, utilities.DbObject):
+class DeviceInfo(GarminDb.Base, idbutils.DbObject):
     """Class representing a Garmin device info message from a FIT file."""
 
     __tablename__ = 'device_info'
@@ -120,7 +120,7 @@ class DeviceInfo(GarminDb.Base, utilities.DbObject):
         cls.create_join_view(db, cls._get_default_view_name(), cols, Device, order_by=cls.timestamp.desc())
 
 
-class File(GarminDb.Base, utilities.DbObject):
+class File(GarminDb.Base, idbutils.DbObject):
     """Class representing a data file."""
 
     __tablename__ = 'files'
@@ -130,7 +130,7 @@ class File(GarminDb.Base, utilities.DbObject):
     view_version = 4
 
     fit_file_types_prefix = 'fit_'
-    FileType = utilities.derived_enum.derive('FileType', fitfile.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
+    FileType = idbutils.derived_enum.derive('FileType', fitfile.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
 
     id = Column(String, primary_key=True)
     name = Column(String, unique=True)
@@ -179,7 +179,7 @@ class File(GarminDb.Base, utilities.DbObject):
         return id
 
 
-class Weight(GarminDb.Base, utilities.DbObject):
+class Weight(GarminDb.Base, idbutils.DbObject):
     """Class representing a weight entry."""
 
     __tablename__ = 'weight'
@@ -200,7 +200,7 @@ class Weight(GarminDb.Base, utilities.DbObject):
         }
 
 
-class Stress(GarminDb.Base, utilities.DbObject):
+class Stress(GarminDb.Base, idbutils.DbObject):
     """Class representing a stress reading."""
 
     __tablename__ = 'stress'
@@ -219,7 +219,7 @@ class Stress(GarminDb.Base, utilities.DbObject):
         }
 
 
-class Sleep(GarminDb.Base, utilities.DbObject):
+class Sleep(GarminDb.Base, idbutils.DbObject):
     """Class representing a sleep session."""
 
     __tablename__ = 'sleep'
@@ -249,7 +249,7 @@ class Sleep(GarminDb.Base, utilities.DbObject):
         }
 
 
-class SleepEvents(GarminDb.Base, utilities.DbObject):
+class SleepEvents(GarminDb.Base, idbutils.DbObject):
     """Table that stores events recorded druing sleep."""
 
     __tablename__ = 'sleep_events'
@@ -271,7 +271,7 @@ class SleepEvents(GarminDb.Base, utilities.DbObject):
             return values[0][0]
 
 
-class RestingHeartRate(GarminDb.Base, utilities.DbObject):
+class RestingHeartRate(GarminDb.Base, idbutils.DbObject):
     """Class representing a daily resting heart rate reading."""
 
     __tablename__ = 'resting_hr'
@@ -293,7 +293,7 @@ class RestingHeartRate(GarminDb.Base, utilities.DbObject):
         }
 
 
-class DailySummary(GarminDb.Base, utilities.DbObject):
+class DailySummary(GarminDb.Base, idbutils.DbObject):
     """Class representing a Garmin daily summary."""
 
     __tablename__ = 'daily_summary'

@@ -10,7 +10,7 @@ import traceback
 import datetime
 
 import fitfile
-import utilities
+import idbutils
 
 from .garmindb import File
 from .garmindb import MonitoringDb, Monitoring, MonitoringInfo, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb, MonitoringRespirationRate, MonitoringPulseOx
@@ -58,7 +58,7 @@ class MonitoringFitFileProcessor(FitFileProcessor):
 
     def _write_monitoring_entry(self, fit_file, message_fields):
         # Only include not None values so that we match and update only if a table's columns if it has values.
-        entry = utilities.list_and_dict.dict_filter_none_values(message_fields)
+        entry = idbutils.list_and_dict.dict_filter_none_values(message_fields)
         timestamp = fit_file.utc_datetime_to_local(message_fields.timestamp)
         # Hack: daily monitoring summaries appear at 00:00:00 localtime for the PREVIOUS day. Subtract a second so they appear in the previous day.
         if timestamp.time() == datetime.time.min:

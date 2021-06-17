@@ -7,15 +7,15 @@ __license__ = "GPL"
 import logging
 from sqlalchemy import Column, Integer, Date, DateTime
 
-import utilities
+import idbutils
 
 from ..summarydb import SummaryBase
 
 
 logger = logging.getLogger(__name__)
 
-GarminSummaryDb = utilities.DB.create('garmin_summary', 8, "Database for storing health summary data from a Garmin device.")
-Summary = utilities.DbObject.create('summary', GarminSummaryDb, 1, base=utilities.KeyValueObject)
+GarminSummaryDb = idbutils.DB.create('garmin_summary', 8, "Database for storing health summary data from a Garmin device.")
+Summary = idbutils.DbObject.create('summary', GarminSummaryDb, 1, base=idbutils.KeyValueObject)
 
 
 class YearsSummary(GarminSummaryDb.Base, SummaryBase):
@@ -86,7 +86,7 @@ class DaysSummary(GarminSummaryDb.Base, SummaryBase):
         cls.create_days_view(db)
 
 
-class IntensityHR(GarminSummaryDb.Base, utilities.DbObject):
+class IntensityHR(GarminSummaryDb.Base, idbutils.DbObject):
     """Monitoring heart rate values that fall within a intensity period."""
 
     __tablename__ = 'intensity_hr'

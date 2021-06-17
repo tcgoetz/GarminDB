@@ -10,7 +10,9 @@ import datetime
 
 import fitfile
 
-from garmindb import garmindb, ConfigManager, GarminMonitoringFitData, GarminSummaryData, MonitoringFitFileProcessor, PluginManager
+from garmindb import ConfigManager, GarminMonitoringFitData, GarminSummaryData, MonitoringFitFileProcessor, PluginManager
+from garmindb.garmindb import GarminDb, File, Device, DeviceInfo, DailySummary
+from garmindb.garmindb import MonitoringDb, Monitoring, MonitoringInfo, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb
 
 from test_db_base import TestDBBase
 
@@ -30,37 +32,37 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
     def setUpClass(cls):
         db_params = ConfigManager.get_db_params()
         cls.plugin_manager = PluginManager(ConfigManager.get_or_create_plugins_dir(), db_params)
-        cls.garmin_mon_db = garmindb.MonitoringDb(db_params)
+        cls.garmin_mon_db = MonitoringDb(db_params)
         table_dict = {
-            'monitoring_info_table'         : garmindb.MonitoringInfo,
-            'monitoring_hr_table'           : garmindb.MonitoringHeartRate,
-            'monitoring_intensity_table'    : garmindb.MonitoringIntensity,
-            'monitoring_climb_table'        : garmindb.MonitoringClimb,
-            'monitoring_table'              : garmindb.Monitoring,
+            'monitoring_info_table'         : MonitoringInfo,
+            'monitoring_hr_table'           : MonitoringHeartRate,
+            'monitoring_intensity_table'    : MonitoringIntensity,
+            'monitoring_climb_table'        : MonitoringClimb,
+            'monitoring_table'              : Monitoring,
         }
         super().setUpClass(cls.garmin_mon_db, table_dict)
 
     def test_garmin_mon_db_tables_exists(self):
-        self.assertGreater(garmindb.MonitoringInfo.row_count(self.db), 0)
-        self.assertGreater(garmindb.MonitoringHeartRate.row_count(self.db), 0)
-        self.assertGreater(garmindb.MonitoringIntensity.row_count(self.db), 0)
-        self.assertGreater(garmindb.MonitoringClimb.row_count(self.db), 0)
-        self.assertGreater(garmindb.Monitoring.row_count(self.db), 0)
+        self.assertGreater(MonitoringInfo.row_count(self.db), 0)
+        self.assertGreater(MonitoringHeartRate.row_count(self.db), 0)
+        self.assertGreater(MonitoringIntensity.row_count(self.db), 0)
+        self.assertGreater(MonitoringClimb.row_count(self.db), 0)
+        self.assertGreater(Monitoring.row_count(self.db), 0)
 
     def test_garmin_mon_db_steps_bounds(self):
-        min = garmindb.Monitoring.get_col_min(self.db, garmindb.Monitoring.steps)
+        min = Monitoring.get_col_min(self.db, Monitoring.steps)
         self.assertGreater(min, 0)
-        max = garmindb.Monitoring.get_col_max(self.db, garmindb.Monitoring.steps)
+        max = Monitoring.get_col_max(self.db, Monitoring.steps)
         self.assertGreater(max, 0)
         self.assertLess(max, 100000)
 
     def test_garmin_mon_db_uptodate(self):
         uptodate_tables = {
-            'monitoring_hr_table'   : garmindb.MonitoringHeartRate,
-            'monitoring_table'      : garmindb.Monitoring,
+            'monitoring_hr_table'   : MonitoringHeartRate,
+            'monitoring_table'      : Monitoring,
         }
         for table_name, table in uptodate_tables.items():
-            latest = garmindb.MonitoringHeartRate.latest_time(self.db, garmindb.MonitoringHeartRate.heart_rate)
+            latest = MonitoringHeartRate.latest_time(self.db, MonitoringHeartRate.heart_rate)
             logger.info("Latest data for %s: %s", table_name, latest)
             self.assertLess(datetime.datetime.now() - latest, datetime.timedelta(days=2))
 
@@ -73,11 +75,11 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
     def test_fit_file_import(self):
         db_params = ConfigManager.get_db_params(test_db=True)
         self.profile_function('fit_mon_import', self.fit_file_import, db_params)
-        test_mon_db = garmindb.GarminDb(db_params)
-        self.check_db_tables_exists(test_mon_db, {'device_table' : garmindb.Device})
-        self.check_db_tables_exists(test_mon_db, {'file_table' : garmindb.File, 'device_info_table' : garmindb.DeviceInfo}, self.gfd_file_count)
-        table_not_none_cols_dict = {garmindb.Monitoring : [garmindb.Monitoring.timestamp, garmindb.Monitoring.activity_type, garmindb.Monitoring.duration]}
-        self.check_not_none_cols(garmindb.MonitoringDb(db_params), table_not_none_cols_dict)
+        test_mon_db = GarminDb(db_params)
+        self.check_db_tables_exists(test_mon_db, {'device_table' : Device})
+        self.check_db_tables_exists(test_mon_db, {'file_table' : File, 'device_info_table' : DeviceInfo}, self.gfd_file_count)
+        table_not_none_cols_dict = {Monitoring : [Monitoring.timestamp, Monitoring.activity_type, Monitoring.duration]}
+        self.check_not_none_cols(MonitoringDb(db_params), table_not_none_cols_dict)
 
     def test_summary_json_file_import(self):
         db_params = ConfigManager.get_db_params(test_db=True)
@@ -85,9 +87,9 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
         if gjsd.file_count() > 0:
             gjsd.process()
         table_not_none_cols_dict = {
-            garmindb.DailySummary : [garmindb.DailySummary.rhr, garmindb.DailySummary.distance, garmindb.DailySummary.steps, garmindb.DailySummary.floors_goal]
+            DailySummary : [DailySummary.rhr, DailySummary.distance, DailySummary.steps, DailySummary.floors_goal]
         }
-        self.check_not_none_cols(garmindb.GarminDb(db_params), table_not_none_cols_dict)
+        self.check_not_none_cols(GarminDb(db_params), table_not_none_cols_dict)
 
     def check_day_steps(self, data):
         last_steps = {}
@@ -105,7 +107,7 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
 
     def test_db_data_integrity(self):
         target_day = (datetime.datetime.now() - datetime.timedelta(days=2)).date()
-        day_data = garmindb.Monitoring.get_for_day(self.garmin_mon_db, garmindb.Monitoring, target_day)
+        day_data = Monitoring.get_for_day(self.garmin_mon_db, Monitoring, target_day)
         self.check_day_steps(day_data)
 
 

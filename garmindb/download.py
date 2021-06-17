@@ -17,7 +17,7 @@ import cloudscraper
 from tqdm import tqdm
 
 import fitfile.conversions as conversions
-from utilities import RestClient, RestException, RestResponseException
+from idbutils import RestClient, RestException, RestResponseException
 
 from .garmin_connect_config_manager import GarminConnectConfigManager
 from .config_manager import ConfigManager

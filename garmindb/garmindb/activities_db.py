@@ -11,15 +11,15 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 
-import utilities
+import idbutils
 
 
 logger = logging.getLogger(__name__)
 
-ActivitiesDb = utilities.DB.create('garmin_activities', 13, "Database for storing activities data.")
+ActivitiesDb = idbutils.DB.create('garmin_activities', 13, "Database for storing activities data.")
 
 
-class ActivitiesLocationSegment(utilities.DbObject):
+class ActivitiesLocationSegment(idbutils.DbObject):
     """Object representing a databse object for storing location segnment from an activity."""
 
     # degrees
@@ -31,7 +31,7 @@ class ActivitiesLocationSegment(utilities.DbObject):
     @hybrid_property
     def start_loc(self):
         """Return the starting location of activity segment as a Location instance."""
-        return utilities.Location(self.start_lat, self.start_long)
+        return idbutils.Location(self.start_lat, self.start_long)
 
     @start_loc.setter
     def start_loc(self, start_location):
@@ -41,7 +41,7 @@ class ActivitiesLocationSegment(utilities.DbObject):
     @hybrid_property
     def stop_loc(self):
         """Return the ending location of activity segment as a Location instance."""
-        return utilities.Location(self.stop_lat, self.stop_long)
+        return idbutils.Location(self.stop_lat, self.stop_long)
 
     @stop_loc.setter
     def stop_loc(self, stop_location):
@@ -181,7 +181,7 @@ class ActivityLaps(ActivitiesDb.Base, ActivitiesLocationSegment):
     @hybrid_property
     def start_loc(self):
         """Return the lap start location."""
-        return utilities.Location(self.start_lat, self.start_long)
+        return idbutils.Location(self.start_lat, self.start_long)
 
     @start_loc.setter
     def start_loc(self, start_location):
@@ -189,7 +189,7 @@ class ActivityLaps(ActivitiesDb.Base, ActivitiesLocationSegment):
         self.start_long = start_location.long_deg
 
 
-class ActivityRecords(ActivitiesDb.Base, utilities.DbObject):
+class ActivityRecords(ActivitiesDb.Base, idbutils.DbObject):
     """Encapsilates record for a single point in time from an activity."""
 
     __tablename__ = 'activity_records'
@@ -221,7 +221,7 @@ class ActivityRecords(ActivitiesDb.Base, utilities.DbObject):
     @hybrid_property
     def position(self):
         """Return the location where the record was recorded."""
-        return utilities.Location(self.position_lat, self.position_long)
+        return idbutils.Location(self.position_lat, self.position_long)
 
     @position.setter
     def position(self, location):
@@ -229,7 +229,7 @@ class ActivityRecords(ActivitiesDb.Base, utilities.DbObject):
         self.position_long = location.long_deg
 
 
-class SportActivities(utilities.DbObject):
+class SportActivities(idbutils.DbObject):
     """Base class for all sport based activity tables."""
 
     @declared_attr
@@ -266,7 +266,7 @@ class SportActivities(utilities.DbObject):
     @classmethod
     def google_map_loc(cls, label):
         """Return a literal column composed of a google map URL for either the start or stop location off the activity."""
-        return literal_column(utilities.Location.google_maps_url('activities.%s_lat' % label, 'activities.%s_long' % label) + ' AS %s_loc' % label)
+        return literal_column(idbutils.Location.google_maps_url('activities.%s_lat' % label, 'activities.%s_long' % label) + ' AS %s_loc' % label)
 
 
 class StepsActivities(ActivitiesDb.Base, SportActivities):

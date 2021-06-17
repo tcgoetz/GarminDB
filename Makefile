@@ -6,6 +6,8 @@ export PROJECT_BASE=$(CURDIR)
 
 include defines.mk
 
+MODULE=garmindb
+
 
 #
 # Master targets
@@ -15,7 +17,7 @@ all: update_dbs
 # install all needed code
 setup_repo: $(CONF_DIR)/GarminConnectConfig.json $(PROJECT_BASE)/.venv submodules_update
 
-setup_install: devdeps install_all
+setup_install: deps devdeps install_all
 
 setup: setup_repo setup_install
 
@@ -65,8 +67,19 @@ submodules_update:
 $(SUBMODULES:%=%-install):
 	$(MAKE) -C $(subst -install,,$@) install
 
-install:
-	$(PYTHON) setup.py install
+dist: build
+
+publish_check: dist
+	$(PYTHON) -m twine check dist/*
+
+publish: publish_check
+	$(PYTHON) -m twine upload dist/* --verbose
+
+build:
+	$(PYTHON) -m build
+
+install: build
+	$(PIP) install --upgrade --force-reinstall ./dist/$(MODULE)-*.whl
 
 install_all: $(SUBMODULES:%=%-install) install
 
@@ -74,14 +87,17 @@ $(SUBMODULES:%=%-uninstall):
 	$(MAKE) -C $(subst -uninstall,,$@) uninstall
 
 uninstall:
-	$(PIP) uninstall -y garmindb
+	$(PIP) uninstall -y $(MODULE)
 
-uninstall_all: uninstall $(SUBMODULES:%=%-install)
+uninstall_all: uninstall $(SUBMODULES:%=%-uninstall)
 
 $(SUBMODULES:%=%-deps):
 	$(MAKE) -C $(subst -deps,,$@) deps
 
-deps: $(SUBMODULES:%=%-deps)
+pip_upgrade:
+	$(PIP) install --upgrade pip
+
+deps: pip_upgrade $(SUBMODULES:%=%-deps)
 	$(PIP) install --upgrade --requirement requirements.txt
 
 $(SUBMODULES:%=%-devdeps):
@@ -133,14 +149,14 @@ backup: $(BACKUP_DIR)
 	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
 
 graphs:
-	garmin_graphs.py --all
+	garmindb_graphs.py --all
 
 graph_yesterday:
-	garmin_graphs.py --day $(YESTERDAY)
+	garmindb_graphs.py --day $(YESTERDAY)
 
 checkup: update_garmin
-	garmin_checkup.py --battery
-	garmin_checkup.py --goals
+	garmindb_checkup.py --battery
+	garmindb_checkup.py --goals
 
 # define CHECKUP_COURSE_ID in my-defines.mk
 checkup_course:
@@ -152,55 +168,55 @@ daily: all checkup graph_yesterday
 # Garmin targets
 #
 download_all_garmin:
-	garmin.py --all --download
+	garmindb_cli.py --all --download
 
 redownload_garmin_activities:
-	garmin.py --activities --download --overwrite
+	garmindb_cli.py --activities --download --overwrite
 
 garmin:
-	garmin.py --all --download --import --analyze
+	garmindb_cli.py --all --download --import --analyze
 
 build_garmin:
-	garmin.py --all --import --analyze
+	garmindb_cli.py --all --import --analyze
 
 build_garmin_monitoring:
-	garmin.py --monitoring --import --analyze
+	garmindb_cli.py --monitoring --import --analyze
 
 build_garmin_activities:
-	garmin.py --activities --import --analyze
+	garmindb_cli.py --activities --import --analyze
 
 copy_garmin_settings:
-	garmin.py --copy
+	garmindb_cli.py --copy
 
 copy_garmin:
-	garmin.py --all --copy --import --analyze
+	garmindb_cli.py --all --copy --import --analyze
 
 update_garmin:
-	garmin.py --all --download --import --analyze --latest
+	garmindb_cli.py --all --download --import --analyze --latest
 
 copy_garmin_latest:
-	garmin.py --all --copy --import --analyze --latest
+	garmindb_cli.py --all --copy --import --analyze --latest
 
 # define EXPORT_ACTIVITY_ID in my-defines.mk
 export_activity:
-	garmin.py --export-activity $(EXPORT_ACTIVITY_ID)
+	garmindb_cli.py --export-activity $(EXPORT_ACTIVITY_ID)
 
 # define EXPORT_ACTIVITY_ID in my-defines.mk
 basecamp_activity:
-	garmin.py --basecamp-activity $(EXPORT_ACTIVITY_ID)
+	garmindb_cli.py --basecamp-activity $(EXPORT_ACTIVITY_ID)
 
 # define EXPORT_ACTIVITY_ID in my-defines.mk
 google_earth_activity:
-	garmin.py --google-earth-activity $(EXPORT_ACTIVITY_ID)
+	garmindb_cli.py --google-earth-activity $(EXPORT_ACTIVITY_ID)
 
 clean_garmin_dbs:
-	garmin.py --delete_db --all
+	garmindb_cli.py --delete_db --all
 
 clean_garmin_monitoring_dbs:
-	garmin.py --delete_db --monitoring
+	garmindb_cli.py --delete_db --monitoring
 
 clean_garmin_activities_dbs:
-	garmin.py --delete_db --activities
+	garmindb_cli.py --delete_db --activities
 
 
 #

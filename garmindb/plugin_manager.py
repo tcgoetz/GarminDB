@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import logging
 
-import utilities
+import idbutils
 
 from .garmindb import ActivitiesDb, Activities
 
@@ -14,7 +14,7 @@ from .garmindb import ActivitiesDb, Activities
 logger = logging.getLogger(__file__)
 
 
-class PluginManager(utilities.PluginManager):
+class PluginManager(idbutils.PluginManager):
     """Loads python file based plugins that extend GarminDb."""
 
     def __init__(self, plugin_dir, db_params):

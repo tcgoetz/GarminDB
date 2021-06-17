@@ -4,7 +4,7 @@ __author__ = "Tom Goetz"
 __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
-from utilities import OpenWithApp
+from idbutils import OpenWithApp
 
 
 class OpenWithBaseCamp(OpenWithApp):

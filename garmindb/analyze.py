@@ -11,7 +11,7 @@ import calendar
 from tqdm import tqdm
 
 import fitfile
-from utilities.list_and_dict import list_not_none
+from idbutils.list_and_dict import list_not_none
 
 from garmindb import summarydb
 from .garmindb import GarminDb, Attributes, File, Weight, Stress, RestingHeartRate, IntensityHR, Sleep

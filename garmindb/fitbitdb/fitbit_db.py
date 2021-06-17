@@ -9,16 +9,16 @@ import datetime
 from sqlalchemy import Column, Integer, Date, Float, Time
 
 import fitfile
-import utilities
+import idbutils
 
 
 logger = logging.getLogger(__name__)
 
-FitBitDb = utilities.DB.create('fitbit', 2, "Database for storing health data from FitBit.")
-Attributes = utilities.DbObject.create('attributes', FitBitDb, 1, base=utilities.KeyValueObject, doc="key-value data from a FitBit device.")
+FitBitDb = idbutils.DB.create('fitbit', 2, "Database for storing health data from FitBit.")
+Attributes = idbutils.DbObject.create('attributes', FitBitDb, 1, base=idbutils.KeyValueObject, doc="key-value data from a FitBit device.")
 
 
-class DaysSummary(FitBitDb.Base, utilities.DbObject):
+class DaysSummary(FitBitDb.Base, idbutils.DbObject):
     """A table that holds summarized information about a day with one row per day."""
 
     __tablename__ = 'days_summary'

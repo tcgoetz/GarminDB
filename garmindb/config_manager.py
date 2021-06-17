@@ -8,7 +8,7 @@ import os
 import logging
 import tempfile
 
-from utilities import DbParams
+from idbutils import DbParams
 
 from .config import Config
 

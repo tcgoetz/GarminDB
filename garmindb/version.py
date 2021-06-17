@@ -4,7 +4,7 @@ __author__ = "Tom Goetz"
 __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
-import utilities.version as uv
+import idbutils.version as uv
 
 from .version_info import python_required, python_tested, version_info, prerelease
 

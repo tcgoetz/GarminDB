@@ -7,15 +7,15 @@ __license__ = "GPL"
 import logging
 from sqlalchemy import Column, Date
 
-import utilities
+import idbutils
 
 from .summary_base import SummaryBase
 
 
 logger = logging.getLogger(__name__)
 
-SummaryDb = utilities.DB.create('summary', 7, "Database for storing summarizing health data.")
-Summary = utilities.DbObject.create('summary', SummaryDb, 1, base=utilities.KeyValueObject)
+SummaryDb = idbutils.DB.create('summary', 7, "Database for storing summarizing health data.")
+Summary = idbutils.DbObject.create('summary', SummaryDb, 1, base=idbutils.KeyValueObject)
 
 
 class YearsSummary(SummaryDb.Base, SummaryBase):

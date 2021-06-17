@@ -9,16 +9,16 @@ import logging
 from sqlalchemy import Column, Integer, Date, DateTime, Float
 
 import fitfile.conversions as conversions
-import utilities
+import idbutils
 
 
 logger = logging.getLogger(__name__)
 
-MSHealthDb = utilities.DB.create('mshealth', 2, "Database for storing health data from Microsoft Health.")
-Attributes = utilities.DbObject.create('attributes', MSHealthDb, 1, base=utilities.KeyValueObject, doc="key-value data from a Microsoft Health device.")
+MSHealthDb = idbutils.DB.create('mshealth', 2, "Database for storing health data from Microsoft Health.")
+Attributes = idbutils.DbObject.create('attributes', MSHealthDb, 1, base=idbutils.KeyValueObject, doc="key-value data from a Microsoft Health device.")
 
 
-class DaysSummary(MSHealthDb.Base, utilities.DbObject):
+class DaysSummary(MSHealthDb.Base, idbutils.DbObject):
     """A table that holds summarized information about a day with one row per day."""
 
     __tablename__ = 'days_summary'
@@ -173,7 +173,7 @@ class DaysSummary(MSHealthDb.Base, utilities.DbObject):
         return stats
 
 
-class MSVaultWeight(MSHealthDb.Base, utilities.DbObject):
+class MSVaultWeight(MSHealthDb.Base, idbutils.DbObject):
     """Class for a databse table holding weight data from Microsoft Health Vault."""
 
     __tablename__ = 'weight'

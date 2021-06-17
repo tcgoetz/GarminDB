@@ -17,7 +17,9 @@ import datetime
 import os
 import tempfile
 
-from garmindb import garmindb, summarydb, python_version_check, log_version, format_version
+from garmindb import python_version_check, log_version, format_version
+from garmindb.garmindb import GarminDb, Attributes, Sleep, Weight, RestingHeartRate, MonitoringDb, MonitoringHeartRate, ActivitiesDb, GarminSummaryDb
+from garmindb.summarydb import SummaryDb
 
 from garmindb import Download, Copy, Analyze
 from garmindb import FitFileProcessor, ActivityFitFileProcessor, MonitoringFitFileProcessor
@@ -41,16 +43,16 @@ plugin_manager = PluginManager(ConfigManager.get_or_create_plugins_dir(), db_par
 
 
 stats_to_db_map = {
-    Statistics.monitoring            : garmindb.MonitoringDb,
-    Statistics.steps                 : garmindb.MonitoringDb,
-    Statistics.itime                 : garmindb.MonitoringDb,
-    Statistics.sleep                 : garmindb.GarminDb,
-    Statistics.rhr                   : garmindb.GarminDb,
-    Statistics.weight                : garmindb.GarminDb,
-    Statistics.activities            : garmindb.ActivitiesDb
+    Statistics.monitoring            : MonitoringDb,
+    Statistics.steps                 : MonitoringDb,
+    Statistics.itime                 : MonitoringDb,
+    Statistics.sleep                 : GarminDb,
+    Statistics.rhr                   : GarminDb,
+    Statistics.weight                : GarminDb,
+    Statistics.activities            : ActivitiesDb
 }
 
-summary_dbs = [garmindb.GarminSummaryDb, summarydb.SummaryDb]
+summary_dbs = [GarminSummaryDb, SummaryDb]
 
 
 def __get_date_and_days(db, latest, table, col, stat_name):
@@ -119,7 +121,7 @@ def download_data(overwite, latest, stats):
         download.get_activities(activities_dir, activity_count, overwite)
 
     if Statistics.monitoring in stats:
-        date, days = __get_date_and_days(garmindb.MonitoringDb(db_params_dict), latest, garmindb.MonitoringHeartRate, garmindb.MonitoringHeartRate.heart_rate, 'monitoring')
+        date, days = __get_date_and_days(MonitoringDb(db_params_dict), latest, MonitoringHeartRate, MonitoringHeartRate.heart_rate, 'monitoring')
         if days > 0:
             root_logger.info("Date range to update: %s (%d) to %s", date, days, ConfigManager.get_monitoring_base_dir())
             download.get_daily_summaries(ConfigManager.get_or_create_monitoring_dir, date, days, overwite)
@@ -128,7 +130,7 @@ def download_data(overwite, latest, stats):
             root_logger.info("Saved monitoring files for %s (%d) to %s for processing", date, days, ConfigManager.get_monitoring_base_dir())
 
     if Statistics.sleep in stats:
-        date, days = __get_date_and_days(garmindb.GarminDb(db_params_dict), latest, garmindb.Sleep, garmindb.Sleep.total_sleep, 'sleep')
+        date, days = __get_date_and_days(GarminDb(db_params_dict), latest, Sleep, Sleep.total_sleep, 'sleep')
         if days > 0:
             sleep_dir = ConfigManager.get_or_create_sleep_dir()
             root_logger.info("Date range to update: %s (%d) to %s", date, days, sleep_dir)
@@ -136,7 +138,7 @@ def download_data(overwite, latest, stats):
             root_logger.info("Saved sleep files for %s (%d) to %s for processing", date, days, sleep_dir)
 
     if Statistics.weight in stats:
-        date, days = __get_date_and_days(garmindb.GarminDb(db_params_dict), latest, garmindb.Weight, garmindb.Weight.weight, 'weight')
+        date, days = __get_date_and_days(GarminDb(db_params_dict), latest, Weight, Weight.weight, 'weight')
         if days > 0:
             weight_dir = ConfigManager.get_or_create_weight_dir()
             root_logger.info("Date range to update: %s (%d) to %s", date, days, weight_dir)
@@ -144,7 +146,7 @@ def download_data(overwite, latest, stats):
             root_logger.info("Saved weight files for %s (%d) to %s for processing", date, days, weight_dir)
 
     if Statistics.rhr in stats:
-        date, days = __get_date_and_days(garmindb.GarminDb(db_params_dict), latest, garmindb.RestingHeartRate, garmindb.RestingHeartRate.resting_heart_rate, 'rhr')
+        date, days = __get_date_and_days(GarminDb(db_params_dict), latest, RestingHeartRate, RestingHeartRate.resting_heart_rate, 'rhr')
         if days > 0:
             rhr_dir = ConfigManager.get_or_create_rhr_dir()
             root_logger.info("Date range to update: %s (%d) to %s", date, days, rhr_dir)
@@ -166,8 +168,8 @@ def import_data(debug, latest, stats):
     if gsfd.file_count() > 0:
         gsfd.process_files(FitFileProcessor(db_params_dict, plugin_manager, debug))
 
-    gdb = garmindb.GarminDb(db_params_dict)
-    measurement_system = garmindb.Attributes.measurements_type(gdb)
+    gdb = GarminDb(db_params_dict)
+    measurement_system = Attributes.measurements_type(gdb)
 
     if Statistics.weight in stats:
         weight_dir = ConfigManager.get_or_create_weight_dir()
@@ -233,15 +235,15 @@ def analyze_data(debug):
 def delete_dbs(delete_db_list=[]):
     """Delete selected, or all if none selected GarminDb, database files."""
     if len(delete_db_list) == 0:
-        delete_db_list = [garmindb.GarminDb, garmindb.MonitoringDb, garmindb.ActivitiesDb, garmindb.GarminSummaryDb, summarydb.SummaryDb]
+        delete_db_list = [GarminDb, MonitoringDb, ActivitiesDb, GarminSummaryDb, SummaryDb]
     for db in delete_db_list:
         db.delete_db(db_params_dict)
 
 
 def export_activity(debug, directory, export_activity_id):
     """Export an activity given its database id."""
-    garmin_db = garmindb.GarminDb(db_params_dict)
-    measurement_system = garmindb.Attributes.measurements_type(garmin_db)
+    garmin_db = GarminDb(db_params_dict)
+    measurement_system = Attributes.measurements_type(garmin_db)
     ae = ActivityExporter(directory, export_activity_id, measurement_system, debug)
     ae.process(db_params_dict)
     return ae.write('activity_%s.tcx' % export_activity_id)

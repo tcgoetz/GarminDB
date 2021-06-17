@@ -11,7 +11,7 @@ import traceback
 from tqdm import tqdm
 
 import fitfile
-from utilities import FileProcessor
+from idbutils import FileProcessor
 
 
 logger = logging.getLogger(__file__)

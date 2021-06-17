@@ -22,14 +22,22 @@ def get_long_description(readme_file):
 
 module_name = 'garmindb'
 module_version = get_version(module_name + os.sep + 'version_info.py')
+module_long_description = get_long_description('README.md')
+
+print(f"Building {module_name} {module_version}\n{module_long_description}")
 
 setup(name=module_name, version=module_version, author='Tom Goetz',
       packages=[module_name, f'{module_name}.garmindb', f'{module_name}.fitbitdb', f'{module_name}.mshealthdb', f'{module_name}.summarydb'],
-      scripts=['scripts/garmin.py', 'scripts/garmin_graphs.py', 'scripts/garmin_checkup.py', 'scripts/fitbit.py', 'scripts/mshealth.py'],
-      license=open('LICENSE').read(),
+      scripts=['scripts/garmindb_cli.py', 'scripts/garmindb_graphs.py', 'scripts/garmindb_checkup.py', 'scripts/fitbit.py', 'scripts/mshealth.py'],
       description='Download data from Garmin Connect and store it in a SQLite db for analysis.',
-      long_description=get_long_description('README.md'),
+      long_description=module_long_description,
+      long_description_content_type='text/markdown',
       url="https://github.com/tcgoetz/GarminDB",
       project_urls={"Bug Tracker": "https://github.com/tcgoetz/GarminDB/issues"},
       install_requires=open('requirements.txt').readlines(),
+      classifiers=[
+          'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
+          "Programming Language :: Python :: 3",
+          "Operating System :: OS Independent"
+      ],
       python_requires=">=3.0")
