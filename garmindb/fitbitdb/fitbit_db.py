@@ -8,7 +8,7 @@ import logging
 import datetime
 from sqlalchemy import Column, Integer, Date, Float, Time
 
-import fit
+import fitfile
 import utilities
 
 
@@ -53,13 +53,13 @@ class DaysSummary(FitBitDb.Base, utilities.DbObject):
 
     @classmethod
     def __get_activity_mins_stats(cls, db, func, start_ts, end_ts):
-        moderate_activity_time = fit.conversions.min_to_dt_time(func(db, cls.fairly_active_mins, start_ts, end_ts))
-        vigorous_activity_time = fit.conversions.min_to_dt_time(func(db, cls.very_active_mins, start_ts, end_ts))
+        moderate_activity_time = fitfile.conversions.min_to_dt_time(func(db, cls.fairly_active_mins, start_ts, end_ts))
+        vigorous_activity_time = fitfile.conversions.min_to_dt_time(func(db, cls.very_active_mins, start_ts, end_ts))
         intensity_time = datetime.time.min
         if moderate_activity_time:
-            intensity_time = fit.conversions.add_time(intensity_time, moderate_activity_time)
+            intensity_time = fitfile.conversions.add_time(intensity_time, moderate_activity_time)
         if vigorous_activity_time:
-            intensity_time = fit.conversions.add_time(intensity_time, vigorous_activity_time, 2)
+            intensity_time = fitfile.conversions.add_time(intensity_time, vigorous_activity_time, 2)
         stats = {
             'intensity_time': intensity_time,
             'moderate_activity_time': moderate_activity_time,
@@ -87,9 +87,9 @@ class DaysSummary(FitBitDb.Base, utilities.DbObject):
     @classmethod
     def __get_sleep_stats(cls, db, start_ts, end_ts):
         return {
-            'sleep_avg': fit.conversions.min_to_dt_time(cls.get_col_avg(db, cls.asleep_mins, start_ts, end_ts, True)),
-            'sleep_min': fit.conversions.min_to_dt_time(cls.get_col_min(db, cls.asleep_mins, start_ts, end_ts, True)),
-            'sleep_max': fit.conversions.min_to_dt_time(cls.get_col_max(db, cls.asleep_mins, start_ts, end_ts)),
+            'sleep_avg': fitfile.conversions.min_to_dt_time(cls.get_col_avg(db, cls.asleep_mins, start_ts, end_ts, True)),
+            'sleep_min': fitfile.conversions.min_to_dt_time(cls.get_col_min(db, cls.asleep_mins, start_ts, end_ts, True)),
+            'sleep_max': fitfile.conversions.min_to_dt_time(cls.get_col_max(db, cls.asleep_mins, start_ts, end_ts)),
         }
 
     @classmethod

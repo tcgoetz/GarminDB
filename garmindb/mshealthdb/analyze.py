@@ -10,7 +10,7 @@ import logging
 import datetime
 import calendar
 
-import fit.conversions as conversions
+import fitfile.conversions as conversions
 
 from ..summarydb import SummaryDb, DaysSummary, WeeksSummary, MonthsSummary, YearsSummary
 from .mshealth_db import MSHealthDb, MSVaultWeight, DaysSummary as MshDaysSummary

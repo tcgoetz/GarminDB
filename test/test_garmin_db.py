@@ -8,7 +8,7 @@ import unittest
 import logging
 import datetime
 
-import fit
+import fitfile
 
 from garmindb import ConfigManager
 from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate
@@ -115,8 +115,8 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         )
 
     def test_measurement_system(self):
-        measurement_system = Attributes.measurements_type(self.garmin_db, fit.field_enums.DisplayMeasure.metric)
-        self.assertIn(measurement_system, fit.field_enums.DisplayMeasure)
+        measurement_system = Attributes.measurements_type(self.garmin_db, fitfile.field_enums.DisplayMeasure.metric)
+        self.assertIn(measurement_system, fitfile.field_enums.DisplayMeasure)
 
 
 if __name__ == '__main__':

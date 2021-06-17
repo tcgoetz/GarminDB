@@ -8,7 +8,7 @@ import unittest
 import logging
 import datetime
 
-from fit import GarminProduct, Distance, Speed, Sport
+from fitfile import GarminProduct, Distance, Speed, Sport
 from utilities import Location
 
 from garmindb import Tcx

@@ -7,7 +7,7 @@ __license__ = "GPL"
 import unittest
 import logging
 
-import fit
+import fitfile
 
 from garmindb import ConfigManager, GarminProfile
 from garmindb.garmindb import GarminDb, Attributes
@@ -35,8 +35,8 @@ class TestProfileFile(unittest.TestCase):
             gp.process()
         gdb = GarminDb(db_params)
         measurement_system = Attributes.measurements_type(gdb)
-        self.assertEqual(measurement_system, fit.field_enums.DisplayMeasure.statute,
-                         'DisplayMeasure expected %r found %r' % (fit.field_enums.DisplayMeasure.statute, measurement_system))
+        self.assertEqual(measurement_system, fitfile.field_enums.DisplayMeasure.statute,
+                         'DisplayMeasure expected %r found %r' % (fitfile.field_enums.DisplayMeasure.statute, measurement_system))
 
 
 if __name__ == '__main__':

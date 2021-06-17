@@ -11,7 +11,7 @@ import logging
 import argparse
 from datetime import datetime, time, timedelta
 
-import fit
+import fitfile
 
 from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, DailySummary, ActivitiesDb, Activities, StepsActivities
 from garmindb import ConfigManager, format_version
@@ -32,7 +32,7 @@ class CheckUp(object):
         self.debug = debug
         self.garmin_db = GarminDb(self.db_params)
         self.measurement_system = Attributes.measurements_type(self.garmin_db)
-        self.unit_strings = fit.units.unit_strings[self.measurement_system]
+        self.unit_strings = fitfile.units.unit_strings[self.measurement_system]
 
     def goals(self):
         """Do a checkup of th euser's goals."""
@@ -67,8 +67,8 @@ class CheckUp(object):
                 floor_goal_days_in_week += 1
             else:
                 logger.debug('Floors: goal not met on %s', result.day)
-            intensity_time = fit.conversions.add_time(intensity_time, result.intensity_time)
-            intensity_time_goal = fit.conversions.add_time(intensity_time_goal, result.intensity_time_goal)
+            intensity_time = fitfile.conversions.add_time(intensity_time, result.intensity_time)
+            intensity_time_goal = fitfile.conversions.add_time(intensity_time_goal, result.intensity_time_goal)
             if result.day.weekday() == 6:
                 if days_in_week == 7:
                     intensity_weeks += 1
@@ -89,9 +89,9 @@ class CheckUp(object):
         if activity.is_steps_activity():
             steps_activity = StepsActivities.get(activity_db, activity.activity_id)
             return ('%s: "%s" %.2f %s in %s pace: %s %s speed: %.2f %s' %
-                    (activity.start_time, activity.name, activity.distance, self.unit_strings[fit.units.UnitTypes.distance_long], activity.elapsed_time,
-                     steps_activity.avg_pace, self.unit_strings[fit.units.UnitTypes.pace], activity.avg_speed,
-                     self.unit_strings[fit.units.UnitTypes.speed]))
+                    (activity.start_time, activity.name, activity.distance, self.unit_strings[fitfile.units.UnitTypes.distance_long], activity.elapsed_time,
+                     steps_activity.avg_pace, self.unit_strings[fitfile.units.UnitTypes.pace], activity.avg_speed,
+                     self.unit_strings[fitfile.units.UnitTypes.speed]))
         return '%s: "%s" %s in %s (%s)' % (activity.start_time, activity.name, activity.distance, activity.elapsed_time, activity.avg_speed)
 
     def activity_course(self, course_id):
@@ -112,8 +112,8 @@ class CheckUp(object):
         devices = Device.get_all(self.garmin_db)
         for device in devices:
             battery_level = DeviceInfo.get_col_latest_where(self.garmin_db, DeviceInfo.battery_status,
-                                                            [DeviceInfo.serial_number == device.serial_number, DeviceInfo.battery_status != fit.field_enums.BatteryStatus.invalid])
-            if battery_level is fit.field_enums.BatteryStatus.low:
+                                                            [DeviceInfo.serial_number == device.serial_number, DeviceInfo.battery_status != fitfile.field_enums.BatteryStatus.invalid])
+            if battery_level is fitfile.field_enums.BatteryStatus.low:
                 logger.info("Device %s %s (%s) has a low battery", device.manufacturer, device.product, device.serial_number)
 
 

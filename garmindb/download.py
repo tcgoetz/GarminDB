@@ -16,7 +16,7 @@ import json
 import cloudscraper
 from tqdm import tqdm
 
-import fit.conversions as conversions
+import fitfile.conversions as conversions
 from utilities import RestClient, RestException, RestResponseException
 
 from .garmin_connect_config_manager import GarminConnectConfigManager

@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import os
 
-from fit import Distance, Speed
+from fitfile import Distance, Speed
 
 from .garmindb import GarminDb, File, Device, ActivitiesDb, Activities, ActivityLaps, ActivityRecords
 from .tcx import Tcx

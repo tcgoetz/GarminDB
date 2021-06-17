@@ -10,7 +10,7 @@ import datetime
 import calendar
 from tqdm import tqdm
 
-import fit
+import fitfile
 from utilities.list_and_dict import list_not_none
 
 from garmindb import summarydb
@@ -38,7 +38,7 @@ class Analyze(object):
         self.sum_db = summarydb.SummaryDb(db_params, debug)
         self.garmin_act_db = ActivitiesDb(db_params, debug)
         self.measurement_system = Attributes.measurements_type(self.garmin_db)
-        self.unit_strings = fit.units.unit_strings[self.measurement_system]
+        self.unit_strings = fitfile.units.unit_strings[self.measurement_system]
 
     def __save_summary_stat(self, name, value):
         Summary.set(self.garmin_sum_db, name, value)
@@ -58,7 +58,7 @@ class Analyze(object):
             self.__report_file_type(file_type_name)
 
     def __report_sport(self, sport_col, sport):
-        fit.units.unit_strings[self.measurement_system]
+        fitfile.units.unit_strings[self.measurement_system]
         records = Activities.row_count(self.garmin_act_db, sport_col, sport)
         if records > 0:
             sport_title = sport.title().replace('_', ' ')
@@ -68,7 +68,7 @@ class Analyze(object):
                 average_distance = 0
             else:
                 average_distance = total_distance / records
-            distance_units = self.unit_strings[fit.units.UnitTypes.distance_long]
+            distance_units = self.unit_strings[fitfile.units.UnitTypes.distance_long]
             stat_logger.info("%s activities: %d - total distance %d %s average distance %d %s",
                              sport_title, records, total_distance, distance_units, average_distance, distance_units)
             self.__save_summary_stat(sport + '_Activities', records)
@@ -98,7 +98,7 @@ class Analyze(object):
         stat_logger.info("Sports: %s", ', '.join(sports))
         sub_sports = list_not_none(Activities.get_col_distinct(self.garmin_act_db, Activities.sub_sport))
         stat_logger.info("SubSports: %s", ', '.join(sub_sports))
-        for sport_name in [sport.name for sport in fit.Sport]:
+        for sport_name in [sport.name for sport in fitfile.Sport]:
             self.__report_sport(Activities.sport, sport_name)
 
     def __get_col_stats(self, table, col, name, ignore_le_zero=False, time_col=False):
@@ -146,8 +146,8 @@ class Analyze(object):
             day = int(days[index])
             next_day = int(days[index + 1])
             if next_day != day + 1:
-                day_str = str(fit.conversions.day_of_the_year_to_datetime(year, day))
-                next_day_str = str(fit.conversions.day_of_the_year_to_datetime(year, next_day))
+                day_str = str(fitfile.conversions.day_of_the_year_to_datetime(year, day))
+                next_day_str = str(fitfile.conversions.day_of_the_year_to_datetime(year, next_day))
                 stat_logger.info("Days gap between %d (%s) and %d (%s)", day, day_str, next_day, next_day_str)
         return days_count
 

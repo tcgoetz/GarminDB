@@ -7,7 +7,7 @@ __license__ = "GPL"
 import logging
 import sys
 
-import fit
+import fitfile
 
 from .garmindb import File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, StepsActivities, CycleActivities, PaddleActivities
 from .fit_file_processor import FitFileProcessor
@@ -114,8 +114,8 @@ class ActivityFitFileProcessor(FitFileProcessor):
         steps = {
             'activity_id'                       : activity_id,
             'steps'                             : message_fields.get('total_steps'),
-            'avg_pace'                          : fit.conversions.perhour_speed_to_pace(message_fields.avg_speed),
-            'max_pace'                          : fit.conversions.perhour_speed_to_pace(message_fields.max_speed),
+            'avg_pace'                          : fitfile.conversions.perhour_speed_to_pace(message_fields.avg_speed),
+            'max_pace'                          : fitfile.conversions.perhour_speed_to_pace(message_fields.max_speed),
             'avg_steps_per_min'                 : message_fields.get('avg_steps_per_min'),
             'max_steps_per_min'                 : message_fields.get('max_steps_per_min'),
             'avg_step_length'                   : message_fields.get('avg_step_length'),
@@ -186,13 +186,13 @@ class ActivityFitFileProcessor(FitFileProcessor):
         root_logger.debug("Generic sport entry: %r", message_fields)
 
     def __choose_sport(self, current_sport, current_sub_sport, new_sport, new_sub_sport):
-        sport = fit.Sport.strict_from_string(current_sport)
-        sub_sport = fit.SubSport.strict_from_string(current_sub_sport)
+        sport = fitfile.Sport.strict_from_string(current_sport)
+        sub_sport = fitfile.SubSport.strict_from_string(current_sub_sport)
         if new_sport is not None and (sport is None or (not sport.preferred() and new_sport.preferred())):
             sport = new_sport
         if new_sub_sport is not None and (sub_sport is None or (not sub_sport.preferred() and new_sub_sport.preferred())):
             sub_sport = new_sub_sport
-        return {'sport' : fit.field_enums.name_for_enum(sport), 'sub_sport' : fit.field_enums.name_for_enum(sub_sport)}
+        return {'sport' : fitfile.field_enums.name_for_enum(sport), 'sub_sport' : fitfile.field_enums.name_for_enum(sub_sport)}
 
     def _write_session_entry(self, fit_file, message_fields):
         activity_id = File.id_from_path(fit_file.filename)

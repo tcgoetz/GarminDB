@@ -10,7 +10,7 @@ import logging
 import datetime
 import calendar
 
-import fit.conversions as conversions
+import fitfile.conversions as conversions
 
 from .fitbit_db import FitBitDb, DaysSummary as FitDaysSummary
 from ..summarydb import SummaryDb, DaysSummary, WeeksSummary, MonthsSummary, YearsSummary

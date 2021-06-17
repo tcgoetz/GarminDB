@@ -9,7 +9,7 @@ import sys
 import traceback
 import datetime
 
-import fit
+import fitfile
 import utilities
 
 from .garmindb import File
@@ -91,14 +91,14 @@ class MonitoringFitFileProcessor(FitFileProcessor):
                 'timestamp' : fit_file.utc_datetime_to_local(message_fields.timestamp),
                 'rr'        : rr,
             }
-            if fit_file.type is fit.FileType.monitoring_b:
+            if fit_file.type is fitfile.FileType.monitoring_b:
                 MonitoringRespirationRate.s_insert_or_update(self.garmin_mon_db_session, respiration)
             else:
                 raise(ValueError(f'Unexpected file type {repr(fit_file.type)} for respiration message'))
 
     def _write_pulse_ox_entry(self, fit_file, message_fields):
         logger.debug("pulse_ox message: %r", message_fields)
-        if fit_file.type is fit.FileType.monitoring_b:
+        if fit_file.type is fitfile.FileType.monitoring_b:
             pulse_ox = message_fields.get('pulse_ox')
             if pulse_ox is not None:
                 pulse_ox_entry = {

@@ -11,7 +11,7 @@ from tqdm import tqdm
 import dateutil.parser
 import traceback
 
-import fit
+import fitfile
 from utilities import FileProcessor, JsonFileProcessor
 
 from .garmin_connect_enums import Event, get_summary_sport, get_details_sport
@@ -41,7 +41,7 @@ class GarminActivitiesFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, debug, latest, False, [fit.FileType.activity], measurement_system)
+        super().__init__(input_dir, debug, latest, False, [fitfile.FileType.activity], measurement_system)
 
 
 class GarminTcxData():
@@ -193,21 +193,21 @@ class GarminJsonActivityData(JsonFileProcessor):
         self.conversions = {}
 
     def _process_common(self, json_data):
-        distance = self._get_field_obj(json_data, 'distance', fit.Distance.from_meters)
-        ascent = self._get_field_obj(json_data, 'elevationGain', fit.Distance.from_meters)
-        descent = self._get_field_obj(json_data, 'elevationLoss', fit.Distance.from_meters)
-        avg_speed = self._get_field_obj(json_data, 'averageSpeed', fit.Speed.from_mps)
-        max_speed = self._get_field_obj(json_data, 'maxSpeed', fit.Speed.from_mps)
-        max_temperature = self._get_field_obj(json_data, 'maxTemperature', fit.Temperature.from_celsius)
-        min_temperature = self._get_field_obj(json_data, 'minTemperature', fit.Temperature.from_celsius)
-        avg_temperature = self._get_field_obj(json_data, 'averageTemperature', fit.Temperature.from_celsius)
+        distance = self._get_field_obj(json_data, 'distance', fitfile.Distance.from_meters)
+        ascent = self._get_field_obj(json_data, 'elevationGain', fitfile.Distance.from_meters)
+        descent = self._get_field_obj(json_data, 'elevationLoss', fitfile.Distance.from_meters)
+        avg_speed = self._get_field_obj(json_data, 'averageSpeed', fitfile.Speed.from_mps)
+        max_speed = self._get_field_obj(json_data, 'maxSpeed', fitfile.Speed.from_mps)
+        max_temperature = self._get_field_obj(json_data, 'maxTemperature', fitfile.Temperature.from_celsius)
+        min_temperature = self._get_field_obj(json_data, 'minTemperature', fitfile.Temperature.from_celsius)
+        avg_temperature = self._get_field_obj(json_data, 'averageTemperature', fitfile.Temperature.from_celsius)
         start_time = dateutil.parser.parse(self._get_field(json_data, 'startTimeLocal'), ignoretz=True)
-        elapsed_time = fit.conversions.secs_to_dt_time(self._get_field(json_data, 'elapsedDuration', int))
+        elapsed_time = fitfile.conversions.secs_to_dt_time(self._get_field(json_data, 'elapsedDuration', int))
         return {
             'start_time'                : start_time,
-            'stop_time'                 : start_time + fit.conversions.time_to_timedelta(elapsed_time),
+            'stop_time'                 : start_time + fitfile.conversions.time_to_timedelta(elapsed_time),
             'elapsed_time'              : elapsed_time,
-            'moving_time'               : fit.conversions.secs_to_dt_time(self._get_field(json_data, 'movingDuration', int)),
+            'moving_time'               : fitfile.conversions.secs_to_dt_time(self._get_field(json_data, 'movingDuration', int)),
             'start_lat'                 : self._get_field(json_data, 'startLatitude', float),
             'start_long'                : self._get_field(json_data, 'startLongitude', float),
             'stop_lat'                  : self._get_field(json_data, 'endLatitude', float),
@@ -257,8 +257,8 @@ class GarminJsonSummaryData(GarminJsonActivityData):
 
     def _process_steps_activity(self, activity_id, activity_summary):
         root_logger.debug("process_steps_activity for %s", activity_id)
-        avg_vertical_oscillation = self._get_field_obj(activity_summary, 'avgVerticalOscillation', fit.Distance.from_meters)
-        avg_step_length = self._get_field_obj(activity_summary, 'avgStrideLength', fit.Distance.from_meters)
+        avg_vertical_oscillation = self._get_field_obj(activity_summary, 'avgVerticalOscillation', fitfile.Distance.from_meters)
+        avg_step_length = self._get_field_obj(activity_summary, 'avgStrideLength', fitfile.Distance.from_meters)
         run = {
             'activity_id'               : activity_id,
             'steps'                     : self._get_field(activity_summary, 'steps', float),
@@ -267,7 +267,7 @@ class GarminJsonSummaryData(GarminJsonActivityData):
             'avg_step_length'           : avg_step_length.meters_or_feet(self.measurement_system),
             'avg_gct_balance'           : self._get_field(activity_summary, 'avgGroundContactBalance', float),
             'avg_vertical_oscillation'  : avg_vertical_oscillation.meters_or_feet(self.measurement_system),
-            'avg_ground_contact_time'   : fit.conversions.ms_to_dt_time(self._get_field(activity_summary, 'avgGroundContactTime', float)),
+            'avg_ground_contact_time'   : fitfile.conversions.ms_to_dt_time(self._get_field(activity_summary, 'avgGroundContactTime', float)),
             'vo2_max'                   : self._get_field(activity_summary, 'vO2MaxValue', float),
         }
         StepsActivities.s_insert_or_update(self.garmin_act_db_session, run, ignore_none=True)
@@ -310,7 +310,7 @@ class GarminJsonSummaryData(GarminJsonActivityData):
             'max_cadence'               : self._get_field(activity_summary, 'maxStrokeCadence', float),
         }
         Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
-        avg_stroke_distance = fit.Distance.from_meters(self._get_field(activity_summary, 'avgStrokeDistance', float))
+        avg_stroke_distance = fitfile.Distance.from_meters(self._get_field(activity_summary, 'avgStrokeDistance', float))
         paddle = {
             'activity_id'               : activity_id,
             'strokes'                   : self._get_field(activity_summary, 'strokes', float),
@@ -379,14 +379,14 @@ class GarminJsonDetailsData(GarminJsonActivityData):
 
     def _process_steps_activity(self, sub_sport, activity_id, json_data):
         summary_dto = json_data['summaryDTO']
-        avg_speed = fit.conversions.mps_to_mph(summary_dto.get('averageSpeed'))
-        avg_moving_speed = fit.conversions.mps_to_mph(summary_dto.get('averageMovingSpeed'))
-        max_speed = fit.conversions.mps_to_mph(summary_dto.get('maxSpeed'))
+        avg_speed = fitfile.conversions.mps_to_mph(summary_dto.get('averageSpeed'))
+        avg_moving_speed = fitfile.conversions.mps_to_mph(summary_dto.get('averageMovingSpeed'))
+        max_speed = fitfile.conversions.mps_to_mph(summary_dto.get('maxSpeed'))
         run = {
             'activity_id'       : activity_id,
-            'avg_pace'          : fit.conversions.perhour_speed_to_pace(avg_speed),
-            'avg_moving_pace'   : fit.conversions.perhour_speed_to_pace(avg_moving_speed),
-            'max_pace'          : fit.conversions.perhour_speed_to_pace(max_speed),
+            'avg_pace'          : fitfile.conversions.perhour_speed_to_pace(avg_speed),
+            'avg_moving_pace'   : fitfile.conversions.perhour_speed_to_pace(avg_moving_speed),
+            'max_pace'          : fitfile.conversions.perhour_speed_to_pace(max_speed),
         }
         root_logger.debug("steps_activity for %d: %r", activity_id, run)
         StepsActivities.s_insert_or_update(self.garmin_act_db_session, run, ignore_none=True)

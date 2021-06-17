@@ -9,7 +9,7 @@ from cached_property import cached_property
 
 import tcx
 from utilities import Location
-from fit import Distance, Speed, conversions
+from fitfile import Distance, Speed, conversions
 
 from .garmindb import Device
 

@@ -8,7 +8,7 @@ import unittest
 import logging
 # from sqlalchemy.exc import LookupError
 
-import fit
+import fitfile
 
 from garmindb import ConfigManager
 from garmindb.garmindb import GarminDb, File, Attributes
@@ -81,7 +81,7 @@ class TestGarminDbObjects(unittest.TestCase):
 
     def test_file_type(self):
         file_types_list = list(File.FileType)
-        self.assertIn(File.FileType.convert(fit.FileType.goals), file_types_list)
+        self.assertIn(File.FileType.convert(fitfile.FileType.goals), file_types_list)
 
     def test_get_default(self):
         result = Attributes.get(self.garmin_db, 'test_String')
@@ -116,9 +116,9 @@ class TestGarminDbObjects(unittest.TestCase):
         result = Attributes.get_float(self.garmin_db, 2.2)
 
     def test_measurement_system(self):
-        result = Attributes.measurements_type(self.garmin_db, fit.field_enums.DisplayMeasure.metric)
-        self.assertEqual(result, fit.field_enums.DisplayMeasure.metric)
-        for value in fit.field_enums.DisplayMeasure:
+        result = Attributes.measurements_type(self.garmin_db, fitfile.field_enums.DisplayMeasure.metric)
+        self.assertEqual(result, fitfile.field_enums.DisplayMeasure.metric)
+        for value in fitfile.field_enums.DisplayMeasure:
             Attributes.set(self.garmin_db, 'measurement_system', value)
             result = Attributes.measurements_type(self.garmin_db)
             self.assertEqual(result, value)

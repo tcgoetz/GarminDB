@@ -8,7 +8,7 @@ import logging
 import sys
 import traceback
 
-import fit
+import fitfile
 
 from .garmindb import GarminDb, File, Device, DeviceInfo, Stress, Attributes
 
@@ -46,7 +46,7 @@ class FitFileProcessor(object):
                 except Exception as e:
                     logger.error("Failed to write message %r type %r: %s", message_type, message, e)
                     root_logger.error("Failed to write message %r type %r: %s", message_type, message, traceback.format_exc())
-        elif isinstance(message_type, fit.UnknownMessageType) or message_type.is_unknown():
+        elif isinstance(message_type, fitfile.UnknownMessageType) or message_type.is_unknown():
             root_logger.debug("No entry handler %s for message type %r (%d) from %s: %s",
                               handler_name, message_type, len(messages), fit_file.filename, messages[0])
         else:
@@ -73,7 +73,7 @@ class FitFileProcessor(object):
         #
         # Some ordering is important: 1. create new file entries 2. create new device entries
         #
-        priority_message_types = [fit.MessageType.file_id, fit.MessageType.device_info]
+        priority_message_types = [fitfile.MessageType.file_id, fitfile.MessageType.device_info]
         for message_type in priority_message_types:
             self.__write_message_type(fit_file, message_type)
         for message_type in message_types:
@@ -95,14 +95,14 @@ class FitFileProcessor(object):
         if _manufacturer is not None:
             self.manufacturer = _manufacturer
         self.product = message_fields.product
-        device_type = fit.MainDeviceType.derive_device_type(self.manufacturer, self.product)
+        device_type = fitfile.MainDeviceType.derive_device_type(self.manufacturer, self.product)
         if self.serial_number:
             device = {
                 'serial_number' : self.serial_number,
                 'timestamp'     : fit_file.utc_datetime_to_local(message_fields.time_created),
-                'device_type'   : fit.field_enums.name_for_enum(device_type),
+                'device_type'   : fitfile.field_enums.name_for_enum(device_type),
                 'manufacturer'  : self.manufacturer,
-                'product'       : fit.field_enums.name_for_enum(self.product),
+                'product'       : fitfile.field_enums.name_for_enum(self.product),
             }
             Device.s_insert_or_update(self.garmin_db_session, device)
         (file_id, file_name) = File.name_and_id_from_path(fit_file.filename)
@@ -116,13 +116,13 @@ class FitFileProcessor(object):
 
     def _write_device_info_entry(self, fit_file, message_fields):
         timestamp = fit_file.utc_datetime_to_local(message_fields.timestamp)
-        device_type = message_fields.get('device_type', fit.MainDeviceType.fitness_tracker)
+        device_type = message_fields.get('device_type', fitfile.MainDeviceType.fitness_tracker)
         serial_number = message_fields.serial_number
         manufacturer = Device.Manufacturer.convert(message_fields.manufacturer)
         product = message_fields.product
         source_type = message_fields.source_type
         # local devices are part of the main device. Base missing fields off of the main device.
-        if source_type is fit.field_enums.SourceType.local:
+        if source_type is fitfile.field_enums.SourceType.local:
             if serial_number is None and self.serial_number is not None and device_type is not None:
                 serial_number = Device.local_device_serial_number(self.serial_number, device_type)
             if manufacturer is None:
@@ -133,9 +133,9 @@ class FitFileProcessor(object):
             device = {
                 'serial_number'     : serial_number,
                 'timestamp'         : timestamp,
-                'device_type'       : fit.field_enums.name_for_enum(device_type),
+                'device_type'       : fitfile.field_enums.name_for_enum(device_type),
                 'manufacturer'      : manufacturer,
-                'product'           : fit.field_enums.name_for_enum(product),
+                'product'           : fitfile.field_enums.name_for_enum(product),
                 'hardware_version'  : message_fields.hardware_version
             }
             Device.s_insert_or_update(self.garmin_db_session, device, ignore_none=True)

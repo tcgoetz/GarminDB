@@ -11,7 +11,7 @@ import re
 from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enum, ForeignKey, func, PrimaryKeyConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
-import fit
+import fitfile
 import utilities
 
 
@@ -40,12 +40,12 @@ class Attributes(GarminDb.Base, utilities.KeyValueObject):
     @classmethod
     def measurements_type(cls, db, default=None):
         """Return the database units type (metric, statute, etc)."""
-        return fit.field_enums.DisplayMeasure.from_string(cls.get_string(db, 'measurement_system', default))
+        return fitfile.field_enums.DisplayMeasure.from_string(cls.get_string(db, 'measurement_system', default))
 
     @classmethod
     def measurements_type_metric(cls, db):
         """Return True if the database units are metric."""
-        return (cls.measurements_type(db) == fit.field_enums.DisplayMeasure.metric)
+        return (cls.measurements_type(db) == fitfile.field_enums.DisplayMeasure.metric)
 
 
 class Device(GarminDb.Base, utilities.DbObject):
@@ -57,7 +57,7 @@ class Device(GarminDb.Base, utilities.DbObject):
     table_version = 4
     unknown_device_serial_number = 9999999999
 
-    Manufacturer = utilities.derived_enum.derive('Manufacturer', fit.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
+    Manufacturer = utilities.derived_enum.derive('Manufacturer', fitfile.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
 
     serial_number = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)
@@ -69,7 +69,7 @@ class Device(GarminDb.Base, utilities.DbObject):
     @property
     def product_as_enum(self):
         """Convert the product attribute from a string to an enum and return it."""
-        return fit.product_enum(self.manufacturer, self.product)
+        return fitfile.product_enum(self.manufacturer, self.product)
 
     @classmethod
     def local_device_serial_number(cls, serial_number, device_type):
@@ -91,7 +91,7 @@ class DeviceInfo(GarminDb.Base, utilities.DbObject):
     serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
     software_version = Column(String)
     cum_operating_time = Column(Time, nullable=False, default=datetime.time.min)
-    battery_status = Column(Enum(fit.field_enums.BatteryStatus))
+    battery_status = Column(Enum(fitfile.field_enums.BatteryStatus))
     battery_voltage = Column(Float)
 
     __table_args__ = (
@@ -130,7 +130,7 @@ class File(GarminDb.Base, utilities.DbObject):
     view_version = 4
 
     fit_file_types_prefix = 'fit_'
-    FileType = utilities.derived_enum.derive('FileType', fit.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
+    FileType = utilities.derived_enum.derive('FileType', fitfile.FileType, {'tcx' : 100001, 'gpx' : 100002}, fit_file_types_prefix)
 
     id = Column(String, primary_key=True)
     name = Column(String, unique=True)
@@ -334,7 +334,7 @@ class DailySummary(GarminDb.Base, utilities.DbObject):
     @hybrid_property
     def intensity_time(self):
         """Return intensity_time computed from moderate_activity_time and vigorous_activity_time."""
-        return fit.conversions.add_time(self.moderate_activity_time, self.vigorous_activity_time, 2)
+        return fitfile.conversions.add_time(self.moderate_activity_time, self.vigorous_activity_time, 2)
 
     @intensity_time.expression
     def intensity_time(cls):
@@ -345,7 +345,7 @@ class DailySummary(GarminDb.Base, utilities.DbObject):
     def intensity_time_goal_percent(self):
         """Return the percentage of intensity time goal achieved."""
         if self.intensity_time is not None and self.intensity_time_goal is not None:
-            return (fit.conversions.time_to_secs(self.intensity_time) * 100) / fit.conversions.time_to_secs(self.intensity_time_goal)
+            return (fitfile.conversions.time_to_secs(self.intensity_time) * 100) / fitfile.conversions.time_to_secs(self.intensity_time_goal)
         return 0.0
 
     @intensity_time_goal_percent.expression
@@ -428,12 +428,12 @@ class DailySummary(GarminDb.Base, utilities.DbObject):
         second_week_end = first_day_ts + datetime.timedelta(14)
         third_week_end = first_day_ts + datetime.timedelta(21)
         fourth_week_end = first_day_ts + datetime.timedelta(28)
-        stats['intensity_time_goal'] = fit.conversions.add_time(
-            fit.conversions.add_time(
+        stats['intensity_time_goal'] = fitfile.conversions.add_time(
+            fitfile.conversions.add_time(
                 cls.s_get_time_col_avg(session, cls.intensity_time_goal, first_day_ts, first_week_end),
                 cls.s_get_time_col_avg(session, cls.intensity_time_goal, first_week_end, second_week_end)
             ),
-            fit.conversions.add_time(
+            fitfile.conversions.add_time(
                 cls.s_get_time_col_avg(session, cls.intensity_time_goal, second_week_end, third_week_end),
                 cls.s_get_time_col_avg(session, cls.intensity_time_goal, third_week_end, fourth_week_end)
             )

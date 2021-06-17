@@ -8,7 +8,7 @@ import datetime
 from sqlalchemy import Column, Float, Time, Integer, func
 from sqlalchemy.ext.hybrid import hybrid_property
 
-import fit.conversions as conversions
+import fitfile.conversions as conversions
 from utilities import DbObject
 
 

@@ -10,7 +10,7 @@ import datetime
 from sqlalchemy import Column, Integer, DateTime, Time, Float, Enum, FLOAT, UniqueConstraint, PrimaryKeyConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
-import fit
+import fitfile
 import utilities
 
 
@@ -29,7 +29,7 @@ class MonitoringInfo(MonitoringDb.Base, utilities.DbObject):
 
     timestamp = Column(DateTime)
     file_id = Column(Integer, nullable=False)
-    activity_type = Column(Enum(fit.field_enums.ActivityType))
+    activity_type = Column(Enum(fitfile.field_enums.ActivityType))
     resting_metabolic_rate = Column(Integer)
     cycles_to_distance = Column(FLOAT)
     cycles_to_calories = Column(FLOAT)
@@ -103,7 +103,7 @@ class MonitoringIntensity(MonitoringDb.Base, utilities.DbObject):
     @hybrid_property
     def intensity_time(self):
         """Return the total cardio minutes, moderate and vigorous, with vigorous counted double."""
-        return fit.conversions.add_time(self.moderate_activity_time, self.vigorous_activity_time, 2)
+        return fitfile.conversions.add_time(self.moderate_activity_time, self.vigorous_activity_time, 2)
 
     @intensity_time.expression
     def intensity_time(cls):
@@ -146,7 +146,7 @@ class MonitoringClimb(MonitoringDb.Base, utilities.DbObject):
         """Return a dict of stats for table entries within the time span."""
         cum_ascent = func(session, cls.cum_ascent, start_ts, end_ts)
         if cum_ascent:
-            if measurement_system is fit.field_enums.DisplayMeasure.metric:
+            if measurement_system is fitfile.field_enums.DisplayMeasure.metric:
                 floors = cum_ascent / cls.feet_to_floors
             else:
                 floors = cum_ascent / cls.meters_to_floors
@@ -193,7 +193,7 @@ class Monitoring(MonitoringDb.Base, utilities.DbObject):
     table_version = 2
 
     timestamp = Column(DateTime, nullable=False)
-    activity_type = Column(Enum(fit.field_enums.ActivityType))
+    activity_type = Column(Enum(fitfile.field_enums.ActivityType))
     intensity = Column(Integer)
     duration = Column(Time, nullable=False, default=datetime.time.min)
     distance = Column(Float)
@@ -222,9 +222,9 @@ class Monitoring(MonitoringDb.Base, utilities.DbObject):
         return {
             'steps': func(session, cls.steps, start_ts, end_ts),
             'calories_active_avg': (
-                cls.get_active_calories(session, fit.field_enums.ActivityType.running, start_ts, end_ts)
-                + cls.get_active_calories(session, fit.field_enums.ActivityType.cycling, start_ts, end_ts)
-                + cls.get_active_calories(session, fit.field_enums.ActivityType.walking, start_ts, end_ts)
+                cls.get_active_calories(session, fitfile.field_enums.ActivityType.running, start_ts, end_ts)
+                + cls.get_active_calories(session, fitfile.field_enums.ActivityType.cycling, start_ts, end_ts)
+                + cls.get_active_calories(session, fitfile.field_enums.ActivityType.walking, start_ts, end_ts)
             )
         }
 

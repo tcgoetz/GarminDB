@@ -10,7 +10,7 @@ import logging
 import traceback
 from tqdm import tqdm
 
-import fit
+import fitfile
 from utilities import FileProcessor
 
 
@@ -22,7 +22,7 @@ root_logger = logging.getLogger()
 class FitData(object):
     """Class for importing FIT files into a database."""
 
-    def __init__(self, input_dir, debug, latest=False, recursive=False, fit_types=None, measurement_system=fit.field_enums.DisplayMeasure.metric):
+    def __init__(self, input_dir, debug, latest=False, recursive=False, fit_types=None, measurement_system=fitfile.field_enums.DisplayMeasure.metric):
         """
         Return an instance of FitData.
 
@@ -38,7 +38,7 @@ class FitData(object):
         self.measurement_system = measurement_system
         self.debug = debug
         self.fit_types = fit_types
-        self.file_names = FileProcessor.dir_to_files(input_dir, fit.file.name_regex, latest, recursive)
+        self.file_names = FileProcessor.dir_to_files(input_dir, fitfile.file.name_regex, latest, recursive)
 
     def file_count(self):
         """Return the number of files that will be processed."""
@@ -48,7 +48,7 @@ class FitData(object):
         """Import FIT files into the database."""
         for file_name in tqdm(self.file_names, unit='files'):
             try:
-                fit_file = fit.file.File(file_name, self.measurement_system)
+                fit_file = fitfile.file.File(file_name, self.measurement_system)
                 if self.fit_types is None or fit_file.type in self.fit_types:
                     fit_file_processor.write_file(fit_file)
                     root_logger.debug("Wrote %s to the database", fit_file)

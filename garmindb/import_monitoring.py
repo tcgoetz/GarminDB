@@ -10,7 +10,7 @@ import logging
 import datetime
 import enum
 
-import fit
+import fitfile
 from utilities import JsonFileProcessor, Conversions
 
 from .garmindb import GarminDb, Attributes, Weight, Sleep, SleepEvents, RestingHeartRate, DailySummary
@@ -47,7 +47,7 @@ class GarminWeightData(JsonFileProcessor):
     def _process_json(self, json_data):
         weight_list = json_data['dateWeightList']
         if len(weight_list) > 0:
-            weight = fit.Weight.from_grams(weight_list[0]['weight'])
+            weight = fitfile.Weight.from_grams(weight_list[0]['weight'])
             point = {
                 'day': json_data['startDate'].date(),
                 'weight': weight.kgs_or_lbs(self.measurement_system)
@@ -72,7 +72,7 @@ class GarminMonitoringFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, debug, latest, True, [fit.FileType.monitoring_b], measurement_system)
+        super().__init__(input_dir, debug, latest, True, [fitfile.FileType.monitoring_b], measurement_system)
 
 
 class GarminSettingsFitData(FitData):
@@ -88,7 +88,7 @@ class GarminSettingsFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, debug, fit_types=[fit.FileType.settings])
+        super().__init__(input_dir, debug, fit_types=[fitfile.FileType.settings])
 
 
 class SleepActivityLevels(enum.Enum):
@@ -130,13 +130,13 @@ class GarminSleepData(JsonFileProcessor):
         self.garmin_db = GarminDb(db_params)
         self.conversions = {
             'calendarDate': self._parse_date,
-            'sleepTimeSeconds': fit.conversions.secs_to_dt_time,
+            'sleepTimeSeconds': fitfile.conversions.secs_to_dt_time,
             'sleepStartTimestampGMT': Conversions.epoch_ms_to_dt,
             'sleepEndTimestampGMT': Conversions.epoch_ms_to_dt,
-            'deepSleepSeconds': fit.conversions.secs_to_dt_time,
-            'lightSleepSeconds': fit.conversions.secs_to_dt_time,
-            'remSleepSeconds': fit.conversions.secs_to_dt_time,
-            'awakeSleepSeconds': fit.conversions.secs_to_dt_time,
+            'deepSleepSeconds': fitfile.conversions.secs_to_dt_time,
+            'lightSleepSeconds': fitfile.conversions.secs_to_dt_time,
+            'remSleepSeconds': fitfile.conversions.secs_to_dt_time,
+            'awakeSleepSeconds': fitfile.conversions.secs_to_dt_time,
             'startGMT': self._parse_date,
             'endGMT': self._parse_date
         }
@@ -240,7 +240,7 @@ class GarminProfile(JsonFileProcessor):
         self.conversions = {'calendarDate': self._parse_date}
 
     def _process_json(self, json_data):
-        measurement_system = fit.field_enums.DisplayMeasure.from_string(
+        measurement_system = fitfile.field_enums.DisplayMeasure.from_string(
             json_data['measurementSystem'])
         attributes = {
             'name': json_data['displayName'].replace('_', ' '),
@@ -277,14 +277,14 @@ class GarminSummaryData(JsonFileProcessor):
         self.garmin_db = GarminDb(db_params)
         self.conversions = {
             'calendarDate': self._parse_date,
-            'moderateIntensityMinutes': fit.conversions.min_to_dt_time,
-            'vigorousIntensityMinutes': fit.conversions.min_to_dt_time,
-            'intensityMinutesGoal': fit.conversions.min_to_dt_time,
+            'moderateIntensityMinutes': fitfile.conversions.min_to_dt_time,
+            'vigorousIntensityMinutes': fitfile.conversions.min_to_dt_time,
+            'intensityMinutesGoal': fitfile.conversions.min_to_dt_time,
         }
 
     def _process_json(self, json_data):
         day = json_data['calendarDate'].date()
-        distance = fit.Distance.from_meters(
+        distance = fitfile.Distance.from_meters(
             self._get_field(json_data, 'totalDistanceMeters', int))
         summary = {
             'day': day,
@@ -344,9 +344,9 @@ class GarminHydrationData(JsonFileProcessor):
         }
 
     def _process_json(self, json_data):
-        hydration_intake = fit.Volume.from_milliliters(json_data['valueInML'])
-        hydration_goal = fit.Volume.from_milliliters(json_data['baseGoalInML'])
-        sweat_loss = fit.Volume.from_milliliters(json_data['sweatLossInML'])
+        hydration_intake = fitfile.Volume.from_milliliters(json_data['valueInML'])
+        hydration_goal = fitfile.Volume.from_milliliters(json_data['baseGoalInML'])
+        sweat_loss = fitfile.Volume.from_milliliters(json_data['sweatLossInML'])
         summary = {
             'day': json_data['calendarDate'].date(),
             'hydration_intake': hydration_intake.ml_or_oz(self.measurement_system, rounded=True),

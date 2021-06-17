@@ -8,7 +8,7 @@ import datetime
 import logging
 from sqlalchemy import Column, Integer, Date, DateTime, Float
 
-import fit.conversions as conversions
+import fitfile.conversions as conversions
 import utilities
 
 
