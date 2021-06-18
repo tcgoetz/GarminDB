@@ -17,7 +17,7 @@ from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, DailySum
 from garmindb import ConfigManager, format_version
 
 
-logging.basicConfig(filename='graphs.log', filemode='w', level=logging.INFO)
+logging.basicConfig(filename='checkup.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()

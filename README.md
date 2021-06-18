@@ -21,13 +21,14 @@ Once you have your data in the DB, I recommend using a SQLite browser like [SQLi
 
 # Using It
 
-## Binary Release
+## Releases
 
-Binary releases are available for MacOS. Binary release for other platforms may be added. You can download releases from the [release page](https://github.com/tcgoetz/GarminDB/releases).
+Install the latest release with `pip install garmindb`.
+* Copy `GarminConnectConfig.json.example` to `~/.garmindb/GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password and adjust the start dates to match the dats of your data in Garmin Connect.
+* Starting out: download all of your data and create your db by running `garmindb_cli.py --all --download --import --analyze` in a terminal.
+* Incrementally update your db by downloading the latest data and importing it by running `garmindb_cli.py --all --download --import --analyze --latest` in a terminal.
 
-Downloading and installing the MacOS binary release:
-* Download the release zip file and unzip it into a directory where you want to keep the program and run it from.
-* Follow the directions in the `Readme_MacOS.txt` in the zip file.
+Update to the latest release with `pip install --upgrade garmindb`.
 
 ## From Source
 
@@ -35,7 +36,7 @@ The scripts are automated with [Make](https://www.gnu.org/software/make/manual/m
 
 * Git clone GarminDB repo using the [SSH clone method](https://github.com/git-guides/git-clone#git-clone-with-ssh). The submodules require you to use SSH and not HTTPS. Get the command from the green button on the project home page.
 * Run `make setup` in the cloned tree to get the scripts ready to process data.
-* Copy `GarminConnectConfig.json.example` to `GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password and adjust the start dates to match the dats of your data in Garmin Connect.
+* Copy `GarminConnectConfig.json.example` to `~/.garmindb/GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password and adjust the start dates to match the dats of your data in Garmin Connect.
 * Run `make create_dbs` once to fetch and process for you data.
 * Keep all of your local data up to date by periodically running only one command: `make`.
 * Ocassionally run `make backup` to backup your DBs files.
