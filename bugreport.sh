@@ -22,11 +22,11 @@ for package in "${PYTHON_PACKAGES_ARRAY[@]}"; do \
     echo "---" >> ${BUGREPORT}; \
 done
 
-if [ -f garmin.py ]; then
+if [ -f garmindb_cli.py ]; then
     echo Getting GarminDB version
     echo --- >> ${BUGREPORT}
     echo -n "GarminDB version " >> ${BUGREPORT}
-    ${PYTHON} garmin.py --version >> ${BUGREPORT}
+    ${PYTHON} garmindb_cli.py --version >> ${BUGREPORT}
 fi
 
 echo Zipping up ${BUGREPORT} and logs

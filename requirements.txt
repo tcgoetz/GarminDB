@@ -3,6 +3,9 @@ requests
 python-dateutil
 cached-property
 tqdm
-matplotlib==3.2.2
-PyInstaller
+matplotlib
 cloudscraper
+ipykernel
+fitfile
+tcxfile
+idbutils

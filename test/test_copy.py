@@ -8,9 +8,7 @@ import unittest
 import logging
 import datetime
 
-from copy_garmin import Copy
-from garmin_db_config_manager import GarminDBConfigManager
-from garmin_connect_config_manager import GarminConnectConfigManager
+from garmindb import Copy, ConfigManager, GarminConnectConfigManager
 
 
 root_logger = logging.getLogger()
@@ -30,22 +28,22 @@ class TestCopy(unittest.TestCase):
         cls.copy = Copy(cls.gc_config.device_mount_dir())
 
     def test_copy_activity(self):
-        activities_dir = GarminDBConfigManager.get_or_create_activities_dir(test_dir=True)
+        activities_dir = ConfigManager.get_or_create_activities_dir(test_dir=True)
         logger.info("Copying activities to %s", activities_dir)
         self.copy.copy_activities(activities_dir)
 
     def test_copy_monitoring(self):
-        monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_dir(datetime.datetime.now().year, test_dir=True)
+        monitoring_dir = ConfigManager.get_or_create_monitoring_dir(datetime.datetime.now().year, test_dir=True)
         logger.info("Copying monitoring to %s", monitoring_dir)
         self.copy.copy_monitoring(monitoring_dir)
 
     def test_copy_settings(self):
-        settings_dir = GarminDBConfigManager.get_or_create_fit_files_dir(test_dir=True)
+        settings_dir = ConfigManager.get_or_create_fit_files_dir(test_dir=True)
         root_logger.info("Copying settings to %s", settings_dir)
         self.copy.copy_settings(settings_dir)
 
     def test_copy_sleep(self):
-        monitoring_dir = GarminDBConfigManager.get_or_create_monitoring_dir(datetime.datetime.now().year, test_dir=True)
+        monitoring_dir = ConfigManager.get_or_create_monitoring_dir(datetime.datetime.now().year, test_dir=True)
         root_logger.info("Copying sleep to %s", monitoring_dir)
         self.copy.copy_sleep(monitoring_dir)
 

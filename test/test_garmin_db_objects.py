@@ -8,9 +8,10 @@ import unittest
 import logging
 # from sqlalchemy.exc import LookupError
 
-import GarminDB
-import Fit
-from garmin_db_config_manager import GarminDBConfigManager
+import fitfile
+
+from garmindb import ConfigManager
+from garmindb.garmindb import GarminDb, File, Attributes
 
 
 root_logger = logging.getLogger()
@@ -26,11 +27,11 @@ class TestGarminDbObjects(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.db_params = GarminDBConfigManager.get_db_params(test_db=True)
-        cls.garmin_db = GarminDB.GarminDB(cls.db_params)
+        cls.db_params = ConfigManager.get_db_params(test_db=True)
+        cls.garmin_db = GarminDb(cls.db_params)
 
     def check_file_obj(self, filename_with_path, file_type, file_serial_number):
-        (file_id, file_name) = GarminDB.File.name_and_id_from_path(filename_with_path)
+        (file_id, file_name) = File.name_and_id_from_path(filename_with_path)
         file_dict = {
             'id'            : file_id,
             'name'          : file_name,
@@ -38,8 +39,8 @@ class TestGarminDbObjects(unittest.TestCase):
             'serial_number' : file_serial_number,
         }
         logger.info("check_file_table: %r", file_dict)
-        GarminDB.File.insert_or_update(self.garmin_db, file_dict)
-        file = GarminDB.File.get(self.garmin_db, file_id)
+        File.insert_or_update(self.garmin_db, file_dict)
+        file = File.get(self.garmin_db, file_id)
         self.assertEqual(file.id, file_dict['id'])
         self.assertEqual(file.name, file_dict['name'])
         self.assertEqual(file.type, file_dict['type'])
@@ -49,7 +50,7 @@ class TestGarminDbObjects(unittest.TestCase):
         file_id = 123345678
         filename = '%d.fit' % file_id
         filename_with_path = '/test/directory/' + filename
-        file_type = GarminDB.File.FileType.fit_goals
+        file_type = File.FileType.fit_goals
         file_serial_number = 987654321
         self.check_file_obj(filename_with_path, file_type, file_serial_number)
 
@@ -57,7 +58,7 @@ class TestGarminDbObjects(unittest.TestCase):
         file_id = 123345678
         filename = '%d_ACTIVITY.fit' % file_id
         filename_with_path = '/test/directory/' + filename
-        file_type = GarminDB.File.FileType.fit_goals
+        file_type = File.FileType.fit_goals
         file_serial_number = 987654321
         self.check_file_obj(filename_with_path, file_type, file_serial_number)
 
@@ -65,7 +66,7 @@ class TestGarminDbObjects(unittest.TestCase):
         file_id = 'SBK82515'
         filename = '%s.fit' % file_id
         filename_with_path = '/test/directory/' + filename
-        file_type = GarminDB.File.FileType.fit_goals
+        file_type = File.FileType.fit_goals
         file_serial_number = 987654321
         self.check_file_obj(filename_with_path, file_type, file_serial_number)
 
@@ -79,47 +80,47 @@ class TestGarminDbObjects(unittest.TestCase):
             self.check_file_obj(filename_with_path, file_type, file_serial_number)
 
     def test_file_type(self):
-        file_types_list = list(GarminDB.File.FileType)
-        self.assertIn(GarminDB.File.FileType.convert(Fit.FileType.goals), file_types_list)
+        file_types_list = list(File.FileType)
+        self.assertIn(File.FileType.convert(fitfile.FileType.goals), file_types_list)
 
     def test_get_default(self):
-        result = GarminDB.Attributes.get(self.garmin_db, 'test_String')
+        result = Attributes.get(self.garmin_db, 'test_String')
         self.assertEqual(result, None)
-        result = GarminDB.Attributes.get(self.garmin_db, 'test_String', 'default_value')
+        result = Attributes.get(self.garmin_db, 'test_String', 'default_value')
         self.assertEqual(result, 'default_value')
         #
-        result = GarminDB.Attributes.get_string(self.garmin_db, 'test_String')
+        result = Attributes.get_string(self.garmin_db, 'test_String')
         self.assertEqual(result, None)
-        result = GarminDB.Attributes.get_string(self.garmin_db, 'test_String', 'default_value')
+        result = Attributes.get_string(self.garmin_db, 'test_String', 'default_value')
         self.assertEqual(result, 'default_value')
 
     def test_set_get_default(self):
-        GarminDB.Attributes.set(self.garmin_db, 'test_String', 'test_value')
-        result = GarminDB.Attributes.get_string(self.garmin_db, 'test_String')
+        Attributes.set(self.garmin_db, 'test_String', 'test_value')
+        result = Attributes.get_string(self.garmin_db, 'test_String')
         self.assertEqual(result, 'test_value')
-        result = GarminDB.Attributes.get_string(self.garmin_db, 'test_String', 'default_value')
+        result = Attributes.get_string(self.garmin_db, 'test_String', 'default_value')
         self.assertEqual(result, 'test_value')
         #
-        GarminDB.Attributes.set_if_unset(self.garmin_db, 'test_String', 'test_value2')
-        result = GarminDB.Attributes.get_string(self.garmin_db, 'test_String')
+        Attributes.set_if_unset(self.garmin_db, 'test_String', 'test_value2')
+        result = Attributes.get_string(self.garmin_db, 'test_String')
         self.assertEqual(result, 'test_value')
 
     def test_get_float(self):
-        GarminDB.Attributes.set(self.garmin_db, 'test_String', 2.2)
-        result = GarminDB.Attributes.get_float(self.garmin_db, 'test_String')
+        Attributes.set(self.garmin_db, 'test_String', 2.2)
+        result = Attributes.get_float(self.garmin_db, 'test_String')
         self.assertEqual(result, 2.2)
-        result = GarminDB.Attributes.get_float(self.garmin_db, 'test_String', 'default_value')
+        result = Attributes.get_float(self.garmin_db, 'test_String', 'default_value')
         self.assertEqual(result, 2.2)
         #
-        GarminDB.Attributes.set_if_unset(self.garmin_db, 'test_String', 2.2)
-        result = GarminDB.Attributes.get_float(self.garmin_db, 2.2)
+        Attributes.set_if_unset(self.garmin_db, 'test_String', 2.2)
+        result = Attributes.get_float(self.garmin_db, 2.2)
 
     def test_measurement_system(self):
-        result = GarminDB.Attributes.measurements_type(self.garmin_db, Fit.field_enums.DisplayMeasure.metric)
-        self.assertEqual(result, Fit.field_enums.DisplayMeasure.metric)
-        for value in Fit.field_enums.DisplayMeasure:
-            GarminDB.Attributes.set(self.garmin_db, 'measurement_system', value)
-            result = GarminDB.Attributes.measurements_type(self.garmin_db)
+        result = Attributes.measurements_type(self.garmin_db, fitfile.field_enums.DisplayMeasure.metric)
+        self.assertEqual(result, fitfile.field_enums.DisplayMeasure.metric)
+        for value in fitfile.field_enums.DisplayMeasure:
+            Attributes.set(self.garmin_db, 'measurement_system', value)
+            result = Attributes.measurements_type(self.garmin_db)
             self.assertEqual(result, value)
 
 

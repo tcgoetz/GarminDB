@@ -7,10 +7,10 @@ __license__ = "GPL"
 import unittest
 import logging
 
-import Fit
-import GarminDB
-from garmin_db_config_manager import GarminDBConfigManager
-from import_garmin import GarminProfile
+import fitfile
+
+from garmindb import ConfigManager, GarminProfile
+from garmindb.garmindb import GarminDb, Attributes
 
 
 root_logger = logging.getLogger()
@@ -29,14 +29,14 @@ class TestProfileFile(unittest.TestCase):
         cls.file_path = 'test_files'
 
     def test_parse_uprofile(self):
-        db_params = GarminDBConfigManager.get_db_params(test_db=True)
+        db_params = ConfigManager.get_db_params(test_db=True)
         gp = GarminProfile(db_params, self.file_path, debug=2)
         if gp.file_count() > 0:
             gp.process()
-        garmindb = GarminDB.GarminDB(db_params)
-        measurement_system = GarminDB.Attributes.measurements_type(garmindb)
-        self.assertEqual(measurement_system, Fit.field_enums.DisplayMeasure.statute,
-                         'DisplayMeasure expected %r found %r' % (Fit.field_enums.DisplayMeasure.statute, measurement_system))
+        gdb = GarminDb(db_params)
+        measurement_system = Attributes.measurements_type(gdb)
+        self.assertEqual(measurement_system, fitfile.field_enums.DisplayMeasure.statute,
+                         'DisplayMeasure expected %r found %r' % (fitfile.field_enums.DisplayMeasure.statute, measurement_system))
 
 
 if __name__ == '__main__':

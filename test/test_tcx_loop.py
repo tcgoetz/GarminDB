@@ -8,9 +8,10 @@ import unittest
 import logging
 import datetime
 
-from Fit import GarminProduct, Distance, Speed, Sport
-from garmin_db_tcx import GarminDbTcx
-from utilities import Location
+from fitfile import GarminProduct, Distance, Speed, Sport
+from idbutils import Location
+
+from garmindb import Tcx
 
 
 root_logger = logging.getLogger()
@@ -44,7 +45,7 @@ class TestLoop(unittest.TestCase):
         record_hr = 100
         record_speed = Speed.from_mph(6.0)
         # create a TCX XML tree
-        tcx = GarminDbTcx()
+        tcx = Tcx()
         tcx.create(sport, start_time)
         tcx.add_creator(product, serial_number, version=version)
         track = tcx.add_lap(start_time, stop_time, lap_distance, lap_calories)

@@ -8,10 +8,12 @@ import unittest
 import logging
 import datetime
 
+import fitfile
+
+from garmindb import ConfigManager
+from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate
+
 from test_db_base import TestDBBase
-import Fit
-import GarminDB
-from garmin_db_config_manager import GarminDBConfigManager
 
 
 root_logger = logging.getLogger()
@@ -26,18 +28,18 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        db_params = GarminDBConfigManager.get_db_params()
-        cls.garmin_db = GarminDB.GarminDB(db_params)
+        db_params = ConfigManager.get_db_params()
+        cls.garmin_db = GarminDb(db_params)
         table_dict = {
-            'attributes_table' : GarminDB.Attributes,
-            'device_table' : GarminDB.Device,
-            'device_info_table' : GarminDB.DeviceInfo,
-            'file_table' : GarminDB.File,
-            'weight_table' : GarminDB.Weight,
-            'stress_table' : GarminDB.Stress,
-            'sleep_table' : GarminDB.Sleep,
-            'sleep_events_table' : GarminDB.SleepEvents,
-            'resting_heart_rate_table' : GarminDB.RestingHeartRate
+            'attributes_table': Attributes,
+            'device_table': Device,
+            'device_info_table': DeviceInfo,
+            'file_table': File,
+            'weight_table': Weight,
+            'stress_table': Stress,
+            'sleep_table': Sleep,
+            'sleep_events_table': SleepEvents,
+            'resting_heart_rate_table': RestingHeartRate
         }
         super().setUpClass(cls.garmin_db, table_dict)
 
@@ -70,8 +72,8 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
 
     def test_garmindb_tables_bounds(self):
         self.check_col_stats(
-            self.garmin_db, GarminDB.Weight, GarminDB.Weight.weight, 'Weight', False, False,
-            (0, 10*365),
+            self.garmin_db, Weight, Weight.weight, 'Weight', False, False,
+            (0, 10 * 365),
             (25, 300),
             (25, 300),
             (25, 300),
@@ -80,7 +82,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         stress_min = -2
         stress_max = 100
         self.check_col_stats(
-            self.garmin_db, GarminDB.Stress, GarminDB.Stress.stress, 'Stress', True, False,
+            self.garmin_db, Stress, Stress.stress, 'Stress', True, False,
             (1, 10000000),
             (25, 100),
             (stress_min, 2),
@@ -88,7 +90,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
             (stress_min, stress_max)
         )
         self.check_col_stats(
-            self.garmin_db, GarminDB.RestingHeartRate, GarminDB.RestingHeartRate.resting_heart_rate, 'RHR', True, False,
+            self.garmin_db, RestingHeartRate, RestingHeartRate.resting_heart_rate, 'RHR', True, False,
             (1, 10000000),
             (30, 100),
             (30, 100),
@@ -96,7 +98,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
             (30, 100)
         )
         self.check_col_stats(
-            self.garmin_db, GarminDB.Sleep, GarminDB.Sleep.total_sleep, 'Sleep', True, True,
+            self.garmin_db, Sleep, Sleep.total_sleep, 'Sleep', True, True,
             (1, 10000000),
             (datetime.time(8), datetime.time(16)),
             (datetime.time(0), datetime.time(4)),
@@ -104,7 +106,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
             (datetime.time(2), datetime.time(16))
         )
         self.check_col_stats(
-            self.garmin_db, GarminDB.Sleep, GarminDB.Sleep.rem_sleep, 'REM Sleep', True, True,
+            self.garmin_db, Sleep, Sleep.rem_sleep, 'REM Sleep', True, True,
             (1, 10000000),
             (datetime.time(2), datetime.time(8)),           # max
             (datetime.time(0), datetime.time(2)),           # min
@@ -113,8 +115,8 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         )
 
     def test_measurement_system(self):
-        measurement_system = GarminDB.Attributes.measurements_type(self.garmin_db, Fit.field_enums.DisplayMeasure.metric)
-        self.assertIn(measurement_system, Fit.field_enums.DisplayMeasure)
+        measurement_system = Attributes.measurements_type(self.garmin_db, fitfile.field_enums.DisplayMeasure.metric)
+        self.assertIn(measurement_system, fitfile.field_enums.DisplayMeasure)
 
 
 if __name__ == '__main__':
