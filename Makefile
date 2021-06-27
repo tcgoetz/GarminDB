@@ -46,7 +46,7 @@ update_copy_dbs: copy_garmin_latest
 # Project maintainance targets
 #
 SUBMODULES=Fit Tcx utilities
-SUBDIRS=FitBitDB GarminDB HealthDB MSHealthDB
+SUBDIRS=fitbitdb garmindb healthdb mshealthdb
 
 $(CONF_DIR):
 	mkdir $(CONF_DIR)
@@ -55,7 +55,8 @@ $(CONF_DIR)/GarminConnectConfig.json: $(CONF_DIR)
 	cp GarminConnectConfig.json.example $(CONF_DIR)/GarminConnectConfig.json
 
 $(PROJECT_BASE)/.venv:
-	$(PYTHON) -m venv $(PROJECT_BASE)/.venv
+	$(PYTHON) -m venv --upgrade-deps $(PROJECT_BASE)/.venv
+	$(PROJECT_BASE)/.venv/bin/activate
 
 update: submodules_update
 	git pull --rebase
@@ -119,8 +120,8 @@ $(SUBMODULES:%=%-clean):
 	$(MAKE) -C $(subst -clean,,$@) clean
 
 $(SUBDIRS:%=%-clean):
-	rm -f $(subst -clean,,$@)/*.pyc
-	rm -rf $(subst -clean,,$@)/__pycache__
+	rm -f garmindb/$(subst -clean,,$@)/*.pyc
+	rm -rf garmindb/$(subst -clean,,$@)/__pycache__
 
 clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -f *.pyc
@@ -132,7 +133,7 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -f ms_stats.txt
 	rm -f stats.txt
 	rm -rf __pycache__
-	rm -rf GarminDb.egg-info
+	rm -rf *.egg-info
 	rm -rf build
 	rm -rf dist
 
