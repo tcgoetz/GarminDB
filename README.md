@@ -23,7 +23,7 @@ Once you have your data in the DB, I recommend using a SQLite browser like [SQLi
 
 ## Releases
 
-Install the latest release with `pip install garmindb`.
+GarminDB requires [Python](https://www.python.org/). With Python installed, install the latest release with [pip](https://pypi.org/project/pip/) by running `pip install garmindb` in a terminal.
 * Copy `GarminConnectConfig.json.example` to `~/.garmindb/GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password and adjust the start dates to match the dats of your data in Garmin Connect.
 * Starting out: download all of your data and create your db by running `garmindb_cli.py --all --download --import --analyze` in a terminal.
 * Incrementally update your db by downloading the latest data and importing it by running `garmindb_cli.py --all --download --import --analyze --latest` in a terminal.
