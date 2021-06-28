@@ -21,7 +21,7 @@ setup_install: deps devdeps install_all
 
 setup: setup_repo setup_install
 
-setup_pipeline: devdeps install
+setup_pipeline: devdeps install_all
 
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs
 
