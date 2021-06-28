@@ -54,7 +54,7 @@ $(CONF_DIR):
 	mkdir $(CONF_DIR)
 
 $(CONF_DIR)/GarminConnectConfig.json: $(CONF_DIR)
-	cp GarminConnectConfig.json.example $(CONF_DIR)/GarminConnectConfig.json
+	cp $(PROJECT_BASE)/garmindb/GarminConnectConfig.json.example $(CONF_DIR)/GarminConnectConfig.json
 
 $(PROJECT_BASE)/.venv:
 	$(PYTHON) -m venv --upgrade-deps $(PROJECT_BASE)/.venv
