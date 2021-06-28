@@ -1,3 +1,8 @@
 flake8
 build
+<<<<<<< HEAD
 twine
+=======
+wheel
+twine
+>>>>>>> remotes/origin/develop

@@ -16,6 +16,7 @@ class Config():
         'relative_to_home'      : True,
         'config_dir'            : '.GarminDb',
         'base_dir'              : 'HealthData',
+        'backup_dir'            : 'Backups',
         'plugins_dir'           : "Plugins",
         'fit_file_dir'          : 'FitFiles',
         'fitbit_file_dir'       : 'FitBitFiles',

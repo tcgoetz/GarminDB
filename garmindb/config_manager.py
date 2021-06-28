@@ -50,6 +50,16 @@ class ConfigManager(Config):
         return dir
 
     @classmethod
+    def get_backup_dir(cls):
+        """Return the configured directory of where the backuped databses will be stored."""
+        return cls.get_base_dir()  + os.sep + cls.directories['backup_dir']
+
+    @classmethod
+    def get_or_create_backup_dir(cls):
+        """Return the path to the backup directory."""
+        return cls._create_dir_if_needed(cls.get_backup_dir())
+
+    @classmethod
     def get_config_dir(cls):
         """Return the configured directory of where the configuation files will be stored."""
         config = cls.directories['config_dir']
@@ -59,9 +69,19 @@ class ConfigManager(Config):
         return config
 
     @classmethod
+    def get_or_create_config_dir(cls):
+        """Return the path to the configuation directory."""
+        return cls._create_dir_if_needed(cls.get_config_dir())
+
+    @classmethod
+    def get_config_filename(cls):
+        """Return the name of the GarminDb config file."""
+        return 'GarminConnectConfig.json'
+
+    @classmethod
     def get_config_file(cls):
         """Return the path to the configuation file."""
-        return cls.get_config_dir() + os.sep + 'GarminConnectConfig.json'
+        return cls.get_or_create_config_dir() + os.sep + cls.get_config_filename()
 
     @classmethod
     def get_base_dir(cls, test_dir=False):

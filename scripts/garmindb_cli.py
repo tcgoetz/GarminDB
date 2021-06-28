@@ -16,6 +16,8 @@ import argparse
 import datetime
 import os
 import tempfile
+import zipfile
+import glob
 
 from garmindb import python_version_check, log_version, format_version
 from garmindb.garmindb import GarminDb, Attributes, Sleep, Weight, RestingHeartRate, MonitoringDb, MonitoringHeartRate, ActivitiesDb, GarminSummaryDb
@@ -232,6 +234,16 @@ def analyze_data(debug):
     analyze.create_dynamic_views()
 
 
+def backup_dbs():
+    """Backup GarminDb database files."""
+    dbs = glob.glob(ConfigManager.get_db_dir() + os.sep + '*.db')
+    backupfile = ConfigManager.get_or_create_backup_dir()  + os.sep + str(int(datetime.datetime.now().timestamp())) + '_dbs.zip'
+    logger.info("Backiping up dbs %s to %s", dbs, backupfile)
+    with zipfile.ZipFile(backupfile, 'w') as backupzip:
+        for db in dbs:
+            backupzip.write(db)
+
+
 def delete_dbs(delete_db_list=[]):
     """Delete selected, or all if none selected GarminDb, database files."""
     if len(delete_db_list) == 0:
@@ -271,13 +283,14 @@ def main(argv):
     parser.add_argument("-v", "--version", help="print the program's version", action='version', version=format_version(sys.argv[0]))
     parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
     modes_group = parser.add_argument_group('Modes')
+    modes_group.add_argument("-b", "--backup", help="Backup the databse files.", dest='backup_dbs', action="store_true", default=False)
     modes_group.add_argument("-d", "--download", help="Download data from Garmin Connect for the chosen stats.", dest='download_data', action="store_true", default=False)
     modes_group.add_argument("-c", "--copy", help="copy data from a connected device", dest='copy_data', action="store_true", default=False)
     modes_group.add_argument("-i", "--import", help="Import data for the chosen stats", dest='import_data', action="store_true", default=False)
     modes_group.add_argument("--analyze", help="Analyze data in the db and create summary and derived tables.", dest='analyze_data', action="store_true", default=False)
     modes_group.add_argument("--delete_db", help="Delete Garmin DB db files for the selected activities.", action="store_true", default=False)
     modes_group.add_argument("-e", "--export-activity", help="Export an activity to a TCX file based on the activity\'s id", type=int)
-    modes_group.add_argument("-b", "--basecamp-activity", help="Export an activity to Garmin BaseCamp", type=int)
+    modes_group.add_argument("--basecamp-activity", help="Export an activity to Garmin BaseCamp", type=int)
     modes_group.add_argument("-g", "--google-earth-activity", help="Export an activity to Google Earth", type=int)
     # stat types to operate on
     stats_group = parser.add_argument_group('Statistics')
@@ -302,6 +315,9 @@ def main(argv):
         root_logger.setLevel(logging.INFO)
 
     root_logger.info("Enabled statistics: %r", args.stats)
+
+    if args.backup_dbs:
+        backup_dbs()
 
     if args.delete_db:
         delete_dbs([stats_to_db_map[stat] for stat in args.stats] + summary_dbs)

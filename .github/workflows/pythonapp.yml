@@ -8,7 +8,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'true'
     - name: Set up Python 3.9
       uses: actions/setup-python@v2
       with:
@@ -18,13 +20,13 @@ jobs:
         make setup_repo
     - name: Update Python tools
       run: |
-        .venv/bin/activate && python -m pip install --upgrade pip
+        bash -c "source .venv/bin/activate && python -m pip install --upgrade pip"
     - name: Install dependencies
       run: |
-        .venv/bin/activate && make setup_install
+        bash -c "source .venv/bin/activate && make setup_pipeline"
     - name: Lint with flake8
       run: |
-        .venv/bin/activate && make flake8
+        bash -c "source .venv/bin/activate && make flake8"
     - name: Test
       run: |
-        .venv/bin/activate && make verify_commit
+        bash -c "source .venv/bin/activate && make verify_commit"

@@ -21,6 +21,8 @@ setup_install: deps devdeps install_all
 
 setup: setup_repo setup_install
 
+setup_pipeline: devdeps install
+
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs
 
 # Use for an intial download or when the start dates have been changed.
@@ -46,16 +48,17 @@ update_copy_dbs: copy_garmin_latest
 # Project maintainance targets
 #
 SUBMODULES=Fit Tcx utilities
-SUBDIRS=FitBitDB GarminDB HealthDB MSHealthDB
+SUBDIRS=fitbitdb garmindb healthdb mshealthdb
 
 $(CONF_DIR):
 	mkdir $(CONF_DIR)
 
 $(CONF_DIR)/GarminConnectConfig.json: $(CONF_DIR)
-	cp GarminConnectConfig.json.example $(CONF_DIR)/GarminConnectConfig.json
+	cp $(PROJECT_BASE)/garmindb/GarminConnectConfig.json.example $(CONF_DIR)/GarminConnectConfig.json
 
 $(PROJECT_BASE)/.venv:
-	$(PYTHON) -m venv $(PROJECT_BASE)/.venv
+	$(PYTHON) -m venv --upgrade-deps $(PROJECT_BASE)/.venv
+	source $(PROJECT_BASE)/.venv/bin/activate
 
 update: submodules_update
 	git pull --rebase
@@ -67,8 +70,6 @@ submodules_update:
 $(SUBMODULES:%=%-install):
 	$(MAKE) -C $(subst -install,,$@) install
 
-dist: build
-
 publish_check: dist
 	$(PYTHON) -m twine check dist/*
 
@@ -78,8 +79,10 @@ publish: publish_check
 build:
 	$(PYTHON) -m build
 
-install: build
-	$(PIP) install --upgrade --force-reinstall ./dist/$(MODULE)-*.whl
+$(PROJECT_BASE)/dist/$(MODULE)-*.whl: build
+
+install: $(PROJECT_BASE)/dist/$(MODULE)-*.whl
+	$(PIP) install --upgrade --force-reinstall $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
 install_all: $(SUBMODULES:%=%-install) install
 
@@ -119,8 +122,8 @@ $(SUBMODULES:%=%-clean):
 	$(MAKE) -C $(subst -clean,,$@) clean
 
 $(SUBDIRS:%=%-clean):
-	rm -f $(subst -clean,,$@)/*.pyc
-	rm -rf $(subst -clean,,$@)/__pycache__
+	rm -f garmindb/$(subst -clean,,$@)/*.pyc
+	rm -rf garmindb/$(subst -clean,,$@)/__pycache__
 
 clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -f *.pyc
@@ -132,21 +135,9 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -f ms_stats.txt
 	rm -f stats.txt
 	rm -rf __pycache__
-	rm -rf GarminDb.egg-info
+	rm -rf *.egg-info
 	rm -rf build
 	rm -rf dist
-
-#
-# Fitness System independant targets
-#
-DB_DIR=$(HEALTH_DATA_DIR)/DBs
-BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
-$(BACKUP_DIR):
-	mkdir -p $(BACKUP_DIR)
-
-EPOCH=$(shell date +'%s')
-backup: $(BACKUP_DIR)
-	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
 
 graphs:
 	garmindb_graphs.py --all
@@ -270,15 +261,6 @@ regression_test_run: flake8 rebuild_dbs
 	grep ERROR garmin.log || [ $$? -eq 1 ]
 
 regression_test: clean regression_test_run test
-
-PLUGIN_DIR=$(shell python3 -c 'from garmindb import ConfigManager; print(ConfigManager.get_plugins_dir())')
-publish_plugins:
-	cp ./Plugins/*.py $(PLUGIN_DIR)/.
-
-clean_plugins:
-	rm $(PLUGIN_DIR)/*.py
-
-republish_plugins: clean_plugins publish_plugins
 
 
 #

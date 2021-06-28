@@ -4,6 +4,7 @@ __author__ = "Tom Goetz"
 __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
+import os
 import sys
 import platform
 import subprocess
@@ -21,11 +22,12 @@ class GarminConnectConfigManager(JsonConfig):
     def __init__(self):
         """Return a new GarminConnectConfigManager instance."""
         self.enabled_statistics = None
+        config_file = ConfigManager.get_config_file()
         try:
-            super().__init__(ConfigManager.get_config_file())
+            super().__init__(config_file)
         except Exception as e:
             print(str(e))
-            print("Missing config: copy GarminConnectConfig.json.example to GarminConnectConfig.json and edit GarminConnectConfig.json to "
+            print(f"Missing config: copy GarminConnectConfig.json.example from {os.path.dirname(os.path.abspath(__file__))} to {config_file} and edit it to "
                   "add your Garmin Connect username and password.")
             sys.exit(-1)
 
