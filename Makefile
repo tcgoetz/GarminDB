@@ -58,7 +58,7 @@ $(CONF_DIR)/GarminConnectConfig.json: $(CONF_DIR)
 
 $(PROJECT_BASE)/.venv:
 	$(PYTHON) -m venv --upgrade-deps $(PROJECT_BASE)/.venv
-	source ./dist/$(MODULE)-*.whl/.venv/bin/activate
+	source $(PROJECT_BASE)/.venv/bin/activate
 
 update: submodules_update
 	git pull --rebase
