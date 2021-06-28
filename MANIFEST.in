@@ -1,0 +1,2 @@
+include GarminConnectConfig.json.example
+include requirements.in

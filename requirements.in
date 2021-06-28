@@ -1,0 +1,11 @@
+sqlalchemy
+requests
+python-dateutil
+cached-property
+tqdm
+matplotlib
+cloudscraper
+ipykernel
+fitfile
+tcxfile
+idbutils

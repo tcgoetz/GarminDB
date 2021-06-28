@@ -6,6 +6,7 @@ CONF_DIR=$(HOME)/.GarminDb
 #
 # Handle multiple Python installs. What python are we using?
 #
+PLATFORM=$(shell uname)
 
 ifeq ($(PLATFORM), Linux)
 
@@ -25,9 +26,8 @@ TIME ?= $(shell which time)
 
 endif
 
-PLATFORM=$(shell uname)
 
-HEALTH_DATA_DIR=$(shell python3 -c 'from garmindb import ConfigManager; print(ConfigManager.get_base_dir())')
+# HEALTH_DATA_DIR=$(shell python3 -c 'from garmindb import ConfigManager; print(ConfigManager.get_base_dir())')
 
 # PYTHON3=$(shell which python3)
 PYTHON3=python3
@@ -46,4 +46,4 @@ $(error pip not found)
 endif
 
 
-export TIME PLATFORM PYTHON PIP YESTERDAY FLAKE8
+export SHELL TIME PLATFORM PYTHON PIP YESTERDAY FLAKE8

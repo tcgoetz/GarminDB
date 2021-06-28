@@ -100,6 +100,5 @@ bugreport.txt
 GarminConnectConfig.json
 *stats.txt
 *.png
-test/*.txt
 test/test_files
 my-defines.mk

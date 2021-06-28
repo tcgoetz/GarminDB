@@ -21,6 +21,8 @@ setup_install: deps devdeps install_all
 
 setup: setup_repo setup_install
 
+setup_pipeline: devdeps install
+
 clean_dbs: clean_mshealth_db clean_fitbit_db clean_garmin_dbs
 
 # Use for an intial download or when the start dates have been changed.
@@ -56,7 +58,8 @@ $(CONF_DIR)/GarminConnectConfig.json: $(CONF_DIR)
 
 $(PROJECT_BASE)/.venv:
 	$(PYTHON) -m venv --upgrade-deps $(PROJECT_BASE)/.venv
-	$(PROJECT_BASE)/.venv/bin/activate
+	echo $(SHELL)
+	source $(PROJECT_BASE)/.venv/bin/activate
 
 update: submodules_update
 	git pull --rebase
@@ -139,15 +142,15 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 
 #
 # Fitness System independant targets
-#
-DB_DIR=$(HEALTH_DATA_DIR)/DBs
-BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
-$(BACKUP_DIR):
-	mkdir -p $(BACKUP_DIR)
+# #
+# DB_DIR=$(HEALTH_DATA_DIR)/DBs
+# BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
+# $(BACKUP_DIR):
+# 	mkdir -p $(BACKUP_DIR)
 
-EPOCH=$(shell date +'%s')
-backup: $(BACKUP_DIR)
-	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
+# EPOCH=$(shell date +'%s')
+# backup: $(BACKUP_DIR)
+# 	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
 
 graphs:
 	garmindb_graphs.py --all
@@ -271,15 +274,6 @@ regression_test_run: flake8 rebuild_dbs
 	grep ERROR garmin.log || [ $$? -eq 1 ]
 
 regression_test: clean regression_test_run test
-
-PLUGIN_DIR=$(shell python3 -c 'from garmindb import ConfigManager; print(ConfigManager.get_plugins_dir())')
-publish_plugins:
-	cp ./Plugins/*.py $(PLUGIN_DIR)/.
-
-clean_plugins:
-	rm $(PLUGIN_DIR)/*.py
-
-republish_plugins: clean_plugins publish_plugins
 
 
 #
