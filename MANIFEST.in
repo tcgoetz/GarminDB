@@ -1,2 +1,2 @@
-include GarminConnectConfig.json.example
+include garmindb/GarminConnectConfig.json.example
 include requirements.in

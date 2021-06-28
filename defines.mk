@@ -27,8 +27,6 @@ TIME ?= $(shell which time)
 endif
 
 
-# HEALTH_DATA_DIR=$(shell python3 -c 'from garmindb import ConfigManager; print(ConfigManager.get_base_dir())')
-
 # PYTHON3=$(shell which python3)
 PYTHON3=python3
 # PIP3=$(shell which pip3)

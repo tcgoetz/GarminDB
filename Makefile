@@ -58,8 +58,7 @@ $(CONF_DIR)/GarminConnectConfig.json: $(CONF_DIR)
 
 $(PROJECT_BASE)/.venv:
 	$(PYTHON) -m venv --upgrade-deps $(PROJECT_BASE)/.venv
-	echo $(SHELL)
-	source $(PROJECT_BASE)/.venv/bin/activate
+	source ./dist/$(MODULE)-*.whl/.venv/bin/activate
 
 update: submodules_update
 	git pull --rebase
@@ -71,8 +70,6 @@ submodules_update:
 $(SUBMODULES:%=%-install):
 	$(MAKE) -C $(subst -install,,$@) install
 
-dist: build
-
 publish_check: dist
 	$(PYTHON) -m twine check dist/*
 
@@ -82,8 +79,10 @@ publish: publish_check
 build:
 	$(PYTHON) -m build
 
-install: build
-	$(PIP) install --upgrade --force-reinstall ./dist/$(MODULE)-*.whl
+$(PROJECT_BASE)/dist/$(MODULE)-*.whl: build
+
+install: $(PROJECT_BASE)/dist/$(MODULE)-*.whl
+	$(PIP) install --upgrade --force-reinstall $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
 install_all: $(SUBMODULES:%=%-install) install
 
@@ -139,18 +138,6 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -rf *.egg-info
 	rm -rf build
 	rm -rf dist
-
-#
-# Fitness System independant targets
-# #
-# DB_DIR=$(HEALTH_DATA_DIR)/DBs
-# BACKUP_DIR=$(HEALTH_DATA_DIR)/Backups
-# $(BACKUP_DIR):
-# 	mkdir -p $(BACKUP_DIR)
-
-# EPOCH=$(shell date +'%s')
-# backup: $(BACKUP_DIR)
-# 	zip -r $(BACKUP_DIR)/$(EPOCH)_dbs.zip $(DB_DIR)
 
 graphs:
 	garmindb_graphs.py --all
