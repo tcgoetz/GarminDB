@@ -6,8 +6,6 @@ export PROJECT_BASE=$(CURDIR)
 
 include defines.mk
 
-MODULE=garmindb
-
 
 #
 # Master targets
@@ -70,10 +68,10 @@ submodules_update:
 $(SUBMODULES:%=%-install):
 	$(MAKE) -C $(subst -install,,$@) install
 
-publish_check: dist
+publish_check: build
 	$(PYTHON) -m twine check dist/*
 
-publish: publish_check
+publish: clean publish_check
 	$(PYTHON) -m twine upload dist/* --verbose
 
 build:

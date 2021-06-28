@@ -13,7 +13,7 @@ What they can do:
 * Extract sleep, weight, and resting heart rate data from Garmin Connect, store it as JSON files, and import it into the DB.
 * Download and import activity files from Garmin Connect. A summary table for all activities and more detailed data for some activity types. Lap and record entries for activities.
 * Summarizing data into `stats.txt` and a common DB with tables containing daily summaries, weekly summaries, and monthly summaries.
-* Graph your data.
+* Graph your data from the commandline or with Jupyter notebooks.
 * Retain data as JSON files or FIT files so that the DB can be regenerated without connecting or redownloading data from Garmin Connect.
 * Export activities as TCX files.
 
@@ -27,6 +27,7 @@ GarminDB requires [Python](https://www.python.org/). With Python installed, inst
 * Copy `GarminConnectConfig.json.example` to `~/.garmindb/GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password and adjust the start dates to match the dats of your data in Garmin Connect.
 * Starting out: download all of your data and create your db by running `garmindb_cli.py --all --download --import --analyze` in a terminal.
 * Incrementally update your db by downloading the latest data and importing it by running `garmindb_cli.py --all --download --import --analyze --latest` in a terminal.
+* Ocassionally run `garmin_cli.py --backup` to backup your DB files.
 
 Update to the latest release with `pip install --upgrade garmindb`.
 
@@ -39,13 +40,12 @@ The scripts are automated with [Make](https://www.gnu.org/software/make/manual/m
 * Copy `GarminConnectConfig.json.example` to `~/.garmindb/GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password and adjust the start dates to match the dats of your data in Garmin Connect.
 * Run `make create_dbs` once to fetch and process for you data.
 * Keep all of your local data up to date by periodically running only one command: `make`.
-* Ocassionally run `make backup` to backup your DBs files.
 
 There  is more help on [using the program](https://github.com/tcgoetz/GarminDB/wiki/Usage) in the wiki.
 
 # Plugins #
 
-Plugins allow the user to expand the types of data that are processed and stored in the database. Read more about plugins [here](https://github.com/tcgoetz/GarminDbPlugins).
+Plugins allow the user to expand the types of data that are processed and stored in the database. GarminDb already has a number of plugins for handling data from third-party Connect IQ apps and data fields. Read more about plugins [here](https://github.com/tcgoetz/GarminDbPlugins).
 
 # Success Stories
 
