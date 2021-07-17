@@ -15,13 +15,15 @@ from .fit_data import FitData
 from .fit_file_processor import FitFileProcessor
 from .garmin_connect_config_manager import GarminConnectConfigManager
 from .config_manager import ConfigManager
-from .graphs import Graph
 from .statistics import Statistics
 from .tcx import Tcx
 from .monitoring_fit_file_processor import MonitoringFitFileProcessor
 from .export_activities import ActivityExporter
 from .open_with_basecamp import OpenWithBaseCamp
 from .open_with_google_earth import OpenWithGoogleEarth
+
+from .graphs import Graph
+from .checkup import Checkup
 
 from .copy import Copy
 from .download import Download
