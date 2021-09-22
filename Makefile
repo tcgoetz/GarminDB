@@ -80,6 +80,9 @@ build:
 $(PROJECT_BASE)/dist/$(MODULE)-*.whl: build
 
 install: $(PROJECT_BASE)/dist/$(MODULE)-*.whl
+	$(PIP) install --upgrade $(PROJECT_BASE)/dist/$(MODULE)-*.whl
+
+reinstall: $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 	$(PIP) install --upgrade --force-reinstall --no-deps $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
 install_all: $(SUBMODULES:%=%-install) install
@@ -91,6 +94,8 @@ uninstall:
 	$(PIP) uninstall -y $(MODULE)
 
 uninstall_all: uninstall $(SUBMODULES:%=%-uninstall)
+
+reinstall_all: uninstall_all install_all
 
 $(SUBMODULES:%=%-deps):
 	$(MAKE) -C $(subst -deps,,$@) deps
