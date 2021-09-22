@@ -10,6 +10,7 @@ from .version_info import version_string
 
 __version__ = version_string()
 
+from .activity_plugin_base import ActivityPluginBase
 from .activity_fit_file_processor import ActivityFitFileProcessor
 from .fit_data import FitData
 from .fit_file_processor import FitFileProcessor

@@ -80,7 +80,7 @@ build:
 $(PROJECT_BASE)/dist/$(MODULE)-*.whl: build
 
 install: $(PROJECT_BASE)/dist/$(MODULE)-*.whl
-	$(PIP) install --upgrade --force-reinstall $(PROJECT_BASE)/dist/$(MODULE)-*.whl
+	$(PIP) install --upgrade --force-reinstall --no-deps $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
 install_all: $(SUBMODULES:%=%-install) install
 
@@ -126,7 +126,6 @@ $(SUBDIRS:%=%-clean):
 clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -f *.pyc
 	rm -f *.log
-	rm -rf build
 	rm -f *.spec
 	rm -f *.zip
 	rm -f *.png
