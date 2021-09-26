@@ -97,6 +97,9 @@ uninstall_all: uninstall $(SUBMODULES:%=%-uninstall)
 
 reinstall_all: uninstall_all install_all
 
+republish_plugins:
+	$(MAKE) -C Plugins republish_plugins
+
 $(SUBMODULES:%=%-deps):
 	$(MAKE) -C $(subst -deps,,$@) deps
 

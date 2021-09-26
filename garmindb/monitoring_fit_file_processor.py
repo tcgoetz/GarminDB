@@ -25,22 +25,18 @@ root_logger = logging.getLogger()
 class MonitoringFitFileProcessor(FitFileProcessor):
     """Class that takes a parsed monitoring FIT file object and imports it into a database."""
 
-    def __init__(self, db_params, plugin_manager, debug=0):
-        """
-        Return a new FitFileProcessor instance.
-
-        Paramters:
-        db_params (dict): database access configuration
-        debug (Boolean): if True, debug logging is enabled
-        """
-        root_logger.info("Debug: %s", debug)
-        super().__init__(db_params, plugin_manager, debug)
-        self.garmin_mon_db = MonitoringDb(db_params, self.debug - 1)
-
     def write_file(self, fit_file):
         """Given a Fit File object, write all of its messages to the DB."""
+        self.monitoring_fit_file_plugins = [plugin for plugin in self.plugin_manager.get_file_processors('MonitoringFit', fit_file).values()]
+        if len(self.monitoring_fit_file_plugins):
+            root_logger.info("Loaded %d activity plugins %r for file %s", len(self.activity_fit_file_plugins), self.activity_fit_file_plugins, fit_file)
+        # Create the db after setting up the plugins so that plugin tables are handled properly
+        self.garmin_mon_db = MonitoringDb(self.db_params, self.debug - 1)
         with self.garmin_db.managed_session() as self.garmin_db_session, self.garmin_mon_db.managed_session() as self.garmin_mon_db_session:
             self._write_message_types(fit_file, fit_file.message_types)
+
+    def _plugin_dispatch(self, handler_name, *args, **kwargs):
+        return super()._plugin_dispatch(self.monitoring_fit_file_plugins, handler_name, *args, **kwargs)
 
     def _write_monitoring_info_entry(self, fit_file, message_fields):
         activity_types = message_fields.activity_type

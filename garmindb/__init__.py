@@ -10,7 +10,8 @@ from .version_info import version_string
 
 __version__ = version_string()
 
-from .activity_plugin_base import ActivityPluginBase
+from .activity_fit_plugin_base import ActivityFitPluginBase
+from .monitoring_fit_plugin_base import MonitoringFitPluginBase
 from .activity_fit_file_processor import ActivityFitFileProcessor
 from .fit_data import FitData
 from .fit_file_processor import FitFileProcessor
@@ -33,4 +34,6 @@ from .plugin_manager import PluginManager
 from .version import format_version, log_version, python_version_check
 
 from .import_monitoring import GarminMonitoringFitData, GarminSummaryData, GarminProfile, GarminWeightData, GarminSleepData, GarminRhrData, GarminSettingsFitData, GarminHydrationData
-from .import_activities import GarminActivitiesFitData, GarminTcxData, GarminJsonSummaryData, GarminJsonDetailsData
+from .activities_fit_data import GarminActivitiesFitData
+from .garmin_tcx_data import GarminTcxData
+from .garmin_json_data import GarminJsonSummaryData, GarminJsonDetailsData

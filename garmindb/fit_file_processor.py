@@ -35,6 +35,14 @@ class FitFileProcessor(object):
         self.debug = debug
         self.garmin_db = GarminDb(db_params, debug - 1)
 
+    def _plugin_dispatch(self, plugins, handler_name, *args, **kwargs):
+        result = {}
+        for plugin in plugins:
+            function = getattr(plugin, handler_name, None)
+            if function:
+                result.update(function(*args, **kwargs))
+        return result
+
     def __write_generic(self, fit_file, message_type, messages):
         """Write all messages of a given message type to the database."""
         handler_name = '_write_' + message_type.name + '_entry'
