@@ -13,7 +13,7 @@ logger = logging.getLogger(__file__)
 
 
 class ActivityFitPluginBase(PluginBase):
-    """Base class for GarminDb activity FIT file plugins."""
+    """Base class for GarminDb activity FIT file plugins that handle data based on ids of applications or developer fields, sport or sub-sport ids, etc."""
 
     _type = 'ActivityFit'
 
