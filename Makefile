@@ -80,7 +80,10 @@ build: devdeps
 $(PROJECT_BASE)/dist/$(MODULE)-*.whl: build
 
 install: $(PROJECT_BASE)/dist/$(MODULE)-*.whl
-	$(PIP) install --upgrade --force-reinstall $(PROJECT_BASE)/dist/$(MODULE)-*.whl
+	$(PIP) install --upgrade $(PROJECT_BASE)/dist/$(MODULE)-*.whl
+
+reinstall: $(PROJECT_BASE)/dist/$(MODULE)-*.whl
+	$(PIP) install --upgrade --force-reinstall --no-deps $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
 install_all: $(SUBMODULES:%=%-install) install
 
@@ -91,6 +94,11 @@ uninstall:
 	$(PIP) uninstall -y $(MODULE)
 
 uninstall_all: uninstall $(SUBMODULES:%=%-uninstall)
+
+reinstall_all: uninstall_all install_all
+
+republish_plugins:
+	$(MAKE) -C Plugins republish_plugins
 
 $(SUBMODULES:%=%-deps):
 	$(MAKE) -C $(subst -deps,,$@) deps
@@ -126,7 +134,6 @@ $(SUBDIRS:%=%-clean):
 clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -f *.pyc
 	rm -f *.log
-	rm -rf build
 	rm -f *.spec
 	rm -f *.zip
 	rm -f *.png

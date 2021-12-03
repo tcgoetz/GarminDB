@@ -57,7 +57,7 @@ class Colors(enum.Enum):
         return Colors(integer % 8)
 
 
-class Graph(object):
+class Graph():
     """A class that generates graphs for GarminDb data sets."""
 
     __table = {

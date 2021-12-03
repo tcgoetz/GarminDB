@@ -22,12 +22,13 @@ class PluginManager(idbutils.PluginManager):
         logger.info("Loading GarminDb plugins from %s", plugin_dir)
         super().__init__(plugin_dir, {'db_params': db_params})
 
-    def get_activity_file_processors(self, fit_file):
-        """Return a dict of all plugins that handle FIT file messages."""
+    def get_file_processors(self, file_type, fit_file):
+        """Return a dict of all plugins that handle file_type."""
         result = {}
-        for plugin_name, plugin in self.plugins.items():
-            if plugin.matches_activity_file(fit_file):
-                logger.info("Plugin %s matches file %s", plugin_name, fit_file)
-                plugin.init_activity(ActivitiesDb, Activities)
-                result[plugin_name] = plugin
+        if file_type in self.plugins:
+            for plugin_name, plugin in self.plugins[file_type].items():
+                if plugin.matches_activity_file(fit_file):
+                    logger.info("Activity Fit plugin %s matches file %s", plugin_name, fit_file)
+                    plugin.init_activity(ActivitiesDb, Activities)
+                    result[plugin_name] = plugin
         return result

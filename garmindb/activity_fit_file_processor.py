@@ -23,21 +23,16 @@ class ActivityFitFileProcessor(FitFileProcessor):
 
     def write_file(self, fit_file):
         """Given a Fit File object, write all of its messages to the DB."""
-        self.activity_file_plugins = [plugin for plugin in self.plugin_manager.get_activity_file_processors(fit_file).values()]
-        if len(self.activity_file_plugins):
-            root_logger.info("Loaded %d activity plugins %r for file %s", len(self.activity_file_plugins), self.activity_file_plugins, fit_file)
+        self.activity_fit_file_plugins = [plugin for plugin in self.plugin_manager.get_file_processors('ActivityFit', fit_file).values()]
+        if len(self.activity_fit_file_plugins):
+            root_logger.info("Loaded %d activity plugins %r for file %s", len(self.activity_fit_file_plugins), self.activity_fit_file_plugins, fit_file)
         # Create the db after setting up the plugins so that plugin tables are handled properly
         self.garmin_act_db = ActivitiesDb(self.db_params, self.debug - 1)
         with self.garmin_db.managed_session() as self.garmin_db_session, self.garmin_act_db.managed_session() as self.garmin_act_db_session:
             self._write_message_types(fit_file, fit_file.message_types)
 
     def _plugin_dispatch(self, handler_name, *args, **kwargs):
-        result = {}
-        for plugin in self.activity_file_plugins:
-            function = getattr(plugin, handler_name, None)
-            if function:
-                result.update(function(*args, **kwargs))
-        return result
+        return super()._plugin_dispatch(self.activity_fit_file_plugins, handler_name, *args, **kwargs)
 
     def _write_lap(self, fit_file, message_type, messages):
         """Write all lap messages to the database."""

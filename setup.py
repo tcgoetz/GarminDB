@@ -32,7 +32,7 @@ def get_requirements(requirements_file):
 module_name = 'garmindb'
 module_version = get_version(module_name + os.sep + 'version_info.py')
 module_long_description = get_long_description('README.md')
-install_requires = get_requirements('requirements.in')
+install_requires = get_requirements('requirements.txt')
 
 print(f"Building {module_name} {module_version}")
 
