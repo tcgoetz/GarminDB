@@ -53,10 +53,8 @@ Find out who's using GarminDb on what platforms, OSes, and python versions [here
 
 # Notes
 
-* You may get a DB version exception after updating the code, this means that the DB schema was updated and you need to rebuild your DBs by running `make rebuild_dbs`. Your DBs will be regenerated from the previously downloaded data files. All of your data will not be redownloaded from Garmin.
+* You may get a DB version exception after updating the code, this means that the DB schema was updated and you need to rebuild your DBs by running `garmindb_cli.py --rebuild_db`. Your DBs will be regenerated from the previously downloaded data files. All of your data will not be redownloaded from Garmin.
 * The scripts were developed on MacOS. Information or patches on using these scripts on other platforms are welcome.
-* Running the scripts on Linux should require little or no changes. You may need to [install](https://github.com/tcgoetz/GarminDB/wiki/Usage) `git` and `make`.
-* There are two ways to use this project on Windows. Installing the [Ubuntu subsystem](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) on Windows 10 is one way. Using a Linux container or VM is also possible.
 * When a database update finishes, a summary of the data in the DB will be saved to stats.txt. The output includes the date ranges included in the downloaded daily monitoring files and activities. It includes the number of records for daily monitoring, activities, sleep, resting heart rate, weight, etc. Use the summary information to determine if all of your data has been downloaded from Garmin Connect. If not, adjust the dates in GarminConnectConfig.json and runt he download again.
 * In `GarminConnectConfig.json` the "steps" element of the "course_views" is list of course ids that per course database views will be generated for. The database view allows you to compare all activities from that course.
 

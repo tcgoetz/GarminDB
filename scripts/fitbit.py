@@ -35,6 +35,7 @@ def main(argv):
     parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
     modes_group = parser.add_argument_group('Modes')
     modes_group.add_argument("-i", "--input_file", help="Specifiy the CSV file to import into the database")
+    modes_group.add_argument("--rebuild_db", help="Delete FitBit db files and rebuild the database.", action="store_true", default=False)
     modes_group.add_argument("--delete_db", help="Delete FitBit db file.", action="store_true", default=False)
     args = parser.parse_args()
 
@@ -46,9 +47,10 @@ def main(argv):
 
     db_params = ConfigManager.get_db_params()
 
-    if args.delete_db:
+    if args.delete_db or args.rebuild_db:
         FitBitDb.delete_db(db_params)
-        sys.exit()
+        if args.delete_db:
+            sys.exit()
 
     fitbit_dir = ConfigManager.get_or_create_fitbit_dir()
     metric = ConfigManager.get_metric()
