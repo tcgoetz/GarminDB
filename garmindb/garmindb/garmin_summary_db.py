@@ -24,7 +24,7 @@ class YearsSummary(GarminSummaryDb.Base, SummaryBase):
     __tablename__ = 'years_summary'
 
     db = GarminSummaryDb
-    table_version = 4
+    table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
@@ -41,7 +41,7 @@ class MonthsSummary(GarminSummaryDb.Base, SummaryBase):
     __tablename__ = 'months_summary'
 
     db = GarminSummaryDb
-    table_version = 4
+    table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
@@ -58,7 +58,7 @@ class WeeksSummary(GarminSummaryDb.Base, SummaryBase):
     __tablename__ = 'weeks_summary'
 
     db = GarminSummaryDb
-    table_version = 4
+    table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
@@ -75,7 +75,7 @@ class DaysSummary(GarminSummaryDb.Base, SummaryBase):
     __tablename__ = 'days_summary'
 
     db = GarminSummaryDb
-    table_version = 4
+    table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
     day = Column(Date, primary_key=True)

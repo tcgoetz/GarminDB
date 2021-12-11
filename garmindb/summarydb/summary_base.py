@@ -16,6 +16,7 @@ class SummaryBase(DbObject):
     """Base class for implementing summary database objects."""
 
     view_version = 10
+    _table_version = 5
     _col_units = {'hr_avg': 'bpm', 'hr_min': 'bpm', 'hr_max': 'bpm', 'rhr_avg': 'bpm', 'rhr_min': 'bpm', 'rhr_max': 'bpm', 'rr_waking_avg': 'brpm', 'rr_max': 'brpm',
                   'rr_min': 'brpm'}
 
@@ -65,6 +66,8 @@ class SummaryBase(DbObject):
     rr_waking_avg = Column(Float)
     rr_max = Column(Float)
     rr_min = Column(Float)
+    bb_max = Column(Integer)
+    bb_min = Column(Integer)
 
     @hybrid_property
     def intensity_time_mins(self):
@@ -213,6 +216,8 @@ class SummaryBase(DbObject):
             cls.round_col('spo2_min'),
             cls.round_col('rr_waking_avg'),
             cls.round_col('rr_max'),
-            cls.round_col('rr_min')
+            cls.round_col('rr_min'),
+            cls.round_col('bb_max'),
+            cls.round_col('bb_min')
         ]
         cls.create_summary_view(db, cols)

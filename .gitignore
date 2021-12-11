@@ -102,3 +102,4 @@ GarminConnectConfig.json
 *.png
 test/test_files
 my-defines.mk
+test/*.txt
