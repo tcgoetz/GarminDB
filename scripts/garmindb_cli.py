@@ -288,6 +288,7 @@ def main(argv):
     modes_group.add_argument("-c", "--copy", help="copy data from a connected device", dest='copy_data', action="store_true", default=False)
     modes_group.add_argument("-i", "--import", help="Import data for the chosen stats", dest='import_data', action="store_true", default=False)
     modes_group.add_argument("--analyze", help="Analyze data in the db and create summary and derived tables.", dest='analyze_data', action="store_true", default=False)
+    modes_group.add_argument("--rebuild_db", help="Delete Garmin DB db files and rebuild the database.", action="store_true", default=False)
     modes_group.add_argument("--delete_db", help="Delete Garmin DB db files for the selected activities.", action="store_true", default=False)
     modes_group.add_argument("-e", "--export-activity", help="Export an activity to a TCX file based on the activity\'s id", type=int)
     modes_group.add_argument("--basecamp-activity", help="Export an activity to Garmin BaseCamp", type=int)
@@ -318,10 +319,15 @@ def main(argv):
 
     if args.backup_dbs:
         backup_dbs()
-
+        
     if args.delete_db:
         delete_dbs([stats_to_db_map[stat] for stat in args.stats] + summary_dbs)
         sys.exit()
+
+    if args.rebuild_db:
+        delete_dbs([stats_to_db_map[stat] for stat in gc_config.enabled_stats()] + summary_dbs)
+        import_data(args.trace, args.latest, gc_config.enabled_stats())
+        analyze_data(args.trace)
 
     if args.copy_data:
         copy_data(args.overwrite, args.latest, args.stats)

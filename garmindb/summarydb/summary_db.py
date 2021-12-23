@@ -24,7 +24,7 @@ class YearsSummary(SummaryDb.Base, SummaryBase):
     __tablename__ = 'years_summary'
 
     db = SummaryDb
-    table_version = 3
+    table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
@@ -41,7 +41,7 @@ class MonthsSummary(SummaryDb.Base, SummaryBase):
     __tablename__ = 'months_summary'
 
     db = SummaryDb
-    table_version = 3
+    table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
@@ -58,7 +58,7 @@ class WeeksSummary(SummaryDb.Base, SummaryBase):
     __tablename__ = 'weeks_summary'
 
     db = SummaryDb
-    table_version = 3
+    table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
@@ -75,7 +75,7 @@ class DaysSummary(SummaryDb.Base, SummaryBase):
     __tablename__ = 'days_summary'
 
     db = SummaryDb
-    table_version = 3
+    table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
     day = Column(Date, primary_key=True)

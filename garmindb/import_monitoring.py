@@ -311,6 +311,9 @@ class GarminSummaryData(JsonFileProcessor):
             'rr_waking_avg': self._get_field(json_data, 'avgWakingRespirationValue', float),
             'rr_max': self._get_field(json_data, 'highestRespirationValue', float),
             'rr_min': self._get_field(json_data, 'lowestRespirationValue', float),
+            'bb_charged': self._get_field(json_data, 'bodyBatteryChargedValue', int),
+            'bb_max': self._get_field(json_data, 'bodyBatteryHighestValue', int),
+            'bb_min': self._get_field(json_data, 'bodyBatteryLowestValue', int),
             'description': self._get_field(json_data, 'wellnessDescription'),
         }
         DailySummary.insert_or_update(

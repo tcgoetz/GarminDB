@@ -70,7 +70,7 @@ class Download(object):
         self.download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
 
     def __get_json(self, page_html, key):
-        found = re.search(key + r" = JSON.parse\(\"(.*)\"\);", page_html, re.M)
+        found = re.search(key + r" = (\{.*\});", page_html, re.M)
         if found:
             json_text = found.group(1).replace('\\"', '"')
             return json.loads(json_text)
