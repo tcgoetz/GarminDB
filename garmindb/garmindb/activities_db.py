@@ -6,11 +6,12 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, String, Float, Integer, DateTime, Time, ForeignKey, PrimaryKeyConstraint, desc, literal_column
+from sqlalchemy import Column, String, Float, Integer, DateTime, Time, Enum, ForeignKey, PrimaryKeyConstraint, desc, literal_column
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 
+import fitfile
 import idbutils
 
 
@@ -19,14 +20,56 @@ logger = logging.getLogger(__name__)
 ActivitiesDb = idbutils.DB.create('garmin_activities', 13, "Database for storing activities data.")
 
 
-class ActivitiesLocationSegment(idbutils.DbObject):
-    """Object representing a databse object for storing location segnment from an activity."""
+class ActivitiesCommon(idbutils.DbObject):
+    """Database object mixin for storing data common to activities and laps."""
+
+    start_time = Column(DateTime)
+    stop_time = Column(DateTime)
+    elapsed_time = Column(Time, nullable=False, default=datetime.time.min)
+    moving_time = Column(Time, nullable=False, default=datetime.time.min)
+    # kms or miles
+    distance = Column(Float)
+    cycles = Column(Float)
+    # beats per minute
+    avg_hr = Column(Integer)
+    max_hr = Column(Integer)
+    # breaths per minute
+    avg_rr = Column(Float)
+    max_rr = Column(Float)
+    calories = Column(Integer)
+    avg_cadence = Column(Integer)
+    max_cadence = Column(Integer)
+    # kmph or mph
+    avg_speed = Column(Float)
+    max_speed = Column(Float)
+    # feet or meters
+    ascent = Column(Float)
+    descent = Column(Float)
+    # C or F
+    max_temperature = Column(Float)
+    min_temperature = Column(Float)
+    avg_temperature = Column(Float)
 
     # degrees
     start_lat = Column(Float)
     start_long = Column(Float)
     stop_lat = Column(Float)
     stop_long = Column(Float)
+
+    # heart rate zone data
+    hr_zones_method = Column(Enum(fitfile.enum_fields.HeartRateZonesMethod))
+    # heart rate threashold that the zone starts at
+    hrz_1_hr = Column(Integer)
+    hrz_2_hr = Column(Integer)
+    hrz_3_hr = Column(Integer)
+    hrz_4_hr = Column(Integer)
+    hrz_5_hr = Column(Integer)
+    # amount of time in that zone
+    hrz_1_time = Column(Time, nullable=False, default=datetime.time.min)
+    hrz_2_time = Column(Time, nullable=False, default=datetime.time.min)
+    hrz_3_time = Column(Time, nullable=False, default=datetime.time.min)
+    hrz_4_time = Column(Time, nullable=False, default=datetime.time.min)
+    hrz_5_time = Column(Time, nullable=False, default=datetime.time.min)
 
     @hybrid_property
     def start_loc(self):
@@ -49,53 +92,22 @@ class ActivitiesLocationSegment(idbutils.DbObject):
         self.stop_long = stop_location.long_deg
 
 
-class Activities(ActivitiesDb.Base, ActivitiesLocationSegment):
-    """Class represents a databse table that contains data about recorded activities."""
+class Activities(ActivitiesDb.Base, ActivitiesCommon):
+    """Class represents a database table that contains data about recorded activities."""
 
     __tablename__ = 'activities'
 
     db = ActivitiesDb
-    table_version = 3
+    table_version = 4
 
     activity_id = Column(String, primary_key=True)
     name = Column(String)
     description = Column(String)
     type = Column(String)
-    #
     course_id = Column(Integer)
-    #
-    start_time = Column(DateTime)
-    stop_time = Column(DateTime)
-    elapsed_time = Column(Time, nullable=False, default=datetime.time.min)
-    moving_time = Column(Time, nullable=False, default=datetime.time.min)
-    #
+    laps = Column(Integer)
     sport = Column(String)
     sub_sport = Column(String)
-    # kms or miles
-    distance = Column(Float)
-    #
-    cycles = Column(Float)
-    #
-    laps = Column(Integer)
-    # beats per minute
-    avg_hr = Column(Integer)
-    max_hr = Column(Integer)
-    # breaths per minute
-    avg_rr = Column(Float)
-    max_rr = Column(Float)
-    calories = Column(Integer)
-    avg_cadence = Column(Integer)
-    max_cadence = Column(Integer)
-    # kmph or mph
-    avg_speed = Column(Float)
-    max_speed = Column(Float)
-    # feet or meters
-    ascent = Column(Float)
-    descent = Column(Float)
-    # C or F
-    max_temperature = Column(Float)
-    min_temperature = Column(Float)
-    avg_temperature = Column(Float)
 
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)
@@ -133,45 +145,31 @@ class Activities(ActivitiesDb.Base, ActivitiesLocationSegment):
         return stats
 
 
-class ActivityLaps(ActivitiesDb.Base, ActivitiesLocationSegment):
+class ActivityLaps(ActivitiesDb.Base, ActivitiesCommon):
     """Class that holds data for an activity lap."""
 
     __tablename__ = 'activity_laps'
 
     db = ActivitiesDb
-    table_version = 3
+    table_version = 4
 
     activity_id = Column(String, ForeignKey('activities.activity_id'))
     lap = Column(Integer)
-    #
-    start_time = Column(DateTime)
-    stop_time = Column(DateTime)
-    elapsed_time = Column(Time, nullable=False, default=datetime.time.min)
-    moving_time = Column(Time, nullable=False, default=datetime.time.min)
-    # kms or miles
-    distance = Column(Float)
-    cycles = Column(Float)
-    # beats per minute
-    avg_hr = Column(Integer)
-    max_hr = Column(Integer)
-    # breaths per minute
-    avg_rr = Column(Float)
-    max_rr = Column(Float)
-    calories = Column(Integer)
-    avg_cadence = Column(Integer)
-    max_cadence = Column(Integer)
-    # kmph or mph
-    avg_speed = Column(Float)
-    max_speed = Column(Float)
-    # feet or meters
-    ascent = Column(Float)
-    descent = Column(Float)
-    # C or F
-    max_temperature = Column(Float)
-    min_temperature = Column(Float)
-    avg_temperature = Column(Float)
 
     __table_args__ = (PrimaryKeyConstraint("activity_id", "lap"),)
+
+    @classmethod
+    def s_get(cls, session, activity_id, lap_number, default=None):
+        """Return a single instance for the given id."""
+        instance = session.query(cls).filter(cls.activity_id == activity_id).filter(cls.lap == lap_number).scalar()
+        if instance is None:
+            return default
+        return instance
+
+    @classmethod
+    def s_get_from_dict(cls, session, values_dict):
+        """Return a single activity instance for the given id."""
+        return cls.s_get(session, values_dict['activity_id'], values_dict['lap'])
 
     @classmethod
     def s_get_activity(cls, session, activity_id):

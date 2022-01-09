@@ -243,3 +243,56 @@ class ActivityFitFileProcessor(FitFileProcessor):
                     root_logger.warning("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_fields)
             except Exception as e:
                 root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
+
+    def _write_hr_zones_timer_entry(self, fit_file, message_fields):
+        """Write hz zones message to the database."""
+        root_logger.info("writing hr zone data for %s", fit_file.filename)
+        hr_zones_type = message_fields.get('hr_zones_timer_type')
+        if hr_zones_type is fitfile.field_enums.HeartRateZonesTimerType.lap:
+            self._write_hr_zones_timer_lap_entry(fit_file, message_fields)
+        elif hr_zones_type is fitfile.field_enums.HeartRateZonesTimerType.session:
+            self._write_hr_zones_timer_session_entry(fit_file, message_fields)
+
+    def __hr_zone_data(self, message_fields):
+        hr_zones_time = message_fields.get('hr_zones_time')
+        zone_data = {
+            'hr_zones_method'   : message_fields.get('hr_zones_method'),
+            'hrz_1_time'        : hr_zones_time[1],
+            'hrz_2_time'        : hr_zones_time[2],
+            'hrz_3_time'        : hr_zones_time[3],
+            'hrz_4_time'        : hr_zones_time[4],
+            'hrz_5_time'        : hr_zones_time[5]
+        }
+        hr_zones = message_fields.get('hr_zones')
+        if hr_zones:
+            zone_data.update({
+                'hrz_1_hr'      : hr_zones[0],
+                'hrz_2_hr'      : hr_zones[1],
+                'hrz_3_hr'      : hr_zones[2],
+                'hrz_4_hr'      : hr_zones[3],
+                'hrz_5_hr'      : hr_zones[4],
+            })
+        return zone_data
+
+    def _write_hr_zones_timer_lap_entry(self, fit_file, message_fields):
+        """Write lap hz zones message to the database."""
+        root_logger.info("writing lap hr zone data %r for %s", message_fields, fit_file.filename)
+        activity_id = File.id_from_path(fit_file.filename)
+        lap = {
+            'activity_id'   : activity_id,
+            'lap'           : message_fields.get('record_num'),
+        }
+        lap.update(self.__hr_zone_data(message_fields))
+        root_logger.info("writing lap hr zone data %r for %s", lap, fit_file.filename)
+        ActivityLaps.s_insert_or_update(self.garmin_act_db_session, lap, ignore_none=True, ignore_zero=True)
+
+    def _write_hr_zones_timer_session_entry(self, fit_file, message_fields):
+        """Write session hz zones message to the database."""
+        root_logger.info("writing session hr zone data %r for %s", message_fields, fit_file.filename)
+        activity_id = File.id_from_path(fit_file.filename)
+        session = {
+            'activity_id'   : activity_id,
+        }
+        session.update(self.__hr_zone_data(message_fields))
+        root_logger.debug("writing session hr zone data %r for %s", session, fit_file.filename)
+        Activities.s_insert_or_update(self.garmin_act_db_session, session, ignore_none=True, ignore_zero=True)
