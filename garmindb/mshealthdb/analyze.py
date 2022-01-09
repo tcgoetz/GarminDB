@@ -79,7 +79,7 @@ class Analyze(object):
                 stats = MshDaysSummary.get_weekly_stats(self.mshealthdb, day_ts)
                 stats.update(MSVaultWeight.get_weekly_stats(self.mshealthdb, day_ts))
                 WeeksSummary.insert_or_update(self.sumdb, stats, ignore_none=True)
-            months = MSHealthDb.DaysSummary.get_months(self.mshealthdb, year)
+            months = MshDaysSummary.get_months(self.mshealthdb, year)
             for month in months:
                 start_day_ts = datetime.date(year, month, 1)
                 end_day_ts = datetime.date(year, month, calendar.monthrange(year, month)[1])
