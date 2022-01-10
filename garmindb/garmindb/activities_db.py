@@ -274,7 +274,7 @@ class StepsActivities(ActivitiesDb.Base, SportActivities):
 
     db = ActivitiesDb
     table_version = 3
-    view_version = 5
+    view_version = 6
 
     steps = Column(Integer)
     # pace in mins/mile
@@ -299,7 +299,7 @@ class StepsActivities(ActivitiesDb.Base, SportActivities):
 
     @classmethod
     def _view_selectable(cls, include_sport=False, include_subsport=False, include_type=False, include_course=False, include_rr=False, include_running_dynamics=False):
-        # The query fails to genarate sql when using the func.round clause.
+        # The query fails to generate sql when using the func.round clause.
         selectable = [
             Activities.activity_id.label('activity_id'),
             Activities.name.label('name'),
@@ -348,6 +348,11 @@ class StepsActivities(ActivitiesDb.Base, SportActivities):
             cls.vo2_max.label('vo2_max'),
             Activities.training_effect.label('training_effect'),
             Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
+            Activities.hrz_1_time.label('heart_rate_zone_one_time'),
+            Activities.hrz_2_time.label('heart_rate_zone_two_time'),
+            Activities.hrz_3_time.label('heart_rate_zone_three_time'),
+            Activities.hrz_4_time.label('heart_rate_zone_four_time'),
+            Activities.hrz_5_time.label('heart_rate_zone_five_time'),
             cls.google_map_loc('start'),
             cls.google_map_loc('stop')
         ]
@@ -449,7 +454,7 @@ class CycleActivities(ActivitiesDb.Base, SportActivities):
 
     db = ActivitiesDb
     table_version = 2
-    view_version = 6
+    view_version = 7
 
     strokes = Column(Integer)
     vo2_max = Column(Float)
@@ -479,6 +484,11 @@ class CycleActivities(ActivitiesDb.Base, SportActivities):
             cls.vo2_max.label('vo2_max'),
             Activities.training_effect.label('training_effect'),
             Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
+            Activities.hrz_1_time.label('heart_rate_zone_one_time'),
+            Activities.hrz_2_time.label('heart_rate_zone_two_time'),
+            Activities.hrz_3_time.label('heart_rate_zone_three_time'),
+            Activities.hrz_4_time.label('heart_rate_zone_four_time'),
+            Activities.hrz_5_time.label('heart_rate_zone_five_time'),
             cls.google_map_loc('start'),
             cls.google_map_loc('stop'),
         ]
