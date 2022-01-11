@@ -13,17 +13,15 @@ from tqdm import tqdm
 import fitfile
 
 from garmindb import summarydb
-from .garmindb import GarminDb, Attributes, File, Weight, Stress, RestingHeartRate, IntensityHR, Sleep
+from .garmindb import GarminDb, Attributes, Weight, Stress, RestingHeartRate, IntensityHR, Sleep
 from .garmindb import MonitoringDb, Monitoring, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb
 from .garmindb import ActivitiesDb, Activities, StepsActivities
-from .garmindb import GarminSummaryDb, Summary, DaysSummary, DailySummary, WeeksSummary, MonthsSummary, YearsSummary
+from .garmindb import GarminSummaryDb, DaysSummary, DailySummary, WeeksSummary, MonthsSummary, YearsSummary
 from .garmin_connect_config_manager import GarminConnectConfigManager
 
 
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
-stat_logger = logging.getLogger('stats')
-stat_logger.addHandler(logging.FileHandler('stats.txt', 'w'))
 
 
 class Analyze(object):
@@ -38,27 +36,6 @@ class Analyze(object):
         self.garmin_act_db = ActivitiesDb(db_params, debug)
         self.measurement_system = Attributes.measurements_type(self.garmin_db)
         self.unit_strings = fitfile.units.unit_strings[self.measurement_system]
-
-    def __save_summary_stat(self, name, value):
-        Summary.set(self.garmin_sum_db, name, value)
-        summarydb.Summary.set(self.sum_db, name, value)
-
-    def __report_file_type(self, file_type):
-        records = File.row_count(self.garmin_db, File.type, file_type)
-        if records > 0:
-            stat_logger.info("%s files: %d", file_type, records)
-            self.__save_summary_stat(file_type + '_files', records)
-
-    def __get_files_stats(self):
-        records = File.row_count(self.garmin_db)
-        stat_logger.info("File records: %d" % records)
-        self.__save_summary_stat('files', records)
-        for file_type_name in [file_type.name for file_type in File.FileType]:
-            self.__report_file_type(file_type_name)
-
-    def get_stats(self):
-        """Calculate summary statistics."""
-        self.__get_files_stats()
 
     def __populate_hr_intensity(self, day_date, garmin_mon_session, garmin_sum_session, overwrite=False):
         if IntensityHR.s_row_count_for_day(garmin_sum_session, day_date) == 0 or overwrite:

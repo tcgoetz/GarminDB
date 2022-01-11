@@ -229,7 +229,6 @@ def analyze_data(debug):
     """Analyze the downloaded and imported Garmin data and create summary tables."""
     logger.info("___Analyzing Data___")
     analyze = Analyze(db_params_dict, debug - 1)
-    analyze.get_stats()
     analyze.summary()
     analyze.create_dynamic_views()
 
