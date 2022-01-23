@@ -72,7 +72,7 @@ publish_check: build
 publish: clean publish_check
 	$(PYTHON) -m twine upload dist/* --verbose
 
-build:
+build: devdeps
 	$(PYTHON) -m build
 
 $(PROJECT_BASE)/dist/$(MODULE)-*.whl: build
