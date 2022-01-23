@@ -94,7 +94,6 @@ bugreport.txt
 *.zip
 *.fit
 *.tcx
-*.json
 *.html
 .*.conf
 GarminConnectConfig.json

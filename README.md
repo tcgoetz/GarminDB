@@ -43,6 +43,9 @@ The scripts are automated with [Make](https://www.gnu.org/software/make/manual/m
 
 There  is more help on [using the program](https://github.com/tcgoetz/GarminDB/wiki/Usage) in the wiki.
 
+# Jupyter Notebooks #
+
+Jupyter notebooks for anylzing data from the database can be found in the 'Jupyter' directory in the source tree.
 # Plugins #
 
 Plugins allow the user to expand the types of data that are processed and stored in the database. GarminDb already has a number of plugins for handling data from third-party Connect IQ apps and data fields. Read more about plugins [here](https://github.com/tcgoetz/GarminDbPlugins).
