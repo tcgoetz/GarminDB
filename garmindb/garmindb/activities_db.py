@@ -118,21 +118,51 @@ class Activities(ActivitiesDb.Base, ActivitiesCommon):
 
     @classmethod
     def get_by_course_id(cls, db, course_id):
-        """Return all activities records for activities with the matching course_id."""
+        """Return all activities items for activities with the matching course_id."""
         with db.managed_session() as session:
             return session.query(cls).filter(cls.course_id == course_id).order_by(cls.start_time).all()
 
     @classmethod
     def get_fastest_by_course_id(cls, db, course_id):
-        """Return an activities record for the activity with the matching course_id with the fastest speed."""
+        """Return an activities items for the activity with the matching course_id with the fastest speed."""
         with db.managed_session() as session:
             return session.query(cls).filter(cls.course_id == course_id).order_by(desc(cls.avg_speed)).limit(1).one_or_none()
 
     @classmethod
     def get_slowest_by_course_id(cls, db, course_id):
-        """Return an activities record for the activity with the matching course_id with the slowest speed."""
+        """Return an activities items for the activity with the matching course_id with the slowest speed."""
         with db.managed_session() as session:
             return session.query(cls).filter(cls.course_id == course_id).order_by(cls.avg_speed).limit(1).one_or_none()
+
+    @classmethod
+    def get_by_sport(cls, db, sport):
+        """Return all activities items for a given sport type."""
+        with db.managed_session() as session:
+            return session.query(cls).filter(cls.sport == sport).order_by(cls.start_time).all()
+
+    @classmethod
+    def get_latest_by_sport(cls, db, sport):
+        """Return the most recent activities item for a given sport type."""
+        with db.managed_session() as session:
+            return session.query(cls).filter(cls.sport == sport.name).order_by(desc(cls.start_time)).limit(1).one_or_none()
+
+    @classmethod
+    def get_fastest_by_sport(cls, db, sport):
+        """Return an activities item for a given sport type with the fastest speed."""
+        with db.managed_session() as session:
+            return session.query(cls).filter(cls.sport == sport.name).order_by(desc(cls.avg_speed)).limit(1).one_or_none()
+
+    @classmethod
+    def get_slowest_by_sport(cls, db, sport):
+        """Return an activities item for a given sport type with the slowest speed."""
+        with db.managed_session() as session:
+            return session.query(cls).filter(cls.sport == sport.name).order_by(cls.avg_speed).limit(1).one_or_none()
+
+    @classmethod
+    def get_longest_by_sport(cls, db, sport):
+        """Return an activities item for a given sport type with the longest distance."""
+        with db.managed_session() as session:
+            return session.query(cls).filter(cls.sport == sport.name).order_by(desc(cls.distance)).limit(1).one_or_none()
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
