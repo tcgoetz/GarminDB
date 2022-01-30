@@ -81,6 +81,12 @@ class DaysSummary(GarminSummaryDb.Base, SummaryBase):
     day = Column(Date, primary_key=True)
 
     @classmethod
+    def get_day(cls, db, day):
+        """Return record for a given day."""
+        with db.managed_session() as session:
+            return session.query(cls).filter(cls.day == day).one_or_none()
+
+    @classmethod
     def create_view(cls, db):
         """Create the default database view for the table."""
         cls.create_days_view(db)
