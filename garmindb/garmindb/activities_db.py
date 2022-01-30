@@ -300,7 +300,7 @@ class SportActivities(idbutils.DbObject):
     @classmethod
     def google_map_loc(cls, label):
         """Return a literal column composed of a google map URL for either the start or stop location off the activity."""
-        return literal_column(idbutils.Location.google_maps_url('activities.%s_lat' % label, 'activities.%s_long' % label) + ' AS %s_loc' % label)
+        return literal_column(idbutils.Location.google_maps_url_template('activities.%s_lat' % label, 'activities.%s_long' % label) + ' AS %s_loc' % label)
 
 
 class StepsActivities(ActivitiesDb.Base, SportActivities):
