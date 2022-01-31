@@ -65,7 +65,7 @@ class Checkup():
                 floors_goal_days += 1
                 floor_goal_days_in_week += 1
             else:
-                self.output_func('Floors: goal not met on {result.day}')
+                self.output_func(f'Floors: goal not met on {result.day}')
             intensity_time = fitfile.conversions.add_time(intensity_time, result.intensity_time)
             intensity_time_goal = fitfile.conversions.add_time(intensity_time_goal, result.intensity_time_goal)
             if result.day.weekday() == 6:

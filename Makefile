@@ -132,11 +132,14 @@ $(SUBDIRS:%=%-clean):
 clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -f *.pyc
 	rm -f *.log
+	rm -f scripts/*.log
+	rm -f Jupyter/*.log
 	rm -f *.spec
 	rm -f *.zip
 	rm -f *.png
-	rm -f ms_stats.txt
-	rm -f stats.txt
+	rm -f *stats.txt
+	rm -f scripts/*stats.txt
+	rm -f Jupyter/*stats.txt
 	rm -rf __pycache__
 	rm -rf *.egg-info
 	rm -rf build

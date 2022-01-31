@@ -8,4 +8,4 @@ cloudscraper
 ipykernel
 fitfile>=1.1.0
 tcxfile>=1.0.4
-idbutils>=1.0.3
+idbutils>=1.0.4
