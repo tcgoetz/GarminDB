@@ -157,13 +157,16 @@ checkup: update_garmin
 
 # define CHECKUP_COURSE_ID in my-defines.mk
 checkup_course:
-	garmin_heckup.py --course $(CHECKUP_COURSE_ID)
+	garmin_checkup.py --course $(CHECKUP_COURSE_ID)
 
 daily: all checkup graph_yesterday
 
 #
 # Garmin targets
 #
+backup:
+	garmindb_cli.py --backup
+
 download_all_garmin:
 	garmindb_cli.py --all --download
 

@@ -5,6 +5,7 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 import logging
+import datetime
 from sqlalchemy import Column, Integer, Date, DateTime
 
 import idbutils
@@ -28,6 +29,12 @@ class YearsSummary(GarminSummaryDb.Base, SummaryBase):
     view_version = SummaryBase.view_version
 
     first_day = Column(Date, primary_key=True)
+
+    @classmethod
+    def get_year(cls, db, year):
+        """Return record for a given year."""
+        with db.managed_session() as session:
+            return session.query(cls).filter(cls.first_day == datetime.date(day=1, month=1, year=year)).one_or_none()
 
     @classmethod
     def create_view(cls, db):
