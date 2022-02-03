@@ -2,7 +2,7 @@
 
 [![Screen shot of a daily graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_jupyter_daily_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
-[![Screen shot of a steps graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_steps_graph_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+[![Screen shot of a steps graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_steps_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
 # GarminDB
 
@@ -63,7 +63,7 @@ Find out who's using GarminDb on what platforms, OSes, and python versions [here
 
 # Bugs and Debugging
 
-* If you have issues, file a bug here on the project. See the Issues tab at the top of the project page. Run `make bugreport` or `bugreport.sh` and include bugreport.txt in your bug report.
+* If you have issues, file a bug here on the project. See the Issues tab at the top of the project page. Run `make bugreport` or `garmindb_bug_report.py` and include bugreport.txt in your bug report.
 * Besides errors that appear on the screen, one of the first places to look for more information is the log files (garmin.log, graphs.log).
 * If your having issues with a particular data files, please considering sharing so I can debug it.
 
