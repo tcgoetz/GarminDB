@@ -17,14 +17,11 @@ import matplotlib.dates as mdates
 from .garmindb import MonitoringDb, Monitoring, MonitoringHeartRate
 from .summarydb import DaysSummary, WeeksSummary, MonthsSummary, SummaryDb
 from .config_manager import ConfigManager
-from .garmin_connect_config_manager import GarminConnectConfigManager
 
 
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
-
-gc_config = GarminConnectConfigManager()
 
 
 class YAxisLabelPostion(enum.Enum):

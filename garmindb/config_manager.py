@@ -250,6 +250,11 @@ class ConfigManager(Config):
         return cls.graphs.get(key)
 
     @classmethod
+    def get_maps(cls, key):
+        """Return a map config item."""
+        return cls.maps.get(key)
+
+    @classmethod
     def graphs_activity_config(cls, activity, key):
         """Return a config value for the graphing capability given it's key name."""
         activity = cls.graphs.get(activity)

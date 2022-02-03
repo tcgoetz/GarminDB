@@ -50,6 +50,11 @@ class Config():
         'weight'                : {'period' : 'weeks', 'days' : 730}
     }
 
+    maps = {
+        'width'                 : 1200,
+        'height'                : 800
+    }
+
     checkup = {
         'look_back_days'        : 90
     }

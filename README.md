@@ -2,19 +2,21 @@
 
 [![Screen shot of a daily graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_jupyter_daily_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
+[![Screen shot of an activity display](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_activity_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+
 [![Screen shot of a steps graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_steps_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
 # GarminDB
 
-[Python](https://www.python.org/) scripts for parsing health data into and manipulating data in a [SQLite](http://sqlite.org/) database. SQLite is a light weight database that requires no server.
+[Python](https://www.python.org/) scripts for parsing health data into and manipulating data in a [SQLite](http://sqlite.org/) database. SQLite is a light weight database that doesn't require a server.
 
 What they can do:
 * Automatically download and import Garmin daily monitoring files (all day heart rate, activity, climb/descend, stress, and intensity minutes) from the user's Garmin Connect "Daily Summary" page.
 * Extract sleep, weight, and resting heart rate data from Garmin Connect, store it as JSON files, and import it into the DB.
 * Download and import activity files from Garmin Connect. A summary table for all activities and more detailed data for some activity types. Lap and record entries for activities.
-* Summarizing data into a DB with tables containing daily summaries, weekly summaries, and monthly summaries.
+* Summarizing data into a DB with tables containing daily, weekly, monthly, and yearly summaries.
 * Graph your data from the commandline or with Jupyter notebooks.
-* Retain data as JSON files or FIT files so that the DB can be regenerated without connecting or redownloading data from Garmin Connect.
+* Retain downloaded JSON and FIT files so that the DB can be regenerated without connecting to or redownloading data from Garmin Connect.
 * Export activities as TCX files.
 
 Once you have your data in the DB, I recommend using a supplied Jupyter notebooks and/or SQLite browser like [SQLite Studio](http://sqlitestudio.pl) or [DB Browser for SQLite](https://sqlitebrowser.org/) for browsing and working with the data. The scripts create some default [views](http://www.tutorialspoint.com/sqlite/sqlite_views.htm) in the DBs that make browsing the data easier.
@@ -41,7 +43,7 @@ The scripts are automated with [Make](https://www.gnu.org/software/make/manual/m
 * Run `make create_dbs` once to fetch and process for you data.
 * Keep all of your local data up to date by periodically running only one command: `make`.
 
-There  is more help on [using the program](https://github.com/tcgoetz/GarminDB/wiki/Usage) in the wiki.
+There is more help on [using the program](https://github.com/tcgoetz/GarminDB/wiki/Usage) in the wiki.
 
 # Jupyter Notebooks #
 
