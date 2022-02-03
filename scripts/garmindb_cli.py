@@ -282,7 +282,7 @@ def main(argv):
     parser.add_argument("-v", "--version", help="print the program's version", action='version', version=format_version(sys.argv[0]))
     parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
     modes_group = parser.add_argument_group('Modes')
-    modes_group.add_argument("-b", "--backup", help="Backup the databse files.", dest='backup_dbs', action="store_true", default=False)
+    modes_group.add_argument("-b", "--backup", help="Backup the database files.", dest='backup_dbs', action="store_true", default=False)
     modes_group.add_argument("-d", "--download", help="Download data from Garmin Connect for the chosen stats.", dest='download_data', action="store_true", default=False)
     modes_group.add_argument("-c", "--copy", help="copy data from a connected device", dest='copy_data', action="store_true", default=False)
     modes_group.add_argument("-i", "--import", help="Import data for the chosen stats", dest='import_data', action="store_true", default=False)

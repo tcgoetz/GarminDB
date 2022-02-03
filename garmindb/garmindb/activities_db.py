@@ -210,7 +210,7 @@ class ActivityLaps(ActivitiesDb.Base, ActivitiesCommon):
     def get_activity(cls, db, activity_id):
         """Return all laps for a given activity_id."""
         with db.managed_session() as session:
-            return session.query(cls).filter(cls.activity_id == activity_id).all()
+            return cls.s_get_activity(session, activity_id)
 
     @hybrid_property
     def start_loc(self):
@@ -251,6 +251,12 @@ class ActivityRecords(ActivitiesDb.Base, idbutils.DbObject):
     def s_get_activity(cls, session, activity_id):
         """Return all records for a given activity_id."""
         return session.query(cls).filter(cls.activity_id == activity_id).all()
+
+    @classmethod
+    def get_activity(cls, db, activity_id):
+        """Return all records for a given activity_id."""
+        with db.managed_session() as session:
+            return cls.s_get_activity(session, activity_id)
 
     @hybrid_property
     def position(self):
