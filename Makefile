@@ -93,7 +93,7 @@ uninstall:
 
 uninstall_all: uninstall $(SUBMODULES:%=%-uninstall)
 
-reinstall_all: uninstall_all install_all
+reinstall_all: clean uninstall_all install_all
 
 republish_plugins:
 	$(MAKE) -C Plugins republish_plugins
@@ -103,6 +103,9 @@ $(SUBMODULES:%=%-deps):
 
 pip_upgrade:
 	$(PIP) install --upgrade pip
+
+requirements.txt:
+	$(PIP) freeze -r requirement.in > requirements.txt
 
 deps: pip_upgrade $(SUBMODULES:%=%-deps)
 	$(PIP) install --upgrade --requirement requirements.txt
