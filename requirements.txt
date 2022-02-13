@@ -7,6 +7,6 @@ matplotlib
 cloudscraper
 ipykernel
 ipyleaflet
-fitfile>=1.1.0
+fitfile>=1.1.1
 tcxfile>=1.0.4
 idbutils>=1.0.5

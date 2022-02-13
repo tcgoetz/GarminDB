@@ -11,6 +11,7 @@ import subprocess
 import datetime
 
 from idbutils import JsonConfig
+from fitfile import Sport
 
 from .statistics import Statistics
 from .config_manager import ConfigManager
@@ -97,3 +98,10 @@ class GarminConnectConfigManager(JsonConfig):
             json_enabled_stats_dict = self.config.get('enabled_stats', {stat_name: True for stat_name in list(Statistics)})
             self.enabled_statistics = [Statistics.from_string(stat_name) for stat_name, stat_enabled in json_enabled_stats_dict.items() if stat_enabled]
         return self.enabled_statistics
+
+    def display_activities(self):
+        """Return a list of the interesting activities."""
+        activities_list = self.__get_node_value('activities', 'display')
+        if not activities_list:
+            activities_list = ConfigManager.default_display_activities()
+        return [Sport.strict_from_string(activity) for activity in activities_list]

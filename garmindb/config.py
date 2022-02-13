@@ -58,3 +58,5 @@ class Config():
     checkup = {
         'look_back_days'        : 90
     }
+
+    default_display_activities = ['walking', 'running', 'cycling']

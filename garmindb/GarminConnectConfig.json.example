@@ -27,5 +27,8 @@
         "steps"                         : []
     },
     "modes": {
+    },
+    "activities": {
+        "display"                       : None
     }
 }
