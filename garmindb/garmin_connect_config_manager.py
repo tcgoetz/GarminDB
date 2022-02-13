@@ -17,6 +17,10 @@ from .statistics import Statistics
 from .config_manager import ConfigManager
 
 
+class ConfigException(Exception):
+    """Something unexpected happened while handling the configuration."""
+
+
 class GarminConnectConfigManager(JsonConfig):
     """Class that manages Garmin Connect downloads."""
 
@@ -48,9 +52,14 @@ class GarminConnectConfigManager(JsonConfig):
         system = platform.system()
         if system == 'Darwin':
             # This relies on there being a 'internet password' entry for URL https://sso.garmin.com in the login keychain
-            password = subprocess.check_output(["security", "find-internet-password", "-s", "sso.garmin.com", "-w"])
-            if password:
-                return password.rstrip()
+            domain = 'sso.garmin.com'
+            try:
+                password = subprocess.check_output(["security", "find-internet-password", "-s", domain, "-w"])
+                if password:
+                    return password.rstrip()
+            except Exception:
+                pass
+            raise ConfigException(f'Secure password was specified but no "Internet Password" entry was found in the Login Keychain for https://{domain}')
 
     def get_user(self):
         """Return the Garmin Connect username."""
@@ -58,7 +67,7 @@ class GarminConnectConfigManager(JsonConfig):
 
     def get_password(self):
         """Return the Garmin Connect password."""
-        if self.__get_node_value('credentials', 'secure_password'):
+        if self.__get_node_value_default('credentials', 'secure_password', False):
             return self.get_secure_password()
         return self.__get_node_value('credentials', 'password')
 
