@@ -72,17 +72,23 @@ class Analyze(object):
         stats.update(IntensityHR.get_daily_stats(garmin_sum_session, day_date))
         stats.update(Weight.get_daily_stats(garmin_session, day_date))
         stats.update(Sleep.get_daily_stats(garmin_session, day_date))
-        stats.update(Activities.get_daily_stats(garmin_act_session, day_date))
         # save it to the db
         DaysSummary.s_insert_or_update(garmin_sum_session, stats)
         summarydb.DaysSummary.s_insert_or_update(sum_session, stats)
 
     def __calculate_days(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         days = Monitoring.s_get_days(garmin_mon_session, year)
-        for day in tqdm(days, unit='days'):
-            day_date = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
-            self.__populate_hr_intensity(day_date, garmin_mon_session, garmin_sum_session)
-            self.__calculate_day_stats(day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
+        if days:
+            for day in tqdm(days, unit='days'):
+                day_date = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
+                self.__populate_hr_intensity(day_date, garmin_mon_session, garmin_sum_session)
+                self.__calculate_day_stats(day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
+        days = Activities.s_get_days(garmin_act_session, year)
+        if len(days):
+            for day in tqdm(days, unit='days'):
+                stats = Activities.get_daily_stats(garmin_act_session, datetime.date(year, 1, 1) + datetime.timedelta(day - 1))
+                DaysSummary.s_insert_or_update(garmin_sum_session, stats)
+                summarydb.DaysSummary.s_insert_or_update(sum_session, stats)
 
     def __calculate_week_stats(self, day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         stats = DailySummary.get_weekly_stats(garmin_session, day_date)
@@ -135,15 +141,17 @@ class Analyze(object):
 
     def __calculate_months(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         months = Monitoring.s_get_months(garmin_mon_session, year)
-        for month in tqdm(months, unit='months'):
-            start_day_date = datetime.date(year, month, 1)
-            end_day_date = datetime.date(year, month, calendar.monthrange(year, month)[1])
-            self.__calculate_monitoring_month_stats(start_day_date, end_day_date, garmin_session, garmin_mon_session, garmin_sum_session, sum_session)
+        if len(months):
+            for month in tqdm(months, unit='months'):
+                start_day_date = datetime.date(year, month, 1)
+                end_day_date = datetime.date(year, month, calendar.monthrange(year, month)[1])
+                self.__calculate_monitoring_month_stats(start_day_date, end_day_date, garmin_session, garmin_mon_session, garmin_sum_session, sum_session)
         months = Activities.s_get_months(garmin_act_session, year)
-        for month in tqdm(months, unit='months'):
-            stats = Activities.get_monthly_stats(garmin_act_session, datetime.date(year, month, 1), datetime.date(year, month, calendar.monthrange(year, month)[1]))
-            MonthsSummary.s_insert_or_update(garmin_sum_session, stats)
-            summarydb.MonthsSummary.s_insert_or_update(sum_session, stats)
+        if len(months):
+            for month in tqdm(months, unit='months'):
+                stats = Activities.get_monthly_stats(garmin_act_session, datetime.date(year, month, 1), datetime.date(year, month, calendar.monthrange(year, month)[1]))
+                MonthsSummary.s_insert_or_update(garmin_sum_session, stats)
+                summarydb.MonthsSummary.s_insert_or_update(sum_session, stats)
 
     def __calculate_year_stats(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         stats = DailySummary.get_yearly_stats(garmin_session, year)
@@ -181,15 +189,7 @@ class Analyze(object):
     def summary(self):
         """Summarize Garmin health data. Daily, weekly, and monthly, tables will be generated."""
         logger.info("Summary Tables Generation:")
-        monitoring_years = Monitoring.get_years(self.garmin_mon_db)
-        activity_years = Activities.get_years(self.garmin_act_db)
-        if monitoring_years and activity_years:
-            years = min(monitoring_years, activity_years)
-        elif monitoring_years:
-            years = monitoring_years
-        else:
-            years = activity_years
-        for year in years:
+        for year in sorted(list(set(Monitoring.get_years(self.garmin_mon_db) + Activities.get_years(self.garmin_act_db)))):
             logger.info("Generating table entries for %s", year)
             self.__calculate_year(year)
 
