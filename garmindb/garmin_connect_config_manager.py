@@ -44,9 +44,10 @@ class GarminConnectConfigManager(JsonConfig):
         return default
 
     def get_secure_password(self):
-        """Return the Garmin Connect password from secure storage. On MacOS that si the KeyChain."""
+        """Return the Garmin Connect password from secure storage. On MacOS that is the KeyChain."""
         system = platform.system()
         if system == 'Darwin':
+            # This relies on there being a 'internet password' entry for URL https://sso.garmin.com in the login keychain
             password = subprocess.check_output(["security", "find-internet-password", "-s", "sso.garmin.com", "-w"])
             if password:
                 return password.rstrip()
@@ -57,10 +58,9 @@ class GarminConnectConfigManager(JsonConfig):
 
     def get_password(self):
         """Return the Garmin Connect password."""
-        password = self.__get_node_value('credentials', 'password')
-        if not password:
-            password = self.get_secure_password()
-        return password
+        if self.__get_node_value('credentials', 'secure_password'):
+            return self.get_secure_password()
+        return self.__get_node_value('credentials', 'password')
 
     def latest_activity_count(self):
         """Return the number of activities to download when getting the latest."""

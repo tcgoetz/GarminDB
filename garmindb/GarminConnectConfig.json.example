@@ -1,6 +1,7 @@
 {
     "credentials": {
         "user"                          : "joe@shmoe.com",
+        "secure_password"               : false,
         "password"                      : "yourpassword"
     },
     "data": {
