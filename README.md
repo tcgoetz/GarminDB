@@ -1,8 +1,10 @@
 [![Screen shot of a daily graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_jupyter_daily_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
+---
+
 [![Screen shot of an activity display](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_activity_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
-[![Screen shot of a steps graph](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_steps_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+---
 
 # GarminDB
 

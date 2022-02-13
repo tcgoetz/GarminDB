@@ -11,9 +11,14 @@ import subprocess
 import datetime
 
 from idbutils import JsonConfig
+from fitfile import Sport
 
 from .statistics import Statistics
 from .config_manager import ConfigManager
+
+
+class ConfigException(Exception):
+    """Something unexpected happened while handling the configuration."""
 
 
 class GarminConnectConfigManager(JsonConfig):
@@ -43,12 +48,18 @@ class GarminConnectConfigManager(JsonConfig):
         return default
 
     def get_secure_password(self):
-        """Return the Garmin Connect password from secure storage. On MacOS that si the KeyChain."""
+        """Return the Garmin Connect password from secure storage. On MacOS that is the KeyChain."""
         system = platform.system()
         if system == 'Darwin':
-            password = subprocess.check_output(["security", "find-internet-password", "-s", "sso.garmin.com", "-w"])
-            if password:
-                return password.rstrip()
+            # This relies on there being a 'internet password' entry for URL https://sso.garmin.com in the login keychain
+            domain = 'sso.garmin.com'
+            try:
+                password = subprocess.check_output(["security", "find-internet-password", "-s", domain, "-w"])
+                if password:
+                    return password.rstrip()
+            except Exception:
+                pass
+            raise ConfigException(f'Secure password was specified but no "Internet Password" entry was found in the Login Keychain for https://{domain}')
 
     def get_user(self):
         """Return the Garmin Connect username."""
@@ -56,10 +67,9 @@ class GarminConnectConfigManager(JsonConfig):
 
     def get_password(self):
         """Return the Garmin Connect password."""
-        password = self.__get_node_value('credentials', 'password')
-        if not password:
-            password = self.get_secure_password()
-        return password
+        if self.__get_node_value_default('credentials', 'secure_password', False):
+            return self.get_secure_password()
+        return self.__get_node_value('credentials', 'password')
 
     def latest_activity_count(self):
         """Return the number of activities to download when getting the latest."""
@@ -97,3 +107,10 @@ class GarminConnectConfigManager(JsonConfig):
             json_enabled_stats_dict = self.config.get('enabled_stats', {stat_name: True for stat_name in list(Statistics)})
             self.enabled_statistics = [Statistics.from_string(stat_name) for stat_name, stat_enabled in json_enabled_stats_dict.items() if stat_enabled]
         return self.enabled_statistics
+
+    def display_activities(self):
+        """Return a list of the interesting activities."""
+        activities_list = self.__get_node_value('activities', 'display')
+        if not activities_list:
+            activities_list = ConfigManager.default_display_activities()
+        return [Sport.strict_from_string(activity) for activity in activities_list]
