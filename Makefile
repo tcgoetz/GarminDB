@@ -57,7 +57,7 @@ $(PROJECT_BASE)/.venv:
 	source $(PROJECT_BASE)/.venv/bin/activate
 
 update: submodules_update
-	git pull --rebase
+	git pull
 
 submodules_update:
 	git submodule init
@@ -80,7 +80,7 @@ $(PROJECT_BASE)/dist/$(MODULE)-*.whl: build
 install: $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 	$(PIP) install --upgrade $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
-reinstall: $(PROJECT_BASE)/dist/$(MODULE)-*.whl
+reinstall: clean $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 	$(PIP) install --upgrade --force-reinstall --no-deps $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
 install_all: $(SUBMODULES:%=%-install) install

@@ -32,7 +32,7 @@ class GarminConnectConfigManager(JsonConfig):
             super().__init__(config_file)
         except Exception as e:
             print(str(e))
-            print(f"Missing config: copy GarminConnectConfig.json.example from {os.path.dirname(os.path.abspath(__file__))} to {config_file} and edit it to "
+            print(f"Missing or bad config: copy GarminConnectConfig.json.example from {os.path.dirname(os.path.abspath(__file__))} to {config_file} and edit it to "
                   "add your Garmin Connect username and password.")
             sys.exit(-1)
 
@@ -109,7 +109,7 @@ class GarminConnectConfigManager(JsonConfig):
         return self.enabled_statistics
 
     def display_activities(self):
-        """Return a list of the interesting activities."""
+        """Return a list of activities to display."""
         activities_list = self.__get_node_value('activities', 'display')
         if not activities_list:
             activities_list = ConfigManager.default_display_activities()

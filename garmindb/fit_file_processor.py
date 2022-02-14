@@ -157,6 +157,7 @@ class FitFileProcessor(object):
                 'software_version'      : message_fields.software_version
             }
             DeviceInfo.s_insert_or_update(self.garmin_db_session, device_info, ignore_none=True)
+            return serial_number
 
     def _write_stress_level_entry(self, fit_file, message_fields):
         stress = {

@@ -29,7 +29,6 @@ class TestGarminSummaryDB(TestSummaryDBBase, unittest.TestCase):
         db_params = ConfigManager.get_db_params()
         db = GarminSummaryDb(db_params)
         table_dict = {
-            'summary_table' : Summary,
             'months_table' : MonthsSummary,
             'weeks_table' : WeeksSummary,
             'days_table' : DaysSummary

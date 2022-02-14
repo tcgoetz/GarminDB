@@ -37,7 +37,8 @@ class Map():
     @classmethod
     def centroid(cls, points):
         """Return the centroid for a list of points."""
-        return (sum([point[0] for point in points]) / len(points), sum([point[1] for point in points]) / len(points))
+        if len(points) and len(points):
+            return (sum([point[0] for point in points]) / len(points), sum([point[1] for point in points]) / len(points))
 
     def display(self):
         """Show the map."""

@@ -15,6 +15,13 @@ def format_number(number, digits=0):
     return '-'
 
 
+def format_string(string):
+    """Format a string for display."""
+    if string is not None:
+        return string
+    return '-'
+
+
 def format_temp(temp, digits=1):
     """Format a tempature value for display."""
     return format_number(temp, digits)

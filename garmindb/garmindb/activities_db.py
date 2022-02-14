@@ -269,6 +269,30 @@ class ActivityRecords(ActivitiesDb.Base, idbutils.DbObject):
         self.position_long = location.long_deg
 
 
+class ActivitiesDevices(ActivitiesDb.Base, idbutils.DbObject):
+    """Class represents a database table that maps device ids to activities (by id) that they were used in."""
+
+    __tablename__ = 'activities_devices'
+
+    db = ActivitiesDb
+    table_version = 1
+
+    activity_id = Column(String)
+    device_serial_number = Column(Integer)
+    __table_args__ = (PrimaryKeyConstraint("activity_id", "device_serial_number"),)
+
+    @classmethod
+    def s_get_activity(cls, session, activity_id):
+        """Return all activity devices records for a given activity_id."""
+        return session.query(cls).filter(cls.activity_id == activity_id).all()
+
+    @classmethod
+    def get_activity(cls, db, activity_id):
+        """Return all activity devices records for a given activity_id."""
+        with db.managed_session() as session:
+            return cls.s_get_activity(session, activity_id)
+
+
 class SportActivities(idbutils.DbObject):
     """Base class for all sport based activity tables."""
 
