@@ -75,11 +75,10 @@ class ActivityMap(Map):
         super().__init__(self.centroid(locations), width=width, height=height, fullscreen_widget=fullscreen_widget)
         ant_path = ipyleaflet.AntPath(locations=locations, dash_array=[1, 10], delay=2000, color='#7590ba', pulse_color='#3f6fba')
         self.map.add_layer(ant_path)
-        for lap_num, lap_location in enumerate(lap_locations):
+        for lap_num, lap_location in enumerate(lap_locations, start=1):
             lap_marker = ipyleaflet.Marker(location=lap_location, title=f'lap {lap_num}', draggable=False, icon=blue_pin)
             self.map.add_layer(lap_marker)
         start_marker = ipyleaflet.Marker(location=locations[0], title='start', draggable=False, icon=green_pin)
         self.map.add_layer(start_marker)
         stop_marker = ipyleaflet.Marker(location=locations[-1], title='stop', draggable=False, icon=red_pin)
         self.map.add_layer(stop_marker)
-
