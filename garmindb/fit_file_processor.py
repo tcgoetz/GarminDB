@@ -18,7 +18,7 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 
-class FitFileProcessor(object):
+class FitFileProcessor():
     """Class that takes a parsed FIT file object and imports it into a database."""
 
     def __init__(self, db_params, plugin_manager, debug=0):

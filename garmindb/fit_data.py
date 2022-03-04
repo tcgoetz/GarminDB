@@ -19,7 +19,7 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 
-class FitData(object):
+class FitData():
     """Class for importing FIT files into a database."""
 
     def __init__(self, input_dir, debug, latest=False, recursive=False, fit_types=None, measurement_system=fitfile.field_enums.DisplayMeasure.metric):

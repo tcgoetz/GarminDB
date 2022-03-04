@@ -24,7 +24,7 @@ logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-class Analyze(object):
+class Analyze():
     """Object for analyzing health data from Garmin devices."""
 
     def __init__(self, db_params, debug):

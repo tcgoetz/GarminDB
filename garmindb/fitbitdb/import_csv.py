@@ -18,7 +18,7 @@ logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-class FitBitData(object):
+class FitBitData():
     """A object for importing CSV formatted FitBit export data."""
 
     cols_map = {

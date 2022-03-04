@@ -20,7 +20,7 @@ logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-class Copy(object):
+class Copy():
     """Class for copying data from a USB mounted Garmin device."""
 
     def __init__(self, device_mount_dir):

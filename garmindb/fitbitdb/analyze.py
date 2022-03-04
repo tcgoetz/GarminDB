@@ -22,7 +22,7 @@ stat_logger = logging.getLogger('stats')
 stat_logger.addHandler(logging.FileHandler('fb_stats.txt', 'w'))
 
 
-class Analyze(object):
+class Analyze():
     """Object for analyzing FitBit data from FitBit CSV exported data."""
 
     def __init__(self, db_params):

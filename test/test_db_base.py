@@ -12,7 +12,7 @@ import pstats
 logger = logging.getLogger(__name__)
 
 
-class TestDBBase(object):
+class TestDBBase():
 
     @classmethod
     def setUpClass(cls, db, table_dict, table_not_none_cols_dict={}):
