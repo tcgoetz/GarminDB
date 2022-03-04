@@ -9,7 +9,7 @@ import sys
 
 import fitfile
 
-from .garmindb import File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, StepsActivities, CycleActivities, PaddleActivities
+from .garmindb import File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, ActivitiesDevices, StepsActivities, CycleActivities, PaddleActivities
 from .fit_file_processor import FitFileProcessor
 
 
@@ -33,6 +33,15 @@ class ActivityFitFileProcessor(FitFileProcessor):
 
     def _plugin_dispatch(self, handler_name, *args, **kwargs):
         return super()._plugin_dispatch(self.activity_fit_file_plugins, handler_name, *args, **kwargs)
+
+    def _write_device_info_entry(self, fit_file, message_fields):
+        device_serial_number = super()._write_device_info_entry(fit_file, message_fields)
+        if device_serial_number:
+            activity_id = File.id_from_path(fit_file.filename)
+            entry = {'activity_id' : activity_id, 'device_serial_number' : device_serial_number}
+            if not ActivitiesDevices.s_exists(self.garmin_act_db_session, entry):
+                root_logger.debug("_write_device_info_entry activity_id %s, device serial number %s doesn't exist", activity_id, device_serial_number)
+                self.garmin_act_db_session.add(ActivitiesDevices(**entry))
 
     def _write_lap(self, fit_file, message_type, messages):
         """Write all lap messages to the database."""

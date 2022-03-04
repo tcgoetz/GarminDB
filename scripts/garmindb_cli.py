@@ -243,10 +243,8 @@ def backup_dbs():
             backupzip.write(db)
 
 
-def delete_dbs(delete_db_list=[]):
-    """Delete selected, or all if none selected GarminDb, database files."""
-    if len(delete_db_list) == 0:
-        delete_db_list = [GarminDb, MonitoringDb, ActivitiesDb, GarminSummaryDb, SummaryDb]
+def delete_dbs(delete_db_list=[GarminDb, MonitoringDb, ActivitiesDb, GarminSummaryDb, SummaryDb]):
+    """Delete selected database files, or all if none selected."""
     for db in delete_db_list:
         db.delete_db(db_params_dict)
 

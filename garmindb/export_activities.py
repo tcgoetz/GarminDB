@@ -12,7 +12,7 @@ from .garmindb import GarminDb, File, Device, ActivitiesDb, Activities, Activity
 from .tcx import Tcx
 
 
-class ActivityExporter(object):
+class ActivityExporter():
     """Export activities as TCX files from database data."""
 
     def __init__(self, directory, activity_id, measurement_system, debug):

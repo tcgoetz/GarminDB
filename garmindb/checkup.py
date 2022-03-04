@@ -24,10 +24,11 @@ root_logger = logging.getLogger()
 class Checkup():
     """Class running a checkup against the DB data."""
 
-    def __init__(self, output_func=logger.info, debug=False):
+    def __init__(self, paragraph_func=logger.info, heading_func=logger.info, debug=False):
         """Return an instance of the CheckUp class."""
         self.db_params = ConfigManager.get_db_params()
-        self.output_func = output_func
+        self.paragraph_func = paragraph_func
+        self.heading_func = heading_func
         self.debug = debug
         self.garmin_db = GarminDb(self.db_params)
         self.measurement_system = Attributes.measurements_type(self.garmin_db)
@@ -60,29 +61,29 @@ class Checkup():
                 step_goal_days += 1
                 step_goal_days_in_week += 1
             else:
-                self.output_func(f'Steps: goal not met on {result.day}')
+                self.paragraph_func(f'Steps: goal not met on {result.day}')
             if result.floors_goal_percent >= 100:
                 floors_goal_days += 1
                 floor_goal_days_in_week += 1
             else:
-                self.output_func(f'Floors: goal not met on {result.day}')
+                self.paragraph_func(f'Floors: goal not met on {result.day}')
             intensity_time = fitfile.conversions.add_time(intensity_time, result.intensity_time)
             intensity_time_goal = fitfile.conversions.add_time(intensity_time_goal, result.intensity_time_goal)
             if result.day.weekday() == 6:
                 if days_in_week == 7:
                     intensity_weeks += 1
                     if step_goal_days_in_week < days_in_week:
-                        self.output_func(f'Steps: goal not met {days_in_week - step_goal_days_in_week} days for week ending in {result.day}')
+                        self.paragraph_func(f'Steps: goal not met {days_in_week - step_goal_days_in_week} days for week ending in {result.day}')
                     if floor_goal_days_in_week < days_in_week:
-                        self.output_func(f'Floors: goal not met {days_in_week - floor_goal_days_in_week} days for week ending in {result.day}')
+                        self.paragraph_func(f'Floors: goal not met {days_in_week - floor_goal_days_in_week} days for week ending in {result.day}')
                     if intensity_time >= intensity_time_goal:
                         intensity_goal_weeks += 1
                     else:
-                        self.output_func(f'Intensity mins: goal not met for week ending in {result.day}')
-        self.output_func('Summary:')
-        self.output_func(f'Steps: met goal {step_goal_days} of last {look_back_days} days')
-        self.output_func(f'Floors: met goal {floors_goal_days} of last {look_back_days} days')
-        self.output_func(f'Intensity mins: met goal {intensity_goal_weeks} of last {intensity_weeks} weeks')
+                        self.paragraph_func(f'Intensity mins: goal not met for week ending in {result.day}')
+        self.heading_func('Summary:')
+        self.paragraph_func(f'Steps: met goal {step_goal_days} of last {look_back_days} days')
+        self.paragraph_func(f'Floors: met goal {floors_goal_days} of last {look_back_days} days')
+        self.paragraph_func(f'Intensity mins: met goal {intensity_goal_weeks} of last {intensity_weeks} weeks')
 
     def __activity_string(self, activity_db, activity):
         if activity.is_steps_activity():
@@ -100,11 +101,11 @@ class Checkup():
         activities_count = len(activities)
         fastest_activity = Activities.get_fastest_by_course_id(activity_db, course_id)
         slowest_activity = Activities.get_slowest_by_course_id(activity_db, course_id)
-        self.output_func(f'Matching Activities: {activities_count}')
-        self.output_func(f'  first: {self.__activity_string(activity_db, activities[0])}')
-        self.output_func(f'  lastest: {self.__activity_string(activity_db, activities[-1])}')
-        self.output_func(f'  fastest: {self.__activity_string(activity_db, fastest_activity)}')
-        self.output_func(f'  slowest: {self.__activity_string(activity_db, slowest_activity)}')
+        self.paragraph_func(f'Matching Activities: {activities_count}')
+        self.paragraph_func(f'  first: {self.__activity_string(activity_db, activities[0])}')
+        self.paragraph_func(f'  lastest: {self.__activity_string(activity_db, activities[-1])}')
+        self.paragraph_func(f'  fastest: {self.__activity_string(activity_db, fastest_activity)}')
+        self.paragraph_func(f'  slowest: {self.__activity_string(activity_db, slowest_activity)}')
 
     def battery_status(self):
         """Check for devices with low battery status."""
@@ -114,4 +115,4 @@ class Checkup():
                                                             [DeviceInfo.serial_number == device.serial_number,
                                                              DeviceInfo.battery_status != fitfile.field_enums.BatteryStatus.invalid])
             if battery_level is fitfile.field_enums.BatteryStatus.low:
-                self.output_func(f"Device {device.manufacturer} {device.product} ({device.serial_number}) has a low battery")
+                self.paragraph_func(f"Device {device.manufacturer} {device.product} ({device.serial_number}) has a low battery")

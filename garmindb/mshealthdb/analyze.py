@@ -22,7 +22,7 @@ stat_logger = logging.getLogger('stats')
 stat_logger.addHandler(logging.FileHandler('ms_stats.txt', 'w'))
 
 
-class Analyze(object):
+class Analyze():
     """Object for analyzing health data from Microsoft Health."""
 
     def __init__(self, db_params):

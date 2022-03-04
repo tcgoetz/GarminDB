@@ -27,7 +27,6 @@ class TestSummaryDB(TestSummaryDBBase, unittest.TestCase):
         db_params = ConfigManager.get_db_params()
         db = summarydb.SummaryDb(db_params)
         table_dict = {
-            'summary_table' : summarydb.Summary,
             'months_table' : summarydb.MonthsSummary,
             'weeks_table' : summarydb.WeeksSummary,
             'days_table' : summarydb.DaysSummary

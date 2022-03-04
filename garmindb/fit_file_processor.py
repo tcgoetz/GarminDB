@@ -18,7 +18,7 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 
-class FitFileProcessor(object):
+class FitFileProcessor():
     """Class that takes a parsed FIT file object and imports it into a database."""
 
     def __init__(self, db_params, plugin_manager, debug=0):
@@ -157,6 +157,7 @@ class FitFileProcessor(object):
                 'software_version'      : message_fields.software_version
             }
             DeviceInfo.s_insert_or_update(self.garmin_db_session, device_info, ignore_none=True)
+            return serial_number
 
     def _write_stress_level_entry(self, fit_file, message_fields):
         stress = {

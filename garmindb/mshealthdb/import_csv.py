@@ -18,7 +18,7 @@ logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-class MSHealthData(object):
+class MSHealthData():
     """A classs for importing CSV formatted Microsoft Health export data."""
 
     cols_map = {
@@ -85,7 +85,7 @@ class MSHealthData(object):
             csvimporter.process_file(not self.metric)
 
 
-class MSVaultData(object):
+class MSVaultData():
     """A class for importing CSV formatted Microsoft Health Vault export data."""
 
     def __init__(self, input_file, input_dir, db_params, metric, debug):

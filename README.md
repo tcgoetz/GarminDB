@@ -4,7 +4,6 @@
 
 [![Screen shot of an activity display](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_activity_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
----
 
 # GarminDB
 
@@ -19,13 +18,13 @@ What they can do:
 * Retain downloaded JSON and FIT files so that the DB can be regenerated without connecting to or redownloading data from Garmin Connect.
 * Export activities as TCX files.
 
-Once you have your data in the DB, I recommend using a supplied Jupyter notebooks and/or SQLite browser like [SQLite Studio](http://sqlitestudio.pl) or [DB Browser for SQLite](https://sqlitebrowser.org/) for browsing and working with the data. The scripts create some default [views](http://www.tutorialspoint.com/sqlite/sqlite_views.htm) in the DBs that make browsing the data easier.
+Once you have your data in the DB, I recommend using a supplied Jupyter notebooks, third party Jupyter notebooks, and/or SQLite browser like [SQLite Studio](http://sqlitestudio.pl) or [DB Browser for SQLite](https://sqlitebrowser.org/) for browsing and working with the data. The scripts create some default [views](http://www.tutorialspoint.com/sqlite/sqlite_views.htm) in the DBs that make browsing the data easier.
 
 # Using It
 
 ## Releases
 
-GarminDb releases are hosted on [PyPI](https://pypi.org/project/garmindb/). GarminDb requires [Python](https://www.python.org/). With Python installed, install the latest release with [pip](https://pypi.org/project/pip/) by running `pip install garmindb` in a terminal.
+GarminDb releases are hosted on [PyPI](https://pypi.org/project/garmindb/). GarminDb requires [Python](https://www.python.org/) 3.x. With Python installed, install the latest release with [pip](https://pypi.org/project/pip/) by running `pip install garmindb` in a terminal.
 * Copy `GarminConnectConfig.json.example` to `~/.GarminDb/GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password and adjust the start dates to match the dats of your data in Garmin Connect.
 * Starting out: download all of your data and create your db by running `garmindb_cli.py --all --download --import --analyze` in a terminal.
 * Incrementally update your db by downloading the latest data and importing it by running `garmindb_cli.py --all --download --import --analyze --latest` in a terminal.
@@ -47,7 +46,8 @@ There is more help on [using the program](https://github.com/tcgoetz/GarminDB/wi
 
 # Jupyter Notebooks #
 
-Jupyter notebooks for anylzing data from the database can be found in the 'Jupyter' directory in the source tree.
+Jupyter notebooks for analzing data from the database can be found in the 'Jupyter' directory in the source tree. [Links](https://github.com/tcgoetz/GarminDB/wiki/Related-Projects#jupyter-notebooks) to user submitted notebooks can be found in the wiki.
+
 # Plugins #
 
 Plugins allow the user to expand the types of data that are processed and stored in the database. GarminDb already has a number of plugins for handling data from third-party Connect IQ apps and data fields. Read more about plugins [here](https://github.com/tcgoetz/GarminDbPlugins).
@@ -67,7 +67,7 @@ Find out who's using GarminDb on what platforms, OSes, and python versions [here
 
 * If you have issues, file a bug here on the project. See the Issues tab at the top of the project page. Run `make bugreport` or `garmindb_bug_report.py` and include bugreport.txt in your bug report.
 * Besides errors that appear on the screen, one of the first places to look for more information is the log files (garmin.log, graphs.log).
-* If your having issues with a particular data files, please considering sharing so I can debug it.
+* If your having issues with a particular data files, please considering sharing so I can debug it and add support.
 
 # Contributing
 

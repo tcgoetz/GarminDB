@@ -30,6 +30,6 @@
     "modes": {
     },
     "activities": {
-        "display"                       : None
+        "display"                       : []
     }
 }
