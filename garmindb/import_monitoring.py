@@ -75,6 +75,24 @@ class GarminMonitoringFitData(FitData):
         super().__init__(input_dir, debug, latest, True, [fitfile.FileType.monitoring_b], measurement_system)
 
 
+class GarminSleepFitData(FitData):
+    """Class for importing sleep FIT files into a database."""
+
+    def __init__(self, input_dir, latest, measurement_system, debug):
+        """
+        Return an instance of GarminSleepFitData.
+
+        Parameters:
+        ----------
+        input_dir (string): directory (full path) to check for monitoring data files
+        latest (Boolean): check for latest files only
+        measurement_system (enum): which measurement system to use when importing the files
+        debug (Boolean): enable debug logging
+
+        """
+        super().__init__(input_dir, debug, latest, True, [fitfile.FileType.sleep], measurement_system)
+
+
 class GarminSettingsFitData(FitData):
     """Class for importing settings FIT files into a database."""
 
@@ -133,6 +151,8 @@ class GarminSleepData(JsonFileProcessor):
             'sleepTimeSeconds': fitfile.conversions.secs_to_dt_time,
             'sleepStartTimestampGMT': Conversions.epoch_ms_to_dt,
             'sleepEndTimestampGMT': Conversions.epoch_ms_to_dt,
+            'sleepStartTimestampLocal': Conversions.epoch_ms_to_dt,
+            'sleepEndTimestampLocal': Conversions.epoch_ms_to_dt,
             'deepSleepSeconds': fitfile.conversions.secs_to_dt_time,
             'lightSleepSeconds': fitfile.conversions.secs_to_dt_time,
             'remSleepSeconds': fitfile.conversions.secs_to_dt_time,
@@ -149,11 +169,19 @@ class GarminSleepData(JsonFileProcessor):
         if date is None:
             return 0
         day = date.date()
+        # Find the UTC offset so we can convert times to local
+        start_utc = daily_sleep.get('sleepStartTimestampGMT')
+        start_local = daily_sleep.get('sleepStartTimestampLocal')
+        if start_utc and start_local:
+            utc_offset = (start_local - start_utc).total_seconds()
+        else:
+            utc_offset = 0
+        self.local_tz = datetime.timezone(datetime.timedelta(seconds=utc_offset))
         if json_data.get('remSleepData'):
-            root_logger.info("Importing %s with REM data", day)
+            root_logger.info("Importing %s with REM data and UTC offset %r", day, utc_offset)
             sleep_activity_levels = RemSleepActivityLevels
         else:
-            root_logger.info("Importing %s without REM data", day)
+            root_logger.info("Importing %s without REM data and UTC offset %r", day, utc_offset)
             sleep_activity_levels = SleepActivityLevels
         day_data = {
             'day': day,
@@ -165,23 +193,23 @@ class GarminSleepData(JsonFileProcessor):
             'rem_sleep': daily_sleep.get('remSleepSeconds'),
             'awake': daily_sleep.get('awakeSleepSeconds')
         }
-        Sleep.insert_or_update(
-            self.garmin_db, day_data, ignore_none=True)
+        Sleep.insert_or_update(self.garmin_db, day_data, ignore_none=True)
         sleep_levels = json_data.get('sleepLevels')
         if sleep_levels is None:
             return 0
         for sleep_level in sleep_levels:
             start = sleep_level['startGMT']
+            start_local = start + datetime.timedelta(seconds=utc_offset)
             end = sleep_level['endGMT']
             event = sleep_activity_levels(sleep_level['activityLevel'])
             duration = (datetime.datetime.min + (end - start)).time()
+            root_logger.info("Sleep event %r (%r) %r", start_local, start, event)
             level_data = {
-                'timestamp': start,
+                'timestamp': start_local,
                 'event': event.name,
                 'duration': duration
             }
-            SleepEvents.insert_or_update(
-                self.garmin_db, level_data, ignore_none=True)
+            SleepEvents.insert_or_update(self.garmin_db, level_data, ignore_none=True)
         return len(sleep_levels)
 
 

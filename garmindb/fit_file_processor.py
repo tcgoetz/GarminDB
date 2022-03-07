@@ -21,7 +21,7 @@ root_logger = logging.getLogger()
 class FitFileProcessor():
     """Class that takes a parsed FIT file object and imports it into a database."""
 
-    def __init__(self, db_params, plugin_manager, debug=0):
+    def __init__(self, db_params, plugin_manager=None, debug=0):
         """
         Return a new FitFileProcessor instance.
 
