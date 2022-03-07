@@ -191,7 +191,10 @@ class GarminSleepData(JsonFileProcessor):
             'deep_sleep': daily_sleep.get('deepSleepSeconds'),
             'light_sleep': daily_sleep.get('lightSleepSeconds'),
             'rem_sleep': daily_sleep.get('remSleepSeconds'),
-            'awake': daily_sleep.get('awakeSleepSeconds')
+            'awake': daily_sleep.get('awakeSleepSeconds'),
+            'avg_spo2': daily_sleep.get('averageSpO2Value'),
+            'avg_rr': daily_sleep.get('averageRespirationValue'),
+            'avg_stress': daily_sleep.get('avgSleepStress')
         }
         Sleep.insert_or_update(self.garmin_db, day_data, ignore_none=True)
         sleep_levels = json_data.get('sleepLevels')
