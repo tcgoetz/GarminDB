@@ -85,10 +85,6 @@ class GarminConnectConfigManager(JsonConfig):
         days = (datetime.datetime.now().date() - date).days
         return (date, days)
 
-    def sleep_from_fit(self):
-        """Return a boolean. True means sleep data comes from FIT files. False means sleep data comes from Garmin Connect downloads."""
-        return self.__get_node_value('data', 'sleep_from_fit')
-
     def device_mount_dir(self):
         """Return the directory where the Garmin USB device is mounted."""
         return self.__get_node_value('copy', 'mount_dir')

@@ -195,15 +195,15 @@ def import_data(debug, latest, stats):
             gfd.process_files(MonitoringFitFileProcessor(db_params_dict, plugin_manager, debug))
 
     if Statistics.sleep in stats:
-        if gc_config.sleep_from_fit():
+        # If we have sleep data from Garmin connect, use it, otherwise process FIT sleep files.
+        sleep_dir = ConfigManager.get_or_create_sleep_dir()
+        gsd = GarminSleepData(db_params_dict, sleep_dir, latest, debug)
+        if gsd.file_count() > 0:
+            gsd.process()
+        else:
             gsd = GarminSleepFitData(monitoring_dir, latest=False, measurement_system=measurement_system, debug=2)
             if gsd.file_count() > 0:
                 gsd.process_files(SleepFitFileProcessor(db_params_dict))
-        else:
-            sleep_dir = ConfigManager.get_or_create_sleep_dir()
-            gsd = GarminSleepData(db_params_dict, sleep_dir, latest, debug)
-            if gsd.file_count() > 0:
-                gsd.process()
 
     if Statistics.rhr in stats:
         rhr_dir = ConfigManager.get_or_create_rhr_dir()
