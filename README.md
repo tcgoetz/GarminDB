@@ -6,7 +6,7 @@
 
 ---
 
-[![Screen shot of daily trend ](Screenshots/Screenshots/Screen_Shot_daily_trend.png)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+[![Screen shot of daily trend ](Screenshots/Screen_Shot_daily_trend.png)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
 
 # GarminDB
