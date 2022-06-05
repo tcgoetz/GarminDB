@@ -273,6 +273,30 @@ class SleepEvents(GarminDb.Base, idbutils.DbObject):
         if len(values) > 0:
             return values[0][0]
 
+    @classmethod
+    def get_level_time(cls, session, day_date, sleep_level):
+        """Return the time in a given sleep level for a given date."""
+        day_start_ts = datetime.datetime.combine(day_date, datetime.time.min)
+        day_stop_ts = datetime.datetime.combine(day_date, datetime.time.max)
+        result = cls._s_query(session, cls._time_from_secs(func.sum(cls._secs_from_time(cls.duration))), None, day_start_ts, day_stop_ts,
+                              cls._secs_from_time(cls.duration)).filter(cls.event == sleep_level).scalar()
+        return datetime.datetime.strptime(result, '%H:%M:%S').time() if result is not None else datetime.time.min
+
+    @classmethod
+    def get_day_stats(cls, session, day_date):
+        """Return a dictionary of aggregate statistics for the given time period."""
+        deep_sleep = cls.get_level_time(cls, session, day_date, 'deep_sleep')
+        light_sleep = cls.get_level_time(cls, session, day_date, 'light_sleep')
+        rem_sleep = cls.get_level_time(cls, session, day_date, 'rem_sleep')
+        awake = cls.get_level_time(cls, session, day_date, 'awake')
+        return {
+            'total_sleep': deep_sleep + light_sleep + rem_sleep,
+            'deep_sleep': deep_sleep,
+            'light_sleep': light_sleep,
+            'rem_sleep': rem_sleep,
+            'awake': awake
+        }
+
 
 class RestingHeartRate(GarminDb.Base, idbutils.DbObject):
     """Class representing a daily resting heart rate reading."""
