@@ -4,6 +4,10 @@
 
 [![Screen shot of an activity display](https://raw.githubusercontent.com/tcgoetz/GarminDB/master/Screenshots/Screen_Shot_activity_sm.jpg)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
 
+---
+
+[![Screen shot of daily trend ](Screenshots/Screen_Shot_daily_trend.png)](https://github.com/tcgoetz/GarminDB/wiki/Screenshots)
+
 
 # GarminDB
 
