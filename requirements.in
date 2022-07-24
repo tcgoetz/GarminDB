@@ -6,6 +6,6 @@ tqdm
 matplotlib
 cloudscraper
 ipykernel
-fitfile>=1.1.2
+fitfile>=1.1.3
 tcxfile>=1.0.4
 idbutils>=1.0.6
