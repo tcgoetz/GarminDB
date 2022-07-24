@@ -20,6 +20,7 @@ from .config_manager import ConfigManager
 from .statistics import Statistics
 from .tcx import Tcx
 from .monitoring_fit_file_processor import MonitoringFitFileProcessor
+from .sleep_fit_file_processor import SleepFitFileProcessor
 from .export_activities import ActivityExporter
 from .open_with_basecamp import OpenWithBaseCamp
 from .open_with_google_earth import OpenWithGoogleEarth
@@ -34,7 +35,7 @@ from .analyze import Analyze
 from .plugin_manager import PluginManager
 from .version import format_version, log_version, python_version_check
 
-from .import_monitoring import GarminMonitoringFitData, GarminSummaryData, GarminProfile, GarminWeightData, GarminSleepData, GarminRhrData, GarminSettingsFitData, GarminHydrationData
+from .import_monitoring import GarminMonitoringFitData, GarminSleepFitData, GarminSummaryData, GarminProfile, GarminWeightData, GarminSleepData, GarminRhrData, GarminSettingsFitData, GarminHydrationData
 from .activities_fit_data import GarminActivitiesFitData
 from .garmin_tcx_data import GarminTcxData
 from .garmin_json_data import GarminJsonSummaryData, GarminJsonDetailsData

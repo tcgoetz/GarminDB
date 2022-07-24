@@ -21,7 +21,7 @@ root_logger = logging.getLogger()
 class FitFileProcessor():
     """Class that takes a parsed FIT file object and imports it into a database."""
 
-    def __init__(self, db_params, plugin_manager, debug=0):
+    def __init__(self, db_params, plugin_manager=None, debug=0):
         """
         Return a new FitFileProcessor instance.
 
@@ -204,7 +204,7 @@ class FitFileProcessor():
         for attribute_name in attribute_names:
             self._write_attribute(timestamp, message_fields, attribute_name)
 
-    def _write_measurement_ssytem_attributes(self, timestamp, message_fields):
+    def _write_measurement_sytem_attributes(self, timestamp, message_fields):
         for attribute_name in ['dist_setting', 'speed_setting', 'height_setting', 'temperature_setting']:
             self._write_attribute(timestamp, message_fields, attribute_name, 'measurement_system')
 
@@ -212,7 +212,7 @@ class FitFileProcessor():
         root_logger.debug("device settings message: %r", message_fields)
         timestamp = fit_file.time_created_local
         self._write_attributes(timestamp, message_fields, ['active_time_zone', 'date_mode'])
-        self._write_measurement_ssytem_attributes(timestamp, message_fields)
+        self._write_measurement_sytem_attributes(timestamp, message_fields)
         self._write_attribute(timestamp, message_fields, 'active_time_zone', 'time_zone')
         self._write_attribute(timestamp, message_fields, 'date_mode', 'date_format')
 
@@ -223,11 +223,11 @@ class FitFileProcessor():
         root_logger.debug("user profile message: %r", message_fields)
         timestamp = fit_file.time_created_local
         attribute_names = [
-            'gender', 'height', 'weight', 'language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time',
+            'gender', 'height', 'weight', 'age', 'year_of_birth', 'language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time',
             'speed_setting'
         ]
         self._write_attributes(timestamp, message_fields, attribute_names)
-        self._write_measurement_ssytem_attributes(timestamp, message_fields)
+        self._write_measurement_sytem_attributes(timestamp, message_fields)
 
     def _write_activity_entry(self, fit_file, message_fields):
         root_logger.debug("activity message: %r", message_fields)

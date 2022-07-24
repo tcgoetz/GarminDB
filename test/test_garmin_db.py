@@ -10,7 +10,7 @@ import datetime
 
 import fitfile
 
-from garmindb import ConfigManager
+from garmindb import ConfigManager, GarminSleepFitData, SleepFitFileProcessor
 from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate
 
 from test_db_base import TestDBBase
@@ -29,7 +29,10 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         db_params = ConfigManager.get_db_params()
+        cls.test_db_params = ConfigManager.get_db_params(test_db=True)
+        print(f"db params {repr(cls.test_db_params)}")
         cls.garmin_db = GarminDb(db_params)
+        cls.measurement_system = fitfile.field_enums.DisplayMeasure.statute
         table_dict = {
             'attributes_table': Attributes,
             'device_table': Device,
@@ -117,6 +120,12 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
     def test_measurement_system(self):
         measurement_system = Attributes.measurements_type(self.garmin_db, fitfile.field_enums.DisplayMeasure.metric)
         self.assertIn(measurement_system, fitfile.field_enums.DisplayMeasure)
+
+    def test_sleep_import(self):
+        gfd = GarminSleepFitData('test_files/fit/sleep', latest=False, measurement_system=self.measurement_system, debug=2)
+        self.gfd_file_count = gfd.file_count()
+        if gfd.file_count() > 0:
+            gfd.process_files(SleepFitFileProcessor(self.test_db_params))
 
 
 if __name__ == '__main__':

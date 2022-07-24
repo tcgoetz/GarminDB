@@ -112,8 +112,6 @@ class TestFitFile(unittest.TestCase):
         self.assertLessEqual(fit_file.utc_offset, +46800, 'Is not a valid time zone offset')
         # file contains less than a day span of time
         (self.start_time, self.end_time) = fit_file.date_span()
-        if fit_file.product != fitfile.GarminProduct.connect:
-            self.check_timestamp_delta(fit_file, self.start_time, self.end_time, (0, 86400))
         for message in fit_file.file_id:
             self.check_value(fit_file, message, 'manufacturer', fitfile.Manufacturer.Garmin)
             self.check_value(fit_file, message, 'type', file_type)
