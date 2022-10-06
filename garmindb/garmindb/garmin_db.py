@@ -225,7 +225,7 @@ class Sleep(GarminDb.Base, idbutils.DbObject):
     __tablename__ = 'sleep'
 
     db = GarminDb
-    table_version = 2
+    table_version = 3
 
     day = Column(Date, primary_key=True)
     start = Column(DateTime)
@@ -238,6 +238,8 @@ class Sleep(GarminDb.Base, idbutils.DbObject):
     avg_spo2 = Column(Float)
     avg_rr = Column(Float)
     avg_stress = Column(Float)
+    score = Column(Integer)
+    qualifier = Column(String)
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
