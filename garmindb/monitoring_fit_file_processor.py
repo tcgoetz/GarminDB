@@ -90,7 +90,7 @@ class MonitoringFitFileProcessor(FitFileProcessor):
             if fit_file.type is fitfile.FileType.monitoring_b:
                 MonitoringRespirationRate.s_insert_or_update(self.garmin_mon_db_session, respiration)
             else:
-                raise(ValueError(f'Unexpected file type {repr(fit_file.type)} for respiration message'))
+                raise ValueError(f'Unexpected file type {repr(fit_file.type)} for respiration message')
 
     def _write_pulse_ox_entry(self, fit_file, message_fields):
         logger.debug("pulse_ox message: %r", message_fields)
@@ -103,4 +103,4 @@ class MonitoringFitFileProcessor(FitFileProcessor):
                 }
                 MonitoringPulseOx.s_insert_or_update(self.garmin_mon_db_session, pulse_ox_entry)
         else:
-            raise(ValueError(f'Unexpected file type {repr(fit_file.type)} for pulse ox'))
+            raise ValueError(f'Unexpected file type {repr(fit_file.type)} for pulse ox')
