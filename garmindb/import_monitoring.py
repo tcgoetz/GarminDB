@@ -183,6 +183,15 @@ class GarminSleepData(JsonFileProcessor):
         else:
             root_logger.info("Importing %s without REM data and UTC offset %r", day, utc_offset)
             sleep_activity_levels = SleepActivityLevels
+        score = None
+        qualifier = None
+        try:
+            sleep_core_overall = daily_sleep.get('sleepScores').get('overall')
+            score = sleep_core_overall.get('value')
+            qualifier = sleep_core_overall.get('qualifierKey')
+        except AttributeError:
+            root_logger.warn("Could not get sleep score for %s", day)
+
         day_data = {
             'day': day,
             'start': daily_sleep.get('sleepStartTimestampGMT'),
@@ -194,7 +203,9 @@ class GarminSleepData(JsonFileProcessor):
             'awake': daily_sleep.get('awakeSleepSeconds'),
             'avg_spo2': daily_sleep.get('averageSpO2Value'),
             'avg_rr': daily_sleep.get('averageRespirationValue'),
-            'avg_stress': daily_sleep.get('avgSleepStress')
+            'avg_stress': daily_sleep.get('avgSleepStress'),
+            'score': score,
+            'qualifier': qualifier
         }
         Sleep.insert_or_update(self.garmin_db, day_data, ignore_none=True)
         sleep_levels = json_data.get('sleepLevels')
