@@ -255,7 +255,7 @@ class Sleep(GarminDb.Base, idbutils.DbObject):
 
 
 class SleepEvents(GarminDb.Base, idbutils.DbObject):
-    """Table that stores events recorded druing sleep."""
+    """Table that stores events recorded during sleep."""
 
     __tablename__ = 'sleep_events'
 
