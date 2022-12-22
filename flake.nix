@@ -105,10 +105,30 @@
             src = ./.;
             doCheck = false;
           };
+          snakemd = pkgs.python3Packages.buildPythonPackage rec {
+            pname = "SnakeMD";
+            version = "0.11.0";
+            buildInputs = with pkgs.python3Packages; [ ];
+            propagateBuildInputs = with pkgs.python3Packages; [ ];
+            src = pkgs.python3Packages.fetchPypi {
+              inherit pname version;
+              sha256 = "sha256-Iou7KtgX6PAdj1OW/eMdSh2+F/WPJtgmAmp9cPSZRZg=";
+            };
+            doCheck = false;
+          };
+          shell = pkgs.mkShell {
+            name = "garmingDB-shell";
+            nativeBuildInputs = [
+              garminDB
+              pkgs.python3Packages.pandas
+              pkgs.python3Packages.jupyterlab
+              snakemd
+            ];
+          };
         in
         {
           packages.default = garminDB;
-          devShells.default = garminDB;
+          devShells.default = shell;
         };
       flake = {
         homeManagerModule = import ./nix/hm-module.nix self;
