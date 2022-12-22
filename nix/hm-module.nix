@@ -30,19 +30,19 @@ let
     options = {
       weight_start_date = mkOption {
         type = types.str;
-        description = "The date to start downloading weight data from (dd/mm/YYYY)";
+        description = "The date to start downloading weight data from (mm/dd/YYYY)";
       };
       sleep_start_date = mkOption {
         type = types.str;
-        description = "The date to start downloading sleep data from (dd/mm/YYYY)";
+        description = "The date to start downloading sleep data from (mm/dd/YYYY)";
       };
       rhr_start_date = mkOption {
         type = types.str;
-        description = "The date to start downloading resting heart rate data from (dd/mm/YYYY)";
+        description = "The date to start downloading resting heart rate data from (mm/dd/YYYY)";
       };
       monitoring_start_date = mkOption {
         type = types.str;
-        description = "The date to start downloading daily monitoring data from (dd/mm/YYYY)";
+        description = "The date to start downloading daily monitoring data from (mm/dd/YYYY)";
       };
       download_latest_activities = mkOption {
         type = types.int;
