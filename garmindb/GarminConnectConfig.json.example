@@ -2,7 +2,8 @@
     "credentials": {
         "user"                          : "joe@shmoe.com",
         "secure_password"               : false,
-        "password"                      : "yourpassword"
+        "password"                      : "yourpassword",
+	"password_command"              : "echo mysecretpassword" // secure_password must be true (Linux only)
     },
     "data": {
         "weight_start_date"             : "01/01/2019",
