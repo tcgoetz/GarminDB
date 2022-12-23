@@ -122,6 +122,10 @@
               garminDB
               pkgs.python3Packages.pandas
               pkgs.python3Packages.jupyterlab
+              pkgs.python3Packages.plotly
+              pkgs.python3Packages.numpy
+              pkgs.python3Packages.scipy
+              pkgs.streamlit
               snakemd
             ];
           };
