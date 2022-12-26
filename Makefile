@@ -1,6 +1,6 @@
 #
-# This Makefile handles downloading data from Garmin Connect and generating SQLite DB files from that data. The Makefile targets handle the dependaancies
-# between downloading and geenrating varies types of data. It wraps the core Python scripts and runs them with appropriate parameters.
+# This Makefile handles downloading data from Garmin Connect and generating SQLite DB files from that data. The Makefile targets handle the dependancies
+# between downloading and generating varies types of data. It wraps the core Python scripts and runs them with appropriate parameters.
 #
 export PROJECT_BASE=$(CURDIR)
 
