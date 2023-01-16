@@ -10,13 +10,13 @@ PLATFORM=$(shell uname)
 
 ifeq ($(PLATFORM), Linux)
 
-SHELL=/usr/bin/bash
+SHELL ?= /usr/bin/bash
 TIME ?= $(shell which time)
 YESTERDAY = $(shell date --date yesterday +"%m/%d/%Y")
 
 else ifeq ($(PLATFORM), Darwin) # MacOS
 
-SHELL=/usr/local/bin/bash
+SHELL ?= /usr/local/bin/bash
 TIME ?= time
 YESTERDAY = $(shell date -v-1d +"%m/%d/%Y")
 
