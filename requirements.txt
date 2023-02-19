@@ -6,9 +6,9 @@ tqdm==4.64.1
 matplotlib==3.4.3
 cloudscraper==1.2.58
 ipykernel==6.4.1
-fitfile @ file:///Users/tgoetz/Projects/GarminDB_develop/Fit/dist/fitfile-1.1.3-py3-none-any.whl
+fitfile==1.1.3
 tcxfile==1.0.4
-idbutils @ file:///Users/tgoetz/Projects/GarminDB_develop/utilities/dist/idbutils-1.0.6-py3-none-any.whl
+idbutils==1.0.6
 ## The following requirements were added by pip freeze:
 altgraph==0.17
 appnope==0.1.2
@@ -31,7 +31,6 @@ defusedxml==0.7.1
 docutils==0.17.1
 entrypoints==0.3
 flake8==5.0.4
-garmindb @ file:///Users/tgoetz/Projects/GarminDB_develop/dist/garmindb-3.2.5-py3-none-any.whl
 greenlet==1.1.3.post0
 idna==3.4
 importlib-metadata==4.5.0

@@ -10,15 +10,13 @@ PLATFORM=$(shell uname)
 
 ifeq ($(PLATFORM), Linux)
 
-SHELL ?= /usr/bin/bash
+SHELL = /usr/bin/bash
 TIME ?= $(shell which time)
-YESTERDAY = $(shell date --date yesterday +"%m/%d/%Y")
 
 else ifeq ($(PLATFORM), Darwin) # MacOS
 
 SHELL ?= /usr/local/bin/bash
 TIME ?= time
-YESTERDAY = $(shell date -v-1d +"%m/%d/%Y")
 
 else
 
@@ -43,6 +41,8 @@ ifeq ($(PIP),)
 $(error pip not found)
 endif
 
+PIP_PATH = $(shell which ${PIP})
+
 MODULE=garmindb
 
-export MODULE SHELL TIME PLATFORM PYTHON PIP YESTERDAY FLAKE8
+export MODULE SHELL TIME PLATFORM PYTHON PIP FLAKE8

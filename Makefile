@@ -6,6 +6,10 @@ export PROJECT_BASE=$(CURDIR)
 
 include defines.mk
 
+$(info $$PROJECT_BASE is [${PROJECT_BASE}])
+$(info $$PLATFORM is [${PLATFORM}])
+$(info $$SHELL is [${SHELL}])
+$(info $$PIP_PATH is [${PIP_PATH}])
 
 #
 # Master targets
@@ -52,9 +56,11 @@ $(CONF_DIR):
 $(CONF_DIR)/GarminConnectConfig.json: $(CONF_DIR)
 	cp $(PROJECT_BASE)/garmindb/GarminConnectConfig.json.example $(CONF_DIR)/GarminConnectConfig.json
 
+activate_venv: $(PROJECT_BASE)/.venv
+	source $(PROJECT_BASE)/.venv/bin/activate
+
 $(PROJECT_BASE)/.venv:
 	$(PYTHON) -m venv --upgrade-deps $(PROJECT_BASE)/.venv
-	source $(PROJECT_BASE)/.venv/bin/activate
 
 update: submodules_update
 	git pull
@@ -150,9 +156,6 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 
 graphs:
 	garmindb_graphs.py --all
-
-graph_yesterday:
-	garmindb_graphs.py --day $(YESTERDAY)
 
 checkup: update_garmin
 	garmindb_checkup.py --battery
