@@ -105,7 +105,7 @@ pip_upgrade:
 	$(PIP) install --upgrade pip
 
 requirements.txt:
-	$(PIP) freeze -r requirement.in > requirements.txt
+	$(PIP) freeze -r requirements.in > requirements.txt
 
 deps: pip_upgrade $(SUBMODULES:%=%-deps)
 	$(PIP) install --upgrade --requirement requirements.txt
@@ -279,7 +279,7 @@ flake8: $(SUBMODULES:%=%-flake8)
 	$(PYTHON) -m flake8 garmindb/*.py garmindb/garmindb/*.py garmindb/summarydb/*.py garmindb/fitbitdb/*.py garmindb/mshealthdb/*.py --max-line-length=180 --ignore=E203,E221,E241,W503
 
 regression_test_run: flake8 rebuild_dbs
-	grep ERROR garmin.log || [ $$? -eq 1 ]
+	grep ERROR garmindb.log || [ $$? -eq 1 ]
 
 regression_test: clean regression_test_run test
 
