@@ -59,8 +59,14 @@ $(CONF_DIR)/GarminConnectConfig.json: $(CONF_DIR)
 activate_venv: $(PROJECT_BASE)/.venv
 	source $(PROJECT_BASE)/.venv/bin/activate
 
+update_venv:
+	$(PROJECT_BASE)/.venv/bin/python -m pip install --upgrade pip
+
 $(PROJECT_BASE)/.venv:
 	$(PYTHON) -m venv --upgrade-deps $(PROJECT_BASE)/.venv
+
+clean_venv:
+	rm -rf $(PROJECT_BASE)/.venv
 
 update: submodules_update
 	git pull
@@ -107,13 +113,16 @@ republish_plugins:
 $(SUBMODULES:%=%-deps):
 	$(MAKE) -C $(subst -deps,,$@) deps
 
-pip_upgrade:
-	$(PIP) install --upgrade pip
-
 requirements.txt:
 	$(PIP) freeze -r requirements.in > requirements.txt
 
-deps: pip_upgrade $(SUBMODULES:%=%-deps)
+dev-requirements.txt:
+	$(PIP) freeze -r dev-requirements.in > dev-requirements.txt
+
+update_pip_packages:
+	$(PIP) list --outdated | egrep -v "Package|---" |   cut -d' ' -f1 | xargs pip install --upgrade
+
+deps: $(SUBMODULES:%=%-deps)
 	$(PIP) install --upgrade --requirement requirements.txt
 
 $(SUBMODULES:%=%-devdeps):
@@ -153,6 +162,8 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -rf *.egg-info
 	rm -rf build
 	rm -rf dist
+
+realclean: clean clean_venv
 
 graphs:
 	garmindb_graphs.py --all
