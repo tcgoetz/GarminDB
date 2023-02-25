@@ -1,4 +1,4 @@
-flake8
-build
-wheel
-twine
+flake8==6.0.0
+build==0.10.0
+wheel==0.38.4
+twine==4.0.2

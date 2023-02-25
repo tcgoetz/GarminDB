@@ -15,7 +15,7 @@ TIME ?= $(shell which time)
 
 else ifeq ($(PLATFORM), Darwin) # MacOS
 
-SHELL ?= /usr/local/bin/bash
+SHELL ?= /usr/bin/bash
 TIME ?= time
 
 else

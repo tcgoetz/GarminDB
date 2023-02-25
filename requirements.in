@@ -1,4 +1,4 @@
-sqlalchemy~=1.4
+sqlalchemy~=2.0.4
 requests
 python-dateutil
 cached-property
@@ -6,6 +6,7 @@ tqdm
 matplotlib
 cloudscraper
 ipykernel
+ipyleaflet
 fitfile>=1.1.3
 tcxfile>=1.0.4
-idbutils>=1.0.6
+idbutils>=1.0.7
