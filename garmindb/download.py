@@ -35,6 +35,7 @@ class Download():
     garmin_connect_enus_url = garmin_connect_base_url + "/en-US"
 
     garmin_connect_sso_login = 'signin'
+    garmin_connect_mfa_login = 'verifyMFA/loginEnterMfaCode'
 
     garmin_connect_login_url = garmin_connect_enus_url + "/signin"
 
@@ -146,6 +147,14 @@ class Download():
         except RestException as e:
             root_logger.error("Exception during login post: %s", e)
             return False
+        mfa = re.search(r"MFA", response.text, re.M)
+        if mfa:
+            data = {
+                'mfa-code' : input("Enter MFA code: "),
+                'embed'    : 'false',
+                '_csrf'    : found.group(1)
+            }
+            response = self.sso_rest_client.post(self.garmin_connect_mfa_login, post_headers, params, data)
         found = re.search(r"\?ticket=([\w-]*)", response.text, re.M)
         if not found:
             logger.error("Login ticket not found (%d).", response.status_code)
