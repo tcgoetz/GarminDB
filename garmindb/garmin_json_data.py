@@ -55,7 +55,7 @@ class GarminJsonActivityData(JsonFileProcessor):
         elapsed_time = fitfile.conversions.secs_to_dt_time(self._get_field(json_data, 'elapsedDuration', int))
         return {
             'start_time'                : start_time,
-            'stop_time'                 : start_time + fitfile.conversions.time_to_timedelta(elapsed_time),
+            'stop_time'                 : start_time + fitfile.conversions.time_to_timedelta(elapsed_time) if elapsed_time is not None else None,
             'elapsed_time'              : elapsed_time,
             'moving_time'               : fitfile.conversions.secs_to_dt_time(self._get_field(json_data, 'movingDuration', int)),
             'start_lat'                 : self._get_field(json_data, 'startLatitude', float),
