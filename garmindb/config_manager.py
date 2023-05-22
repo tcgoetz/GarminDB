@@ -265,4 +265,4 @@ class ConfigManager(Config):
     @classmethod
     def default_display_activities(cls):
         """Return a list of the default activities to display."""
-        return [Sport.strict_from_string(activity) for activity in cls.default_display_activities]
+        return [Sport.strict_from_string(activity) for activity in super().default_display_activities]
