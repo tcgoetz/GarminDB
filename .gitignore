@@ -102,3 +102,5 @@ GarminConnectConfig.json
 test/test_files
 my-defines.mk
 test/*.txt
+
+Jupyter/.ipynb_checkpoints/
