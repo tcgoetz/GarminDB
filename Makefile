@@ -92,10 +92,12 @@ $(PROJECT_BASE)/dist/$(MODULE)-*.whl: build
 install: $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 	$(PIP) install --upgrade $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
+install_all: $(SUBMODULES:%=%-install) install
+
 reinstall: clean $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 	$(PIP) install --upgrade --force-reinstall --no-deps $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
-install_all: $(SUBMODULES:%=%-install) install
+reinstall_all: clean uninstall_all install_all
 
 $(SUBMODULES:%=%-uninstall):
 	$(MAKE) -C $(subst -uninstall,,$@) uninstall
@@ -104,8 +106,6 @@ uninstall:
 	$(PIP) uninstall -y $(MODULE)
 
 uninstall_all: uninstall $(SUBMODULES:%=%-uninstall)
-
-reinstall_all: clean uninstall_all install_all
 
 republish_plugins:
 	$(MAKE) -C Plugins republish_plugins
@@ -119,11 +119,15 @@ requirements.txt:
 dev-requirements.txt:
 	$(PIP) freeze -r dev-requirements.in > dev-requirements.txt
 
+Jupyter/requirements.txt:
+	$(PIP) freeze -r Jupyter/requirements.in > Jupyter/requirements.txt
+
 update_pip_packages:
 	$(PIP) list --outdated | egrep -v "Package|---" |   cut -d' ' -f1 | xargs pip install --upgrade
 
 deps: $(SUBMODULES:%=%-deps)
 	$(PIP) install --upgrade --requirement requirements.txt
+	$(PIP) install --upgrade --requirement Jupyter/requirements.txt
 
 $(SUBMODULES:%=%-devdeps):
 	$(MAKE) -C $(subst -devdeps,,$@) devdeps
@@ -137,6 +141,7 @@ $(SUBMODULES:%=%-remove_deps):
 remove_deps: $(SUBMODULES:%=%-remove_deps)
 	$(PIP) uninstall -y --requirement requirements.txt
 	$(PIP) uninstall -y --requirement dev-requirements.txt
+	$(PIP) uninstall -y --requirement Jupyter/requirements.txt
 
 clean_deps: remove_deps
 

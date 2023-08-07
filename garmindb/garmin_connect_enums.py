@@ -249,12 +249,12 @@ def convert_gc_sport_to_fit(gc_sport, gc_sub_sport):
         Sport.ccr_diving                              : Sport.ccr_diving,
         Sport.auto_racing                             : Sport.auto_racing,
         Sport.breathwork                              : Sport.breathwork,
-        Sport.other                                   : Sport.other,
+        Sport.other                                   : Sport.other
     }
     special_remaps = {
         Sport.other                                   : remap_gc_sport_to_fit.get(gc_sub_sport),
         Sport.top_level                               : remap_gc_sport_to_fit.get(gc_sub_sport),
-        Sport.winter_sports                           : remap_winter_sports.get(gc_sub_sport),
+        Sport.winter_sports                           : remap_winter_sports.get(gc_sub_sport)
     }
     if gc_sport in special_remaps.keys():
         return (special_remaps[gc_sport], fitfile.Sport.generic)
