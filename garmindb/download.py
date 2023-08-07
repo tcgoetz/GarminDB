@@ -147,14 +147,17 @@ class Download():
         except RestException as e:
             root_logger.error("Exception during login post: %s", e)
             return False
-        mfa = re.search(r"MFA", response.text, re.M)
-        if mfa:
+        mfa = re.search(r'performMFACheck\s*="(.*)"', response.text, re.M)
+        if mfa and mfa.group(1) == 'true':
+            logger.debug("MFA request found in (%s).", response.text)
             data = {
                 'mfa-code' : input("Enter MFA code: "),
                 'embed'    : 'false',
                 '_csrf'    : found.group(1)
             }
             response = self.sso_rest_client.post(self.garmin_connect_mfa_login, post_headers, params, data)
+        else:
+            logger.debug("no MFA request found.")
         found = re.search(r"\?ticket=([\w-]*)", response.text, re.M)
         if not found:
             logger.error("Login ticket not found (%d).", response.status_code)
