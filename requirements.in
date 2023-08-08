@@ -1,4 +1,4 @@
-sqlalchemy~=2.0.4
+sqlalchemy~=2.0.19
 requests
 python-dateutil
 cached-property
