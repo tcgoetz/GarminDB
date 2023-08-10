@@ -219,6 +219,9 @@ copy_garmin:
 update_garmin:
 	garmindb_cli.py --all --download --import --analyze --latest
 
+update_garmin_activities:
+	garmindb_cli.py --activities --download --import --analyze --latest
+
 copy_garmin_latest:
 	garmindb_cli.py --all --copy --import --analyze --latest
 

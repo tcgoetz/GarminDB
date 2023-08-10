@@ -116,6 +116,29 @@ class Sport(enum.Enum):
     skate_skiing_ws                         = 170
     cross_country_skiing_ws                 = 171
     resort_skiing_snowboarding_ws           = 172
+    indoor_climbing                         = 173
+    bouldering                              = 174
+    e_bike_mountain                         = 175
+    e_bike_fitness                          = 176
+    onshore_grinding                        = 178
+    offshore_grinding                       = 179
+    hiit                                    = 180
+    ultra_run                               = 181
+    e_sport                                 = 182
+    windsurfing                             = 183
+    kiteboarding                            = 184
+    motorcycling_v2                         = 185
+    motocross_v2                            = 186
+    atv_v2                                  = 187
+    transition_v2                           = 189
+    swimToBikeTransition_v2                 = 190
+    bikeToRunTransition_v2                  = 191
+    runToBikeTransition_v2                  = 192
+    hunting                                 = 193
+    fishing                                 = 194
+    whitewater_rafting                      = 195
+    kayaking                                = 196
+    stand_up_paddleboarding_v2              = 239
 
     @classmethod
     def __activity_from_json(cls, json_data):
@@ -173,46 +196,45 @@ class Sport(enum.Enum):
 def convert_gc_sport_to_fit(gc_sport, gc_sub_sport):
     """Convert sport and subsport values from Garmin Connect to Fit values."""
     remap_gc_sub_sport_to_fit = {
-        Sport.mountain_biking                         : fitfile.SubSport.mountain,
-        Sport.trail_running                           : fitfile.SubSport.trail,
-        Sport.street_running                          : fitfile.SubSport.street,
-        Sport.track_running                           : fitfile.SubSport.track,
-        Sport.road_biking                             : fitfile.SubSport.road,
-        Sport.casual_walking                          : fitfile.SubSport.casual_walking,
-        Sport.speed_walking                           : fitfile.SubSport.speed_walking,
-        Sport.treadmill_running                       : fitfile.SubSport.treadmill,
-        Sport.downhill_biking                         : fitfile.SubSport.downhill,
-        Sport.track_cycling                           : fitfile.SubSport.track_cycling,
-        Sport.recumbent_cycling                       : fitfile.SubSport.recumbent,
-        Sport.indoor_cycling                          : fitfile.SubSport.indoor_cycling,
-        Sport.strength_training                       : fitfile.SubSport.strength_training,
-        Sport.cyclocross                              : fitfile.SubSport.cyclocross,
-        Sport.lap_swimming                            : fitfile.SubSport.lap_swimming,
-        Sport.open_water_swimming                     : fitfile.SubSport.open_water,
-        Sport.elliptical                              : fitfile.SubSport.elliptical,
-        Sport.stair_climbing                          : fitfile.SubSport.stair_climbing,
-        Sport.indoor_rowing                           : fitfile.SubSport.indoor_rowing,
-        Sport.bmx                                     : fitfile.SubSport.bmx,
-        Sport.gravel_cycling                          : fitfile.SubSport.gravel_cycling,
-        Sport.yoga                                    : fitfile.SubSport.yoga,
-        Sport.obstacle_run                            : fitfile.SubSport.obstacle,
-        Sport.indoor_running                          : fitfile.SubSport.indoor_running,
-        Sport.yoga_gym                                : Sport.yoga_gym
+        Sport.mountain_biking                       : fitfile.SubSport.mountain,
+        Sport.trail_running                         : fitfile.SubSport.trail,
+        Sport.street_running                        : fitfile.SubSport.street,
+        Sport.track_running                         : fitfile.SubSport.track,
+        Sport.road_biking                           : fitfile.SubSport.road,
+        Sport.casual_walking                        : fitfile.SubSport.casual_walking,
+        Sport.speed_walking                         : fitfile.SubSport.speed_walking,
+        Sport.treadmill_running                     : fitfile.SubSport.treadmill,
+        Sport.downhill_biking                       : fitfile.SubSport.downhill,
+        Sport.track_cycling                         : fitfile.SubSport.track_cycling,
+        Sport.recumbent_cycling                     : fitfile.SubSport.recumbent,
+        Sport.indoor_cycling                        : fitfile.SubSport.indoor_cycling,
+        Sport.strength_training                     : fitfile.SubSport.strength_training,
+        Sport.cyclocross                            : fitfile.SubSport.cyclocross,
+        Sport.indoor_cardio                         : fitfile.SubSport.cardio_training,
+        Sport.lap_swimming                          : fitfile.SubSport.lap_swimming,
+        Sport.open_water_swimming                   : fitfile.SubSport.open_water,
+        Sport.elliptical                            : fitfile.SubSport.elliptical,
+        Sport.stair_climbing                        : fitfile.SubSport.stair_climbing,
+        Sport.indoor_rowing                         : fitfile.SubSport.indoor_rowing,
+        Sport.bmx                                   : fitfile.SubSport.bmx,
+        Sport.gravel_cycling                        : fitfile.SubSport.gravel_cycling,
+        Sport.yoga                                  : fitfile.SubSport.yoga,
+        Sport.obstacle_run                          : fitfile.SubSport.obstacle,
+        Sport.indoor_running                        : fitfile.SubSport.indoor_running,
+        Sport.indoor_climbing                       : fitfile.SubSport.indoor_climbing,
+        Sport.bouldering                            : fitfile.SubSport.bouldering
+
     }
     remap_winter_sports = {
         Sport.snow_shoe_ws                            : fitfile.Sport.snowshoeing,
         Sport.skating_ws                              : fitfile.Sport.ice_skating,
-        Sport.backcountry_skiing_snowboarding_ws      : Sport.backcountry_skiing_snowboarding,
-        Sport.skate_skiing_ws                         : Sport.skate_skiing_ws,
         Sport.cross_country_skiing_ws                 : fitfile.Sport.cross_country_skiing,
-        Sport.resort_skiing_snowboarding_ws           : Sport.resort_skiing_snowboarding
     }
     remap_gc_sport_to_fit = {
         Sport.running                                 : fitfile.Sport.running,
         Sport.cycling                                 : fitfile.Sport.cycling,
         Sport.hiking                                  : fitfile.Sport.hiking,
         Sport.walking                                 : fitfile.Sport.walking,
-        Sport.indoor_cardio                           : Sport.indoor_cardio,
         Sport.swimming                                : fitfile.Sport.swimming,
         Sport.fitness_equipment                       : fitfile.Sport.fitness_equipment,
         Sport.snow_shoe                               : fitfile.Sport.snowshoeing,
@@ -223,42 +245,35 @@ def convert_gc_sport_to_fit(gc_sport, gc_sub_sport):
         Sport.driving_general                         : fitfile.Sport.driving,
         Sport.flying                                  : fitfile.Sport.flying,
         Sport.paddling                                : fitfile.Sport.paddling,
-        Sport.whitewater_rafting_kayaking             : Sport.whitewater_rafting_kayaking,
         Sport.skating                                 : fitfile.Sport.ice_skating,
         Sport.inline_skating                          : fitfile.Sport.inline_skating,
-        Sport.resort_skiing_snowboarding              : Sport.resort_skiing_snowboarding,
-        Sport.backcountry_skiing_snowboarding         : Sport.backcountry_skiing_snowboarding,
         Sport.boating                                 : fitfile.Sport.boating,
         Sport.sailing                                 : fitfile.Sport.sailing,
         Sport.cross_country_skiing                    : fitfile.Sport.cross_country_skiing,
         Sport.stand_up_paddleboarding                 : fitfile.Sport.stand_up_paddleboarding,
         Sport.golf                                    : fitfile.Sport.golf,
-        Sport.hunting_fishing                         : Sport.hunting_fishing,
         Sport.surfing                                 : fitfile.Sport.surfing,
         Sport.wakeboarding                            : fitfile.Sport.wakeboarding,
         Sport.rock_climbing                           : fitfile.Sport.rock_climbing,
         Sport.hang_gliding                            : fitfile.Sport.hang_gliding,
         Sport.tennis                                  : fitfile.Sport.tennis,
-        Sport.diving                                  : Sport.diving,
         Sport.floor_climbing                          : fitfile.Sport.floor_climbing,
-        Sport.virtual_ride                            : Sport.virtual_ride,
-        Sport.virtual_run                             : Sport.virtual_run,
-        Sport.safety                                  : Sport.safety,
-        Sport.assistance                              : Sport.assistance,
-        Sport.incident_detected                       : Sport.incident_detected,
-        Sport.ccr_diving                              : Sport.ccr_diving,
-        Sport.auto_racing                             : Sport.auto_racing,
-        Sport.breathwork                              : Sport.breathwork,
-        Sport.other                                   : Sport.other
+        Sport.windsurfing                             : fitfile.Sport.windsurfing,
+        Sport.kiteboarding                            : fitfile.Sport.kitesurfing,
+        Sport.hunting                                 : fitfile.Sport.hunting,
+        Sport.fishing                                 : fitfile.Sport.fishing,
+        Sport.whitewater_rafting                      : fitfile.Sport.rafting,
+        Sport.kayaking                                : fitfile.Sport.kayaking,
+        Sport.stand_up_paddleboarding_v2              : fitfile.Sport.stand_up_paddleboarding
     }
     special_remaps = {
-        Sport.other                                   : remap_gc_sport_to_fit.get(gc_sub_sport),
-        Sport.top_level                               : remap_gc_sport_to_fit.get(gc_sub_sport),
-        Sport.winter_sports                           : remap_winter_sports.get(gc_sub_sport)
+        Sport.other                                   : remap_gc_sport_to_fit.get(gc_sub_sport, gc_sub_sport),
+        Sport.top_level                               : remap_gc_sport_to_fit.get(gc_sub_sport, gc_sub_sport),
+        Sport.winter_sports                           : remap_winter_sports.get(gc_sub_sport, gc_sub_sport)
     }
     if gc_sport in special_remaps.keys():
         return (special_remaps[gc_sport], fitfile.Sport.generic)
-    return (remap_gc_sport_to_fit.get(gc_sport), remap_gc_sub_sport_to_fit.get(gc_sub_sport))
+    return (remap_gc_sport_to_fit.get(gc_sport, gc_sport), remap_gc_sub_sport_to_fit.get(gc_sub_sport, gc_sub_sport))
 
 
 def get_details_sport(json_data):

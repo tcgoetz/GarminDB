@@ -168,8 +168,8 @@ class Download():
         }
         try:
             response = self.modern_rest_client.get('', params=params)
-        except RestException:
-            logger.error("Login get homepage failed (%d).", response.status_code)
+        except RestException as e:
+            logger.error("Login get homepage failed (%d) %s.", response.status_code, e)
             RestClient.save_binary_file('login_home.html', response)
             return False
         self.user_prefs = self.__get_json(response.text, 'VIEWER_USERPREFERENCES')
