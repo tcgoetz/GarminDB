@@ -14,6 +14,7 @@ import tempfile
 import zipfile
 import json
 import cloudscraper
+from garth import Client as GarthClient
 from tqdm import tqdm
 
 import fitfile.conversions as conversions
@@ -43,15 +44,15 @@ class Download():
 
     garmin_connect_privacy_url = "//connect.garmin.com/en-U/privacy"
 
-    garmin_connect_user_profile_url = "proxy/userprofile-service/userprofile"
-    garmin_connect_wellness_url = "proxy/wellness-service/wellness"
+    garmin_connect_user_profile_url = "userprofile-service/userprofile"
+    garmin_connect_wellness_url = "wellness-service/wellness"
     garmin_connect_sleep_daily_url = garmin_connect_wellness_url + "/dailySleepData"
-    garmin_connect_rhr = "proxy/userstats-service/wellness/daily"
-    garmin_connect_weight_url = "proxy/weight-service/weight/dateRange"
+    garmin_connect_rhr = "userstats-service/wellness/daily"
+    garmin_connect_weight_url = "weight-service/weight/dateRange"
 
-    garmin_connect_activity_search_url = "proxy/activitylist-service/activities/search/activities"
+    garmin_connect_activity_search_url = "activitylist-service/activities/search/activities"
 
-    garmin_connect_usersummary_url = "proxy/usersummary-service/usersummary"
+    garmin_connect_usersummary_url = "usersummary-service/usersummary"
     garmin_connect_daily_summary_url = garmin_connect_usersummary_url + "/daily"
     garmin_connect_daily_hydration_url = garmin_connect_usersummary_url + "/hydration/allData"
 
@@ -63,12 +64,7 @@ class Download():
         """Create a new Download class instance."""
         logger.debug("__init__")
         self.session = cloudscraper.CloudScraper()
-        self.sso_rest_client = RestClient(self.session, 'sso.garmin.com', 'sso', aditional_headers=self.garmin_headers)
-        self.modern_rest_client = RestClient(self.session, 'connect.garmin.com', 'modern', aditional_headers=self.garmin_headers)
-        self.activity_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/activity-service/activity")
-        self.download_service_rest_client = RestClient.inherit(self.modern_rest_client, "proxy/download-service/files")
-        self.gc_config = GarminConnectConfigManager()
-        self.download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
+        self.garth = GarthClient(session=self.session)
 
     def __get_json(self, page_html, key):
         found = re.search(key + r" = (\{.*\});", page_html, re.M)
@@ -79,6 +75,7 @@ class Download():
     def login(self):
         """Login to Garmin Connect."""
         profile_dir = ConfigManager.get_or_create_fit_files_dir()
+        self.gc_config = GarminConnectConfigManager()
         username = self.gc_config.get_user()
         password = self.gc_config.get_password()
         if not username or not password:
@@ -86,97 +83,22 @@ class Download():
             return
 
         logger.debug("login: %s %s", username, password)
-        get_headers = {
-            'Referer'                           : self.garmin_connect_login_url
-        }
-        params = {
-            'service'                           : self.modern_rest_client.url(),
-            'webhost'                           : self.garmin_connect_base_url,
-            'source'                            : self.garmin_connect_login_url,
-            'redirectAfterAccountLoginUrl'      : self.modern_rest_client.url(),
-            'redirectAfterAccountCreationUrl'   : self.modern_rest_client.url(),
-            'gauthHost'                         : self.sso_rest_client.url(),
-            'locale'                            : 'en_US',
-            'id'                                : 'gauth-widget',
-            'cssUrl'                            : self.garmin_connect_css_url,
-            'privacyStatementUrl'               : '//connect.garmin.com/en-US/privacy/',
-            'clientId'                          : 'GarminConnect',
-            'rememberMeShown'                   : 'true',
-            'rememberMeChecked'                 : 'false',
-            'createAccountShown'                : 'true',
-            'openCreateAccount'                 : 'false',
-            'displayNameShown'                  : 'false',
-            'consumeServiceTicket'              : 'false',
-            'initialFocus'                      : 'true',
-            'embedWidget'                       : 'false',
-            'generateExtraServiceTicket'        : 'true',
-            'generateTwoExtraServiceTickets'    : 'false',
-            'generateNoServiceTicket'           : 'false',
-            'globalOptInShown'                  : 'true',
-            'globalOptInChecked'                : 'false',
-            'mobile'                            : 'false',
-            'connectLegalTerms'                 : 'true',
-            'locationPromptShown'               : 'true',
-            'showPassword'                      : 'true'
-        }
-        try:
-            response = self.sso_rest_client.get(self.garmin_connect_sso_login, get_headers, params)
-        except RestResponseException as e:
-            root_logger.error("Exception during login get: %s", e)
-            RestClient.save_binary_file('login_get.html', e.response)
-            return False
-        found = re.search(r"name=\"_csrf\" value=\"(\w*)", response.text, re.M)
-        if not found:
-            logger.error("_csrf not found: %s", response.status_code)
-            RestClient.save_binary_file('login_get.html', response)
-            return False
-        logger.debug("_csrf found (%s).", found.group(1))
+        self.garth.login(username, password)
+        token = self.garth.oauth2_token
 
-        data = {
-            'username'  : username,
-            'password'  : password,
-            'embed'     : 'false',
-            '_csrf'     : found.group(1)
-        }
-        post_headers = {
-            'Referer'       : response.url,
-            'Content-Type'  : 'application/x-www-form-urlencoded'
-        }
-        try:
-            response = self.sso_rest_client.post(self.garmin_connect_sso_login, post_headers, params, data)
-        except RestException as e:
-            root_logger.error("Exception during login post: %s", e)
-            return False
-        mfa = re.search(r'performMFACheck\s*="(.*)"', response.text, re.M)
-        if mfa and mfa.group(1) == 'true':
-            logger.debug("MFA request found in (%s).", response.text)
-            data = {
-                'mfa-code' : input("Enter MFA code: "),
-                'embed'    : 'false',
-                '_csrf'    : found.group(1)
-            }
-            response = self.sso_rest_client.post(self.garmin_connect_mfa_login, post_headers, params, data)
-        else:
-            logger.debug("no MFA request found.")
-        found = re.search(r"\?ticket=([\w-]*)", response.text, re.M)
-        if not found:
-            logger.error("Login ticket not found (%d).", response.status_code)
-            RestClient.save_binary_file('login_post.html', response)
-            return False
-        params = {
-            'ticket' : found.group(1)
-        }
-        try:
-            response = self.modern_rest_client.get('', params=params)
-        except RestException as e:
-            logger.error("Login get homepage failed (%d) %s.", response.status_code, e)
-            RestClient.save_binary_file('login_home.html', response)
-            return False
-        self.user_prefs = self.__get_json(response.text, 'VIEWER_USERPREFERENCES')
+        self.user_prefs = self.garth.profile
+
+        self.garmin_headers['Authorization'] = str(self.garth.oauth2_token)
+
+        self.modern_rest_client = RestClient(self.session, 'connectapi.garmin.com', '', aditional_headers=self.garmin_headers)
+        self.activity_service_rest_client = RestClient.inherit(self.modern_rest_client, "activity-service/activity")
+        self.download_service_rest_client = RestClient.inherit(self.modern_rest_client, "download-service/files")
+        self.download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
+
         if profile_dir:
             self.modern_rest_client.save_json_to_file(f'{profile_dir}/profile.json', self.user_prefs)
         self.display_name = self.user_prefs['displayName']
-        self.social_profile = self.__get_json(response.text, 'VIEWER_SOCIAL_PROFILE')
+        self.social_profile = self.garth.profile
         self.full_name = self.social_profile['fullName']
         root_logger.info("login: %s (%s)", self.full_name, self.display_name)
         return True
