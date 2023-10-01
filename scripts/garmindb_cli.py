@@ -25,7 +25,7 @@ from garmindb.summarydb import SummaryDb
 
 from garmindb import Download, Copy, Analyze
 from garmindb import FitFileProcessor, ActivityFitFileProcessor, MonitoringFitFileProcessor, SleepFitFileProcessor
-from garmindb import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepFitData, GarminSleepData, GarminRhrData, GarminSettingsFitData, \
+from garmindb import GarminProfile, GarminSocialProfile, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepFitData, GarminSleepData, GarminRhrData, GarminSettingsFitData, \
     GarminHydrationData
 from garmindb import GarminJsonSummaryData, GarminJsonDetailsData, GarminTcxData, GarminActivitiesFitData
 from garmindb import ActivityExporter
@@ -166,6 +166,10 @@ def import_data(debug, latest, stats):
     gp = GarminProfile(db_params_dict, fit_files_dir, debug)
     if gp.file_count() > 0:
         gp.process()
+
+    gsp = GarminSocialProfile(db_params_dict, fit_files_dir, debug)
+    if gsp.file_count() > 0:
+        gsp.process()
 
     gsfd = GarminSettingsFitData(fit_files_dir, debug)
     if gsfd.file_count() > 0:

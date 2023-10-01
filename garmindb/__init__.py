@@ -35,7 +35,7 @@ from .analyze import Analyze
 from .plugin_manager import PluginManager
 from .version import format_version, log_version, python_version_check
 
-from .import_monitoring import GarminMonitoringFitData, GarminSleepFitData, GarminSummaryData, GarminProfile, GarminWeightData, GarminSleepData, GarminRhrData, GarminSettingsFitData, GarminHydrationData
+from .import_monitoring import GarminMonitoringFitData, GarminSleepFitData, GarminSummaryData, GarminProfile, GarminSocialProfile, GarminWeightData, GarminSleepData, GarminRhrData, GarminSettingsFitData, GarminHydrationData
 from .activities_fit_data import GarminActivitiesFitData
 from .garmin_tcx_data import GarminTcxData
 from .garmin_json_data import GarminJsonSummaryData, GarminJsonDetailsData

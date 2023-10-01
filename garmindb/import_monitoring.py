@@ -277,18 +277,42 @@ class GarminProfile(JsonFileProcessor):
 
         """
         logger.info("Processing profile data")
-        super().__init__(r'profile\.json', input_dir=input_dir, latest=False, debug=debug)
+        super().__init__(r'^profile\.json', input_dir=input_dir, latest=False, debug=debug)
         self.garmin_db = GarminDb(db_params)
         self.conversions = {'calendarDate': self._parse_date}
 
     def _process_json(self, json_data):
+        userData = json_data['userData']
         measurement_system = fitfile.field_enums.DisplayMeasure.from_string(
-            json_data['measurementSystem'])
+            userData['measurementSystem'])
+        Attributes.set_newer(self.garmin_db, 'measurement_system', str(measurement_system))
+        return 1
+
+
+class GarminSocialProfile(JsonFileProcessor):
+    """Class for importing JSON formatted Garmin Connect social profile data into a database."""
+
+    def __init__(self, db_params, input_dir, debug):
+        """
+        Return an instance of GarminSocialProfile.
+
+        Parameters:
+        ----------
+        db_params (object): configuration data for accessing the database
+        input_dir (string): directory (full path) to check for profile data files
+        debug (Boolean): enable debug logging
+
+        """
+        logger.info("Processing profile data")
+        super().__init__(r'^social_profile\.json', input_dir=input_dir, latest=False, debug=debug)
+        self.garmin_db = GarminDb(db_params)
+        self.conversions = {'calendarDate': self._parse_date}
+
+    def _process_json(self, json_data):
         attributes = {
-            'name': json_data['displayName'].replace('_', ' '),
-            'time_zone': json_data['timeZone'],
-            'measurement_system': str(measurement_system),
-            'date_format': json_data['dateFormat']['formatKey']
+            'id': json_data['id'],
+            'userName': json_data['userName'],
+            'name': json_data['fullName']
         }
         for attribute_name, attribute_value in attributes.items():
             Attributes.set_newer(
