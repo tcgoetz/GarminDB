@@ -52,7 +52,7 @@ class Download():
 
     garmin_connect_activity_search_url = "activitylist-service/activities/search/activities"
 
-    garmin_connect_usersummary_url = "usersummary-service/usersummary"
+    garmin_connect_usersummary_url = "/usersummary-service/usersummary"
     garmin_connect_daily_summary_url = garmin_connect_usersummary_url + "/daily"
     garmin_connect_daily_hydration_url = garmin_connect_usersummary_url + "/hydration/allData"
 
@@ -84,7 +84,6 @@ class Download():
 
         logger.debug("login: %s %s", username, password)
         self.garth.login(username, password)
-        token = self.garth.oauth2_token
 
         self.user_prefs = self.garth.profile
 
@@ -116,6 +115,17 @@ class Download():
                     except Exception as e:
                         logger.error('Failed to unzip %s to %s: %s', full_pathname, outdir, e)
 
+    @classmethod
+    def __convert_to_json(cls, object):
+        return object.__str__()
+
+    @classmethod
+    def save_json_to_file(cls, filename, json_data):
+        """Save JSON formatted data to a file."""
+        root_logger.info("Writing daily summary: %s with %s", filename, json_data)
+        with open(filename, 'w') as file:
+            file.write(json.dumps(json_data, default=cls.__convert_to_json))
+
     def __get_stat(self, stat_function, directory, date, days, overwite):
         for day in tqdm(range(0, days), unit='days'):
             download_date = date + datetime.timedelta(days=day)
@@ -133,9 +143,9 @@ class Download():
             '_': str(conversions.dt_to_epoch_ms(conversions.date_to_dt(date)))
         }
         url = f'{self.garmin_connect_daily_summary_url}/{self.display_name}'
-        json_filename = f'{directory_func(date.year)}/daily_summary_{date_str}'
+        json_filename = f'{directory_func(date.year)}/daily_summary_{date_str}.json'
         try:
-            self.modern_rest_client.download_json_file(url, json_filename, overwite, params)
+            self.save_json_to_file(json_filename, self.garth.download(url, params=params))
         except RestException as e:
             root_logger.error("Exception getting daily summary: %s", e)
 
