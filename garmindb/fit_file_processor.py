@@ -193,6 +193,7 @@ class FitFileProcessor():
         if attribute is not None:
             if db_attribute_name is None:
                 db_attribute_name = attribute_name
+            root_logger.info("Writing attribute: %r -> %r at %r", attribute, db_attribute_name, timestamp)
             Attributes.s_set_newer(self.garmin_db_session, db_attribute_name, attribute, timestamp)
 
     def _write_attributes(self, timestamp, message_fields, attribute_names):
@@ -215,7 +216,7 @@ class FitFileProcessor():
         root_logger.debug("battery message: %r", message_fields)
 
     def _write_user_profile_entry(self, fit_file, message_fields):
-        root_logger.debug("user profile message: %r", message_fields)
+        root_logger.info("user profile message: %r", message_fields)
         timestamp = fit_file.time_created_local
         attribute_names = [
             'gender', 'height', 'weight', 'age', 'year_of_birth', 'language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time',

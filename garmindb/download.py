@@ -74,8 +74,9 @@ class Download():
         self.download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
 
         if profile_dir:
-            self.save_json_to_file(f'{profile_dir}/social_profile', self.social_profile)
-            self.save_json_to_file(f'{profile_dir}/profile', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/user-settings'), True)
+            self.save_json_to_file(f'{profile_dir}/social-profile', self.social_profile)
+            self.save_json_to_file(f'{profile_dir}/user-settings', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/user-settings'), True)
+            self.save_json_to_file(f'{profile_dir}/personal-information', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/personal-information'), True)
 
         self.display_name = self.social_profile['displayName']
         self.full_name = self.social_profile['fullName']
@@ -162,7 +163,7 @@ class Download():
     def get_monitoring(self, directory_func, date, days):
         """Download the daily monitoring data from Garmin Connect, unzip and save the raw files."""
         root_logger.info("Getting monitoring: %s (%d)", date, days)
-        for day in tqdm(range(0, days + 1), unit='days'):
+        for day in tqdm(range(0, days), unit='days'):
             day_date = date + datetime.timedelta(day)
             self.temp_dir = tempfile.mkdtemp()
             self.__get_monitoring_day(day_date)
