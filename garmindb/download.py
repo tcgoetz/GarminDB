@@ -21,6 +21,7 @@ import fitfile.conversions as conversions
 
 from .garmin_connect_config_manager import GarminConnectConfigManager
 from .config_manager import ConfigManager
+from idbutils import RestException
 
 
 logger = logging.getLogger(__file__)
@@ -51,12 +52,13 @@ class Download():
     def __init__(self):
         """Create a new Download class instance."""
         logger.debug("__init__")
+        self.gc_config = GarminConnectConfigManager()
         self.garth = GarthClient()
+        self.garth.configure(domain=self.gc_config.get_garmin_base_domain())
 
     def login(self):
         """Login to Garmin Connect."""
         profile_dir = ConfigManager.get_or_create_fit_files_dir()
-        self.gc_config = GarminConnectConfigManager()
         username = self.gc_config.get_user()
         password = self.gc_config.get_password()
         if not username or not password:
@@ -107,18 +109,18 @@ class Download():
             with open(full_filename, 'w') as file:
                 file.write(json.dumps(json_data, default=cls.__convert_to_json))
 
-    @classmethod
-    def save_binary_file(cls, filename, response, overwite=False):
+    def save_binary_file(self, filename, url, overwite=False):
         """Save binary data to a file."""
         exists = os.path.isfile(filename)
         if not exists or overwite:
             logger.info("%s %s", 'Overwriting' if exists else 'Saving', filename)
             try:
+                response = self.garth.get("connectapi", url, api=True)
                 with open(filename, 'wb') as file:
                     for chunk in response:
                         file.write(chunk)
             except Exception as e:
-                raise Exception(e, response, error=f'failed to save as binary: {e} ({response.content})')
+                raise RestException(e, error=f'failed to save as binary: {e}')
 
     def __get_stat(self, stat_function, directory, date, days, overwite):
         for day in tqdm(range(0, days), unit='days'):
@@ -151,9 +153,9 @@ class Download():
     def __get_monitoring_day(self, date):
         root_logger.info("get_monitoring_day: %s to %s", date, self.temp_dir)
         zip_filename = f'{self.temp_dir}/{date}.zip'
-        url = f'/wellness/{date.strftime("%Y-%m-%d")}'
+        url = f'{self.garmin_connect_download_service_url}/wellness/{date.strftime("%Y-%m-%d")}'
         try:
-            self.save_binary_file(zip_filename, self.garth.connectapi(url))
+            self.save_binary_file(zip_filename, url)
         except GarthHTTPError as e:
             root_logger.error("Exception getting daily summary: %s", e)
 
@@ -212,7 +214,7 @@ class Download():
         zip_filename = f'{self.temp_dir}/activity_{activity_id_str}.zip'
         url = f'{self.garmin_connect_download_service_url}/activity/{activity_id_str}'
         try:
-            self.save_json_to_file(zip_filename, self.garth.connectapi(url))
+            self.save_binary_file(zip_filename, url)
         except GarthHTTPError as e:
             root_logger.error("Exception downloading activity file: %s", e)
 

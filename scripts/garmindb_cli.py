@@ -25,8 +25,8 @@ from garmindb.summarydb import SummaryDb
 
 from garmindb import Download, Copy, Analyze
 from garmindb import FitFileProcessor, ActivityFitFileProcessor, MonitoringFitFileProcessor, SleepFitFileProcessor
-from garmindb import GarminProfile, GarminSocialProfile, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepFitData, GarminSleepData, GarminRhrData, GarminSettingsFitData, \
-    GarminHydrationData
+from garmindb import GarminProfile, GarminSocialProfile, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepFitData, GarminSleepData, GarminRhrData, \
+    GarminSettingsFitData, GarminHydrationData
 from garmindb import GarminJsonSummaryData, GarminJsonDetailsData, GarminTcxData, GarminActivitiesFitData
 from garmindb import ActivityExporter
 

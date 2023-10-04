@@ -282,9 +282,8 @@ class GarminProfile(JsonFileProcessor):
         self.conversions = {'calendarDate': self._parse_date}
 
     def _process_json(self, json_data):
-        userData = json_data['userData']
-        measurement_system = fitfile.field_enums.DisplayMeasure.from_string(
-            userData['measurementSystem'])
+        measurement_system = fitfile.field_enums.DisplayMeasure.from_string(json_data['measurementSystem'])
+        logger.info("Processing profile data: measurement_system %r from %s", measurement_system, json_data['measurementSystem'])
         Attributes.set_newer(self.garmin_db, 'measurement_system', str(measurement_system))
         return 1
 
@@ -303,7 +302,7 @@ class GarminSocialProfile(JsonFileProcessor):
         debug (Boolean): enable debug logging
 
         """
-        logger.info("Processing profile data")
+        logger.info("Processing social profile data")
         super().__init__(r'^social_profile\.json', input_dir=input_dir, latest=False, debug=debug)
         self.garmin_db = GarminDb(db_params)
         self.conversions = {'calendarDate': self._parse_date}
@@ -314,6 +313,7 @@ class GarminSocialProfile(JsonFileProcessor):
             'userName': json_data['userName'],
             'name': json_data['fullName']
         }
+        logger.info("Processing social profile data: %r", attributes)
         for attribute_name, attribute_value in attributes.items():
             Attributes.set_newer(
                 self.garmin_db, attribute_name, attribute_value)
