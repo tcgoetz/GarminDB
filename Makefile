@@ -207,6 +207,9 @@ rebuild_garmin:
 build_garmin_monitoring:
 	garmindb_cli.py --monitoring --import --analyze
 
+import_garmin_monitoring:
+	garmindb_cli.py --monitoring --import --latest
+
 build_garmin_activities:
 	garmindb_cli.py --activities --import --analyze
 

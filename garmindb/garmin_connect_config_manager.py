@@ -71,6 +71,10 @@ class GarminConnectConfigManager(JsonConfig):
             return self.get_secure_password()
         return self.__get_node_value('credentials', 'password')
 
+    def get_garmin_base_domain(self):
+        """Return the Garmin base domain to use for api calls."""
+        return self.__get_node_value_default('garmin', 'domain', "garmin.com")
+
     def latest_activity_count(self):
         """Return the number of activities to download when getting the latest."""
         return self.__get_node_value('data', 'download_latest_activities')

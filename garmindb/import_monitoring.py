@@ -265,6 +265,34 @@ class GarminRhrData(JsonFileProcessor):
 class GarminProfile(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect profile data into a database."""
 
+    def __init__(self, db_params, file_regex, input_dir, debug):
+        """
+        Return an instance of GarminProfile.
+
+        Parameters:
+        ----------
+        db_params (object): configuration data for accessing the database
+        file_regex (string): matches files to be processed
+        input_dir (string): directory (full path) to check for profile data files
+        debug (Boolean): enable debug logging
+
+        """
+        logger.info("Processing profile data")
+        super().__init__(file_regex, input_dir=input_dir, latest=False, debug=debug)
+        self.garmin_db = GarminDb(db_params)
+        self.conversions = {'calendarDate': self._parse_date}
+
+    def _process_json(self, json_data):
+        attributes = self._process_attributes(json_data)
+        logger.info("Processing profile data: %r", attributes)
+        for attribute_name, attribute_value in attributes.items():
+            Attributes.set_newer(self.garmin_db, attribute_name, attribute_value)
+        return len(attributes)
+
+
+class GarminUserSettings(GarminProfile):
+    """Class for importing JSON formatted Garmin Connect user settings data into a database."""
+
     def __init__(self, db_params, input_dir, debug):
         """
         Return an instance of GarminProfile.
@@ -276,24 +304,75 @@ class GarminProfile(JsonFileProcessor):
         debug (Boolean): enable debug logging
 
         """
-        logger.info("Processing profile data")
-        super().__init__(r'profile\.json', input_dir=input_dir, latest=False, debug=debug)
-        self.garmin_db = GarminDb(db_params)
-        self.conversions = {'calendarDate': self._parse_date}
+        logger.info("Processing user settings data")
+        super().__init__(db_params, r'^user-settings\.json', input_dir=input_dir, debug=debug)
 
-    def _process_json(self, json_data):
-        measurement_system = fitfile.field_enums.DisplayMeasure.from_string(
-            json_data['measurementSystem'])
-        attributes = {
-            'name': json_data['displayName'].replace('_', ' '),
-            'time_zone': json_data['timeZone'],
+    def _process_attributes(self, json_data):
+        user_data = json_data['userData']
+        measurement_system = fitfile.field_enums.DisplayMeasure.from_string(user_data['measurementSystem'])
+        gender = fitfile.field_enums.Gender.from_string(user_data['gender'])
+        weight = fitfile.Weight.from_grams(user_data['weight'])
+        height = fitfile.Distance.from_cm(user_data['height'])
+        return {
             'measurement_system': str(measurement_system),
-            'date_format': json_data['dateFormat']['formatKey']
+            'gender': str(gender),
+            'weight': weight.kgs_or_lbs(measurement_system),
+            'height': height.meters_or_feet(measurement_system),
+            'vo2max_running': user_data['vo2MaxRunning'],
+            'vo2max_cycling': user_data['vo2MaxCycling'],
+            'handedness': user_data['handedness'].lower()
         }
-        for attribute_name, attribute_value in attributes.items():
-            Attributes.set_newer(
-                self.garmin_db, attribute_name, attribute_value)
-        return len(attributes)
+
+
+class GarminPersonalInformation(GarminProfile):
+    """Class for importing JSON formatted Garmin Connect user personal information data into a database."""
+
+    def __init__(self, db_params, input_dir, debug):
+        """
+        Return an instance of GarminProfile.
+
+        Parameters:
+        ----------
+        db_params (object): configuration data for accessing the database
+        input_dir (string): directory (full path) to check for profile data files
+        debug (Boolean): enable debug logging
+
+        """
+        logger.info("Processing user personal information data")
+        super().__init__(db_params, r'^personal-information\.json', input_dir=input_dir, debug=debug)
+
+    def _process_attributes(self, json_data):
+        user_info = json_data['userInfo']
+        return {
+            'locale': user_info['locale'],
+            'time_zone': user_info['timeZone'],
+            'country_code': user_info['countryCode'],
+        }
+
+
+class GarminSocialProfile(GarminProfile):
+    """Class for importing JSON formatted Garmin Connect social profile data into a database."""
+
+    def __init__(self, db_params, input_dir, debug):
+        """
+        Return an instance of GarminProfile.
+
+        Parameters:
+        ----------
+        db_params (object): configuration data for accessing the database
+        input_dir (string): directory (full path) to check for profile data files
+        debug (Boolean): enable debug logging
+
+        """
+        logger.info("Processing user settings data")
+        super().__init__(db_params, r'^social-profile\.json', input_dir=input_dir, debug=debug)
+
+    def _process_attributes(self, json_data):
+        return {
+            'id': json_data['id'],
+            'userName': json_data['userName'],
+            'name': json_data['fullName']
+        }
 
 
 class GarminSummaryData(JsonFileProcessor):

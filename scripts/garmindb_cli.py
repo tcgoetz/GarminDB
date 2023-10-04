@@ -25,8 +25,8 @@ from garmindb.summarydb import SummaryDb
 
 from garmindb import Download, Copy, Analyze
 from garmindb import FitFileProcessor, ActivityFitFileProcessor, MonitoringFitFileProcessor, SleepFitFileProcessor
-from garmindb import GarminProfile, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepFitData, GarminSleepData, GarminRhrData, GarminSettingsFitData, \
-    GarminHydrationData
+from garmindb import GarminUserSettings, GarminSocialProfile, GarminPersonalInformation, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepFitData, GarminSleepData, GarminRhrData, \
+    GarminSettingsFitData, GarminHydrationData
 from garmindb import GarminJsonSummaryData, GarminJsonDetailsData, GarminTcxData, GarminActivitiesFitData
 from garmindb import ActivityExporter
 
@@ -163,9 +163,17 @@ def import_data(debug, latest, stats):
 
     # Import the user profile and/or settings FIT file first so that we can get the measurement system and some other things sorted out first.
     fit_files_dir = ConfigManager.get_or_create_fit_files_dir()
-    gp = GarminProfile(db_params_dict, fit_files_dir, debug)
-    if gp.file_count() > 0:
-        gp.process()
+    gus = GarminUserSettings(db_params_dict, fit_files_dir, debug)
+    if gus.file_count() > 0:
+        gus.process()
+
+    gpi = GarminPersonalInformation(db_params_dict, fit_files_dir, debug)
+    if gpi.file_count() > 0:
+        gpi.process()
+
+    gsp = GarminSocialProfile(db_params_dict, fit_files_dir, debug)
+    if gsp.file_count() > 0:
+        gsp.process()
 
     gsfd = GarminSettingsFitData(fit_files_dir, debug)
     if gsfd.file_count() > 0:

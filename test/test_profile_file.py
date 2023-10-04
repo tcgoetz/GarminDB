@@ -36,7 +36,7 @@ class TestProfileFile(unittest.TestCase):
         gdb = GarminDb(db_params)
         measurement_system = Attributes.measurements_type(gdb)
         self.assertEqual(measurement_system, fitfile.field_enums.DisplayMeasure.statute,
-                         'DisplayMeasure expected %r found %r' % (fitfile.field_enums.DisplayMeasure.statute, measurement_system))
+                         'DisplayMeasure expected %r found %r from %r' % (fitfile.field_enums.DisplayMeasure.statute, measurement_system, gp.file_names))
 
 
 if __name__ == '__main__':
