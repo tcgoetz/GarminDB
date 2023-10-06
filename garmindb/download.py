@@ -42,6 +42,7 @@ class Download():
     garmin_connect_activity_service_url = "/activity-service/activity"
 
     garmin_connect_download_service_url = "/download-service/files"
+    garmin_connect_download_service_gpx_url = "/download-service/export/gpx"
 
     garmin_connect_usersummary_url = "/usersummary-service/usersummary"
     garmin_connect_daily_summary_url = garmin_connect_usersummary_url + "/daily"
@@ -210,6 +211,15 @@ class Download():
         except GarthHTTPError as e:
             root_logger.error("Exception getting daily summary %s", e)
 
+    def __save_activity_file_gpx(self, dir, activity_id_str):
+        root_logger.debug("save_activity_gpx_file: %s", activity_id_str)
+        gpx_filename = f'{dir}/activity_{activity_id_str}.gpx'
+        url = f'{self.garmin_connect_download_service_gpx_url}/activity/{activity_id_str}'
+        try:
+            self.save_binary_file(gpx_filename, url)
+        except GarthHTTPError as e:
+            root_logger.error("Exception downloading activity file: %s", e)
+
     def __save_activity_file(self, activity_id_str):
         root_logger.debug("save_activity_file: %s", activity_id_str)
         zip_filename = f'{self.temp_dir}/activity_{activity_id_str}.zip'
@@ -219,8 +229,8 @@ class Download():
         except GarthHTTPError as e:
             root_logger.error("Exception downloading activity file: %s", e)
 
-    def get_activities(self, directory, count, overwite=False):
-        """Download activities files from Garmin Connect and save the raw files."""
+    def get_activities(self, directory, count, overwite=False, gpx_only=False):
+        """Download activities files from Garmin Connect and save the raw or gpx files."""
         self.temp_dir = tempfile.mkdtemp()
         logger.info("Getting activities: '%s' (%d) temp %s", directory, count, self.temp_dir)
         activities = self.__get_activity_summaries(0, count)
@@ -228,18 +238,30 @@ class Download():
             activity_id_str = str(activity['activityId'])
             activity_name_str = conversions.printable(activity['activityName'])
             root_logger.info("get_activities: %s (%s)", activity_name_str, activity_id_str)
-            json_filename = f'{directory}/activity_{activity_id_str}.json'
-            if not os.path.isfile(json_filename) or overwite:
-                root_logger.info("get_activities: %s <- %r", json_filename, activity)
-                self.__save_activity_details(directory, activity_id_str, overwite)
-                self.save_json_to_file(json_filename, activity)
-                if not os.path.isfile(f'{directory}/{activity_id_str}.fit') or overwite:
-                    self.__save_activity_file(activity_id_str)
-                # pause for a second between every page access
-                time.sleep(1)
+            if (gpx_only):
+                gpx_filename = f'{directory}/activity_{activity_id_str}.gpx'
+                if not os.path.isfile(gpx_filename) or overwite:
+                    root_logger.info("get_activities: %s <- %r", gpx_filename, activity)
+                    self.__save_activity_file_gpx(directory, activity_id_str)
+                    # pause for a second between every page access
+                    time.sleep(1)
+                else:
+                    root_logger.info("get_activities: skipping download of %s, already present", activity_id_str)
             else:
-                root_logger.info("get_activities: skipping download of %s, already present", activity_id_str)
-        self.__unzip_files(directory)
+                json_filename = f'{directory}/activity_{activity_id_str}.json'
+                if not os.path.isfile(json_filename) or overwite:
+                    root_logger.info("get_activities: %s <- %r", json_filename, activity)
+                    self.__save_activity_details(directory, activity_id_str, overwite)
+                    self.save_json_to_file(json_filename, activity)
+                    if not os.path.isfile(f'{directory}/{activity_id_str}.fit') or overwite:
+                        self.__save_activity_file(activity_id_str)
+                    # pause for a second between every page access
+                    time.sleep(1)
+                else:
+                    root_logger.info("get_activities: skipping download of %s, already present", activity_id_str)
+
+        if (not gpx_only):
+            self.__unzip_files(directory)
 
     def get_activity_types(self, directory, overwite):
         """Download the activity types from Garmin Connect and save to a JSON file."""

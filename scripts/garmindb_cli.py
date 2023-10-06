@@ -104,7 +104,7 @@ def copy_data(overwite, latest, stats):
         copy.copy_sleep(monitoring_dir, latest)
 
 
-def download_data(overwite, latest, stats):
+def download_data(overwite, latest, gpx_only, gpx_path, stats):
     """Download selected activity types from Garmin Connect and save the data in files. Overwrite previously downloaded data if indicated."""
     logger.info("___Downloading %s Data___", 'Latest' if latest else 'All')
 
@@ -119,9 +119,15 @@ def download_data(overwite, latest, stats):
         else:
             activity_count = gc_config.all_activity_count()
         activities_dir = ConfigManager.get_or_create_activities_dir()
+
+        if (gpx_path and os.path.isdir(gpx_path)):
+            activities_dir = gpx_path
+
         root_logger.info("Fetching %d activities to %s", activity_count, activities_dir)
-        download.get_activity_types(activities_dir, overwite)
-        download.get_activities(activities_dir, activity_count, overwite)
+
+        if (not gpx_only):
+            download.get_activity_types(activities_dir, overwite)
+        download.get_activities(activities_dir, activity_count, overwite, gpx_only)
 
     if Statistics.monitoring in stats:
         date, days = __get_date_and_days(MonitoringDb(db_params_dict), latest, MonitoringHeartRate, MonitoringHeartRate.heart_rate, 'monitoring')
@@ -315,6 +321,8 @@ def main(argv):
     stats_group.add_argument("-w", "--weight", help="Download and/or import weight data.", dest='stats', action='append_const', const=Statistics.weight)
     modifiers_group = parser.add_argument_group('Modifiers')
     modifiers_group.add_argument("-l", "--latest", help="Only download and/or import the latest data.", action="store_true", default=False)
+    modifiers_group.add_argument("--gpx", help="Only download the latest gpx data.", action="store_true", default=False)
+    modifiers_group.add_argument("--gpx-path", help="Override default path for downloading GPX files.")
     modifiers_group.add_argument("-o", "--overwrite", help="Overwite existing files when downloading. The default is to only download missing files.",
                                  action="store_true", default=False)
     args = parser.parse_args()
@@ -330,7 +338,7 @@ def main(argv):
 
     if args.backup_dbs:
         backup_dbs()
-        
+
     if args.delete_db:
         delete_dbs([stats_to_db_map[stat] for stat in args.stats] + summary_dbs)
         sys.exit()
@@ -344,7 +352,7 @@ def main(argv):
         copy_data(args.overwrite, args.latest, args.stats)
 
     if args.download_data:
-        download_data(args.overwrite, args.latest, args.stats)
+        download_data(args.overwrite, args.latest, args.gpx, args.gpx_path, args.stats)
 
     if args.import_data:
         import_data(args.trace, args.latest, args.stats)
