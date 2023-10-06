@@ -211,9 +211,8 @@ class Download():
         except GarthHTTPError as e:
             root_logger.error("Exception getting daily summary %s", e)
 
-    def __save_activity_file_gpx(self, dir, activity_id_str):
+    def __save_activity_file_gpx(self, activity_id_str, gpx_filename):
         root_logger.debug("save_activity_gpx_file: %s", activity_id_str)
-        gpx_filename = f'{dir}/activity_{activity_id_str}.gpx'
         url = f'{self.garmin_connect_download_service_gpx_url}/activity/{activity_id_str}'
         try:
             self.save_binary_file(gpx_filename, url)
@@ -237,12 +236,15 @@ class Download():
         for activity in tqdm(activities or [], unit='activities'):
             activity_id_str = str(activity['activityId'])
             activity_name_str = conversions.printable(activity['activityName'])
+            activity_date_start_local = activity['startTimeLocal']
+            local_date_arr = activity_date_start_local.split(" ")
+            ymd_activity_start = local_date_arr[0]
             root_logger.info("get_activities: %s (%s)", activity_name_str, activity_id_str)
             if (gpx_only):
-                gpx_filename = f'{directory}/activity_{activity_id_str}.gpx'
+                gpx_filename = f'{directory}/{ymd_activity_start}_{activity_id_str}.gpx'
                 if not os.path.isfile(gpx_filename) or overwite:
                     root_logger.info("get_activities: %s <- %r", gpx_filename, activity)
-                    self.__save_activity_file_gpx(directory, activity_id_str)
+                    self.__save_activity_file_gpx(activity_id_str, gpx_filename)
                     # pause for a second between every page access
                     time.sleep(1)
                 else:
