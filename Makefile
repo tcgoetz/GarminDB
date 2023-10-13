@@ -75,8 +75,6 @@ submodules_update:
 	git submodule init
 	git submodule update
 
-$(SUBMODULES:%=%-install):
-	$(MAKE) -C $(subst -install,,$@) install
 
 publish_check: build
 	$(PYTHON) -m twine check dist/*
@@ -92,7 +90,18 @@ $(PROJECT_BASE)/dist/$(MODULE)-*.whl: build
 install: $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 	$(PIP) install --upgrade $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
+$(SUBMODULES:%=%-install):
+	$(MAKE) -C $(subst -install,,$@) install
+
 install_all: $(SUBMODULES:%=%-install) install
+
+install_pip:
+	$(PIP) install --upgrade garmindb
+
+$(SUBMODULES:%=%-install_pip):
+	$(MAKE) -C $(subst -install_pip,,$@) install_pip
+
+install_pip_all: $(SUBMODULES:%=%-install_pip) install_pip
 
 reinstall: clean $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 	$(PIP) install --upgrade --force-reinstall --no-deps $(PROJECT_BASE)/dist/$(MODULE)-*.whl
