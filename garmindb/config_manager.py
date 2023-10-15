@@ -85,6 +85,16 @@ class ConfigManager(Config):
         return cls.get_or_create_config_dir() + os.sep + cls.get_config_filename()
 
     @classmethod
+    def get_session_filename(cls):
+        """Return the name of the garth session file."""
+        return 'garth_session'
+
+    @classmethod
+    def get_session_file(cls):
+        """Return the path to the session file."""
+        return cls.get_or_create_config_dir() + os.sep + cls.get_session_filename()
+
+    @classmethod
     def get_base_dir(cls, test_dir=False):
         """Return the configured directory of where the data files will be stored."""
         base = cls.directories['base_dir']
