@@ -67,8 +67,9 @@ def __get_date_and_days(db, latest, table, col, stat_name):
         else:
             # start from the day before the last day in the DB
             logger.info("Downloading latest %s data from: %s", stat_name, last_ts)
-            date = last_ts.date() if isinstance(last_ts, datetime.datetime) else last_ts
-            days = max((datetime.date.today() - date).days, 1)
+            last_ts_date_date = last_ts.date() if isinstance(last_ts, datetime.datetime) else last_ts
+            date = last_ts_date_date - datetime.timedelta(days=1)
+            days = (datetime.date.today() - date).days
     else:
         date, days = gc_config.stat_start_date(stat_name)
         days = min((datetime.date.today() - date).days, days)
