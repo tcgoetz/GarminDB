@@ -21,7 +21,6 @@ import fitfile.conversions as conversions
 
 from .garmin_connect_config_manager import GarminConnectConfigManager
 from .config_manager import ConfigManager
-from idbutils import RestException
 
 
 logger = logging.getLogger(__file__)
