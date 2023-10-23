@@ -140,13 +140,10 @@ class Download():
         exists = os.path.isfile(filename)
         if not exists or overwite:
             logger.info("%s %s", 'Overwriting' if exists else 'Saving', filename)
-            try:
-                response = self.garth.get("connectapi", url, api=True)
-                with open(filename, 'wb') as file:
-                    for chunk in response:
-                        file.write(chunk)
-            except Exception as e:
-                raise RestException(e, error=f'failed to save as binary: {e}')
+            response = self.garth.get("connectapi", url, api=True)
+            with open(filename, 'wb') as file:
+                for chunk in response:
+                    file.write(chunk)
 
     def __get_stat(self, stat_function, directory, date, days, overwite):
         for day in tqdm(range(0, days), unit='days'):
