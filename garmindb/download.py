@@ -48,6 +48,8 @@ class Download():
 
     # https://connect.garmin.com/modern/proxy/usersummary-service/usersummary/hydration/allData/2019-11-29
 
+    download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
+
     def __init__(self):
         """Create a new Download class instance."""
         logger.debug("__init__")
@@ -92,18 +94,13 @@ class Download():
         except GarthException:
             self.__login()
 
-        self.social_profile = self.garth.profile
-        self.user_prefs = self.garth.profile
-
-        self.download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
-
         profile_dir = ConfigManager.get_or_create_fit_files_dir()
-        self.save_json_to_file(f'{profile_dir}/social-profile', self.social_profile)
+        self.save_json_to_file(f'{profile_dir}/social-profile', self.garth.profile)
         self.save_json_to_file(f'{profile_dir}/user-settings', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/user-settings'), True)
         self.save_json_to_file(f'{profile_dir}/personal-information', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/personal-information'), True)
 
-        self.display_name = self.social_profile['displayName']
-        self.full_name = self.social_profile['fullName']
+        self.display_name = self.garth.profile['displayName']
+        self.full_name = self.garth.profile['fullName']
         root_logger.info("login: %s (%s)", self.full_name, self.display_name)
         return True
 
