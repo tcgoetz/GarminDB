@@ -14,9 +14,18 @@ import enum
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-from .garmindb import MonitoringDb, Monitoring, MonitoringHeartRate
-from .summarydb import DaysSummary, WeeksSummary, MonthsSummary, SummaryDb
-from .config_manager import ConfigManager
+from garmindb import ConfigManager
+from garmindb.garmindb import MonitoringDb, Monitoring, MonitoringHeartRate
+from garmindb.summarydb import DaysSummary, WeeksSummary, MonthsSummary, SummaryDb
+
+
+config = {
+    'size'                  : [16.0, 12.0],
+    'steps'                 : {'period' : 'weeks', 'days' : 730},
+    'hr'                    : {'period' : 'weeks', 'days' : 730},
+    'itime'                 : {'period' : 'weeks', 'days' : 730},
+    'weight'                : {'period' : 'weeks', 'days' : 730}
+}
 
 
 logger = logging.getLogger(__file__)
@@ -81,7 +90,7 @@ class Graph():
     @classmethod
     def __graph_multiple_single_axes(cls, time, data_list, stat_name, ylabel, save, geometry=111):
         title = f'{stat_name} Over Time'
-        figure = plt.figure(figsize=ConfigManager.get_graphs('size'))
+        figure = plt.figure(figsize=config.get('size'))
         for index, data in enumerate(data_list):
             color = Colors.from_integer(index).name
             axes = figure.add_subplot(geometry, frame_on=(index == 0))
@@ -96,7 +105,7 @@ class Graph():
     @classmethod
     def __graph_multiple(cls, time, data_list, stat_name, period, ylabel_list, yrange_list, save, geometry=111):
         title = f'{stat_name} by {period}'
-        figure = plt.figure(figsize=ConfigManager.get_graphs('size'))
+        figure = plt.figure(figsize=config.get('size'))
         for index, data in enumerate(data_list):
             color = Colors.from_integer(index).name
             axes = figure.add_subplot(geometry, label=ylabel_list[index], frame_on=(index == 0))
@@ -120,7 +129,7 @@ class Graph():
 
     @classmethod
     def __graph_over(cls, date, over_data_dicts, under_data_dict, title, xlabel, ylabel, save_name=None, geometry=111):
-        figure = plt.figure(figsize=ConfigManager.get_graphs('size'))
+        figure = plt.figure(figsize=config.get('size'))
         # First graph the data that appears under
         axes = figure.add_subplot(geometry, frame_on=True)
         axes.fill_between(under_data_dict['time'], under_data_dict['data'], 0, color=Colors.c.name)
@@ -179,9 +188,9 @@ class Graph():
     def graph_activity(self, activity, period=None, days=None, geometry=111):
         """Generate a graph for the given activity with points every period spanning days."""
         if period is None:
-            period = ConfigManager.graphs_activity_config(activity, 'period')
+            period = config.get(activity, 'period')
         if days is None:
-            days = ConfigManager.graphs_activity_config(activity, 'days')
+            days = config.get(activity, 'days')
         db_params = ConfigManager.get_db_params()
         sum_db = SummaryDb(db_params, self.debug)
         end_ts = datetime.datetime.now()

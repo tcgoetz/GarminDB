@@ -11,10 +11,14 @@ from IPython.display import display
 import ipyleaflet
 import ipywidgets
 
-from .config_manager import ConfigManager
-
 
 logger = logging.getLogger()
+
+
+config = {
+    'width'                 : 1200,
+    'height'                : 800
+}
 
 
 class Map():
@@ -23,9 +27,9 @@ class Map():
     def __init__(self, center, width=None, height=None, zoom=None, fullscreen_widget=False):
         """Return a instance of a Map."""
         if width is None:
-            width = ConfigManager.get_maps('width')
+            width = config.get('width')
         if height is None:
-            height = ConfigManager.get_maps('height')
+            height = config.get('height')
         if zoom is None:
             zoom = 15
         layout = ipywidgets.Layout(width=f'{width}px', height=f'{height}px')

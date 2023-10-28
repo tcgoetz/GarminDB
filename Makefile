@@ -131,18 +131,25 @@ dev-requirements.txt:
 Jupyter/requirements.txt:
 	$(PIP) freeze -r Jupyter/requirements.in > Jupyter/requirements.txt
 
+Jupyter/requirements_graphs.txt:
+	$(PIP) freeze -r Jupyter/requirements_graphs.in > Jupyter/requirements_graphs.txt
+
 update_pip_packages:
 	$(PIP) list --outdated | egrep -v "Package|---" |   cut -d' ' -f1 | xargs pip install --upgrade
 
 deps: $(SUBMODULES:%=%-deps)
 	$(PIP) install --upgrade --requirement requirements.txt
-	$(PIP) install --upgrade --requirement Jupyter/requirements.txt
 
 $(SUBMODULES:%=%-devdeps):
 	$(MAKE) -C $(subst -devdeps,,$@) devdeps
 
 devdeps: $(SUBMODULES:%=%-devdeps)
 	$(PIP) install --upgrade --requirement dev-requirements.txt
+
+jupiterdeps:
+	$(PIP) install --upgrade --requirement Jupyter/requirements.txt
+
+alldeps: update_pip_packages deps devdeps jupiterdeps
 
 $(SUBMODULES:%=%-remove_deps):
 	$(MAKE) -C $(subst -remove_deps,,$@) remove_deps
@@ -151,6 +158,7 @@ remove_deps: $(SUBMODULES:%=%-remove_deps)
 	$(PIP) uninstall -y --requirement requirements.txt
 	$(PIP) uninstall -y --requirement dev-requirements.txt
 	$(PIP) uninstall -y --requirement Jupyter/requirements.txt
+	$(PIP) uninstall -y --requirement Jupyter/requirements_graphs.txt
 
 clean_deps: remove_deps
 
@@ -178,9 +186,6 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -rf dist
 
 realclean: clean clean_venv
-
-graphs:
-	garmindb_graphs.py --all
 
 checkup: update_garmin
 	garmindb_checkup.py --battery

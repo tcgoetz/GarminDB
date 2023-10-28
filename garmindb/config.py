@@ -42,19 +42,6 @@ class Config():
         'settings'              : 'settings'
     }
 
-    graphs = {
-        'size'                  : [16.0, 12.0],
-        'steps'                 : {'period' : 'weeks', 'days' : 730},
-        'hr'                    : {'period' : 'weeks', 'days' : 730},
-        'itime'                 : {'period' : 'weeks', 'days' : 730},
-        'weight'                : {'period' : 'weeks', 'days' : 730}
-    }
-
-    maps = {
-        'width'                 : 1200,
-        'height'                : 800
-    }
-
     checkup = {
         'look_back_days'        : 90
     }
