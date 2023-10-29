@@ -32,7 +32,7 @@ class Copy():
         if not os.path.isdir(self.device_mount_dir):
             raise RuntimeError(f'Device mount directory {self.device_mount_dir} not a directory')
 
-    def __copy(self, src_dir, dest_dir, latest=False, parse_as_ts=False, fn_suffix=''):
+    def __copy(self, src_dir, dest_dir, latest=False, parse_as_ts=False, fn_suffix='WELLNESS'):
         """Copy FIT files from a USB mounted Garmin device to the given directory."""
         file_names = FileProcessor.dir_to_files(src_dir, fitfile.file.name_regex, latest)
         logger.info("Copying files from %s to %s", src_dir, dest_dir)
@@ -40,8 +40,8 @@ class Copy():
             dest = dest_dir
             if parse_as_ts:
                 dt = os.path.basename(file).split('.fit')[0]
-                ts = datetime.strptime(dt, '%Y-%m-%d-%H-%M-%S').strftime('%s') 
-                dest = os.path.join(dest_dir, ts) + fn_suffix + '.fit'
+                ts = datetime.strptime(dt, '%Y-%m-%d-%H-%M-%S').timestamp()
+                dest = os.path.join(dest_dir, f'{ts:.0f}') + fn_suffix + '.fit'
             shutil.copy(file, dest)
 
     def copy_activities(self, activities_dir, latest=False):
