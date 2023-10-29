@@ -1,3 +1,5 @@
 garmindb>=3.2.8
 snakemd==2.1.0
+ipykernel==6.25.1
+ipyleaflet==0.17.3
 pandas==1.5.3

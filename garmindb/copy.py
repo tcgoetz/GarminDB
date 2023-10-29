@@ -9,6 +9,7 @@ import sys
 import shutil
 from tqdm import tqdm
 import logging
+from datetime import datetime
 
 import fitfile
 from idbutils import FileProcessor
@@ -31,17 +32,22 @@ class Copy():
         if not os.path.isdir(self.device_mount_dir):
             raise RuntimeError(f'Device mount directory {self.device_mount_dir} not a directory')
 
-    def __copy(self, src_dir, dest_dir, latest=False):
+    def __copy(self, src_dir, dest_dir, latest=False, parse_as_ts=False, fn_suffix='WELLNESS'):
         """Copy FIT files from a USB mounted Garmin device to the given directory."""
         file_names = FileProcessor.dir_to_files(src_dir, fitfile.file.name_regex, latest)
         logger.info("Copying files from %s to %s", src_dir, dest_dir)
         for file in tqdm(file_names, unit='files'):
-            shutil.copy(file, dest_dir)
+            dest = dest_dir
+            if parse_as_ts:
+                dt = os.path.basename(file).split('.fit')[0]
+                ts = datetime.strptime(dt, '%Y-%m-%d-%H-%M-%S').timestamp()
+                dest = os.path.join(dest_dir, f'{ts:.0f}') + fn_suffix + '.fit'
+            shutil.copy(file, dest)
 
     def copy_activities(self, activities_dir, latest=False):
         """Copy activites data FIT files from a USB mounted Garmin device to the given directory."""
         device_activities_dir = ConfigManager.device_activities_dir(self.device_mount_dir)
-        self.__copy(device_activities_dir, activities_dir, latest)
+        self.__copy(device_activities_dir, activities_dir, latest, True, '_activities')
 
     def copy_monitoring(self, monitoring_dir, latest=False):
         """Copy daily monitoring data FIT files from a USB mounted Garmin device to the given directory."""
