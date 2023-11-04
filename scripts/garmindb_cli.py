@@ -25,8 +25,8 @@ from garmindb.summarydb import SummaryDb
 
 from garmindb import Download, Copy, Analyze
 from garmindb import FitFileProcessor, ActivityFitFileProcessor, MonitoringFitFileProcessor, SleepFitFileProcessor
-from garmindb import GarminUserSettings, GarminSocialProfile, GarminPersonalInformation, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepFitData, GarminSleepData, GarminRhrData, \
-    GarminSettingsFitData, GarminHydrationData
+from garmindb import GarminUserSettings, GarminSocialProfile, GarminPersonalInformation, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepFitData, \
+    GarminSleepData, GarminRhrData, GarminSettingsFitData, GarminHydrationData
 from garmindb import GarminJsonSummaryData, GarminJsonDetailsData, GarminTcxData, GarminActivitiesFitData
 from garmindb import ActivityExporter
 
@@ -67,8 +67,9 @@ def __get_date_and_days(db, latest, table, col, stat_name):
         else:
             # start from the day before the last day in the DB
             logger.info("Downloading latest %s data from: %s", stat_name, last_ts)
-            date = last_ts.date() if isinstance(last_ts, datetime.datetime) else last_ts
-            days = max((datetime.date.today() - date).days, 1)
+            last_ts_date_date = last_ts.date() if isinstance(last_ts, datetime.datetime) else last_ts
+            date = last_ts_date_date - datetime.timedelta(days=1)
+            days = (datetime.date.today() - date).days
     else:
         date, days = gc_config.stat_start_date(stat_name)
         days = min((datetime.date.today() - date).days, days)

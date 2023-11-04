@@ -14,14 +14,13 @@ import tempfile
 import zipfile
 import json
 from garth import Client as GarthClient
-from garth.exc import GarthHTTPError
+from garth.exc import GarthHTTPError, GarthException
 from tqdm import tqdm
 
 import fitfile.conversions as conversions
 
 from .garmin_connect_config_manager import GarminConnectConfigManager
 from .config_manager import ConfigManager
-from idbutils import RestException
 
 
 logger = logging.getLogger(__file__)
@@ -49,16 +48,32 @@ class Download():
 
     # https://connect.garmin.com/modern/proxy/usersummary-service/usersummary/hydration/allData/2019-11-29
 
+    download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
+
     def __init__(self):
         """Create a new Download class instance."""
         logger.debug("__init__")
         self.gc_config = GarminConnectConfigManager()
+        self.garth_session_file = ConfigManager.get_session_file()
         self.garth = GarthClient()
         self.garth.configure(domain=self.gc_config.get_garmin_base_domain())
 
-    def login(self):
-        """Login to Garmin Connect."""
-        profile_dir = ConfigManager.get_or_create_fit_files_dir()
+    def __resume_session(self):
+        if os.path.isfile(self.garth_session_file):
+            root_logger.info("load session from %s", self.garth_session_file)
+            with open(self.garth_session_file, "r", encoding="utf-8") as file:
+                self.garth.loads(file.read())
+                return True
+        else:
+            root_logger.info("session file %s not found", self.garth_session_file)
+        return False
+
+    def __save_session(self):
+        root_logger.info("save session to %s", self.garth_session_file)
+        with open(self.garth_session_file, "w", encoding="utf-8") as file:
+            file.write(self.garth.dumps())
+
+    def __login(self):
         username = self.gc_config.get_user()
         password = self.gc_config.get_password()
         if not username or not password:
@@ -67,19 +82,25 @@ class Download():
 
         logger.debug("login: %s %s", username, password)
         self.garth.login(username, password)
+        self.__save_session()
 
-        self.social_profile = self.garth.profile
-        self.user_prefs = self.garth.profile
+    def login(self):
+        """Use garth to resume to Garmin Connect session if possible, otherwise login."""
+        if not self.__resume_session():
+            self.__login()
 
-        self.download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
+        try:
+            self.garth.username
+        except GarthException:
+            self.__login()
 
-        if profile_dir:
-            self.save_json_to_file(f'{profile_dir}/social-profile', self.social_profile)
-            self.save_json_to_file(f'{profile_dir}/user-settings', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/user-settings'), True)
-            self.save_json_to_file(f'{profile_dir}/personal-information', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/personal-information'), True)
+        profile_dir = ConfigManager.get_or_create_fit_files_dir()
+        self.save_json_to_file(f'{profile_dir}/social-profile', self.garth.profile)
+        self.save_json_to_file(f'{profile_dir}/user-settings', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/user-settings'), True)
+        self.save_json_to_file(f'{profile_dir}/personal-information', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/personal-information'), True)
 
-        self.display_name = self.social_profile['displayName']
-        self.full_name = self.social_profile['fullName']
+        self.display_name = self.garth.profile['displayName']
+        self.full_name = self.garth.profile['fullName']
         root_logger.info("login: %s (%s)", self.full_name, self.display_name)
         return True
 
@@ -115,13 +136,10 @@ class Download():
         exists = os.path.isfile(filename)
         if not exists or overwite:
             logger.info("%s %s", 'Overwriting' if exists else 'Saving', filename)
-            try:
-                response = self.garth.get("connectapi", url, api=True)
-                with open(filename, 'wb') as file:
-                    for chunk in response:
-                        file.write(chunk)
-            except Exception as e:
-                raise RestException(e, error=f'failed to save as binary: {e}')
+            response = self.garth.get("connectapi", url, api=True)
+            with open(filename, 'wb') as file:
+                for chunk in response:
+                    file.write(chunk)
 
     def __get_stat(self, stat_function, directory, date, days, overwite):
         for day in tqdm(range(0, days), unit='days'):

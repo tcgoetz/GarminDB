@@ -25,8 +25,6 @@ from .export_activities import ActivityExporter
 from .open_with_basecamp import OpenWithBaseCamp
 from .open_with_google_earth import OpenWithGoogleEarth
 
-from .graphs import Graph
-from .maps import Map, ActivityMap
 from .checkup import Checkup
 
 from .copy import Copy
