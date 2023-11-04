@@ -32,7 +32,7 @@ GarminDb releases are hosted on [PyPI](https://pypi.org/project/garmindb/). Garm
 * Copy `GarminConnectConfig.json.example` to `~/.GarminDb/GarminConnectConfig.json`, edit it, and add your Garmin Connect username and password and adjust the start dates to match the dats of your data in Garmin Connect.
 * Starting out: download all of your data and create your db by running `garmindb_cli.py --all --download --import --analyze` in a terminal.
 * Incrementally update your db by downloading the latest data and importing it by running `garmindb_cli.py --all --download --import --analyze --latest` in a terminal.
-* Ocassionally run `garmin_cli.py --backup` to backup your DB files.
+* Ocassionally run `garmindb_cli.py --backup` to backup your DB files.
 
 Update to the latest release with `pip install --upgrade garmindb`.
 
