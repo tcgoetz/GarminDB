@@ -188,9 +188,9 @@ class Graph():
     def graph_activity(self, activity, period=None, days=None, geometry=111):
         """Generate a graph for the given activity with points every period spanning days."""
         if period is None:
-            period = config.get(activity, 'period')
+            period = config[activity]['period']
         if days is None:
-            days = config.get(activity, 'days')
+            days = config[activity]['days']
         db_params = ConfigManager.get_db_params()
         sum_db = SummaryDb(db_params, self.debug)
         end_ts = datetime.datetime.now()
