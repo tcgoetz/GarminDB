@@ -8,7 +8,7 @@ __license__ = "GPL"
 python_required = (3, 0, 0)
 python_tested = (3, 11, 4)
 version_info = (3, 5, 2)
-prerelease = False
+prerelease = True
 
 
 def version_string():
