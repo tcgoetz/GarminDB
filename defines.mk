@@ -1,5 +1,5 @@
 
--include my-defines.mk
+-include $(PROJECT_BASE)/my-defines.mk
 
 CONF_DIR=$(HOME)/.GarminDb
 
