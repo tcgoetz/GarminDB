@@ -127,7 +127,7 @@ class Download():
         full_filename = f'{filename}.json'
         exists = os.path.isfile(full_filename)
         if not exists or overwite:
-            logger.info("%s %s", 'Overwriting' if exists else 'Saving', full_filename)
+            logger.debug("%s %s", 'Overwriting' if exists else 'Saving', full_filename)
             with open(full_filename, 'w') as file:
                 file.write(json.dumps(json_data, default=cls.__convert_to_json))
 
@@ -135,7 +135,7 @@ class Download():
         """Save binary data to a file."""
         exists = os.path.isfile(filename)
         if not exists or overwite:
-            logger.info("%s %s", 'Overwriting' if exists else 'Saving', filename)
+            logger.debug("%s %s", 'Overwriting' if exists else 'Saving', filename)
             response = self.garth.get("connectapi", url, api=True)
             with open(filename, 'wb') as file:
                 for chunk in response:
