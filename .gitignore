@@ -85,6 +85,7 @@ bin/
 
 bugreport.txt
 
+.DS_Store
 *.zip
 *.fit
 *.tcx
