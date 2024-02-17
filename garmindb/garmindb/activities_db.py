@@ -98,7 +98,7 @@ class Activities(ActivitiesDb.Base, ActivitiesCommon):
     __tablename__ = 'activities'
 
     db = ActivitiesDb
-    table_version = 4
+    table_version = 5
 
     activity_id = Column(String, primary_key=True)
     name = Column(String)
@@ -109,12 +109,32 @@ class Activities(ActivitiesDb.Base, ActivitiesCommon):
     sport = Column(String)
     sub_sport = Column(String)
 
+    self_eval_feel = Column(Integer)
+    self_eval_effort = Column(Integer)
+
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)
 
     def is_steps_activity(self):
         """Return if the activity is a steps based activity."""
         return self.sport in ['walking', 'running', 'hiking']
+
+    def get_self_eval_feel(self):
+        """Return the Garmin Connect self evaluation 'How did you feel' label for the activity."""
+        levels = [(100, "Very Strong"), (75, "Strong"), (50, "Normal"), (25, "Weak"), (0, "Very Weak")]
+        for threshold, label in levels:
+            print(f"Threshold {threshold} label {label}")
+            if self.self_eval_feel >= threshold:
+                return label
+
+    def get_self_eval_effort(self):
+        """Return the Garmin Connect self evaluation perceived effort label for the activity."""
+        levels = [(100, "Maximum"), (90, "Extremely Hard"), (70, "Very Hard"), (50, "Hard"),
+                  (40, "Somewhat Hard"), (30, "Moderate"), (20, "Light"), (10, "Very Light"), (0, "None")]
+        for threshold, label in levels:
+            print(f"Threshold {threshold} label {label}")
+            if self.self_eval_effort >= threshold:
+                return label
 
     @classmethod
     def get_by_course_id(cls, db, course_id):

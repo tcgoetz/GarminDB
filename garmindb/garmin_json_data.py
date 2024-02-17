@@ -294,8 +294,10 @@ class GarminJsonDetailsData(GarminJsonActivityData):
         summary_dto = json_data['summaryDTO']
         sport, sub_sport = get_details_sport(json_data)
         activity = {
-            'activity_id'   : activity_id,
-            'course_id'     : self._get_field(metadata_dto, 'associatedCourseId', int)
+            'activity_id'       : activity_id,
+            'course_id'         : self._get_field(metadata_dto, 'associatedCourseId', int),
+            'self_eval_feel'    : self._get_field(summary_dto, 'directWorkoutFeel', int),
+            'self_eval_effort'  : self._get_field(summary_dto, 'directWorkoutRpe', int)
         }
         activity.update(self._process_common(summary_dto))
         Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
