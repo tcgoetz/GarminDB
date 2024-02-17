@@ -247,7 +247,7 @@ class Download():
             activity_name_str = conversions.printable(activity['activityName'])
             root_logger.info("get_activities: %s (%s)", activity_name_str, activity_id_str)
             json_filename = f'{directory}/activity_{activity_id_str}'
-            if not os.path.isfile(json_filename) or overwite:
+            if not os.path.isfile(json_filename + '.json') or overwite:
                 root_logger.info("get_activities: %s <- %r", json_filename, activity)
                 self.__save_activity_details(directory, activity_id_str, overwite)
                 self.save_json_to_file(json_filename, activity)
