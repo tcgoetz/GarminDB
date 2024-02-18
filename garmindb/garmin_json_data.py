@@ -288,16 +288,39 @@ class GarminJsonDetailsData(GarminJsonActivityData):
         root_logger.debug("fitness_equipment (%s) for %d: %r", sub_sport, activity_id, json_data)
         self._call_process_func(sub_sport.name, None, activity_id, json_data)
 
+    @classmethod
+    def get_self_eval_feel(cls, value):
+        """Return the Garmin Connect self evaluation 'How did you feel' label for the activity."""
+        levels = [(100, "Very Strong"), (75, "Strong"), (50, "Normal"), (25, "Weak"), (0, "Very Weak")]
+        for threshold, label in levels:
+            print(f"Threshold {threshold} label {label}")
+            if value >= threshold:
+                return label
+
+    @classmethod
+    def get_self_eval_effort(cls, value):
+        """Return the Garmin Connect self evaluation perceived effort label for the activity."""
+        levels = [(100, "Maximum"), (90, "Extremely Hard"), (70, "Very Hard"), (50, "Hard"),
+                  (40, "Somewhat Hard"), (30, "Moderate"), (20, "Light"), (10, "Very Light"), (0, "None")]
+        for threshold, label in levels:
+            print(f"Threshold {threshold} label {label}")
+            if value >= threshold:
+                return label
+
     def _activities_process_json(self, json_data):
         activity_id = json_data['activityId']
         metadata_dto = json_data['metadataDTO']
         summary_dto = json_data['summaryDTO']
         sport, sub_sport = get_details_sport(json_data)
+        self_eval_feel = self._get_field(summary_dto, 'directWorkoutFeel', int)
+        self_eval_effort = self._get_field(summary_dto, 'directWorkoutRpe', int)
         activity = {
-            'activity_id'       : activity_id,
-            'course_id'         : self._get_field(metadata_dto, 'associatedCourseId', int),
-            'self_eval_feel'    : self._get_field(summary_dto, 'directWorkoutFeel', int),
-            'self_eval_effort'  : self._get_field(summary_dto, 'directWorkoutRpe', int)
+            'activity_id'           : activity_id,
+            'course_id'             : self._get_field(metadata_dto, 'associatedCourseId', int),
+            'device_serial_number'  : self._get_field(metadata_dto, 'deviceId', int),
+            'self_eval_feel'        : self.get_self_eval_feel(self_eval_feel) if (self_eval_feel is not None) else None,
+            'self_eval_effort'      : self.get_self_eval_effort(self_eval_effort) if (self_eval_effort is not None) else None,
+            'training_load'         : self._get_field(summary_dto, 'activityTrainingLoad', float)
         }
         activity.update(self._process_common(summary_dto))
         Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
