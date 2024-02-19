@@ -293,7 +293,6 @@ class GarminJsonDetailsData(GarminJsonActivityData):
         """Return the Garmin Connect self evaluation 'How did you feel' label for the activity."""
         levels = [(100, "Very Strong"), (75, "Strong"), (50, "Normal"), (25, "Weak"), (0, "Very Weak")]
         for threshold, label in levels:
-            print(f"Threshold {threshold} label {label}")
             if value >= threshold:
                 return label
 
@@ -303,7 +302,6 @@ class GarminJsonDetailsData(GarminJsonActivityData):
         levels = [(100, "Maximum"), (90, "Extremely Hard"), (70, "Very Hard"), (50, "Hard"),
                   (40, "Somewhat Hard"), (30, "Moderate"), (20, "Light"), (10, "Very Light"), (0, "None")]
         for threshold, label in levels:
-            print(f"Threshold {threshold} label {label}")
             if value >= threshold:
                 return label
 
