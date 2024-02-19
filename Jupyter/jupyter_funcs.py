@@ -39,4 +39,4 @@ def format_weight(distance, digits=1):
 
 def linked_location(location):
     """Return a location as markdown formatted linked text."""
-    return snakemd.Inline(location.display(), location.to_google_maps_url())
+    return snakemd.Inline(location.display(), link=location.to_google_maps_url())
