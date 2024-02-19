@@ -329,4 +329,8 @@ regression_test: clean regression_test_run test
 bugreport:
 	./bugreport.sh
 
-.PHONY: all setup install install_all uninstall uninstall_all update deps create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release clean test test_clean daily flake8 $(SUBMODULES:%=%-flake8)
+
+merge_develop:
+	git fetch --all && git merge remotes/origin/develop
+
+.PHONY: all setup install install_all uninstall uninstall_all update deps create_dbs rebuild_dbs update_dbs clean clean_dbs test zip_packages release clean test test_clean daily flake8 $(SUBMODULES:%=%-flake8) merge_develop
