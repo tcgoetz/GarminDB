@@ -19,7 +19,7 @@ all: update_dbs
 # install all needed code
 setup_repo: $(CONF_DIR)/GarminConnectConfig.json $(PROJECT_BASE)/.venv submodules_update
 
-setup_install: deps devdeps install_all
+setup_install: version_check deps devdeps install_all
 
 setup: setup_repo setup_install
 
@@ -67,6 +67,9 @@ $(PROJECT_BASE)/.venv:
 
 clean_venv:
 	rm -rf $(PROJECT_BASE)/.venv
+
+version_check:
+	python -c 'import sys; import garmindb.version; garmindb.version.python_dev_version_check(sys.argv[0])'
 
 update: submodules_update
 	git pull
