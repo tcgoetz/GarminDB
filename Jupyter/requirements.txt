@@ -1,5 +1,5 @@
 garmindb>=3.2.8
-snakemd==2.1.0
+snakemd==2.2.0
 ipykernel==6.25.1
 ipywidgets==7.7.2
 ipyleaflet==0.17.3

@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import idbutils.version as uv
 
-from .version_info import python_required, python_tested, version_info, prerelease
+from .version_info import dev_python_required, python_required, python_tested, version_info, prerelease
 
 
 version_string = uv.to_string(version_info, prerelease)
@@ -23,5 +23,10 @@ def log_version(program):
 
 
 def python_version_check(program):
-    """Validate the Python version requirements."""
+    """Validate the Python version requirements for a pip installed package."""
     uv.python_version_check(program, python_required, python_tested)
+
+
+def python_dev_version_check(program):
+    """Validate the Python version requirements for development."""
+    uv.python_version_check(program, dev_python_required, python_tested, verbose=True)
