@@ -15,12 +15,12 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 from garmindb import ConfigManager
-from garmindb.garmindb import MonitoringDb, Monitoring, MonitoringHeartRate
+from garmindb.garmindb import MonitoringDb, Monitoring, MonitoringHeartRate, ActivitiesDb
 from garmindb.summarydb import DaysSummary, WeeksSummary, MonthsSummary, SummaryDb
 
 
 config = {
-    'size'                  : [16.0, 12.0],
+    'size'                  : [8.0, 6.0],
     'steps'                 : {'period' : 'weeks', 'days' : 730},
     'hr'                    : {'period' : 'weeks', 'days' : 730},
     'itime'                 : {'period' : 'weeks', 'days' : 730},
@@ -88,7 +88,21 @@ class Graph():
         return data
 
     @classmethod
-    def __graph_multiple_single_axes(cls, time, data_list, stat_name, ylabel, save, geometry=111):
+    def _graph_scatter(cls, time, data, stat_name, ylabel, save=False, geometry=111):
+        title = f'{stat_name} Over Time'
+        figure = plt.figure(figsize=config.get('size'))
+        color = Colors.from_integer(0).name
+        axes = figure.add_subplot(geometry, frame_on=True)
+        axes.scatter(time, data, color=color)
+        axes.grid()
+        axes.set_title(title)
+        axes.set_xlabel('Time')
+        axes.set_ylabel(ylabel)
+        if save:
+            figure.savefig(stat_name + ".png")
+
+    @classmethod
+    def _graph_multiple_single_axes(cls, time, data_list, stat_name, ylabel, save=False, geometry=111):
         title = f'{stat_name} Over Time'
         figure = plt.figure(figsize=config.get('size'))
         for index, data in enumerate(data_list):
@@ -182,8 +196,9 @@ class Graph():
                               yrange_list, self.save, geometry)
 
     def _graph_weight(self, time, data, period, geometry=111):
+        """Generate a graph weight"""
         weight = [entry.weight_avg for entry in data]
-        self.__graph_multiple_single_axes(time, [weight], 'Weight', 'weight', self.save, geometry)
+        self._graph_multiple_single_axes(time, [weight], 'Weight', 'weight', self.save, geometry)
 
     def graph_activity(self, activity, period=None, days=None, geometry=111):
         """Generate a graph for the given activity with points every period spanning days."""
