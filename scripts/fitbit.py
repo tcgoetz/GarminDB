@@ -12,7 +12,7 @@ import logging
 
 
 from garmindb.fitbitdb import FitBitDb, FitBitData, Analyze
-from garmindb import ConfigManager
+from garmindb import GarminConnectConfigManager
 from garmindb.version import format_version
 
 
@@ -45,15 +45,16 @@ def main(argv):
     else:
         root_logger.setLevel(logging.INFO)
 
-    db_params = ConfigManager.get_db_params()
+    gc_config = GarminConnectConfigManager()
+    db_params = gc_config.get_db_params()
 
     if args.delete_db or args.rebuild_db:
         FitBitDb.delete_db(db_params)
         if args.delete_db:
             sys.exit()
 
-    fitbit_dir = ConfigManager.get_or_create_fitbit_dir()
-    metric = ConfigManager.get_metric()
+    fitbit_dir = gc_config.get_fitbit_dir()
+    metric = gc_config.get_metric()
     fd = FitBitData(args.input_file, fitbit_dir, db_params, metric, args.trace)
     if fd.file_count() > 0:
         fd.process_files()

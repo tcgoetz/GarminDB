@@ -1,6 +1,9 @@
 {
+    "db": {
+        "type"                          : "sqlite"
+    },
     "garmin": {
-        "domain": "garmin.com"
+        "domain"                        : "garmin.com"
     },
     "credentials": {
         "user"                          : "joe@shmoe.com",
@@ -15,7 +18,9 @@
         "download_latest_activities"    : 25,
         "download_all_activities"       : 1000
     },
-    "copy": {
+    "directories": {
+        "relative_to_home"              : true,
+        "base_dir"                      : "HealthData",
         "mount_dir"                     : "/Volumes/GARMIN"
     },
     "enabled_stats": {
@@ -34,5 +39,12 @@
     },
     "activities": {
         "display"                       : []
+    },
+    "settings": {
+        "metric"                        : false,
+        "default_display_activities"    : ["walking", "running", "cycling"]
+    },
+    "checkup": {
+        "look_back_days"                : 90
     }
 }

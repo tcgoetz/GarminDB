@@ -16,7 +16,6 @@ from .activity_fit_file_processor import ActivityFitFileProcessor
 from .fit_data import FitData
 from .fit_file_processor import FitFileProcessor
 from .garmin_connect_config_manager import GarminConnectConfigManager
-from .config_manager import ConfigManager
 from .statistics import Statistics
 from .tcx import Tcx
 from .monitoring_fit_file_processor import MonitoringFitFileProcessor

@@ -10,7 +10,7 @@ import logging
 
 import fitfile
 
-from garmindb import GarminActivitiesFitData, GarminTcxData, GarminJsonSummaryData, GarminJsonDetailsData, ActivityFitFileProcessor, ConfigManager, PluginManager
+from garmindb import GarminActivitiesFitData, GarminTcxData, GarminJsonSummaryData, GarminJsonDetailsData, ActivityFitFileProcessor, GarminConnectConfigManager, PluginManager
 from garmindb.garmindb import GarminDb, Device, File, DeviceInfo
 from garmindb.garmindb import ActivitiesDb, Activities, ActivityLaps, ActivityRecords, StepsActivities, PaddleActivities, CycleActivities
 
@@ -34,7 +34,8 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.garmin_act_db = ActivitiesDb(ConfigManager.get_db_params())
+        cls.gc_config = GarminConnectConfigManager()
+        cls.garmin_act_db = ActivitiesDb(cls.gc_config.get_db_params())
         table_dict = {
             'activities_table' : Activities,
             'activity_laps_table' : ActivityLaps,
@@ -44,8 +45,9 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
             'cycle_activities_table' : CycleActivities,
         }
         super().setUpClass(cls.garmin_act_db, table_dict, {Activities : [Activities.activity_id]})
-        cls.test_db_params = ConfigManager.get_db_params(test_db=True)
-        cls.plugin_manager = PluginManager(ConfigManager.get_or_create_plugins_dir(), cls.test_db_params)
+        cls.gc_config = GarminConnectConfigManager()
+        cls.test_db_params = cls.gc_config.get_db_params(test_db=True)
+        cls.plugin_manager = PluginManager(cls.gc_config.get_plugins_dir(), cls.test_db_params)
         cls.test_mon_db = GarminDb(cls.test_db_params)
         cls.test_act_db = ActivitiesDb(cls.test_db_params, debug_level=1)
         cls.measurement_system = fitfile.field_enums.DisplayMeasure.statute

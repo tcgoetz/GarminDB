@@ -10,7 +10,7 @@ import sys
 import argparse
 import logging
 
-from garmindb import ConfigManager, format_version
+from garmindb import GarminConnectConfigManager, format_version
 from garmindb.mshealthdb import MSHealthDb, MSHealthData, MSVaultData, Analyze
 
 
@@ -42,15 +42,16 @@ def main(argv):
     else:
         root_logger.setLevel(logging.INFO)
 
-    db_params = ConfigManager.get_db_params()
+    gc_config = GarminConnectConfigManager()
+    db_params = gc_config.get_db_params()
 
     if args.delete_db or args.rebuild_db:
         MSHealthDb.delete_db(db_params)
         if args.delete_db:
             sys.exit()
 
-    mshealth_dir = ConfigManager.get_or_create_mshealth_dir()
-    metric = ConfigManager.get_metric()
+    mshealth_dir = gc_config.get_mshealth_dir()
+    metric = gc_config.get_metric()
 
     msd = MSHealthData(args.input_file, mshealth_dir, db_params, metric, args.trace)
     if msd.file_count() > 0:

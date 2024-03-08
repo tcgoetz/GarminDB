@@ -14,7 +14,7 @@ import enum
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-from garmindb import ConfigManager
+from garmindb import GarminConnectConfigManager
 from garmindb.garmindb import MonitoringDb, Monitoring, MonitoringHeartRate, ActivitiesDb
 from garmindb.summarydb import DaysSummary, WeeksSummary, MonthsSummary, SummaryDb
 
@@ -76,6 +76,8 @@ class Graph():
         """Return an instance of the Graph class."""
         self.debug = debug
         self.save = save
+        self.gc_config = GarminConnectConfigManager()
+        self.db_params = self.gc_config.get_db_params()
 
     @classmethod
     def __remove_discontinuities(cls, data):
@@ -206,8 +208,7 @@ class Graph():
             period = config[activity]['period']
         if days is None:
             days = config[activity]['days']
-        db_params = ConfigManager.get_db_params()
-        sum_db = SummaryDb(db_params, self.debug)
+        sum_db = SummaryDb(self.db_params, self.debug)
         end_ts = datetime.datetime.now()
         start_ts = end_ts - datetime.timedelta(days=days)
         table = self.__table[period]
@@ -237,8 +238,7 @@ class Graph():
         """Generate a graph for the given date."""
         if date is None:
             date = (datetime.datetime.now() - datetime.timedelta(days=1)).date()
-        db_params = ConfigManager.get_db_params()
-        mon_db = MonitoringDb(db_params, self.debug)
+        mon_db = MonitoringDb(self.db_params, self.debug)
         start_ts = datetime.datetime.combine(date, datetime.datetime.min.time())
         end_ts = datetime.datetime.combine(date, datetime.datetime.max.time())
         hr_data = MonitoringHeartRate.get_for_period(mon_db, start_ts, end_ts, MonitoringHeartRate)

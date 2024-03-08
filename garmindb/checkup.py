@@ -13,7 +13,7 @@ from datetime import datetime, time, timedelta
 import fitfile
 
 from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, DailySummary, ActivitiesDb, Activities, StepsActivities
-from garmindb import ConfigManager
+from garmindb import GarminConnectConfigManager
 
 
 logger = logging.getLogger(__file__)
@@ -26,7 +26,8 @@ class Checkup():
 
     def __init__(self, paragraph_func=logger.info, heading_func=logger.info, debug=False):
         """Return an instance of the CheckUp class."""
-        self.db_params = ConfigManager.get_db_params()
+        self.gc_config = GarminConnectConfigManager()
+        self.db_params = self.gc_config.get_db_params()
         self.paragraph_func = paragraph_func
         self.heading_func = heading_func
         self.debug = debug
@@ -36,7 +37,7 @@ class Checkup():
 
     def goals(self):
         """Do a checkup of the user's goals."""
-        look_back_days = ConfigManager.checkup.get('look_back_days')
+        look_back_days = self.gc_config.get_node_value_default('checkup', 'look_back_days', 90)
         end_ts = datetime.now()
         start_ts = end_ts - timedelta(days=look_back_days)
         results = DailySummary.get_for_period(self.garmin_db, start_ts, end_ts)

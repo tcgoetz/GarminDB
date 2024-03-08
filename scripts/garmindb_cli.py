@@ -30,7 +30,7 @@ from garmindb import GarminUserSettings, GarminSocialProfile, GarminPersonalInfo
 from garmindb import GarminJsonSummaryData, GarminJsonDetailsData, GarminTcxData, GarminActivitiesFitData
 from garmindb import ActivityExporter
 
-from garmindb import ConfigManager, GarminConnectConfigManager, PluginManager
+from garmindb import GarminConnectConfigManager, PluginManager
 from garmindb import Statistics
 from garmindb import OpenWithBaseCamp, OpenWithGoogleEarth
 
@@ -41,8 +41,8 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
 
 gc_config = GarminConnectConfigManager()
-db_params_dict = ConfigManager.get_db_params()
-plugin_manager = PluginManager(ConfigManager.get_or_create_plugins_dir(), db_params_dict)
+db_params_dict = gc_config.get_db_params()
+plugin_manager = PluginManager(gc_config.get_plugins_dir(), db_params_dict)
 
 
 stats_to_db_map = {
@@ -85,22 +85,22 @@ def copy_data(overwite, latest, stats):
     logger.info("___Copying Data___")
     copy = Copy(gc_config.device_mount_dir())
 
-    settings_dir = ConfigManager.get_or_create_fit_files_dir()
+    settings_dir = gc_config.get_fit_files_dir()
     root_logger.info("Copying settings to %s", settings_dir)
     copy.copy_settings(settings_dir)
 
     if Statistics.activities in stats:
-        activities_dir = ConfigManager.get_or_create_activities_dir()
+        activities_dir = gc_config.get_activities_dir()
         root_logger.info("Copying activities to %s", activities_dir)
         copy.copy_activities(activities_dir, latest)
 
     if Statistics.monitoring in stats:
-        monitoring_dir = ConfigManager.get_or_create_monitoring_dir(datetime.datetime.now().year)
+        monitoring_dir = gc_config.get_monitoring_dir(datetime.datetime.now().year)
         root_logger.info("Copying monitoring to %s", monitoring_dir)
         copy.copy_monitoring(monitoring_dir, latest)
 
     if Statistics.sleep in stats:
-        monitoring_dir = ConfigManager.get_or_create_monitoring_dir(datetime.datetime.now().year)
+        monitoring_dir = gc_config.get_monitoring_dir(datetime.datetime.now().year)
         root_logger.info("Copying sleep to %s", monitoring_dir)
         copy.copy_sleep(monitoring_dir, latest)
 
@@ -119,7 +119,7 @@ def download_data(overwite, latest, stats):
             activity_count = gc_config.latest_activity_count()
         else:
             activity_count = gc_config.all_activity_count()
-        activities_dir = ConfigManager.get_or_create_activities_dir()
+        activities_dir = gc_config.get_activities_dir()
         root_logger.info("Fetching %d activities to %s", activity_count, activities_dir)
         download.get_activity_types(activities_dir, overwite)
         download.get_activities(activities_dir, activity_count, overwite)
@@ -127,16 +127,17 @@ def download_data(overwite, latest, stats):
     if Statistics.monitoring in stats:
         date, days = __get_date_and_days(MonitoringDb(db_params_dict), latest, MonitoringHeartRate, MonitoringHeartRate.heart_rate, 'monitoring')
         if days > 0:
-            root_logger.info("Date range to update: %s (%d) to %s", date, days, ConfigManager.get_monitoring_base_dir())
-            download.get_daily_summaries(ConfigManager.get_or_create_monitoring_dir, date, days, overwite)
-            download.get_hydration(ConfigManager.get_or_create_monitoring_dir, date, days, overwite)
-            download.get_monitoring(ConfigManager.get_or_create_monitoring_dir, date, days)
-            root_logger.info("Saved monitoring files for %s (%d) to %s for processing", date, days, ConfigManager.get_monitoring_base_dir())
+            monitoring_dir = gc_config.get_monitoring_base_dir()
+            root_logger.info("Date range to update: %s (%d) to %s", date, days, monitoring_dir)
+            download.get_daily_summaries(gc_config.get_monitoring_dir, date, days, overwite)
+            download.get_hydration(gc_config.get_monitoring_dir, date, days, overwite)
+            download.get_monitoring(gc_config.get_monitoring_dir, date, days)
+            root_logger.info("Saved monitoring files for %s (%d) to %s for processing", date, days, monitoring_dir)
 
     if Statistics.sleep in stats:
         date, days = __get_date_and_days(GarminDb(db_params_dict), latest, Sleep, Sleep.total_sleep, 'sleep')
         if days > 0:
-            sleep_dir = ConfigManager.get_or_create_sleep_dir()
+            sleep_dir = gc_config.get_sleep_dir()
             root_logger.info("Date range to update: %s (%d) to %s", date, days, sleep_dir)
             download.get_sleep(sleep_dir, date, days, overwite)
             root_logger.info("Saved sleep files for %s (%d) to %s for processing", date, days, sleep_dir)
@@ -144,7 +145,7 @@ def download_data(overwite, latest, stats):
     if Statistics.weight in stats:
         date, days = __get_date_and_days(GarminDb(db_params_dict), latest, Weight, Weight.weight, 'weight')
         if days > 0:
-            weight_dir = ConfigManager.get_or_create_weight_dir()
+            weight_dir = gc_config.get_weight_dir()
             root_logger.info("Date range to update: %s (%d) to %s", date, days, weight_dir)
             download.get_weight(weight_dir, date, days, overwite)
             root_logger.info("Saved weight files for %s (%d) to %s for processing", date, days, weight_dir)
@@ -152,7 +153,7 @@ def download_data(overwite, latest, stats):
     if Statistics.rhr in stats:
         date, days = __get_date_and_days(GarminDb(db_params_dict), latest, RestingHeartRate, RestingHeartRate.resting_heart_rate, 'rhr')
         if days > 0:
-            rhr_dir = ConfigManager.get_or_create_rhr_dir()
+            rhr_dir = gc_config.get_rhr_dir()
             root_logger.info("Date range to update: %s (%d) to %s", date, days, rhr_dir)
             download.get_rhr(rhr_dir, date, days, overwite)
             root_logger.info("Saved rhr files for %s (%d) to %s for processing", date, days, rhr_dir)
@@ -163,7 +164,7 @@ def import_data(debug, latest, stats):
     logger.info("___Importing %s Data___", 'Latest' if latest else 'All')
 
     # Import the user profile and/or settings FIT file first so that we can get the measurement system and some other things sorted out first.
-    fit_files_dir = ConfigManager.get_or_create_fit_files_dir()
+    fit_files_dir = gc_config.get_fit_files_dir()
     gus = GarminUserSettings(db_params_dict, fit_files_dir, debug)
     if gus.file_count() > 0:
         gus.process()
@@ -184,12 +185,12 @@ def import_data(debug, latest, stats):
     measurement_system = Attributes.measurements_type(gdb)
 
     if Statistics.weight in stats:
-        weight_dir = ConfigManager.get_or_create_weight_dir()
+        weight_dir = gc_config.get_weight_dir()
         gwd = GarminWeightData(db_params_dict, weight_dir, latest, measurement_system, debug)
         if gwd.file_count() > 0:
             gwd.process()
 
-    monitoring_dir = ConfigManager.get_or_create_monitoring_base_dir()
+    monitoring_dir = gc_config.get_monitoring_base_dir()
     if Statistics.monitoring in stats:
         gsd = GarminSummaryData(db_params_dict, monitoring_dir, latest, measurement_system, debug)
         if gsd.file_count() > 0:
@@ -205,7 +206,7 @@ def import_data(debug, latest, stats):
 
     if Statistics.sleep in stats:
         # If we have sleep data from Garmin connect, use it, otherwise process FIT sleep files.
-        sleep_dir = ConfigManager.get_or_create_sleep_dir()
+        sleep_dir = gc_config.get_sleep_dir()
         gsd = GarminSleepData(db_params_dict, sleep_dir, latest, debug)
         if gsd.file_count() > 0:
             gsd.process()
@@ -215,13 +216,13 @@ def import_data(debug, latest, stats):
                 gsd.process_files(SleepFitFileProcessor(db_params_dict))
 
     if Statistics.rhr in stats:
-        rhr_dir = ConfigManager.get_or_create_rhr_dir()
+        rhr_dir = gc_config.get_rhr_dir()
         grhrd = GarminRhrData(db_params_dict, rhr_dir, latest, debug)
         if grhrd.file_count() > 0:
             grhrd.process()
 
     if Statistics.activities in stats:
-        activities_dir = ConfigManager.get_or_create_activities_dir()
+        activities_dir = gc_config.get_activities_dir()
         # Tcx fields are less precise than the JSON files, so load Tcx first and overwrite with better JSON values.
         gtd = GarminTcxData(activities_dir, latest, measurement_system, debug)
         if gtd.file_count() > 0:
@@ -250,8 +251,8 @@ def analyze_data(debug):
 
 def backup_dbs():
     """Backup GarminDb database files."""
-    dbs = glob.glob(ConfigManager.get_db_dir() + os.sep + '*.db')
-    backupfile = ConfigManager.get_or_create_backup_dir()  + os.sep + str(int(datetime.datetime.now().timestamp())) + '_dbs.zip'
+    dbs = glob.glob(gc_config.get_db_dir() + os.sep + '*.db')
+    backupfile = gc_config.get_backup_dir()  + os.sep + str(int(datetime.datetime.now().timestamp())) + '_dbs.zip'
     logger.info("Backiping up dbs %s to %s", dbs, backupfile)
     with zipfile.ZipFile(backupfile, 'w') as backupzip:
         for db in dbs:

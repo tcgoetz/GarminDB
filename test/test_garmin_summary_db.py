@@ -8,7 +8,7 @@ __license__ = "GPL"
 import unittest
 import logging
 
-from garmindb import ConfigManager
+from garmindb import GarminConnectConfigManager
 from garmindb.garmindb import GarminSummaryDb, Summary, MonthsSummary, WeeksSummary, DaysSummary
 
 from test_summary_db_base import TestSummaryDBBase
@@ -26,8 +26,7 @@ class TestGarminSummaryDB(TestSummaryDBBase, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        db_params = ConfigManager.get_db_params()
-        db = GarminSummaryDb(db_params)
+        db = GarminSummaryDb(GarminConnectConfigManager().get_db_params())
         table_dict = {
             'months_table' : MonthsSummary,
             'weeks_table' : WeeksSummary,
