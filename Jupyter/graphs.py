@@ -23,6 +23,7 @@ config = {
     'size'                  : [8.0, 6.0],
     'steps'                 : {'period' : 'weeks', 'days' : 730},
     'hr'                    : {'period' : 'weeks', 'days' : 730},
+    'rhr'                   : {'period' : 'weeks', 'days' : 730},
     'itime'                 : {'period' : 'weeks', 'days' : 730},
     'weight'                : {'period' : 'weeks', 'days' : 730}
 }
@@ -197,8 +198,13 @@ class Graph():
         self.__graph_multiple(time, [itime, itime_goal_percent], 'Intensity Minutes', period, ['Intensity Minutes', 'Intensity Minutes Goal Percent'],
                               yrange_list, self.save, geometry)
 
+    def _graph_rhr(self, time, data, period, geometry=111):
+        """Generate a rhr graph"""
+        weight = [entry.rhr_avg for entry in data]
+        self._graph_multiple_single_axes(time, [weight], 'Resting Heart Rate', 'rhr', self.save, geometry)
+
     def _graph_weight(self, time, data, period, geometry=111):
-        """Generate a graph weight"""
+        """Generate a weight graph"""
         weight = [entry.weight_avg for entry in data]
         self._graph_multiple_single_axes(time, [weight], 'Weight', 'weight', self.save, geometry)
 
