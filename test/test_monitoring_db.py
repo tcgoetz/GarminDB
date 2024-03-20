@@ -10,7 +10,7 @@ import datetime
 
 import fitfile
 
-from garmindb import ConfigManager, GarminMonitoringFitData, GarminSummaryData, MonitoringFitFileProcessor, PluginManager
+from garmindb import GarminConnectConfigManager, GarminMonitoringFitData, GarminSummaryData, MonitoringFitFileProcessor, PluginManager
 from garmindb.garmindb import GarminDb, File, Device, DeviceInfo, DailySummary
 from garmindb.garmindb import MonitoringDb, Monitoring, MonitoringInfo, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb
 
@@ -30,8 +30,9 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        db_params = ConfigManager.get_db_params()
-        cls.plugin_manager = PluginManager(ConfigManager.get_or_create_plugins_dir(), db_params)
+        cls.gc_config = GarminConnectConfigManager()
+        db_params = cls.gc_config.get_db_params()
+        cls.plugin_manager = PluginManager(cls.gc_config.get_plugins_dir(), db_params)
         cls.garmin_mon_db = MonitoringDb(db_params)
         table_dict = {
             'monitoring_info_table'         : MonitoringInfo,
@@ -73,7 +74,7 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
             gfd.process_files(MonitoringFitFileProcessor(db_params, self.plugin_manager))
 
     def test_fit_file_import(self):
-        db_params = ConfigManager.get_db_params(test_db=True)
+        db_params = self.gc_config.get_db_params(test_db=True)
         self.profile_function('fit_mon_import', self.fit_file_import, db_params)
         test_mon_db = GarminDb(db_params)
         self.check_db_tables_exists(test_mon_db, {'device_table' : Device})
@@ -82,7 +83,7 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
         self.check_not_none_cols(MonitoringDb(db_params), table_not_none_cols_dict)
 
     def test_summary_json_file_import(self):
-        db_params = ConfigManager.get_db_params(test_db=True)
+        db_params = self.gc_config.get_db_params(test_db=True)
         gjsd = GarminSummaryData(db_params, 'test_files/json/monitoring/summary', latest=False, measurement_system=fitfile.field_enums.DisplayMeasure.statute, debug=2)
         if gjsd.file_count() > 0:
             gjsd.process()

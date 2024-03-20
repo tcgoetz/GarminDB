@@ -20,7 +20,6 @@ from tqdm import tqdm
 import fitfile.conversions as conversions
 
 from .garmin_connect_config_manager import GarminConnectConfigManager
-from .config_manager import ConfigManager
 
 
 logger = logging.getLogger(__file__)
@@ -54,7 +53,7 @@ class Download():
         """Create a new Download class instance."""
         logger.debug("__init__")
         self.gc_config = GarminConnectConfigManager()
-        self.garth_session_file = ConfigManager.get_session_file()
+        self.garth_session_file = self.gc_config.get_session_file()
         self.garth = GarthClient()
         self.garth.configure(domain=self.gc_config.get_garmin_base_domain())
 
@@ -94,7 +93,7 @@ class Download():
         except GarthException:
             self.__login()
 
-        profile_dir = ConfigManager.get_or_create_fit_files_dir()
+        profile_dir = self.gc_config.get_fit_files_dir()
         self.save_json_to_file(f'{profile_dir}/social-profile', self.garth.profile)
         self.save_json_to_file(f'{profile_dir}/user-settings', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/user-settings'), True)
         self.save_json_to_file(f'{profile_dir}/personal-information', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/personal-information'), True)

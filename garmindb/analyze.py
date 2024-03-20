@@ -195,8 +195,7 @@ class Analyze():
 
     def create_dynamic_views(self):
         """Create database views specific to the data in this database."""
-        gc_config = GarminConnectConfigManager()
-        course_ids = gc_config.course_views('steps')
+        course_ids = GarminConnectConfigManager().course_views('steps')
         if course_ids:
             for course_id in course_ids:
                 StepsActivities.create_course_view(self.garmin_act_db, course_id)

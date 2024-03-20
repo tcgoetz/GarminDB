@@ -149,7 +149,10 @@ $(SUBMODULES:%=%-devdeps):
 devdeps: $(SUBMODULES:%=%-devdeps)
 	$(PIP) install --upgrade --requirement dev-requirements.txt
 
-jupiterdeps:
+graphdeps:
+	$(PIP) install --upgrade --requirement Jupyter/requirements_graphs.txt
+
+jupiterdeps: graphdeps
 	$(PIP) install --upgrade --requirement Jupyter/requirements.txt
 
 alldeps: update_pip_packages deps devdeps jupiterdeps

@@ -9,7 +9,7 @@ import logging
 
 import fitfile
 
-from garmindb import ConfigManager, GarminUserSettings, GarminPersonalInformation, GarminSocialProfile
+from garmindb import GarminConnectConfigManager, GarminUserSettings, GarminPersonalInformation, GarminSocialProfile
 from garmindb.garmindb import GarminDb, Attributes
 
 
@@ -26,10 +26,11 @@ class TestProfileFile(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.gc_config = GarminConnectConfigManager()
         cls.file_path = 'test_files'
 
     def test_parse_usersettings(self):
-        db_params = ConfigManager.get_db_params(test_db=True)
+        db_params = self.gc_config.get_db_params(test_db=True)
         gus = GarminUserSettings(db_params, self.file_path, debug=2)
         if gus.file_count() > 0:
             gus.process()
@@ -39,7 +40,7 @@ class TestProfileFile(unittest.TestCase):
                          'DisplayMeasure expected %r found %r from %r' % (fitfile.field_enums.DisplayMeasure.statute, measurement_system, gus.file_names))
 
     def test_parse_personalinfo(self):
-        db_params = ConfigManager.get_db_params(test_db=True)
+        db_params = self.gc_config.get_db_params(test_db=True)
         gpi = GarminPersonalInformation(db_params, self.file_path, debug=2)
         if gpi.file_count() > 0:
             gpi.process()
@@ -48,7 +49,7 @@ class TestProfileFile(unittest.TestCase):
         self.assertEqual(locale, 'en', 'locale expected %r found %r from %r' % ('en', locale, gpi.file_names))
 
     def test_parse_socialprofile(self):
-        db_params = ConfigManager.get_db_params(test_db=True)
+        db_params = self.gc_config.get_db_params(test_db=True)
         gsp = GarminSocialProfile(db_params, self.file_path, debug=2)
         if gsp.file_count() > 0:
             gsp.process()

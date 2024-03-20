@@ -10,7 +10,7 @@ import datetime
 
 import fitfile
 
-from garmindb import ConfigManager, GarminSleepFitData, SleepFitFileProcessor
+from garmindb import GarminConnectConfigManager, GarminSleepFitData, SleepFitFileProcessor
 from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate
 
 from test_db_base import TestDBBase
@@ -28,8 +28,9 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        db_params = ConfigManager.get_db_params()
-        cls.test_db_params = ConfigManager.get_db_params(test_db=True)
+        gc_config = GarminConnectConfigManager()
+        db_params = gc_config.get_db_params()
+        cls.test_db_params = gc_config.get_db_params(test_db=True)
         print(f"db params {repr(cls.test_db_params)}")
         cls.garmin_db = GarminDb(db_params)
         cls.measurement_system = fitfile.field_enums.DisplayMeasure.statute

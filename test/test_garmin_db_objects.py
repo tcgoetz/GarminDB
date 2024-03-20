@@ -10,7 +10,7 @@ import logging
 
 import fitfile
 
-from garmindb import ConfigManager
+from garmindb import GarminConnectConfigManager
 from garmindb.garmindb import GarminDb, File, Attributes
 
 
@@ -27,8 +27,7 @@ class TestGarminDbObjects(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.db_params = ConfigManager.get_db_params(test_db=True)
-        cls.garmin_db = GarminDb(cls.db_params)
+        cls.garmin_db = GarminDb(GarminConnectConfigManager().get_db_params(test_db=True))
 
     def check_file_obj(self, filename_with_path, file_type, file_serial_number):
         (file_id, file_name) = File.name_and_id_from_path(filename_with_path)

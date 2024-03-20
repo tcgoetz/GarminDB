@@ -14,15 +14,16 @@ import enum
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-from garmindb import ConfigManager
-from garmindb.garmindb import MonitoringDb, Monitoring, MonitoringHeartRate
+from garmindb import GarminConnectConfigManager
+from garmindb.garmindb import MonitoringDb, Monitoring, MonitoringHeartRate, ActivitiesDb
 from garmindb.summarydb import DaysSummary, WeeksSummary, MonthsSummary, SummaryDb
 
 
 config = {
-    'size'                  : [16.0, 12.0],
+    'size'                  : [8.0, 6.0],
     'steps'                 : {'period' : 'weeks', 'days' : 730},
     'hr'                    : {'period' : 'weeks', 'days' : 730},
+    'rhr'                   : {'period' : 'weeks', 'days' : 730},
     'itime'                 : {'period' : 'weeks', 'days' : 730},
     'weight'                : {'period' : 'weeks', 'days' : 730}
 }
@@ -76,6 +77,8 @@ class Graph():
         """Return an instance of the Graph class."""
         self.debug = debug
         self.save = save
+        self.gc_config = GarminConnectConfigManager()
+        self.db_params = self.gc_config.get_db_params()
 
     @classmethod
     def __remove_discontinuities(cls, data):
@@ -88,7 +91,21 @@ class Graph():
         return data
 
     @classmethod
-    def __graph_multiple_single_axes(cls, time, data_list, stat_name, ylabel, save, geometry=111):
+    def _graph_scatter(cls, time, data, stat_name, ylabel, save=False, geometry=111):
+        title = f'{stat_name} Over Time'
+        figure = plt.figure(figsize=config.get('size'))
+        color = Colors.from_integer(0).name
+        axes = figure.add_subplot(geometry, frame_on=True)
+        axes.scatter(time, data, color=color)
+        axes.grid()
+        axes.set_title(title)
+        axes.set_xlabel('Time')
+        axes.set_ylabel(ylabel)
+        if save:
+            figure.savefig(stat_name + ".png")
+
+    @classmethod
+    def _graph_multiple_single_axes(cls, time, data_list, stat_name, ylabel, save=False, geometry=111):
         title = f'{stat_name} Over Time'
         figure = plt.figure(figsize=config.get('size'))
         for index, data in enumerate(data_list):
@@ -181,9 +198,15 @@ class Graph():
         self.__graph_multiple(time, [itime, itime_goal_percent], 'Intensity Minutes', period, ['Intensity Minutes', 'Intensity Minutes Goal Percent'],
                               yrange_list, self.save, geometry)
 
+    def _graph_rhr(self, time, data, period, geometry=111):
+        """Generate a rhr graph"""
+        weight = [entry.rhr_avg for entry in data]
+        self._graph_multiple_single_axes(time, [weight], 'Resting Heart Rate', 'rhr', self.save, geometry)
+
     def _graph_weight(self, time, data, period, geometry=111):
+        """Generate a weight graph"""
         weight = [entry.weight_avg for entry in data]
-        self.__graph_multiple_single_axes(time, [weight], 'Weight', 'weight', self.save, geometry)
+        self._graph_multiple_single_axes(time, [weight], 'Weight', 'weight', self.save, geometry)
 
     def graph_activity(self, activity, period=None, days=None, geometry=111):
         """Generate a graph for the given activity with points every period spanning days."""
@@ -191,8 +214,7 @@ class Graph():
             period = config[activity]['period']
         if days is None:
             days = config[activity]['days']
-        db_params = ConfigManager.get_db_params()
-        sum_db = SummaryDb(db_params, self.debug)
+        sum_db = SummaryDb(self.db_params, self.debug)
         end_ts = datetime.datetime.now()
         start_ts = end_ts - datetime.timedelta(days=days)
         table = self.__table[period]
@@ -222,8 +244,7 @@ class Graph():
         """Generate a graph for the given date."""
         if date is None:
             date = (datetime.datetime.now() - datetime.timedelta(days=1)).date()
-        db_params = ConfigManager.get_db_params()
-        mon_db = MonitoringDb(db_params, self.debug)
+        mon_db = MonitoringDb(self.db_params, self.debug)
         start_ts = datetime.datetime.combine(date, datetime.datetime.min.time())
         end_ts = datetime.datetime.combine(date, datetime.datetime.max.time())
         hr_data = MonitoringHeartRate.get_for_period(mon_db, start_ts, end_ts, MonitoringHeartRate)
