@@ -16,7 +16,7 @@ from idbutils import FileProcessor
 root_logger = logging.getLogger()
 handler = logging.FileHandler('fit_file.log', 'w')
 root_logger.addHandler(handler)
-root_logger.setLevel(logging.INFO)
+root_logger.setLevel(logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 
@@ -180,6 +180,7 @@ class TestFitFile(unittest.TestCase):
         self.check_monitoring_messages(fit_file)
 
     def check_activity_file(self, filename):
+        logger.info('parsing %s', filename)
         fit_file = fitfile.file.File(filename, self.measurement_system)
         logger.info('%s (%s) activity file message types: %s', filename, fit_file.time_created_local, fit_file.message_types)
         self.check_message_types(fit_file, dump_message=True)
