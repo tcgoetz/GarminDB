@@ -243,7 +243,7 @@ class Download():
         activities = self.__get_activity_summaries(0, count)
         for activity in tqdm(activities or [], unit='activities'):
             activity_id_str = str(activity['activityId'])
-            activity_name_str = conversions.printable(activity['activityName'])
+            activity_name_str = conversions.printable(activity.get('activityName'))
             root_logger.info("get_activities: %s (%s)", activity_name_str, activity_id_str)
             json_filename = f'{directory}/activity_{activity_id_str}'
             if not os.path.isfile(json_filename + '.json') or overwite:
