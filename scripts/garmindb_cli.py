@@ -365,4 +365,5 @@ def main(argv):
 
 
 if __name__ == "__main__":
+    garth.http.USER_AGENT = {"User-Agent": "GCM-iOS-5.7.2.1"}
     main(sys.argv[1:])
