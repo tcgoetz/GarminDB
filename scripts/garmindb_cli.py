@@ -18,6 +18,7 @@ import os
 import tempfile
 import zipfile
 import glob
+import garth
 
 from garmindb import python_version_check, log_version, format_version
 from garmindb.garmindb import GarminDb, Attributes, Sleep, Weight, RestingHeartRate, MonitoringDb, MonitoringHeartRate, ActivitiesDb, GarminSummaryDb
