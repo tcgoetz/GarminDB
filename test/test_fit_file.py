@@ -212,38 +212,53 @@ class TestFitFile(unittest.TestCase):
     def test_parse_monitoring(self):
         monitoring_path = self.file_path + '/monitoring'
         file_names = FileProcessor.dir_to_files(monitoring_path, fitfile.file.name_regex, False)
-        for file_name in file_names:
-            self.check_monitoring_file(file_name)
+        if len(file_names) > 0:
+            for file_name in file_names:
+                self.check_monitoring_file(file_name)
+        else:
+            logger.error("Add test files to %s", activity_path)
 
     @unittest.skipIf(not test_activity_files, 'Test not selected')
     def test_parse_activity(self):
         activity_path = self.file_path + '/activity'
         file_names = FileProcessor.dir_to_files(activity_path, fitfile.file.name_regex, False)
-        for file_name in file_names:
-            self.check_activity_file(file_name)
+        if len(file_names) > 0:
+            for file_name in file_names:
+                self.check_activity_file(file_name)
+        else:
+            logger.error("Add test files to %s", activity_path)
 
     @unittest.skipIf(not test_sleep_files, 'Test not selected')
     def test_parse_sleep(self):
         activity_path = self.file_path + '/sleep'
         file_names = FileProcessor.dir_to_files(activity_path, fitfile.file.name_regex, False)
-        for file_name in file_names:
-            self.check_sleep_file(file_name)
+        if len(file_names) > 0:
+            for file_name in file_names:
+                self.check_sleep_file(file_name)
+        else:
+            logger.error("Add test files to %s", activity_path)
 
     @unittest.skipIf(not test_metrics_files, 'Test not selected')
     def test_parse_metrics(self):
         # root_logger.setLevel(logging.DEBUG)
         activity_path = self.file_path + '/metrics'
         file_names = FileProcessor.dir_to_files(activity_path, fitfile.file.name_regex, False)
-        for file_name in file_names:
-            self.check_unknown_file(file_name)
+        if len(file_names) > 0:
+            for file_name in file_names:
+                self.check_unknown_file(file_name)
+        else:
+            logger.error("Add test files to %s", activity_path)
 
     @unittest.skipIf(not test_unknown_files, 'Test not selected')
     def test_parse_unknown(self):
         # root_logger.setLevel(logging.DEBUG)
         activity_path = self.file_path + '/unknown'
         file_names = FileProcessor.dir_to_files(activity_path, fitfile.file.name_regex, False)
-        for file_name in file_names:
-            self.check_unknown_file(file_name)
+        if len(file_names) > 0:
+            for file_name in file_names:
+                self.check_unknown_file(file_name)
+        else:
+            logger.error("Add test files to %s", activity_path)
 
 
 if __name__ == '__main__':
