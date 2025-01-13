@@ -133,7 +133,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
                 'stop_time'                         : fit_file.utc_datetime_to_local(message_fields.timestamp),
                 'elapsed_time'                      : message_fields.get('total_elapsed_time'),
                 'moving_time'                       : message_fields.get('total_timer_time'),
-                'avg_hr'                            : message_fields.get('min_heart_rate'),
+                'avg_hr'                            : message_fields.get('avg_heart_rate'),
                 'max_hr'                            : message_fields.get('max_heart_rate'),
                 'calories'                          : message_fields.get('total_calories'),
                 'ascent'                            : message_fields.get('total_ascent'),
