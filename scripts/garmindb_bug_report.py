@@ -13,6 +13,9 @@ import sysconfig
 import logging
 import subprocess
 import zipfile
+import os
+import os.path
+import argparse
 
 
 logging.basicConfig(filename='bugreport.log', filemode='w', level=logging.INFO)
@@ -20,24 +23,39 @@ logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-with open('bugreport.txt', 'w') as report:
-    report.write(f"sys.version: {sys.version}\n")
-    report.write(f"sys.platform: {sys.platform}\n")
-    report.write(f"platform.system(): {platform.system()}\n")
-    report.write(f"sysconfig.get_platform(): {sysconfig.get_platform()}\n")
-    report.write(f"platform.machine(): {platform.machine()}\n")
-    report.write(f"platform.architecture(): {platform.architecture()}\n\n")
+def main(argv):
+    """Run a data checkup of the user's choice."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--dir", help="Directory where Garmindb scripts were run", required=True)
+    args = parser.parse_args()
 
-    output = subprocess.check_output([sys.executable, '-m', 'pip', 'show', 'garmindb'])
-    report.write(output.decode())
+    bug_report_txt = args.dir + os.sep + 'bugreport.txt'
 
-    requirements_files = ["requirements.txt", 'Fit/requirements.txt' 'utilities/requirements.txt', 'tcx/requirements.txt']
+    with open(bug_report_txt, 'w') as report:
+        report.write(f"sys.version: {sys.version}\n")
+        report.write(f"sys.platform: {sys.platform}\n")
+        report.write(f"platform.system(): {platform.system()}\n")
+        report.write(f"sysconfig.get_platform(): {sysconfig.get_platform()}\n")
+        report.write(f"platform.machine(): {platform.machine()}\n")
+        report.write(f"platform.architecture(): {platform.architecture()}\n\n")
 
-    for requirements_file in requirements_files:
-        report.write(f'\nrequirements {requirements_file}\n\n')
-        output = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze', requirements_file])
+        output = subprocess.check_output([sys.executable, '-m', 'pip', 'show', 'garmindb'])
         report.write(output.decode())
 
-with zipfile.ZipFile('bugreport.zip', 'w') as zip:
-    zip.write('bugreport.txt')
-    zip.write('garmindb.log')
+        requirements_files = ["requirements.txt", 'Fit/requirements.txt' 'utilities/requirements.txt', 'tcx/requirements.txt']
+
+        for requirements_file in requirements_files:
+            requirements_file_path = args.dir + os.sep + requirements_file
+            report.write(f'\nrequirements {requirements_file_path}\n\n')
+            output = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze', requirements_file_path])
+            report.write(output.decode())
+
+    with zipfile.ZipFile(args.dir +  os.sep + 'bugreport.zip', 'w') as zip:
+        zip.write(bug_report_txt)
+        garmindb_log = args.dir + os.sep + 'garmindb.log'
+        if os.path.isfile(garmindb_log):
+            zip.write(garmindb_log)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

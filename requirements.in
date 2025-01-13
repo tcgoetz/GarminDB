@@ -2,8 +2,8 @@ sqlalchemy~=2.0.32
 python-dateutil
 cached-property
 tqdm
-garth>=0.4.47
-fitfile>=1.1.8
+garth>=0.5.2
+fitfile>=1.1.9
 tcxfile>=1.0.4
 idbutils>=1.1.0
 # security fixes
