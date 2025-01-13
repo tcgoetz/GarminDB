@@ -38,6 +38,11 @@ class MonitoringFitFileProcessor(FitFileProcessor):
     def _plugin_dispatch(self, handler_name, *args, **kwargs):
         return super()._plugin_dispatch(self.monitoring_fit_file_plugins, handler_name, *args, **kwargs)
 
+    @classmethod
+    def __unpack_tuple(cls, entry, name, value, index):
+        if type(value) is tuple:
+            entry[name] = value[index]
+
     def _write_monitoring_info_entry(self, fit_file, message_fields):
         activity_types = message_fields.activity_type
         if isinstance(activity_types, list):
@@ -46,10 +51,10 @@ class MonitoringFitFileProcessor(FitFileProcessor):
                     'file_id'                   : File.s_get_id(self.garmin_db_session, fit_file.filename),
                     'timestamp'                 : message_fields.local_timestamp,
                     'activity_type'             : activity_type,
-                    'resting_metabolic_rate'    : message_fields.get('resting_metabolic_rate'),
-                    'cycles_to_distance'        : message_fields.cycles_to_distance[index],
-                    'cycles_to_calories'        : message_fields.cycles_to_calories[index]
+                    'resting_metabolic_rate'    : message_fields.get('resting_metabolic_rate')
                 }
+                self.__unpack_tuple(entry, 'cycles_to_distance', message_fields.cycles_to_distance, index)
+                self.__unpack_tuple(entry, 'cycles_to_calories', message_fields.cycles_to_calories, index)
                 MonitoringInfo.s_insert_or_update(self.garmin_mon_db_session, entry)
 
     def _write_monitoring_entry(self, fit_file, message_fields):
