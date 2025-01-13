@@ -12,7 +12,7 @@ import fitfile
 
 from garmindb import GarminActivitiesFitData, GarminTcxData, GarminJsonSummaryData, GarminJsonDetailsData, ActivityFitFileProcessor, GarminConnectConfigManager, PluginManager
 from garmindb.garmindb import GarminDb, Device, File, DeviceInfo
-from garmindb.garmindb import ActivitiesDb, Activities, ActivityLaps, ActivityRecords, StepsActivities, PaddleActivities, CycleActivities
+from garmindb.garmindb import ActivitiesDb, Activities, ActivityLaps, ActivitySplits, ActivityRecords, StepsActivities, PaddleActivities, CycleActivities, ClimbingActivities
 
 from test_db_base import TestDBBase
 
@@ -39,6 +39,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         table_dict = {
             'activities_table' : Activities,
             'activity_laps_table' : ActivityLaps,
+            'activity_splits_table' : ActivitySplits,
             'activity_records_table' : ActivityRecords,
             'run_activities_table' : StepsActivities,
             'paddle_activities_table' : PaddleActivities,
@@ -56,10 +57,12 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
     def test_garmin_act_db_tables_exists(self):
         self.assertGreater(Activities.row_count(self.garmin_act_db), 0)
         self.assertGreater(ActivityLaps.row_count(self.garmin_act_db), 0)
+        self.assertGreater(ActivitySplits.row_count(self.garmin_act_db), 0)
         self.assertGreater(ActivityRecords.row_count(self.garmin_act_db), 0)
         self.assertGreater(StepsActivities.row_count(self.garmin_act_db), 0)
         self.assertGreater(PaddleActivities.row_count(self.garmin_act_db), 0)
         self.assertGreater(CycleActivities.row_count(self.garmin_act_db), 0)
+        self.assertGreater(ClimbingActivities.row_count(self.garmin_act_db), 0)
 
     def check_activities_fields(self, fields_list):
         self.check_not_none_cols(self.test_act_db, {Activities : fields_list})
