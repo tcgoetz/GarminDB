@@ -9,7 +9,7 @@ import sys
 
 import fitfile
 
-from .garmindb import File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, ActivitiesDevices, StepsActivities, CycleActivities, PaddleActivities
+from .garmindb import File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, ActivitySplits, ActivitiesDevices, StepsActivities, CycleActivities, ClimbingActivities, PaddleActivities
 from .fit_file_processor import FitFileProcessor
 
 
@@ -47,6 +47,11 @@ class ActivityFitFileProcessor(FitFileProcessor):
         """Write all lap messages to the database."""
         for lap_num, message in enumerate(messages):
             self._write_lap_entry(fit_file, message.fields, lap_num)
+
+    def _write_split(self, fit_file, message_type, messages):
+        """Write all split messages to the database."""
+        for split_num, message in enumerate(messages):
+            self._write_split_entry(fit_file, message.fields, split_num)
 
     def _write_record(self, fit_file, message_type, messages):
         """Write all record messages to the database."""
@@ -114,6 +119,109 @@ class ActivityFitFileProcessor(FitFileProcessor):
             root_logger.debug("writing lap %r for %s", lap, fit_file.filename)
             self.garmin_act_db_session.add(ActivityLaps(**lap))
 
+    def _write_split_entry(self, fit_file, message_fields, split_num):
+        # we don't get splits data from multiple sources so we don't need to coellesce data in the DB.
+        # It's fastest to just write new data out if the it doesn't currently exist.
+        activity_id = File.id_from_path(fit_file.filename)
+        plugin_split = self._plugin_dispatch('write_split_entry', self.garmin_act_db_session, fit_file, activity_id, message_fields, split_num)
+
+        if not ActivitySplits.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'split' : split_num}):
+            split = {
+                'activity_id'                       : File.id_from_path(fit_file.filename),
+                'split'                             : split_num,
+                'start_time'                        : fit_file.utc_datetime_to_local(message_fields.start_time),
+                'stop_time'                         : fit_file.utc_datetime_to_local(message_fields.timestamp),
+                'elapsed_time'                      : message_fields.get('total_elapsed_time'),
+                'moving_time'                       : message_fields.get('total_timer_time'),
+                'avg_hr'                            : message_fields.get('avg_heart_rate'),
+                'max_hr'                            : message_fields.get('max_heart_rate'),
+                'calories'                          : message_fields.get('total_calories'),
+                'ascent'                            : message_fields.get('total_ascent'),
+                'descent'                           : message_fields.get('total_descent'),
+                'avg_speed'                         : message_fields.get('avg_vertical_speed'),
+            }
+            bouldering_font_grade = {
+                0: '1',
+                1: '2',
+                2: '3',
+                3: '4',
+                4: '4+',
+                5: '5',
+                6: '5+',
+                7: '6A',
+                8: '6A+',
+                9: '6B',
+                10: '6B+',
+                11: '6C',
+                12: '6C+',
+                13: '7A',
+                14: '7A+',
+                15: '7B',
+                16: '7B+',
+                17: '7C',
+                18: '7C+',
+                19: '8A',
+                20: '8A+',
+                21: '8B',
+                22: '8B+',
+                23: '8C',
+                24: '8C+',
+                25: '9A',
+            }
+            indoor_font_grade = {
+                0: '1',
+                1: '2',
+                2: '3',
+                3: '4a',
+                4: '4b',
+                5: '4c',
+                6: '5a',
+                7: '5b',
+                8: '5c',
+                9: '6a',
+                10: '6a+',
+                11: '6b',
+                12: '6b+',
+                13: '6c',
+                14: '6c+',
+                15: '7a',
+                16: '7a+',
+                17: '7b',
+                18: '7b+',
+                19: '7c',
+                20: '7c+',
+                21: '8a',
+                22: '8a+',
+                23: '8b',
+                24: '8b+',
+                25: '8c',
+                26: '8c+',
+                27: '9a',
+                28: '9a+',
+                29: '9b',
+            }
+
+            route = {
+                'activity_id'   : activity_id,
+                'grade'         : message_fields.get('grade'),
+                'completed'     : message_fields.get('completed'),
+                'falls'         : message_fields.get('falls'),
+            }
+
+            if 'grade' in route and route.get('grade') is not None:
+                if fitfile.SubSport.bouldering == fit_file.sub_sport_type:
+                    route['grade'] = bouldering_font_grade[int(route['grade'])]
+                elif fitfile.SubSport.indoor_climbing == fit_file.sub_sport_type:
+                    route['grade'] = indoor_font_grade[int(route['grade'])]
+
+            split.update(plugin_split)
+            split.update(route)
+
+            # there are some empty splits we want to filter out
+            if route.get('grade') is not None and route.get('completed') is not None:
+                root_logger.debug("writing split %r for %s", split, fit_file.filename)
+                self.garmin_act_db_session.add(ActivitySplits(**split))
+
     def _write_steps_entry(self, fit_file, activity_id, sub_sport, message_fields):
         steps = {
             'activity_id'                       : activity_id,
@@ -149,6 +257,14 @@ class ActivityFitFileProcessor(FitFileProcessor):
         }
         ride.update(self._plugin_dispatch('write_cycle_entry', self.garmin_act_db_session, fit_file, activity_id, sub_sport, message_fields))
         CycleActivities.s_insert_or_update(self.garmin_act_db_session, ride, ignore_none=True, ignore_zero=True)
+
+    def _write_rock_climbing_entry(self, fit_file, activity_id, sub_sport, message_fields):
+        entry = {
+            'activity_id'   : activity_id,
+            'total_routes': len([s for s in fit_file.split if s.fields.get('grade')]),
+        }
+        entry.update(self._plugin_dispatch('write_rock_climbing_entry', self.garmin_act_db_session, fit_file, activity_id, sub_sport, message_fields))
+        ClimbingActivities.s_insert_or_update(self.garmin_act_db_session, entry, ignore_none=True, ignore_zero=True)
 
     def _write_stand_up_paddleboarding_entry(self, fit_file, activity_id, sub_sport, message_fields):
         root_logger.debug("sup sport entry: %r", message_fields)
