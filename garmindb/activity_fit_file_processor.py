@@ -9,7 +9,8 @@ import sys
 
 import fitfile
 
-from .garmindb import File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, ActivitySplits, ActivitiesDevices, StepsActivities, CycleActivities, ClimbingActivities, PaddleActivities
+from .garmindb import File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, ActivitySplits, ActivitiesDevices, StepsActivities, \
+    CycleActivities, ClimbingActivities, PaddleActivities
 from .fit_file_processor import FitFileProcessor
 
 
