@@ -8,8 +8,8 @@
     "credentials": {
         "user"                          : "joe@shmoe.com",
         "secure_password"               : false,
-        "password"                      : "yourpassword"
-        "password_file"                 : null,
+        "password"                      : "yourpassword",
+        "password_file"                 : null
     },
     "data": {
         "weight_start_date"             : "12/31/2019",

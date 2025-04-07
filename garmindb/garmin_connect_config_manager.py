@@ -201,7 +201,7 @@ class GarminConnectConfigManager(JsonConfig):
         """Return the Garmin Connect password."""
         if self.get_node_value_default('credentials', 'secure_password', False):
             return self.get_secure_password()
-        if self.get_node_value('credentials', 'password_file'):
+        if self.get_node_value_default('credentials', 'password_file', None):
             return self.get_password_from_file()
         return self.get_node_value('credentials', 'password')
 
