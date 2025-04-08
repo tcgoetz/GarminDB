@@ -50,7 +50,7 @@ There is more help on [using the program](https://github.com/tcgoetz/GarminDB/wi
 
 # Jupyter Notebooks #
 
-Jupyter notebooks for analzing data from the database can be found in the 'Jupyter' directory in the source tree. [Links](https://github.com/tcgoetz/GarminDB/wiki/Related-Projects#jupyter-notebooks) to user submitted notebooks can be found in the wiki.
+Jupyter notebooks for analyzing data from the database can be found in the 'Jupyter' directory in the source tree. [Links](https://github.com/tcgoetz/GarminDB/wiki/Related-Projects#jupyter-notebooks) to user submitted notebooks can be found in the wiki.
 
 # Plugins #
 
