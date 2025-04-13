@@ -19,8 +19,6 @@ from tqdm import tqdm
 
 import fitfile.conversions as conversions
 
-from .garmin_connect_config_manager import GarminConnectConfigManager
-
 
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
@@ -49,10 +47,10 @@ class Download():
 
     download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
 
-    def __init__(self):
+    def __init__(self, gc_config):
         """Create a new Download class instance."""
         logger.debug("__init__")
-        self.gc_config = GarminConnectConfigManager()
+        self.gc_config = gc_config
         self.garth_session_file = self.gc_config.get_session_file()
         self.garth = GarthClient()
         self.garth.configure(domain=self.gc_config.get_garmin_base_domain())

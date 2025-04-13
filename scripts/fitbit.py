@@ -33,6 +33,7 @@ def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--version", help="print the program's version", action='version', version=format_version(sys.argv[0]))
     parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
+    parser.add_argument("-f", "--config", help="Config file path", type=str, default=None)
     modes_group = parser.add_argument_group('Modes')
     modes_group.add_argument("-i", "--input_file", help="Specifiy the CSV file to import into the database")
     modes_group.add_argument("--rebuild_db", help="Delete FitBit db files and rebuild the database.", action="store_true", default=False)
@@ -45,7 +46,7 @@ def main(argv):
     else:
         root_logger.setLevel(logging.INFO)
 
-    gc_config = GarminConnectConfigManager()
+    gc_config = GarminConnectConfigManager(args.config)
     db_params = gc_config.get_db_params()
 
     if args.delete_db or args.rebuild_db:

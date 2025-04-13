@@ -13,7 +13,6 @@ from datetime import datetime, time, timedelta
 import fitfile
 
 from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, DailySummary, ActivitiesDb, Activities, StepsActivities
-from garmindb import GarminConnectConfigManager
 
 
 logger = logging.getLogger(__file__)
@@ -24,9 +23,9 @@ root_logger = logging.getLogger()
 class Checkup():
     """Class running a checkup against the DB data."""
 
-    def __init__(self, paragraph_func=logger.info, heading_func=logger.info, debug=False):
+    def __init__(self, gc_config, paragraph_func=logger.info, heading_func=logger.info, debug=False):
         """Return an instance of the CheckUp class."""
-        self.gc_config = GarminConnectConfigManager()
+        self.gc_config = gc_config
         self.db_params = self.gc_config.get_db_params()
         self.paragraph_func = paragraph_func
         self.heading_func = heading_func

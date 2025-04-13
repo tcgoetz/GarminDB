@@ -10,6 +10,7 @@ import sys
 import logging
 import argparse
 
+from garmindb import GarminConnectConfigManager
 from garmindb import format_version
 from garmindb import Checkup
 
@@ -25,6 +26,7 @@ def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--version", help="print the program's version", action='version', version=format_version(sys.argv[0]))
     parser.add_argument("-t", "--trace", help="Turn on debug tracing", type=int, default=0)
+    parser.add_argument("-f", "--config", help="Config file path", type=str, default=None)
     checks_group = parser.add_argument_group('Checks')
     checks_group.add_argument("-b", "--battery", help="Check for low battery levels.", action="store_true", default=False)
     checks_group.add_argument("-c", "--course", help="Show statistics from all workouts for a single course.", type=int, default=None)
@@ -32,7 +34,7 @@ def main(argv):
     checks_group.add_argument("-a", "--all", help="Run a checkup on all of the the user\'s stats.", action="store_true", default=False)
     args = parser.parse_args()
 
-    checkup = Checkup(debug=args.trace)
+    checkup = Checkup(GarminConnectConfigManager(args.config), debug=args.trace)
     if args.all or args.battery:
         checkup.battery_status()
     if args.course:

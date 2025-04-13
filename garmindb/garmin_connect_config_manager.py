@@ -28,10 +28,11 @@ class GarminConnectConfigManager(JsonConfig):
     temp_dir = tempfile.mkdtemp()
     homedir = os.path.expanduser('~')
 
-    def __init__(self):
+    def __init__(self, config_dir=None):
         """Return a new GarminConnectConfigManager instance."""
         self.enabled_statistics = None
-        config_file = self.get_config_file()
+        self.config_dir = config_dir or self.__create_dir_if_needed(self.homedir + os.sep + '.GarminDb')
+        config_file = self.config_dir + os.sep + 'GarminConnectConfig.json'
         try:
             super().__init__(config_file)
         except Exception as e:
@@ -57,20 +58,9 @@ class GarminConnectConfigManager(JsonConfig):
             os.makedirs(dir)
         return dir
 
-    @classmethod
-    def get_config_dir(cls):
-        """Return the configured directory of where the configuation files will be stored."""
-        return cls.__create_dir_if_needed(cls.homedir + os.sep + '.GarminDb')
-
-    @classmethod
-    def get_config_file(cls):
-        """Return the path to the configuation file."""
-        return cls.get_config_dir() + os.sep + 'GarminConnectConfig.json'
-
-    @classmethod
-    def get_session_file(cls):
+    def get_session_file(self):
         """Return the path to the session file."""
-        return cls.get_config_dir() + os.sep + 'garth_session'
+        return self.config_dir + os.sep + 'garth_session'
 
     def get_db_type(self):
         """Return the type (SQLite, MySQL, etc) of database that is configured."""
