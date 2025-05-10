@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, String, Float, Integer, DateTime, Time, Enum, ForeignKey, PrimaryKeyConstraint, desc, literal_column
+from sqlalchemy import Column, String, Float, Integer, Boolean, DateTime, Time, Enum, ForeignKey, PrimaryKeyConstraint, desc, literal_column
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -228,6 +228,47 @@ class ActivityLaps(ActivitiesDb.Base, ActivitiesCommon):
     def start_loc(self, start_location):
         self.start_lat = start_location.lat_deg
         self.start_long = start_location.long_deg
+
+
+class ActivitySplits(ActivitiesDb.Base, ActivitiesCommon):
+    """Class that holds data for an activity split."""
+
+    __tablename__ = 'activity_splits'
+
+    db = ActivitiesDb
+    table_version = 1
+
+    activity_id = Column(String, ForeignKey('activities.activity_id'))
+    split = Column(Integer)
+    grade = Column(String)  # climbing grade
+    completed = Column(Boolean)  # climbing route
+    falls = Column(Integer)  # climbing number of falls
+
+    __table_args__ = (PrimaryKeyConstraint("activity_id", "split"),)
+
+    @classmethod
+    def s_get(cls, session, activity_id, split_number, default=None):
+        """Return a single instance for the given id."""
+        instance = session.query(cls).filter(cls.activity_id == activity_id).filter(cls.split == split_number).scalar()
+        if instance is None:
+            return default
+        return instance
+
+    @classmethod
+    def s_get_from_dict(cls, session, values_dict):
+        """Return a single activity instance for the given id."""
+        return cls.s_get(session, values_dict['activity_id'], values_dict['split'])
+
+    @classmethod
+    def s_get_activity(cls, session, activity_id):
+        """Return all splits for a given activity_id."""
+        return session.query(cls).filter(cls.activity_id == activity_id).all()
+
+    @classmethod
+    def get_activity(cls, db, activity_id):
+        """Return all splits for a given activity_id."""
+        with db.managed_session() as session:
+            return cls.s_get_activity(session, activity_id)
 
 
 class ActivityRecords(ActivitiesDb.Base, idbutils.DbObject):
@@ -564,4 +605,42 @@ class CycleActivities(ActivitiesDb.Base, SportActivities):
             Activities.hrz_5_time.label('heart_rate_zone_five_time'),
             cls.google_map_loc('start'),
             cls.google_map_loc('stop'),
+        ]
+
+
+class ClimbingActivities(ActivitiesDb.Base, SportActivities):
+    """Climbing based activity table."""
+
+    __tablename__ = 'climbing_activities'
+
+    db = ActivitiesDb
+    table_version = 1
+    view_version = 1
+
+    total_routes = Column(Integer)
+
+    @classmethod
+    def _view_selectable(cls):
+        return [
+            Activities.activity_id.label('activity_id'),
+            Activities.name.label('name'),
+            Activities.description.label('description'),
+            Activities.sub_sport.label('sub_sport'),
+            Activities.start_time.label('start_time'),
+            Activities.stop_time.label('stop_time'),
+            Activities.elapsed_time.label('elapsed_time'),
+            Activities.moving_time.label('moving_time'),
+            Activities.avg_hr.label('avg_hr'),
+            Activities.max_hr.label('max_hr'),
+            Activities.calories.label('calories'),
+            Activities.ascent.label('ascent'),
+            Activities.descent.label('descent'),
+            cls.total_routes.label('total_routes'),
+            Activities.training_effect.label('training_effect'),
+            Activities.anaerobic_training_effect.label('anaerobic_training_effect'),
+            Activities.hrz_1_time.label('heart_rate_zone_one_time'),
+            Activities.hrz_2_time.label('heart_rate_zone_two_time'),
+            Activities.hrz_3_time.label('heart_rate_zone_three_time'),
+            Activities.hrz_4_time.label('heart_rate_zone_four_time'),
+            Activities.hrz_5_time.label('heart_rate_zone_five_time'),
         ]

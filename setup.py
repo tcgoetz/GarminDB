@@ -10,7 +10,7 @@ def get_version(version_file):
     print(f"Loading version from {version_file} in {os.getcwd()}")
     with open(version_file, 'r') as file:
         data = file.read()
-        match = re.search(r'version_info = \((\d), (\d), (\d)\)', data, re.M)
+        match = re.search(r'version_info = \((\d+), (\d+), (\d+)\)', data, re.M)
         if match:
             return f'{match.group(1)}.{match.group(2)}.{match.group(3)}'
 

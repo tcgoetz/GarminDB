@@ -12,7 +12,7 @@ import fitfile
 
 from garmindb import GarminActivitiesFitData, GarminTcxData, GarminJsonSummaryData, GarminJsonDetailsData, ActivityFitFileProcessor, GarminConnectConfigManager, PluginManager
 from garmindb.garmindb import GarminDb, Device, File, DeviceInfo
-from garmindb.garmindb import ActivitiesDb, Activities, ActivityLaps, ActivityRecords, StepsActivities, PaddleActivities, CycleActivities
+from garmindb.garmindb import ActivitiesDb, Activities, ActivityLaps, ActivitySplits, ActivityRecords, StepsActivities, PaddleActivities, CycleActivities, ClimbingActivities
 
 from test_db_base import TestDBBase
 
@@ -39,12 +39,13 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         table_dict = {
             'activities_table' : Activities,
             'activity_laps_table' : ActivityLaps,
+            'activity_splits_table' : ActivitySplits,
             'activity_records_table' : ActivityRecords,
             'run_activities_table' : StepsActivities,
             'paddle_activities_table' : PaddleActivities,
             'cycle_activities_table' : CycleActivities,
         }
-        super().setUpClass(cls.garmin_act_db, table_dict, {Activities : [Activities.activity_id]})
+        super().setUpClass(cls.garmin_act_db, table_dict, {Activities : [Activities.activity_id]}, ['activity_splits_table'])
         cls.gc_config = GarminConnectConfigManager()
         cls.test_db_params = cls.gc_config.get_db_params(test_db=True)
         cls.plugin_manager = PluginManager(cls.gc_config.get_plugins_dir(), cls.test_db_params)
@@ -90,6 +91,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         self.gfd_file_count = gfd.file_count()
         if gfd.file_count() > 0:
             gfd.process_files(ActivityFitFileProcessor(self.test_db_params, self.plugin_manager))
+        root_logger.info("imported %d fit files", gfd.file_count())
 
     def fit_file_import(self):
         self.profile_function('fit_activities_import', self.__fit_file_import)

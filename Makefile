@@ -138,7 +138,7 @@ Jupyter/requirements_graphs.txt:
 	$(PIP) freeze -r Jupyter/requirements_graphs.in > Jupyter/requirements_graphs.txt
 
 update_pip_packages:
-	$(PIP) list --outdated | egrep -v "Package|---" |   cut -d' ' -f1 | xargs pip install --upgrade
+	$(PIP) list --outdated | egrep -v "Package|---" | cut -d' ' -f1 | xargs pip install --upgrade
 
 deps: $(SUBMODULES:%=%-deps)
 	$(PIP) install --upgrade --requirement requirements.txt

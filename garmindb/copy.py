@@ -14,8 +14,6 @@ from datetime import datetime
 import fitfile
 from idbutils import FileProcessor
 
-from .garmin_connect_config_manager import GarminConnectConfigManager
-
 
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
@@ -24,9 +22,9 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 class Copy():
     """Class for copying data from a USB mounted Garmin device."""
 
-    def __init__(self):
+    def __init__(self, gc_config):
         """Create a Copy object given the directory where the Garmin USB device is mounted."""
-        self.gc_config = GarminConnectConfigManager()
+        self.gc_config = gc_config
         device_mount_dir = self.gc_config.device_mount_dir()
         if not os.path.exists(device_mount_dir):
             raise RuntimeError(f'Device mount directory {device_mount_dir} not found')

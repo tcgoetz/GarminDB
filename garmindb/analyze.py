@@ -17,7 +17,6 @@ from .garmindb import GarminDb, Attributes, Weight, Stress, RestingHeartRate, In
 from .garmindb import MonitoringDb, Monitoring, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb
 from .garmindb import ActivitiesDb, Activities, StepsActivities
 from .garmindb import GarminSummaryDb, DaysSummary, DailySummary, WeeksSummary, MonthsSummary, YearsSummary
-from .garmin_connect_config_manager import GarminConnectConfigManager
 
 
 logger = logging.getLogger(__file__)
@@ -27,13 +26,14 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 class Analyze():
     """Object for analyzing health data from Garmin devices."""
 
-    def __init__(self, db_params, debug):
+    def __init__(self, gc_config, debug):
         """Return an instance of the Analyze class."""
-        self.garmin_db = GarminDb(db_params, debug)
-        self.garmin_mon_db = MonitoringDb(db_params, debug)
-        self.garmin_sum_db = GarminSummaryDb(db_params, debug)
-        self.sum_db = summarydb.SummaryDb(db_params, debug)
-        self.garmin_act_db = ActivitiesDb(db_params, debug)
+        self.gc_config = gc_config
+        self.garmin_db = GarminDb(self.gc_config.get_db_params(), debug)
+        self.garmin_mon_db = MonitoringDb(self.gc_config.get_db_params(), debug)
+        self.garmin_sum_db = GarminSummaryDb(self.gc_config.get_db_params(), debug)
+        self.sum_db = summarydb.SummaryDb(self.gc_config.get_db_params(), debug)
+        self.garmin_act_db = ActivitiesDb(self.gc_config.get_db_params(), debug)
         self.measurement_system = Attributes.measurements_type(self.garmin_db)
         self.unit_strings = fitfile.units.unit_strings[self.measurement_system]
 
@@ -195,7 +195,7 @@ class Analyze():
 
     def create_dynamic_views(self):
         """Create database views specific to the data in this database."""
-        course_ids = GarminConnectConfigManager().course_views('steps')
+        course_ids = self.gc_config.course_views('steps')
         if course_ids:
             for course_id in course_ids:
                 StepsActivities.create_course_view(self.garmin_act_db, course_id)

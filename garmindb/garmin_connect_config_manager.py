@@ -28,10 +28,11 @@ class GarminConnectConfigManager(JsonConfig):
     temp_dir = tempfile.mkdtemp()
     homedir = os.path.expanduser('~')
 
-    def __init__(self):
+    def __init__(self, config_dir=None):
         """Return a new GarminConnectConfigManager instance."""
         self.enabled_statistics = None
-        config_file = self.get_config_file()
+        self.config_dir = config_dir or self.__create_dir_if_needed(self.homedir + os.sep + '.GarminDb')
+        config_file = self.config_dir + os.sep + 'GarminConnectConfig.json'
         try:
             super().__init__(config_file)
         except Exception as e:
@@ -57,20 +58,9 @@ class GarminConnectConfigManager(JsonConfig):
             os.makedirs(dir)
         return dir
 
-    @classmethod
-    def get_config_dir(cls):
-        """Return the configured directory of where the configuation files will be stored."""
-        return cls.__create_dir_if_needed(cls.homedir + os.sep + '.GarminDb')
-
-    @classmethod
-    def get_config_file(cls):
-        """Return the path to the configuation file."""
-        return cls.get_config_dir() + os.sep + 'GarminConnectConfig.json'
-
-    @classmethod
-    def get_session_file(cls):
+    def get_session_file(self):
         """Return the path to the session file."""
-        return cls.get_config_dir() + os.sep + 'garth_session'
+        return self.config_dir + os.sep + 'garth_session'
 
     def get_db_type(self):
         """Return the type (SQLite, MySQL, etc) of database that is configured."""
@@ -184,6 +174,15 @@ class GarminConnectConfigManager(JsonConfig):
                 pass
             raise ConfigException(f'Secure password was specified but no "Internet Password" entry was found in the Login Keychain for https://{domain}')
 
+    def get_password_from_file(self):
+        """Read the Garmin Connect password from a file."""
+        password_file = self.get_node_value('credentials', 'password_file')
+        try:
+            with open(os.path.expanduser(password_file), 'r') as f:
+                return f.read().strip()
+        except Exception as e:
+            raise ConfigException(f'Failed to read password from file {password_file}: {str(e)}')
+
     def get_user(self):
         """Return the Garmin Connect username."""
         return self.get_node_value('credentials', 'user')
@@ -192,6 +191,8 @@ class GarminConnectConfigManager(JsonConfig):
         """Return the Garmin Connect password."""
         if self.get_node_value_default('credentials', 'secure_password', False):
             return self.get_secure_password()
+        if self.get_node_value_default('credentials', 'password_file', None):
+            return self.get_password_from_file()
         return self.get_node_value('credentials', 'password')
 
     def get_garmin_base_domain(self):
