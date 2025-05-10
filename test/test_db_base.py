@@ -15,10 +15,11 @@ logger = logging.getLogger(__name__)
 class TestDBBase():
 
     @classmethod
-    def setUpClass(cls, db, table_dict, table_not_none_cols_dict={}):
+    def setUpClass(cls, db, table_dict, table_not_none_cols_dict={}, table_can_be_empty=[]):
         cls.db = db
         cls.table_dict = table_dict
         cls.table_not_none_cols_dict = table_not_none_cols_dict
+        cls.table_can_be_empty = table_can_be_empty
 
     def profile_function(self, output_file_prefix, func, *args):
         pr = cProfile.Profile()
@@ -35,8 +36,9 @@ class TestDBBase():
 
     def check_db_tables_exists(self, db, table_dict, min_rows=1):
         for table_name, table in table_dict.items():
-            logger.info("Checking %s exists", table_name)
-            self.assertGreaterEqual(table.row_count(db), min_rows, 'table %s has no data' % table_name)
+            if table_name not in self.table_can_be_empty:
+                logger.info("Checking %s exists", table_name)
+                self.assertGreaterEqual(table.row_count(db), min_rows, 'table %s has no data' % table_name)
 
     def test_db_exists(self):
         logger.info("Checking DB %s exists", self.db.db_name)

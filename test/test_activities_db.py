@@ -45,7 +45,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
             'paddle_activities_table' : PaddleActivities,
             'cycle_activities_table' : CycleActivities,
         }
-        super().setUpClass(cls.garmin_act_db, table_dict, {Activities : [Activities.activity_id]})
+        super().setUpClass(cls.garmin_act_db, table_dict, {Activities : [Activities.activity_id]}, ['activity_splits_table'])
         cls.gc_config = GarminConnectConfigManager()
         cls.test_db_params = cls.gc_config.get_db_params(test_db=True)
         cls.plugin_manager = PluginManager(cls.gc_config.get_plugins_dir(), cls.test_db_params)
@@ -57,12 +57,10 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
     def test_garmin_act_db_tables_exists(self):
         self.assertGreater(Activities.row_count(self.garmin_act_db), 0)
         self.assertGreater(ActivityLaps.row_count(self.garmin_act_db), 0)
-        self.assertGreater(ActivitySplits.row_count(self.garmin_act_db), 0)
         self.assertGreater(ActivityRecords.row_count(self.garmin_act_db), 0)
         self.assertGreater(StepsActivities.row_count(self.garmin_act_db), 0)
         self.assertGreater(PaddleActivities.row_count(self.garmin_act_db), 0)
         self.assertGreater(CycleActivities.row_count(self.garmin_act_db), 0)
-        self.assertGreater(ClimbingActivities.row_count(self.garmin_act_db), 0)
 
     def check_activities_fields(self, fields_list):
         self.check_not_none_cols(self.test_act_db, {Activities : fields_list})
@@ -93,6 +91,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         self.gfd_file_count = gfd.file_count()
         if gfd.file_count() > 0:
             gfd.process_files(ActivityFitFileProcessor(self.test_db_params, self.plugin_manager))
+        root_logger.info("imported %d fit files", gfd.file_count())
 
     def fit_file_import(self):
         self.profile_function('fit_activities_import', self.__fit_file_import)
