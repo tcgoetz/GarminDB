@@ -5,7 +5,7 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 import re
-from cached_property import cached_property
+from functools import cached_property
 
 import tcxfile
 from idbutils import Location
