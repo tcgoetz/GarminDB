@@ -12,7 +12,7 @@ DB_OBJECTS_TEST_GROUPS=garmin_db_objects
 FILE_PARSE_TEST_GROUPS=fit_file tcx_loop tcx_file profile_file
 ALL_TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS)
 MANUAL_TEST_GROUPS=copy
-BASE_TESTGROUP=config
+BASE_TESTGROUP=config module_versions
 TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS) $(MANUAL_TEST_GROUPS) $(BASE_TESTGROUP)
 
 #
@@ -28,7 +28,7 @@ file_parse: $(FILE_PARSE_TEST_GROUPS)
 
 db_objects: $(DB_OBJECTS_TEST_GROUPS)
 
-verify_commit: test_config.TestConfig.test_versions db_objects
+verify_commit: module_versions db_objects
 
 clean:
 	rm -f *.pyc
