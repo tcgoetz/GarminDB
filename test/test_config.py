@@ -47,7 +47,7 @@ class TestConfig(unittest.TestCase):
     def test_directories(self):
         # config_dir
         expected_config_dir = self.homedir + os.sep + '.GarminDb'
-        config_dir = self.gc_config.get_config_dir()
+        config_dir = self.gc_config.config_dir
         self.assertEqual(config_dir, expected_config_dir, f'actual {config_dir} expected {expected_config_dir}')
         # base_dir
         expected_base_dir = self.homedir + os.sep + 'HealthData'
@@ -55,7 +55,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(base_dir, expected_base_dir, f'actual {base_dir} expected {expected_base_dir}')
         # monitoring_dir
         year = 2023
-        expected_monitoring_dir = expected_base_dir + os.sep + 'Monitoring' + os.sep + str(year)
+        expected_monitoring_dir = expected_base_dir + os.sep + "FitFiles" + os.sep + 'Monitoring' + os.sep + str(year)
         monitoring_dir = self.gc_config.get_monitoring_dir(year)
         self.assertEqual(monitoring_dir, expected_monitoring_dir, f'actual {monitoring_dir} expected {expected_monitoring_dir}')
 

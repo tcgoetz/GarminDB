@@ -28,7 +28,7 @@ file_parse: $(FILE_PARSE_TEST_GROUPS)
 
 db_objects: $(DB_OBJECTS_TEST_GROUPS)
 
-verify_commit: db_objects
+verify_commit: test_config.TestConfig.test_versions db_objects
 
 clean:
 	rm -f *.pyc
