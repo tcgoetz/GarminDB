@@ -81,7 +81,7 @@ class GarminDbMain():
         return (date, days)
 
 
-    def copy_data(self, overwite, latest, stats):
+    def copy_data(self, overwrite, latest, stats):
         """Copy data from a mounted Garmin USB device to files."""
         logger.info("___Copying Data___")
         copy = Copy(self.gc_config)
@@ -106,7 +106,7 @@ class GarminDbMain():
             copy.copy_sleep(monitoring_dir, latest)
 
 
-    def download_data(self, overwite, latest, stats):
+    def download_data(self, overwrite, latest, stats):
         """Download selected activity types from Garmin Connect and save the data in files. Overwrite previously downloaded data if indicated."""
         logger.info("___Downloading %s Data___", 'Latest' if latest else 'All')
 
@@ -122,16 +122,16 @@ class GarminDbMain():
                 activity_count = self.gc_config.all_activity_count()
             activities_dir = self.gc_config.get_activities_dir()
             root_logger.info("Fetching %d activities to %s", activity_count, activities_dir)
-            download.get_activity_types(activities_dir, overwite)
-            download.get_activities(activities_dir, activity_count, overwite)
+            download.get_activity_types(activities_dir, overwrite)
+            download.get_activities(activities_dir, activity_count, overwrite)
 
         if Statistics.monitoring in stats:
             date, days = self.__get_date_and_days(MonitoringDb(self.gc_config.get_db_params()), latest, MonitoringHeartRate, MonitoringHeartRate.heart_rate, 'monitoring')
             if days > 0:
                 monitoring_dir = self.gc_config.get_monitoring_base_dir()
                 root_logger.info("Date range to update: %s (%d) to %s", date, days, monitoring_dir)
-                download.get_daily_summaries(self.gc_config.get_monitoring_dir, date, days, overwite)
-                download.get_hydration(self.gc_config.get_monitoring_dir, date, days, overwite)
+                download.get_daily_summaries(self.gc_config.get_monitoring_dir, date, days, overwrite)
+                download.get_hydration(self.gc_config.get_monitoring_dir, date, days, overwrite)
                 download.get_monitoring(self.gc_config.get_monitoring_dir, date, days)
                 root_logger.info("Saved monitoring files for %s (%d) to %s for processing", date, days, monitoring_dir)
 
@@ -140,7 +140,7 @@ class GarminDbMain():
             if days > 0:
                 sleep_dir = self.gc_config.get_sleep_dir()
                 root_logger.info("Date range to update: %s (%d) to %s", date, days, sleep_dir)
-                download.get_sleep(sleep_dir, date, days, overwite)
+                download.get_sleep(sleep_dir, date, days, overwrite)
                 root_logger.info("Saved sleep files for %s (%d) to %s for processing", date, days, sleep_dir)
 
         if Statistics.weight in stats:
@@ -148,7 +148,7 @@ class GarminDbMain():
             if days > 0:
                 weight_dir = self.gc_config.get_weight_dir()
                 root_logger.info("Date range to update: %s (%d) to %s", date, days, weight_dir)
-                download.get_weight(weight_dir, date, days, overwite)
+                download.get_weight(weight_dir, date, days, overwrite)
                 root_logger.info("Saved weight files for %s (%d) to %s for processing", date, days, weight_dir)
 
         if Statistics.rhr in stats:
@@ -156,7 +156,7 @@ class GarminDbMain():
             if days > 0:
                 rhr_dir = self.gc_config.get_rhr_dir()
                 root_logger.info("Date range to update: %s (%d) to %s", date, days, rhr_dir)
-                download.get_rhr(rhr_dir, date, days, overwite)
+                download.get_rhr(rhr_dir, date, days, overwrite)
                 root_logger.info("Saved rhr files for %s (%d) to %s for processing", date, days, rhr_dir)
 
 
@@ -317,7 +317,7 @@ def main(argv):
     stats_group.add_argument("-w", "--weight", help="Download and/or import weight data.", dest='stats', action='append_const', const=Statistics.weight)
     modifiers_group = parser.add_argument_group('Modifiers')
     modifiers_group.add_argument("-l", "--latest", help="Only download and/or import the latest data.", action="store_true", default=False)
-    modifiers_group.add_argument("-o", "--overwrite", help="Overwite existing files when downloading. The default is to only download missing files.",
+    modifiers_group.add_argument("-o", "--overwrite", help="Overwrite existing files when downloading. The default is to only download missing files.",
                                  action="store_true", default=False)
     args = parser.parse_args()
 

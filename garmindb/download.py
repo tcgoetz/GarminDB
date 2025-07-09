@@ -119,35 +119,35 @@ class Download():
         return object.__str__()
 
     @classmethod
-    def save_json_to_file(cls, filename, json_data, overwite=False):
+    def save_json_to_file(cls, filename, json_data, overwrite=False):
         """Save JSON formatted data to a file."""
         full_filename = f'{filename}.json'
         exists = os.path.isfile(full_filename)
-        if not exists or overwite:
+        if not exists or overwrite:
             logger.debug("%s %s", 'Overwriting' if exists else 'Saving', full_filename)
             with open(full_filename, 'w') as file:
                 file.write(json.dumps(json_data, default=cls.__convert_to_json))
 
-    def save_binary_file(self, filename, url, overwite=False):
+    def save_binary_file(self, filename, url, overwrite=False):
         """Save binary data to a file."""
         exists = os.path.isfile(filename)
-        if not exists or overwite:
+        if not exists or overwrite:
             logger.debug("%s %s", 'Overwriting' if exists else 'Saving', filename)
             response = self.garth.get("connectapi", url, api=True)
             with open(filename, 'wb') as file:
                 for chunk in response:
                     file.write(chunk)
 
-    def __get_stat(self, stat_function, directory, date, days, overwite):
+    def __get_stat(self, stat_function, directory, date, days, overwrite):
         for day in tqdm(range(0, days), unit='days'):
             download_date = date + datetime.timedelta(days=day)
             # always overwrite for yesterday and today since the last download may have been a partial result
             delta = datetime.datetime.now().date() - download_date
-            stat_function(directory, download_date, overwite or delta.days <= self.download_days_overlap)
+            stat_function(directory, download_date, overwrite or delta.days <= self.download_days_overlap)
             # pause for a second between every page access
             time.sleep(1)
 
-    def __get_summary_day(self, directory_func, date, overwite=False):
+    def __get_summary_day(self, directory_func, date, overwrite=False):
         root_logger.info("get_summary_day: %s", date)
         date_str = date.strftime('%Y-%m-%d')
         params = {
@@ -157,14 +157,14 @@ class Download():
         url = f'{self.garmin_connect_daily_summary_url}/{self.display_name}'
         json_filename = f'{directory_func(date.year)}/daily_summary_{date_str}'
         try:
-            self.save_json_to_file(json_filename, self.garth.connectapi(url, params=params), overwite)
+            self.save_json_to_file(json_filename, self.garth.connectapi(url, params=params), overwrite)
         except GarthHTTPError as e:
             root_logger.error("Exception getting daily summary: %s", e)
 
-    def get_daily_summaries(self, directory_func, date, days, overwite):
+    def get_daily_summaries(self, directory_func, date, days, overwrite):
         """Download the daily summary data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting daily summaries: %s (%d)", date, days)
-        self.__get_stat(self.__get_summary_day, directory_func, date, days, overwite)
+        self.__get_stat(self.__get_summary_day, directory_func, date, days, overwrite)
 
     def __get_monitoring_day(self, date):
         root_logger.info("get_monitoring_day: %s to %s", date, self.temp_dir)
@@ -186,8 +186,8 @@ class Download():
             # pause for a second between every page access
             time.sleep(1)
 
-    def __get_weight_day(self, directory, day, overwite=False):
-        root_logger.info("Checking weight: %s overwite %r", day, overwite)
+    def __get_weight_day(self, directory, day, overwrite=False):
+        root_logger.info("Checking weight: %s overwrite %r", day, overwrite)
         date_str = day.strftime('%Y-%m-%d')
         params = {
             'startDate' : date_str,
@@ -196,14 +196,15 @@ class Download():
         }
         json_filename = f'{directory}/weight_{date_str}'
         try:
-            self.save_json_to_file(json_filename, self.garth.connectapi(self.garmin_connect_weight_url, params=params), overwite)
+            self.save_json_to_file(json_filename, self.garth.connectapi(self.garmin_connect_weight_url, params=params), overwrite)
         except GarthHTTPError as e:
             root_logger.error("Exception getting daily summary: %s", e)
 
-    def get_weight(self, directory, date, days, overwite):
+    def get_weight(self, directory, date, days, overwrite):
         """Download the sleep data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting weight: %s (%d)", date, days)
-        self.__get_stat(self.__get_weight_day, directory, date, days, overwite)
+        self.__get_stat(self.__get_weight_day,
+                        directory, date, days, overwrite)
 
     def __get_activity_summaries(self, start, count):
         root_logger.info("get_activity_summaries")
@@ -216,12 +217,13 @@ class Download():
         except GarthHTTPError as e:
             root_logger.error("Exception getting activity summary: %s", e)
 
-    def __save_activity_details(self, directory, activity_id_str, overwite):
+    def __save_activity_details(self, directory, activity_id_str, overwrite):
         root_logger.debug("save_activity_details")
         json_filename = f'{directory}/activity_details_{activity_id_str}'
         try:
             url = f'{self.garmin_connect_activity_service_url}/{activity_id_str}'
-            self.save_json_to_file(json_filename, self.garth.connectapi(url), overwite)
+            self.save_json_to_file(
+                json_filename, self.garth.connectapi(url), overwrite)
         except GarthHTTPError as e:
             root_logger.error("Exception getting daily summary %s", e)
 
@@ -234,7 +236,7 @@ class Download():
         except GarthHTTPError as e:
             root_logger.error("Exception downloading activity file: %s", e)
 
-    def get_activities(self, directory, count, overwite=False):
+    def get_activities(self, directory, count, overwrite=False):
         """Download activities files from Garmin Connect and save the raw files."""
         self.temp_dir = tempfile.mkdtemp()
         logger.info("Getting activities: '%s' (%d) temp %s", directory, count, self.temp_dir)
@@ -244,11 +246,11 @@ class Download():
             activity_name_str = conversions.printable(activity.get('activityName'))
             root_logger.info("get_activities: %s (%s)", activity_name_str, activity_id_str)
             json_filename = f'{directory}/activity_{activity_id_str}'
-            if not os.path.isfile(json_filename + '.json') or overwite:
+            if not os.path.isfile(json_filename + '.json') or overwrite:
                 root_logger.info("get_activities: %s <- %r", json_filename, activity)
-                self.__save_activity_details(directory, activity_id_str, overwite)
+                self.__save_activity_details(directory, activity_id_str, overwrite)
                 self.save_json_to_file(json_filename, activity)
-                if not os.path.isfile(f'{directory}/{activity_id_str}.fit') or overwite:
+                if not os.path.isfile(f'{directory}/{activity_id_str}.fit') or overwrite:
                     self.__save_activity_file(activity_id_str)
                 # pause for a second between every page access
                 time.sleep(1)
@@ -256,17 +258,18 @@ class Download():
                 root_logger.info("get_activities: skipping download of %s, already present", activity_id_str)
         self.__unzip_files(directory)
 
-    def get_activity_types(self, directory, overwite):
+    def get_activity_types(self, directory, overwrite):
         """Download the activity types from Garmin Connect and save to a JSON file."""
         root_logger.info("get_activity_types: '%s'", directory)
         json_filename = f'{directory}/activity_types'
         try:
             url = f'{self.garmin_connect_activity_service_url}/activityTypes'
-            self.save_json_to_file(json_filename, self.garth.connectapi(url), overwite)
+            self.save_json_to_file(
+                json_filename, self.garth.connectapi(url), overwrite)
         except GarthHTTPError as e:
             root_logger.error("Exception getting activity types: %s", e)
 
-    def __get_sleep_day(self, directory, date, overwite=False):
+    def __get_sleep_day(self, directory, date, overwrite=False):
         json_filename = f'{directory}/sleep_{date}'
         params = {
             'date'                  : date.strftime("%Y-%m-%d"),
@@ -274,16 +277,16 @@ class Download():
         }
         url = f'{self.garmin_connect_sleep_daily_url}/{self.display_name}'
         try:
-            self.save_json_to_file(json_filename, self.garth.connectapi(url, params=params), overwite)
+            self.save_json_to_file(json_filename, self.garth.connectapi(url, params=params), overwrite)
         except GarthHTTPError as e:
             root_logger.error("Exception getting daily summary: %s", e)
 
-    def get_sleep(self, directory, date, days, overwite):
+    def get_sleep(self, directory, date, days, overwrite):
         """Download the sleep data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting sleep: %s (%d)", date, days)
-        self.__get_stat(self.__get_sleep_day, directory, date, days, overwite)
+        self.__get_stat(self.__get_sleep_day, directory, date, days, overwrite)
 
-    def __get_rhr_day(self, directory, day, overwite=False):
+    def __get_rhr_day(self, directory, day, overwrite=False):
         date_str = day.strftime('%Y-%m-%d')
         json_filename = f'{directory}/rhr_{date_str}'
         params = {
@@ -293,25 +296,26 @@ class Download():
         }
         url = f'{self.garmin_connect_rhr}/{self.display_name}'
         try:
-            self.save_json_to_file(json_filename, self.garth.connectapi(url, params=params), overwite)
+            self.save_json_to_file(json_filename, self.garth.connectapi(
+                url, params=params), overwrite)
         except GarthHTTPError as e:
             root_logger.error("Exception getting daily summary %s", e)
 
-    def get_rhr(self, directory, date, days, overwite):
+    def get_rhr(self, directory, date, days, overwrite):
         """Download the resting heart rate data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting rhr: %s (%d)", date, days)
-        self.__get_stat(self.__get_rhr_day, directory, date, days, overwite)
+        self.__get_stat(self.__get_rhr_day, directory, date, days, overwrite)
 
-    def __get_hydration_day(self, directory_func, day, overwite=False):
+    def __get_hydration_day(self, directory_func, day, overwrite=False):
         date_str = day.strftime('%Y-%m-%d')
         json_filename = f'{directory_func(day.year)}/hydration_{date_str}'
         url = f'{self.garmin_connect_daily_hydration_url}/{date_str}'
         try:
-            self.save_json_to_file(json_filename, self.garth.connectapi(url), overwite)
+            self.save_json_to_file(json_filename, self.garth.connectapi(url), overwrite)
         except GarthHTTPError as e:
             root_logger.error("Exception getting hydration: %s", e)
 
-    def get_hydration(self, directory_func, date, days, overwite):
+    def get_hydration(self, directory_func, date, days, overwrite):
         """Download the hydration data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting hydration: %s (%d)", date, days)
-        self.__get_stat(self.__get_hydration_day, directory_func, date, days, overwite)
+        self.__get_stat(self.__get_hydration_day, directory_func, date, days, overwrite)
