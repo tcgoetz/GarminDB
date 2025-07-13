@@ -29,4 +29,4 @@ def python_version_check(program):
 
 def python_dev_version_check(program):
     """Validate the Python version requirements for development."""
-    uv.python_version_check(program, dev_python_required, python_tested, verbose=True)
+    uv.python_version_check(program, dev_python_required, python_tested)
