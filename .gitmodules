@@ -1,12 +1,12 @@
 [submodule "Fit"]
 	path = Fit
-	url = ../Fit.git
+	url = "https://github.com/tcgoetz/Fit.git"
 [submodule "utilities"]
 	path = utilities
-	url = ../utilities.git
+	url = "https://github.com/tcgoetz/utilities.git"
 [submodule "Tcx"]
 	path = Tcx
-	url = ../Tcx.git
+	url = "https://github.com/tcgoetz/Tcx.git"
 [submodule "Plugins"]
 	path = Plugins
-	url = ../GarminDbPlugins.git
+	url = "https://github.com/tcgoetz/GarminDbPlugins.git"
