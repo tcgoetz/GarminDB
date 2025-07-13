@@ -1,12 +1,12 @@
 [submodule "Fit"]
 	path = Fit
-	url = ../Fit.git
+	url = "https://github.com/tcgoetz/Fit/tree/34124133c7d0b177e5715e6a19f6292c111bcc07"
 [submodule "utilities"]
 	path = utilities
-	url = ../utilities.git
+	url = "https://github.com/tcgoetz/utilities/tree/8020d88e2d07b514f6110e36f2c9fdc5f79e2e88"
 [submodule "Tcx"]
 	path = Tcx
-	url = ../Tcx.git
+	url = "https://github.com/tcgoetz/Tcx/tree/686c49dbb87b1847dd2b0973768baab626faf129"
 [submodule "Plugins"]
 	path = Plugins
-	url = ../GarminDbPlugins.git
+	url = "https://github.com/tcgoetz/GarminDbPlugins/tree/82bd3faba1de9bbd9eb7e2bf82687b62d7458c7a"
