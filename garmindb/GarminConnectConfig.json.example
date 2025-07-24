@@ -6,9 +6,9 @@
         "domain"                        : "garmin.com"
     },
     "credentials": {
-        "user"                          : "joe@shmoe.com",
+        "user"                          : "",
         "secure_password"               : false,
-        "password"                      : "yourpassword",
+        "password"                      : "",
         "password_file"                 : null
     },
     "data": {
