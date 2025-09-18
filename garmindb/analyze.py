@@ -13,7 +13,7 @@ from tqdm import tqdm
 import fitfile
 
 from garmindb import summarydb
-from .garmindb import GarminDb, Attributes, Weight, Stress, RestingHeartRate, IntensityHR, Sleep
+from .garmindb import GarminDb, Attributes, Weight, Stress, RestingHeartRate, IntensityHR, Sleep, SleepEvents
 from .garmindb import MonitoringDb, Monitoring, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb
 from .garmindb import ActivitiesDb, Activities, StepsActivities
 from .garmindb import GarminSummaryDb, DaysSummary, DailySummary, WeeksSummary, MonthsSummary, YearsSummary
@@ -55,6 +55,30 @@ class Analyze():
                         IntensityHR.s_insert_or_update(garmin_sum_session, entry, ignore_none=True)
                 previous_ts = monitoring.timestamp
 
+    def __populate_sleep_for_day(self, day_date, garmin_session, overwrite=False):
+        """Ensure a Sleep row exists for the given day by summarizing SleepEvents if needed."""
+        existing = Sleep.s_row_count_for_day(garmin_session, day_date)
+
+        if existing == 0 or overwrite:
+            day_start_ts = datetime.datetime.combine(day_date, datetime.time.min)
+            day_stop_ts = datetime.datetime.combine(day_date, datetime.time.max)
+            first_event = SleepEvents.s_get_col_min(garmin_session, SleepEvents.timestamp, day_start_ts, day_stop_ts)
+            if first_event is None:
+
+                return
+            last_event = SleepEvents.s_get_col_max(garmin_session, SleepEvents.timestamp, day_start_ts, day_stop_ts)
+            stats = SleepEvents.get_day_stats(garmin_session, day_date)
+            entry = {
+                'day': day_date,
+                'start': first_event,
+                'end': last_event,
+                **stats,
+            }
+
+            Sleep.s_insert_or_update(garmin_session, entry, ignore_none=True)
+
+
+
     def __calculate_day_stats(self, day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         stats = DailySummary.get_daily_stats(garmin_session, day_date)
         # prefer getting stats from the daily summary.
@@ -77,11 +101,16 @@ class Analyze():
         summarydb.DaysSummary.s_insert_or_update(sum_session, stats)
 
     def __calculate_days(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
-        days = Monitoring.s_get_days(garmin_mon_session, year)
-        if days:
-            for day in tqdm(days, unit='days'):
+        days_mon = Monitoring.s_get_days(garmin_mon_session, year) or []
+        days_sleep = SleepEvents.s_get_days(garmin_session, year) or []
+        days_all = sorted(set(days_mon) | set(days_sleep))
+
+        if days_all:
+            for day in tqdm(days_all, unit='days'):
                 day_date = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
                 self.__populate_hr_intensity(day_date, garmin_mon_session, garmin_sum_session)
+                # Ensure a summarized Sleep row exists when only SleepEvents are present
+                self.__populate_sleep_for_day(day_date, garmin_session)
                 self.__calculate_day_stats(day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
         days = Activities.s_get_days(garmin_act_session, year)
         if len(days):
@@ -188,9 +217,14 @@ class Analyze():
 
     def summary(self):
         """Summarize Garmin health data. Daily, weekly, and monthly, tables will be generated."""
-        logger.info("Summary Tables Generation:")
-        for year in sorted(list(set(Monitoring.get_years(self.garmin_mon_db) + Activities.get_years(self.garmin_act_db)))):
-            logger.info("Generating table entries for %s", year)
+
+        years_mon = Monitoring.get_years(self.garmin_mon_db)
+        years_act = Activities.get_years(self.garmin_act_db)
+        years_sleep = SleepEvents.get_years(self.garmin_db)
+        years_all = sorted(list(set(years_mon + years_act + years_sleep)))
+
+        for year in years_all:
+
             self.__calculate_year(year)
 
     def create_dynamic_views(self):
