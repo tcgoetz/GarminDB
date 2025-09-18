@@ -287,12 +287,15 @@ class SleepEvents(GarminDb.Base, idbutils.DbObject):
     @classmethod
     def get_day_stats(cls, session, day_date):
         """Return a dictionary of aggregate statistics for the given time period."""
-        deep_sleep = cls.get_level_time(cls, session, day_date, 'deep_sleep')
-        light_sleep = cls.get_level_time(cls, session, day_date, 'light_sleep')
-        rem_sleep = cls.get_level_time(cls, session, day_date, 'rem_sleep')
-        awake = cls.get_level_time(cls, session, day_date, 'awake')
+        deep_sleep = cls.get_level_time(session, day_date, 'deep_sleep')
+        light_sleep = cls.get_level_time(session, day_date, 'light_sleep')
+        rem_sleep = cls.get_level_time(session, day_date, 'rem_sleep')
+        awake = cls.get_level_time(session, day_date, 'awake')
+        total_sleep = fitfile.conversions.add_time(
+            fitfile.conversions.add_time(deep_sleep, light_sleep), rem_sleep
+        )
         return {
-            'total_sleep': deep_sleep + light_sleep + rem_sleep,
+            'total_sleep': total_sleep,
             'deep_sleep': deep_sleep,
             'light_sleep': light_sleep,
             'rem_sleep': rem_sleep,
