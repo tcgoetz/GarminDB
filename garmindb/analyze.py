@@ -77,8 +77,6 @@ class Analyze():
 
             Sleep.s_insert_or_update(garmin_session, entry, ignore_none=True)
 
-
-
     def __calculate_day_stats(self, day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         stats = DailySummary.get_daily_stats(garmin_session, day_date)
         # prefer getting stats from the daily summary.
