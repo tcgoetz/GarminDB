@@ -11,12 +11,16 @@ import traceback
 from tqdm import tqdm
 
 import fitfile
+
+from . import fitfile_patches
 from idbutils import FileProcessor
 
 
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
+
+fitfile_patches.apply()
 
 
 class FitData():
@@ -38,6 +42,7 @@ class FitData():
         self.measurement_system = measurement_system
         self.debug = debug
         self.fit_types = fit_types
+        self.latest = latest
         self.file_names = FileProcessor.dir_to_files(input_dir, fitfile.file.name_regex, latest, recursive)
 
     def file_count(self):
@@ -47,6 +52,9 @@ class FitData():
     def process_files(self, fit_file_processor):
         """Import FIT files into the database."""
         for file_name in tqdm(self.file_names, unit='files'):
+            if self.latest and fit_file_processor.file_already_imported(file_name):
+                root_logger.debug("Skipping already imported FIT file %s", file_name)
+                continue
             try:
                 fit_file = fitfile.file.File(file_name, self.measurement_system)
                 if self.fit_types is None or fit_file.type in self.fit_types:
