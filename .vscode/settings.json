@@ -9,5 +9,6 @@
     "python.testing.pytestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.unittestEnabled": true,
-    "python.pythonPath": "${workspaceFolder}/.venv/bin/python3.9"
+    "python.pythonPath": "${workspaceFolder}/.venv/bin/python3.9",
+    "makefile.configureOnOpen": false
 }

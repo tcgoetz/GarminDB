@@ -11,6 +11,7 @@ import traceback
 import fitfile
 
 from .garmindb import GarminDb, File, Device, DeviceInfo, Stress, Attributes
+from .garmindb.garmin_db import GarminDbError_IdNotFound
 
 
 logger = logging.getLogger(__file__)
@@ -92,6 +93,15 @@ class FitFileProcessor():
         """Write all data from the FIT file to database files."""
         with self.garmin_db.managed_session() as self.garmin_db_session:
             self._write_message_types(fit_file, fit_file.message_types)
+
+    def file_already_imported(self, file_name):
+        """Return True if the FIT file has already been imported into the database."""
+        with self.garmin_db.managed_session() as session:
+            try:
+                existing_id = File.s_get_id(session, file_name)
+            except (AttributeError, GarminDbError_IdNotFound):
+                return False
+            return existing_id is not None
 
     #
     # Message type handlers
