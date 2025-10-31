@@ -2,16 +2,17 @@
 name = "GarminDb"
 dynamic = ["version"]
 description = "Garmin Connect download and analysis"
+readme = "README.md"
+license = {text = "GPL"}
+requires-python = ">3.10"
 authors = [
     {name = "Tom Goetz"},
 ]
+keywords = ["garmin", "garmin connect"]
 dependencies = [
     "SQLAlchemy==2.0.41",
-    "garth>=0.5.17"
+    "garth>=0.5.17",
 ]
-requires-python = ">=3.10"
-readme = "README.md"
-license = {text = "GPL"}
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
@@ -24,7 +25,6 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Operating System :: OS Independent",
 ]
-keywords = ["garmin", "garmin connect"]
 
 [project.urls]
 "Homepage" = "https://github.com/tcgoetz/GarminDB"
@@ -32,9 +32,23 @@ keywords = ["garmin", "garmin connect"]
 "Issues" = "https://github.com/tcgoetz/GarminDB/issues"
 "Changelog" = "https://github.com/tcgoetz/GarminDB/releases"
 
+[dependency-groups]
+dev = [
+    "build",
+    "flake8",
+    "twine",
+    "wheel",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "garmindb.__version__"}
+
+[tool.uv]
+python = ">=3.11"
+
 [build-system]
 requires = [
-    "setuptools>=42",
-    "wheel"
+    "setuptools>=64",
+    "wheel",
 ]
 build-backend = "setuptools.build_meta"
