@@ -41,8 +41,6 @@ ifeq ($(PIP),)
 $(error pip not found)
 endif
 
-PIP_PATH = $(shell which ${PIP})
-
 MODULE=garmindb
 
 export MODULE SHELL TIME PLATFORM PYTHON PIP FLAKE8

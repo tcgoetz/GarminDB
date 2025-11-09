@@ -3,13 +3,22 @@
 # between downloading and generating varies types of data. It wraps the core Python scripts and runs them with appropriate parameters.
 #
 export PROJECT_BASE=$(CURDIR)
+export VENV=$(PROJECT_BASE)/.venv
 
 include defines.mk
 
 $(info $$PROJECT_BASE is [${PROJECT_BASE}])
+$(info $$VENV is [${VENV}])
 $(info $$PLATFORM is [${PLATFORM}])
 $(info $$SHELL is [${SHELL}])
+
+export PIP_PATH=$(VENV)/bin/$(PIP)
 $(info $$PIP_PATH is [${PIP_PATH}])
+export PYTHON_PATH=$(VENV)/bin/$(PYTHON)
+$(info $$PYTHON_PATH is [${PYTHON_PATH}])
+export GARMINDB_CLI=$(VENV)/bin/garmindb_cli.py
+$(info $$GARMINDB_CLI is [${GARMINDB_CLI}])
+
 
 #
 # Master targets
@@ -17,7 +26,7 @@ $(info $$PIP_PATH is [${PIP_PATH}])
 all: update_dbs
 
 # install all needed code
-setup_repo: $(CONF_DIR)/GarminConnectConfig.json $(PROJECT_BASE)/.venv submodules_update
+setup_repo: $(CONF_DIR)/GarminConnectConfig.json $(VENV) submodules_update
 
 setup_install: version_check deps devdeps install_all
 
@@ -56,17 +65,17 @@ $(CONF_DIR):
 $(CONF_DIR)/GarminConnectConfig.json: $(CONF_DIR)
 	cp $(PROJECT_BASE)/garmindb/GarminConnectConfig.json.example $(CONF_DIR)/GarminConnectConfig.json
 
-activate_venv: $(PROJECT_BASE)/.venv
-	source $(PROJECT_BASE)/.venv/bin/activate
+activate_venv: $(VENV)
+	source $(VENV)/bin/activate
 
 update_venv:
-	$(PROJECT_BASE)/.venv/bin/python -m pip install --upgrade pip
+	$(VENV)/bin/python -m pip install --upgrade pip
 
-$(PROJECT_BASE)/.venv:
-	$(PYTHON) -m venv --upgrade-deps $(PROJECT_BASE)/.venv
+$(VENV):
+	$(PYTHON) -m venv --upgrade-deps $(VENV)
 
 clean_venv:
-	rm -rf $(PROJECT_BASE)/.venv
+	rm -rf $(VENV)
 
 version_check:
 	python -c 'import sys; import garmindb.version; garmindb.version.python_dev_version_check(sys.argv[0])'
@@ -80,18 +89,18 @@ submodules_update:
 
 
 publish_check: build
-	$(PYTHON) -m twine check dist/*
+	$(PYTHON_PATH) -m twine check dist/*
 
 publish: clean publish_check
-	$(PYTHON) -m twine upload dist/* --verbose
+	$(PYTHON_PATH) -m twine upload dist/* --verbose
 
 build: devdeps
-	$(PYTHON) -m build
+	$(PYTHON_PATH) -m build
 
 $(PROJECT_BASE)/dist/$(MODULE)-*.whl: build
 
 install: $(PROJECT_BASE)/dist/$(MODULE)-*.whl
-	$(PIP) install --upgrade $(PROJECT_BASE)/dist/$(MODULE)-*.whl
+	$(PIP_PATH) install --upgrade $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
 $(SUBMODULES:%=%-install):
 	$(MAKE) -C $(subst -install,,$@) install
@@ -99,7 +108,7 @@ $(SUBMODULES:%=%-install):
 install_all: $(SUBMODULES:%=%-install) install
 
 install_pip:
-	$(PIP) install --upgrade garmindb
+	$(PIP_PATH) install --upgrade garmindb
 
 $(SUBMODULES:%=%-install_pip):
 	$(MAKE) -C $(subst -install_pip,,$@) install_pip
@@ -107,7 +116,7 @@ $(SUBMODULES:%=%-install_pip):
 install_pip_all: $(SUBMODULES:%=%-install_pip) install_pip
 
 reinstall: clean $(PROJECT_BASE)/dist/$(MODULE)-*.whl
-	$(PIP) install --upgrade --force-reinstall --no-deps $(PROJECT_BASE)/dist/$(MODULE)-*.whl
+	$(PIP_PATH) install --upgrade --force-reinstall --no-deps $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
 reinstall_all: clean uninstall_all install_all
 
@@ -115,7 +124,7 @@ $(SUBMODULES:%=%-uninstall):
 	$(MAKE) -C $(subst -uninstall,,$@) uninstall
 
 uninstall:
-	$(PIP) uninstall -y $(MODULE)
+	$(PIP_PATH) uninstall -y $(MODULE)
 
 uninstall_all: uninstall $(SUBMODULES:%=%-uninstall)
 
@@ -126,34 +135,34 @@ $(SUBMODULES:%=%-deps):
 	$(MAKE) -C $(subst -deps,,$@) deps
 
 requirements.txt:
-	$(PIP) freeze -r requirements.in > requirements.txt
+	$(PIP_PATH) freeze -r requirements.in > requirements.txt
 
 dev-requirements.txt:
-	$(PIP) freeze -r dev-requirements.in > dev-requirements.txt
+	$(PIP_PATH) freeze -r dev-requirements.in > dev-requirements.txt
 
 Jupyter/requirements.txt:
-	$(PIP) freeze -r Jupyter/requirements.in > Jupyter/requirements.txt
+	$(PIP_PATH) freeze -r Jupyter/requirements.in > Jupyter/requirements.txt
 
 Jupyter/requirements_graphs.txt:
-	$(PIP) freeze -r Jupyter/requirements_graphs.in > Jupyter/requirements_graphs.txt
+	$(PIP_PATH) freeze -r Jupyter/requirements_graphs.in > Jupyter/requirements_graphs.txt
 
 update_pip_packages:
-	$(PIP) list --outdated | egrep -v "Package|---" | cut -d' ' -f1 | xargs pip install --upgrade
+	$(PIP_PATH) list --outdated | egrep -v "Package|---" | cut -d' ' -f1 | xargs pip install --upgrade
 
 deps: $(SUBMODULES:%=%-deps)
-	$(PIP) install --upgrade --requirement requirements.txt
+	$(PIP_PATH) install --upgrade --requirement requirements.txt
 
 $(SUBMODULES:%=%-devdeps):
 	$(MAKE) -C $(subst -devdeps,,$@) devdeps
 
 devdeps: $(SUBMODULES:%=%-devdeps)
-	$(PIP) install --upgrade --requirement dev-requirements.txt
+	$(PIP_PATH) install --upgrade --requirement dev-requirements.txt
 
 graphdeps:
-	$(PIP) install --upgrade --requirement Jupyter/requirements_graphs.txt
+	$(PIP_PATH) install --upgrade --requirement Jupyter/requirements_graphs.txt
 
 jupiterdeps: graphdeps
-	$(PIP) install --upgrade --requirement Jupyter/requirements.txt
+	$(PIP_PATH) install --upgrade --requirement Jupyter/requirements.txt
 
 alldeps: update_pip_packages deps devdeps jupiterdeps
 
@@ -161,10 +170,10 @@ $(SUBMODULES:%=%-remove_deps):
 	$(MAKE) -C $(subst -remove_deps,,$@) remove_deps
 
 remove_deps: $(SUBMODULES:%=%-remove_deps)
-	$(PIP) uninstall -y --requirement requirements.txt
-	$(PIP) uninstall -y --requirement dev-requirements.txt
-	$(PIP) uninstall -y --requirement Jupyter/requirements.txt
-	$(PIP) uninstall -y --requirement Jupyter/requirements_graphs.txt
+	$(PIP_PATH) uninstall -y --requirement requirements.txt
+	$(PIP_PATH) uninstall -y --requirement dev-requirements.txt
+	$(PIP_PATH) uninstall -y --requirement Jupyter/requirements.txt
+	$(PIP_PATH) uninstall -y --requirement Jupyter/requirements_graphs.txt
 
 clean_deps: remove_deps
 
@@ -207,67 +216,67 @@ daily: all checkup graph_yesterday
 # Garmin targets
 #
 backup:
-	garmindb_cli.py --backup
+	$(GARMINDB_CLI) --backup
 
 download_all_garmin:
-	garmindb_cli.py --all --download
+	$(GARMINDB_CLI) --all --download
 
 redownload_garmin_activities:
-	garmindb_cli.py --activities --download --overwrite
+	$(GARMINDB_CLI) --activities --download --overwrite
 
 garmin:
-	garmindb_cli.py --all --download --import --analyze
+	$(GARMINDB_CLI) --all --download --import --analyze
 
 build_garmin:
-	garmindb_cli.py --all --import --analyze
+	$(GARMINDB_CLI) --all --import --analyze
 
 rebuild_garmin:
-	garmindb_cli.py --rebuild_db
+	$(GARMINDB_CLI) --rebuild_db
 
 build_garmin_monitoring:
-	garmindb_cli.py --monitoring --import --analyze
+	$(GARMINDB_CLI) --monitoring --import --analyze
 
 import_garmin_monitoring:
-	garmindb_cli.py --monitoring --import --latest
+	$(GARMINDB_CLI) --monitoring --import --latest
 
 build_garmin_activities:
-	garmindb_cli.py --activities --import --analyze
+	$(GARMINDB_CLI) --activities --import --analyze
 
 copy_garmin_settings:
-	garmindb_cli.py --copy
+	$(GARMINDB_CLI) --copy
 
 copy_garmin:
-	garmindb_cli.py --all --copy --import --analyze
+	$(GARMINDB_CLI) --all --copy --import --analyze
 
 update_garmin:
-	garmindb_cli.py --all --download --import --analyze --latest
+	$(GARMINDB_CLI) --all --download --import --analyze --latest
 
 update_garmin_activities:
-	garmindb_cli.py --activities --download --import --analyze --latest
+	$(GARMINDB_CLI) --activities --download --import --analyze --latest
 
 copy_garmin_latest:
-	garmindb_cli.py --all --copy --import --analyze --latest
+	$(GARMINDB_CLI) --all --copy --import --analyze --latest
 
 # define EXPORT_ACTIVITY_ID in my-defines.mk
 export_activity:
-	garmindb_cli.py --export-activity $(EXPORT_ACTIVITY_ID)
+	$(GARMINDB_CLI) --export-activity $(EXPORT_ACTIVITY_ID)
 
 # define EXPORT_ACTIVITY_ID in my-defines.mk
 basecamp_activity:
-	garmindb_cli.py --basecamp-activity $(EXPORT_ACTIVITY_ID)
+	$(GARMINDB_CLI) --basecamp-activity $(EXPORT_ACTIVITY_ID)
 
 # define EXPORT_ACTIVITY_ID in my-defines.mk
 google_earth_activity:
-	garmindb_cli.py --google-earth-activity $(EXPORT_ACTIVITY_ID)
+	$(GARMINDB_CLI) --google-earth-activity $(EXPORT_ACTIVITY_ID)
 
 clean_garmin_dbs:
-	garmindb_cli.py --delete_db --all
+	$(GARMINDB_CLI) --delete_db --all
 
 clean_garmin_monitoring_dbs:
-	garmindb_cli.py --delete_db --monitoring
+	$(GARMINDB_CLI) --delete_db --monitoring
 
 clean_garmin_activities_dbs:
-	garmindb_cli.py --delete_db --activities
+	$(GARMINDB_CLI) --delete_db --activities
 
 
 #
@@ -302,7 +311,7 @@ rebuild_mshealth:
 $(SUBMODULES:%=%-test):
 	$(MAKE) -C $(subst -test,,$@) test
 
-test: $(SUBMODULES:%=%-test)
+test: flake8 $(SUBMODULES:%=%-test)
 	$(MAKE) -C test all
 
 $(SUBMODULES:%=%-verify_commit):
@@ -321,7 +330,7 @@ $(SUBMODULES:%=%-flake8):
 	$(MAKE) -C $(subst -flake8,,$@) flake8
 
 flake8: $(SUBMODULES:%=%-flake8)
-	$(PYTHON) -m flake8 garmindb/*.py garmindb/garmindb/*.py garmindb/summarydb/*.py garmindb/fitbitdb/*.py garmindb/mshealthdb/*.py --max-line-length=180 --ignore=E203,E221,E241,W503
+	$(PYTHON_PATH) -m flake8 garmindb/*.py garmindb/garmindb/*.py garmindb/summarydb/*.py garmindb/fitbitdb/*.py garmindb/mshealthdb/*.py --max-line-length=180 --ignore=E203,E221,E241,W503
 
 regression_test_run: flake8 rebuild_dbs
 	grep ERROR garmindb.log || [ $$? -eq 1 ]

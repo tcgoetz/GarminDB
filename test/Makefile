@@ -3,6 +3,7 @@
 #
 
 PROJECT_BASE ?= $(CURDIR)/../.
+export VENV=$(PROJECT_BASE)/.venv
 
 include $(PROJECT_BASE)/defines.mk
 
@@ -40,9 +41,9 @@ clean:
 # Targets for testing smaller slices of functionality.
 #
 $(TEST_GROUPS):
-	$(PYTHON) test_$@.py
+	$(PYTHON_PATH) test_$@.py
 
 test_%:
-	$(PYTHON) -m unittest -v $@
+	$(PYTHON_PATH) -m unittest -v $@
 
 .PHONY: all db file_parse db_objects clean
