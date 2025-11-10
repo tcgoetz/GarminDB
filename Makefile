@@ -72,9 +72,10 @@ update_venv:
 	$(VENV)/bin/python -m pip install --upgrade pip
 
 $(VENV):
-	$(PYTHON) -m venv --upgrade-deps $(VENV)
+	$(SYS_PYTHON_PATH) -m venv --upgrade-deps $(VENV)
 
 clean_venv:
+	echo "Cleaning venv"
 	rm -rf $(VENV)
 
 version_check:
@@ -94,8 +95,20 @@ publish_check: build
 publish: clean publish_check
 	$(PYTHON_PATH) -m twine upload dist/* --verbose
 
-build: devdeps
+builddeps: $(VENV) devdeps
+
+build: builddeps
+	cp pyproject.toml.in pyproject.toml
+	uv add -r requirements.txt
 	$(PYTHON_PATH) -m build
+
+build_clean:
+	echo "Cleaning build"
+	rm -rf pyproject.toml
+	rm -rf *.egg-info
+	rm -rf build
+	rm -rf dist
+	rm -rf uv.lock
 
 $(PROJECT_BASE)/dist/$(MODULE)-*.whl: build
 
@@ -118,7 +131,7 @@ install_pip_all: $(SUBMODULES:%=%-install_pip) install_pip
 reinstall: clean $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 	$(PIP_PATH) install --upgrade --force-reinstall --no-deps $(PROJECT_BASE)/dist/$(MODULE)-*.whl
 
-reinstall_all: clean uninstall_all install_all
+reinstall_all: clean builddeps uninstall_all install_all
 
 $(SUBMODULES:%=%-uninstall):
 	$(MAKE) -C $(subst -uninstall,,$@) uninstall
@@ -184,7 +197,8 @@ $(SUBDIRS:%=%-clean):
 	rm -f garmindb/$(subst -clean,,$@)/*.pyc
 	rm -rf garmindb/$(subst -clean,,$@)/__pycache__
 
-clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
+clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean build_clean
+	echo "Cleaning project"
 	rm -f *.pyc
 	rm -f *.log
 	rm -f scripts/*.log
@@ -196,11 +210,9 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean
 	rm -f scripts/*stats.txt
 	rm -f Jupyter/*stats.txt
 	rm -rf __pycache__
-	rm -rf *.egg-info
-	rm -rf build
-	rm -rf dist
 
 realclean: clean clean_venv
+	echo "Done realclean"
 
 checkup: update_garmin
 	garmindb_checkup.py --battery

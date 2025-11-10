@@ -32,6 +32,7 @@ db_objects: $(DB_OBJECTS_TEST_GROUPS)
 verify_commit: module_versions db_objects
 
 clean:
+	echo "Cleaning test"
 	rm -f *.pyc
 	rm -f *.log
 	rm -f *.txt

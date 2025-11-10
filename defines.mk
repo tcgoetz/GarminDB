@@ -24,14 +24,10 @@ TIME ?= $(shell which time)
 
 endif
 
-
-# PYTHON3=$(shell which python3)
-PYTHON3=python3
-# PIP3=$(shell which pip3)
-PIP3=pip3
-
-PYTHON ?= $(PYTHON3)
-PIP ?= $(PIP3)
+PYTHON ?= python3
+# what python should the venv be based on?
+SYS_PYTHON_PATH ?= $(shell which python3)
+PIP ?= pip3
 
 
 ifeq ($(PYTHON),)

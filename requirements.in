@@ -1,4 +1,4 @@
-sqlalchemy~=2.0.41
+sqlalchemy~=2.0.44
 python-dateutil
 cached-property
 tqdm
