@@ -31,6 +31,8 @@ PYTHON3=python3
 PIP3=pip3
 
 PYTHON ?= $(PYTHON3)
+# what python should the venv be based on?
+SYS_PYTHON_PATH ?= PYTHON3=$(shell which $(PYTHON3))
 PIP ?= $(PIP3)
 
 

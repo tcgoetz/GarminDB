@@ -5,10 +5,6 @@ description = "Garmin Connect download and analysis"
 authors = [
     {name = "Tom Goetz"},
 ]
-dependencies = [
-    "SQLAlchemy==2.0.41",
-    "garth>=0.5.17"
-]
 requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "GPL"}
