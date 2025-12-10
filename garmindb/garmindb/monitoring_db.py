@@ -16,7 +16,7 @@ import idbutils
 
 logger = logging.getLogger(__name__)
 
-MonitoringDb = idbutils.DB.create('garmin_monitoring', 6, "Database for storing daily health monitoring data from a Garmin device.")
+MonitoringDb = idbutils.DB.create('garmin_monitoring', 7, "Database for storing daily health monitoring data from a Garmin device.")
 
 
 class MonitoringInfo(MonitoringDb.Base, idbutils.DbObject):
@@ -289,4 +289,53 @@ class MonitoringPulseOx(MonitoringDb.Base, idbutils.DbObject):
             'pulse_ox_avg' : cls.s_get_col_avg(session, cls.pulse_ox, start_ts, end_ts, True),
             'pulse_ox_min' : cls.s_get_col_min(session, cls.pulse_ox, start_ts, end_ts, True),
             'pulse_ox_max' : cls.s_get_col_max(session, cls.pulse_ox, start_ts, end_ts),
+        }
+
+
+class MonitoringHrvValue(MonitoringDb.Base, idbutils.DbObject):
+    """Class that represents a database table holding individual HRV (RMSSD) readings during sleep."""
+
+    __tablename__ = 'monitoring_hrv_value'
+
+    db = MonitoringDb
+    table_version = 1
+
+    timestamp = Column(DateTime, primary_key=True)
+    hrv = Column(Float, nullable=False)  # RMSSD in milliseconds
+
+    @classmethod
+    def get_stats(cls, session, start_ts, end_ts):
+        """Return a dict of stats for table entries within the time span."""
+        return {
+            'hrv_avg' : cls.s_get_col_avg(session, cls.hrv, start_ts, end_ts, True),
+            'hrv_min' : cls.s_get_col_min(session, cls.hrv, start_ts, end_ts, True),
+            'hrv_max' : cls.s_get_col_max(session, cls.hrv, start_ts, end_ts),
+        }
+
+
+class MonitoringHrvStatus(MonitoringDb.Base, idbutils.DbObject):
+    """Class that represents a database table holding daily HRV status summaries."""
+
+    __tablename__ = 'monitoring_hrv_status'
+
+    db = MonitoringDb
+    table_version = 1
+
+    timestamp = Column(DateTime, primary_key=True)
+    weekly_average = Column(Float)       # Weekly average RMSSD in milliseconds
+    last_night = Column(Float)           # Last night's RMSSD in milliseconds
+    last_night_average = Column(Float)   # Last night's average RMSSD
+    baseline_low = Column(Float)         # Baseline low bound
+    baseline_high = Column(Float)        # Baseline high bound
+    status = Column(Integer)             # HRV status: 0=unknown, 2=poor, 3=low, 4=balanced
+    reading_count = Column(Integer)      # Number of readings
+
+    @classmethod
+    def get_stats(cls, session, start_ts, end_ts):
+        """Return a dict of stats for table entries within the time span."""
+        return {
+            'hrv_weekly_avg' : cls.s_get_col_avg(session, cls.weekly_average, start_ts, end_ts, True),
+            'hrv_last_night_avg' : cls.s_get_col_avg(session, cls.last_night, start_ts, end_ts, True),
+            'hrv_baseline_low_avg' : cls.s_get_col_avg(session, cls.baseline_low, start_ts, end_ts, True),
+            'hrv_baseline_high_avg' : cls.s_get_col_avg(session, cls.baseline_high, start_ts, end_ts, True),
         }

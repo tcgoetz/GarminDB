@@ -72,7 +72,7 @@ class GarminMonitoringFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, debug, latest, True, [fitfile.FileType.monitoring_b], measurement_system)
+        super().__init__(input_dir, debug, latest, True, [fitfile.FileType.monitoring_b, fitfile.FileType.hrv_status], measurement_system)
 
 
 class GarminSleepFitData(FitData):
