@@ -13,7 +13,7 @@ import fitfile
 import idbutils
 
 from .garmindb import File
-from .garmindb import MonitoringDb, Monitoring, MonitoringInfo, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb, MonitoringRespirationRate, MonitoringPulseOx
+from .garmindb import MonitoringDb, Monitoring, MonitoringInfo, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb, MonitoringRespirationRate, MonitoringPulseOx, MonitoringHrvValue, MonitoringHrvStatus
 from .fit_file_processor import FitFileProcessor
 
 
@@ -109,3 +109,31 @@ class MonitoringFitFileProcessor(FitFileProcessor):
                 MonitoringPulseOx.s_insert_or_update(self.garmin_mon_db_session, pulse_ox_entry)
         else:
             raise ValueError(f'Unexpected file type {repr(fit_file.type)} for pulse ox')
+
+    def _write_hrv_value_entry(self, fit_file, message_fields):
+        """Write an HRV reading entry to the database."""
+        logger.debug("hrv_value message: %r", message_fields)
+        hrv_value = message_fields.get('hrv_value')
+        if hrv_value is not None and hrv_value > 0:
+            # HRV values are scaled by 128 in the FIT file
+            hrv_entry = {
+                'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),
+                'hrv': hrv_value / 128.0,  # Convert to milliseconds
+            }
+            MonitoringHrvValue.s_insert_or_update(self.garmin_mon_db_session, hrv_entry)
+
+    def _write_hrv_status_summary_entry(self, fit_file, message_fields):
+        """Write an HRV status summary entry to the database."""
+        logger.debug("hrv_status_summary message: %r", message_fields)
+        # HRV values are scaled by 128 in the FIT file
+        hrv_status_entry = {
+            'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),
+            'weekly_average': message_fields.get('weekly_average', 0) / 128.0 if message_fields.get('weekly_average') else None,
+            'last_night': message_fields.get('last_night', 0) / 128.0 if message_fields.get('last_night') else None,
+            'last_night_average': message_fields.get('last_night_average', 0) / 128.0 if message_fields.get('last_night_average') else None,
+            'baseline_low': message_fields.get('baseline_low', 0) / 128.0 if message_fields.get('baseline_low') else None,
+            'baseline_high': message_fields.get('baseline_high', 0) / 128.0 if message_fields.get('baseline_high') else None,
+            'status': message_fields.get('status'),
+            'reading_count': message_fields.get('reading_count'),
+        }
+        MonitoringHrvStatus.s_insert_or_update(self.garmin_mon_db_session, hrv_status_entry)
