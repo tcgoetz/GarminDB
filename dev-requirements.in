@@ -2,3 +2,4 @@ flake8
 build
 wheel
 twine
+uv

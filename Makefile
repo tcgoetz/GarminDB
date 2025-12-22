@@ -18,6 +18,7 @@ export PYTHON_PATH=$(VENV)/bin/$(PYTHON)
 $(info $$PYTHON_PATH is [${PYTHON_PATH}])
 export GARMINDB_CLI=$(VENV)/bin/garmindb_cli.py
 $(info $$GARMINDB_CLI is [${GARMINDB_CLI}])
+export UV_PATH=$(VENV)/bin/uv
 
 
 #
@@ -79,7 +80,7 @@ clean_venv:
 	rm -rf $(VENV)
 
 version_check:
-	python -c 'import sys; import garmindb.version; garmindb.version.python_dev_version_check(sys.argv[0])'
+	python3 -c "v={}; exec(open('garmindb/version_info.py').read(), v); import sys; req=v['dev_python_required']; tested=v['python_tested']; print(f'Python version check: current={sys.version_info[:3]}, required={req}, tested={tested}'); sys.exit(0 if sys.version_info >= req else 1)"
 
 update: submodules_update
 	git pull
@@ -99,7 +100,7 @@ builddeps: $(VENV) devdeps
 
 build: builddeps
 	cp pyproject.toml.in pyproject.toml
-	uv add -r requirements.txt
+	$(UV_PATH) add --no-sync -r requirements.txt
 	$(PYTHON_PATH) -m build
 
 build_clean:
@@ -147,10 +148,12 @@ republish_plugins:
 $(SUBMODULES:%=%-deps):
 	$(MAKE) -C $(subst -deps,,$@) deps
 
-requirements.txt:
+requirements.txt: requirements.in
+	$(PIP_PATH) install --upgrade --requirement requirements.in
 	$(PIP_PATH) freeze -r requirements.in > requirements.txt
 
-dev-requirements.txt:
+dev-requirements.txt: dev-requirements.in
+	$(PIP_PATH) install --upgrade --requirement dev-requirements.in
 	$(PIP_PATH) freeze -r dev-requirements.in > dev-requirements.txt
 
 Jupyter/requirements.txt:
@@ -162,13 +165,13 @@ Jupyter/requirements_graphs.txt:
 update_pip_packages:
 	$(PIP_PATH) list --outdated | egrep -v "Package|---" | cut -d' ' -f1 | xargs pip install --upgrade
 
-deps: $(SUBMODULES:%=%-deps)
+deps: $(SUBMODULES:%=%-deps) requirements.txt
 	$(PIP_PATH) install --upgrade --requirement requirements.txt
 
 $(SUBMODULES:%=%-devdeps):
 	$(MAKE) -C $(subst -devdeps,,$@) devdeps
 
-devdeps: $(SUBMODULES:%=%-devdeps)
+devdeps: $(SUBMODULES:%=%-devdeps) dev-requirements.txt
 	$(PIP_PATH) install --upgrade --requirement dev-requirements.txt
 
 graphdeps:
