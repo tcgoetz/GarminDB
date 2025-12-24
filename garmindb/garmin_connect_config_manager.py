@@ -214,6 +214,12 @@ class GarminConnectConfigManager(JsonConfig):
     def stat_start_date(self, stat_type):
         """Return a tuple containing the start date and the number of days to fetch stats from."""
         start_date = self.get_node_value('data', stat_type + '_start_date')
+        if start_date is None:
+            # Fallback to a general start date or a reasonable default
+            start_date = self.get_node_value('data', 'start_date')
+        if start_date is None:
+            # If still nothing, default to 20 days ago
+            start_date = datetime.datetime.now().date() - datetime.timedelta(days=20)
         end_date = self.get_node_value_default('data', stat_type + '_end_date', datetime.datetime.now().date())
         days = (end_date - start_date).days
         return (start_date, days)
