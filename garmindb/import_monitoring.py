@@ -13,7 +13,7 @@ import enum
 import fitfile
 from idbutils import JsonFileProcessor, Conversions
 
-from .garmindb import GarminDb, Attributes, Weight, Sleep, SleepEvents, RestingHeartRate, DailySummary
+from .garmindb import GarminDb, Attributes, Weight, Sleep, SleepEvents, RestingHeartRate, DailySummary, Hrv
 from .fit_data import FitData
 
 
@@ -480,4 +480,45 @@ class GarminHydrationData(JsonFileProcessor):
         root_logger.debug("Processing daily hydration data %r", summary)
         DailySummary.insert_or_update(
             self.garmin_db, summary, ignore_none=True)
+        return 1
+
+
+class GarminHrvData(JsonFileProcessor):
+    """Class for importing JSON formatted Garmin Connect heart rate variability (HRV) data into a database."""
+
+    def __init__(self, db_params, input_dir, latest, debug):
+        """
+        Return an instance of GarminHrvData.
+
+        Parameters:
+        ----------
+        db_params (object): configuration data for accessing the database
+        input_dir (string): directory (full path) to check for HRV data files
+        latest (Boolean): check for latest files only
+        debug (Boolean): enable debug logging
+
+        """
+        super().__init__(r'hrv_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
+        self.garmin_db = GarminDb(db_params)
+        self.conversions = {'calendarDate': self._parse_date}
+
+    def _process_json(self, json_data):
+        hrv_summary = json_data.get('hrvSummary')
+        if hrv_summary is None:
+            return 0
+        day = hrv_summary.get('calendarDate')
+        if day is None:
+            return 0
+        if isinstance(day, str):
+            day = self._parse_date(day)
+        point = {
+            'day': day.date() if hasattr(day, 'date') else day,
+            'weekly_avg': self._get_field(hrv_summary, 'weeklyAvg', int),
+            'last_night_avg': self._get_field(hrv_summary, 'lastNightAvg', int),
+            'last_night_5min_high': self._get_field(hrv_summary, 'lastNight5MinHigh', int),
+            'baseline_low': self._get_field(hrv_summary.get('baseline', {}), 'balancedLow', int),
+            'baseline_upper': self._get_field(hrv_summary.get('baseline', {}), 'balancedUpper', int),
+            'status': self._get_field(hrv_summary, 'status', str)
+        }
+        Hrv.insert_or_update(self.garmin_db, point, ignore_none=True)
         return 1

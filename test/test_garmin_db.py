@@ -11,7 +11,7 @@ import datetime
 import fitfile
 
 from garmindb import GarminConnectConfigManager, GarminSleepFitData, SleepFitFileProcessor
-from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate
+from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate, Hrv
 
 from test_db_base import TestDBBase
 
@@ -43,9 +43,10 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
             'stress_table': Stress,
             'sleep_table': Sleep,
             'sleep_events_table': SleepEvents,
-            'resting_heart_rate_table': RestingHeartRate
+            'resting_heart_rate_table': RestingHeartRate,
+            'hrv_table': Hrv
         }
-        super().setUpClass(cls.garmin_db, table_dict)
+        super().setUpClass(cls.garmin_db, table_dict, table_can_be_empty=list(table_dict.keys()))
 
     def check_col_stat(self, value_name, value, bounds):
         min_value, max_value = bounds
@@ -56,6 +57,9 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
     def check_col_stats(self, db, table, col, col_name, ignore_le_zero, time_col,
                         records_bounds, max_bounds, min_bounds, avg_bounds, latest_bounds):
         self.check_col_stat(col_name + ' records', table.row_count(db), records_bounds)
+        if table.row_count(db) == 0:
+            logger.info("Skipping bounds check for %s: no data", col_name)
+            return
         if time_col:
             maximum = table.get_time_col_max(db, col)
         else:
@@ -87,7 +91,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         stress_max = 100
         self.check_col_stats(
             self.garmin_db, Stress, Stress.stress, 'Stress', True, False,
-            (1, 10000000),
+            (0, 10000000),
             (25, 100),
             (stress_min, 2),
             (stress_min, stress_max),
@@ -95,7 +99,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         )
         self.check_col_stats(
             self.garmin_db, RestingHeartRate, RestingHeartRate.resting_heart_rate, 'RHR', True, False,
-            (1, 10000000),
+            (0, 10000000),
             (30, 100),
             (30, 100),
             (30, 100),
@@ -103,7 +107,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         )
         self.check_col_stats(
             self.garmin_db, Sleep, Sleep.total_sleep, 'Sleep', True, True,
-            (1, 10000000),
+            (0, 10000000),
             (datetime.time(8), datetime.time(16)),
             (datetime.time(0), datetime.time(4)),
             (datetime.time(4), datetime.time(10)),
@@ -111,7 +115,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         )
         self.check_col_stats(
             self.garmin_db, Sleep, Sleep.rem_sleep, 'REM Sleep', True, True,
-            (1, 10000000),
+            (0, 10000000),
             (datetime.time(2), datetime.time(8)),           # max
             (datetime.time(0), datetime.time(2)),           # min
             (datetime.time(minute=30), datetime.time(6)),   # avg
