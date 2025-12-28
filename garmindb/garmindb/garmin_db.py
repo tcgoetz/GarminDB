@@ -325,6 +325,38 @@ class RestingHeartRate(GarminDb.Base, idbutils.DbObject):
         }
 
 
+class Hrv(GarminDb.Base, idbutils.DbObject):
+    """Class representing daily Heart Rate Variability (HRV) data."""
+
+    __tablename__ = 'hrv'
+
+    db = GarminDb
+    table_version = 1
+    _col_units = {
+        'weekly_avg': 'ms',
+        'last_night_avg': 'ms',
+        'last_night_5min_high': 'ms',
+        'baseline_low': 'ms',
+        'baseline_upper': 'ms'
+    }
+
+    day = Column(Date, primary_key=True)
+    weekly_avg = Column(Integer)
+    last_night_avg = Column(Integer)
+    last_night_5min_high = Column(Integer)
+    baseline_low = Column(Integer)
+    baseline_upper = Column(Integer)
+    status = Column(String)
+
+    @classmethod
+    def get_stats(cls, session, start_ts, end_ts):
+        """Return a dictionary of aggregate statistics for the given time period."""
+        return {
+            'hrv_weekly_avg': cls.s_get_col_avg(session, cls.weekly_avg, start_ts, end_ts, ignore_le_zero=True),
+            'hrv_last_night_avg': cls.s_get_col_avg(session, cls.last_night_avg, start_ts, end_ts, ignore_le_zero=True),
+        }
+
+
 class DailySummary(GarminDb.Base, idbutils.DbObject):
     """Class representing a Garmin daily summary."""
 
