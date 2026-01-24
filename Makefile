@@ -99,7 +99,7 @@ builddeps: $(VENV) devdeps
 
 build: builddeps
 	cp pyproject.toml.in pyproject.toml
-	uv add -r requirements.txt
+	uv add -r requirements.txt --frozen
 	$(PYTHON_PATH) -m build
 
 build_clean:
