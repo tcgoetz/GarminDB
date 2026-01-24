@@ -13,7 +13,8 @@ import fitfile
 import idbutils
 
 from .garmindb import File
-from .garmindb import MonitoringDb, Monitoring, MonitoringInfo, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb, MonitoringRespirationRate, MonitoringPulseOx, MonitoringHrvValue, MonitoringHrvStatus
+from .garmindb import MonitoringDb, Monitoring, MonitoringInfo, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb, MonitoringRespirationRate, MonitoringPulseOx, \
+    MonitoringHrvValue, MonitoringHrvStatus
 from .fit_file_processor import FitFileProcessor
 
 
