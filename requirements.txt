@@ -1,10 +1,10 @@
 SQLAlchemy==2.0.46
 python-dateutil==2.9.0.post0
-cached-property==1.5.2
-tqdm==4.66.5
+cached-property==2.0.1
+tqdm==4.67.1
 garth==0.6.3
 fitfile>=1.2.0
 tcxfile>=1.0.4
 idbutils>=1.1.0
 # security fixes
-tornado>=6.4.2
+tornado>=6.5.4

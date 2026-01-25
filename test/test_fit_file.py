@@ -91,7 +91,7 @@ class TestFitFile(unittest.TestCase):
         if (message.type != fitfile.MessageType.device_info or message.type != fitfile.MessageType.file_id) and message.fields.product != fitfile.GarminProduct.connect:
             self.check_value_range(fit_file, message, 'timestamp',
                                    datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc),
-                                   datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc))
+                                   datetime.datetime.now(datetime.UTC))
 
     def check_temperature(self, message):
         for field_name in message.fields:
