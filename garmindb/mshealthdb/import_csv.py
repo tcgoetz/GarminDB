@@ -62,7 +62,7 @@ class MSHealthData():
     }
 
     def __init__(self, input_file, input_dir, db_params, metric, debug):
-        """Return an instance of MSHealthData given an input file or files and information on the databse to put it in."""
+        """Return an instance of MSHealthData given an input file or files and information on the database to put it in."""
         self.metric = metric
         self.mshealth_db = MSHealthDb(db_params, debug)
         if input_file:
@@ -78,7 +78,7 @@ class MSHealthData():
         DaysSummary.insert_or_update(self.mshealth_db, db_entry)
 
     def process_files(self):
-        """Import files into the databse."""
+        """Import files into the database."""
         for file_name in tqdm(self.file_names, unit='files'):
             logger.info("Processing file: " + file_name)
             csvimporter = CsvImporter(file_name, self.cols_map, self.__write_entry)
@@ -89,7 +89,7 @@ class MSVaultData():
     """A class for importing CSV formatted Microsoft Health Vault export data."""
 
     def __init__(self, input_file, input_dir, db_params, metric, debug):
-        """Return an instance of MSVaultData given an input file or files and information on the databse to put it in."""
+        """Return an instance of MSVaultData given an input file or files and information on the database to put it in."""
         self.metric = metric
         self.mshealth_db = MSHealthDb(db_params, debug)
         self.cols_map = {
@@ -112,7 +112,7 @@ class MSVaultData():
             logger.error('Failed to save %r to db: %s', db_entry, e)
 
     def process_files(self):
-        """Import files into the databse."""
+        """Import files into the database."""
         for file_name in tqdm(self.file_names, unit='files'):
             logger.info("Processing file: " + file_name)
             csvimporter = CsvImporter(file_name, self.cols_map, self.__write_entry)

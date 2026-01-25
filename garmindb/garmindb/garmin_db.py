@@ -8,7 +8,7 @@ import os
 import datetime
 import logging
 import re
-from sqlalchemy import Column, Integer, Date, DateTime, Time, Float, String, Enum, ForeignKey, func, PrimaryKeyConstraint
+from sqlalchemy import Column, Integer, DateTime, Time, Float, String, Enum, ForeignKey, func, PrimaryKeyConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import fitfile
@@ -144,7 +144,7 @@ class File(GarminDb.Base, idbutils.DbObject):
 
     @classmethod
     def create_view(cls, db):
-        """Create a databse view that presents the file data in a more user friendly way."""
+        """Create a database view that presents the file data in a more user friendly way."""
         cols = [
             DeviceInfo.timestamp.label('timestamp'),
             cls.id.label('activity_id'),
@@ -187,7 +187,7 @@ class Weight(GarminDb.Base, idbutils.DbObject):
     db = GarminDb
     table_version = 1
 
-    day = Column(Date, primary_key=True)
+    day = Column(DateTime, primary_key=True)
     weight = Column(Float, nullable=False)
 
     @classmethod
@@ -227,7 +227,7 @@ class Sleep(GarminDb.Base, idbutils.DbObject):
     db = GarminDb
     table_version = 3
 
-    day = Column(Date, primary_key=True)
+    day = Column(DateTime, primary_key=True)
     start = Column(DateTime)
     end = Column(DateTime)
     total_sleep = Column(Time, nullable=False, default=datetime.time.min)
@@ -312,7 +312,7 @@ class RestingHeartRate(GarminDb.Base, idbutils.DbObject):
     table_version = 1
     _col_units = {'resting_heart_rate': 'bpm'}
 
-    day = Column(Date, primary_key=True)
+    day = Column(DateTime, primary_key=True)
     resting_heart_rate = Column(Float)
 
     @classmethod
@@ -334,7 +334,7 @@ class DailySummary(GarminDb.Base, idbutils.DbObject):
     table_version = 4
     _col_units = {'hr_min': 'bpm', 'hr_max': 'bpm', 'rhr': 'bpm'}
 
-    day = Column(Date, primary_key=True)
+    day = Column(DateTime, primary_key=True)
     hr_min = Column(Integer)
     hr_max = Column(Integer)
     rhr = Column(Integer)

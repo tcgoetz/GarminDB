@@ -178,7 +178,7 @@ class MonitoringClimb(MonitoringDb.Base, idbutils.DbObject):
     @classmethod
     def get_yearly_stats(cls, session, year, measurement_system):
         """Return a dict of stats for table entries for the year."""
-        first_day_ts = datetime.datetime(year, 1, 1)
+        first_day_ts = datetime.datetime(year=year, month=1, day=1)
         stats = cls.get_stats(session, cls.s_get_col_sum_of_max_per_day, first_day_ts, first_day_ts + datetime.timedelta(365), measurement_system)
         stats['first_day'] = first_day_ts
         return stats

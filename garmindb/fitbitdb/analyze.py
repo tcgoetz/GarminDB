@@ -67,17 +67,17 @@ class Analyze():
         for year in years:
             days = FitDaysSummary.get_days(self.fitbitdb, year)
             for day in days:
-                day_ts = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
+                day_ts = datetime.datetime(year=year, month=1, day=1) + datetime.timedelta(day - 1)
                 stats = FitDaysSummary.get_daily_stats(self.fitbitdb, day_ts)
                 DaysSummary.insert_or_update(self.sumdb, stats, ignore_none=True)
             for week_starting_day in range(1, 365, 7):
-                day_ts = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
+                day_ts = datetime.datetime(year=year, month=1, day=1) + datetime.timedelta(week_starting_day - 1)
                 stats = FitDaysSummary.get_weekly_stats(self.fitbitdb, day_ts)
                 WeeksSummary.insert_or_update(self.sumdb, stats, ignore_none=True)
             months = DaysSummary.get_months(self.fitbitdb, year)
             for month in months:
-                start_day_ts = datetime.date(year, month, 1)
-                end_day_ts = datetime.date(year, month, calendar.monthrange(year, month)[1])
+                start_day_ts = datetime.datetime(year=year, month=month, day=1)
+                end_day_ts = datetime.datetime(year=year, month=month, day=calendar.monthrange(year, month)[1])
                 stats = FitDaysSummary.get_monthly_stats(self.fitbitdb, start_day_ts, end_day_ts)
                 MonthsSummary.insert_or_update(self.sumdb, stats, ignore_none=True)
             stats = FitDaysSummary.get_yearly_stats(self.fitbitdb, year)

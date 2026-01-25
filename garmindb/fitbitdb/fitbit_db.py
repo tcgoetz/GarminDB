@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, Integer, Date, Float, Time
+from sqlalchemy import Column, Integer, DateTime, Float, Time
 
 import fitfile
 import idbutils
@@ -26,7 +26,7 @@ class DaysSummary(FitBitDb.Base, idbutils.DbObject):
     db = FitBitDb
     table_version = 1
 
-    day = Column(Date, primary_key=True)
+    day = Column(DateTime, primary_key=True)
     calories_in = Column(Integer)
     log_water = Column(Float)
     calories = Column(Integer)
@@ -145,7 +145,7 @@ class DaysSummary(FitBitDb.Base, idbutils.DbObject):
     @classmethod
     def get_yearly_stats(cls, db, year):
         """Return a dictionary of aggregate statistics for the given year."""
-        first_day_ts = datetime.datetime(year, 1, 1)
+        first_day_ts = datetime.datetime(year=year, month=1, day=1)
         last_day_ts = first_day_ts + datetime.timedelta(365)
         stats = cls.__get_activity_mins_stats(db, cls.get_col_sum, first_day_ts, last_day_ts)
         stats.update(cls.__get_floors_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))

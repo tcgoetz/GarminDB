@@ -1,4 +1,4 @@
-"""Object for implementing summary databse objects."""
+"""Object for implementing summary database objects."""
 
 __author__ = "Tom Goetz"
 __copyright__ = "Copyright Tom Goetz"

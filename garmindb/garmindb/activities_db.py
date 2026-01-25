@@ -1,4 +1,4 @@
-"""Objects representing a database and databse objects for storing activities data."""
+"""Objects representing a database and database objects for storing activities data."""
 
 __author__ = "Tom Goetz"
 __copyright__ = "Copyright Tom Goetz"

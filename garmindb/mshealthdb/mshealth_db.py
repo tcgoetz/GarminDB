@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import datetime
 import logging
-from sqlalchemy import Column, Integer, Date, DateTime, Float
+from sqlalchemy import Column, Integer, DateTime, Float
 
 import fitfile.conversions as conversions
 import idbutils
@@ -26,7 +26,7 @@ class DaysSummary(MSHealthDb.Base, idbutils.DbObject):
     db = MSHealthDb
     table_version = 1
 
-    day = Column(Date, primary_key=True)
+    day = Column(DateTime, primary_key=True)
     calories = Column(Integer)
     steps = Column(Integer)
     floors = Column(Integer)
@@ -161,7 +161,7 @@ class DaysSummary(MSHealthDb.Base, idbutils.DbObject):
     @classmethod
     def get_yearly_stats(cls, db, year):
         """Return a dictionary of aggregate statistics for the given year."""
-        first_day_ts = datetime.datetime(year, 1, 1)
+        first_day_ts = datetime.datetime(year=year, month=1, day=1)
         last_day_ts = first_day_ts + datetime.timedelta(365)
         stats = cls.get_activity_mins_stats(db, cls.get_col_sum, first_day_ts, last_day_ts)
         stats.update(cls.get_floors_stats(db, cls.get_col_sum, first_day_ts, last_day_ts))
@@ -174,7 +174,7 @@ class DaysSummary(MSHealthDb.Base, idbutils.DbObject):
 
 
 class MSVaultWeight(MSHealthDb.Base, idbutils.DbObject):
-    """Class for a databse table holding weight data from Microsoft Health Vault."""
+    """Class for a database table holding weight data from Microsoft Health Vault."""
 
     __tablename__ = 'weight'
 
