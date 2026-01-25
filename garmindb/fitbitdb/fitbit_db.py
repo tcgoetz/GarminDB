@@ -24,7 +24,7 @@ class DaysSummary(FitBitDb.Base, idbutils.DbObject):
     __tablename__ = 'days_summary'
 
     db = FitBitDb
-    table_version = 1
+    table_version = 2
 
     day = Column(DateTime, primary_key=True)
     calories_in = Column(Integer)

@@ -16,7 +16,7 @@ class SummaryBase(DbObject):
     """Base class for implementing summary database objects."""
 
     view_version = 10
-    _table_version = 5
+    _table_version = 6
     _col_units = {'hr_avg': 'bpm', 'hr_min': 'bpm', 'hr_max': 'bpm', 'rhr_avg': 'bpm', 'rhr_min': 'bpm', 'rhr_max': 'bpm', 'rr_waking_avg': 'brpm', 'rr_max': 'brpm',
                   'rr_min': 'brpm'}
 

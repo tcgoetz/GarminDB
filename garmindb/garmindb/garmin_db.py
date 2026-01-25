@@ -185,7 +185,7 @@ class Weight(GarminDb.Base, idbutils.DbObject):
     __tablename__ = 'weight'
 
     db = GarminDb
-    table_version = 1
+    table_version = 2
 
     day = Column(DateTime, primary_key=True)
     weight = Column(Float, nullable=False)
@@ -225,7 +225,7 @@ class Sleep(GarminDb.Base, idbutils.DbObject):
     __tablename__ = 'sleep'
 
     db = GarminDb
-    table_version = 3
+    table_version = 4
 
     day = Column(DateTime, primary_key=True)
     start = Column(DateTime)
@@ -309,7 +309,7 @@ class RestingHeartRate(GarminDb.Base, idbutils.DbObject):
     __tablename__ = 'resting_hr'
 
     db = GarminDb
-    table_version = 1
+    table_version = 2
     _col_units = {'resting_heart_rate': 'bpm'}
 
     day = Column(DateTime, primary_key=True)
@@ -331,7 +331,7 @@ class DailySummary(GarminDb.Base, idbutils.DbObject):
     __tablename__ = 'daily_summary'
 
     db = GarminDb
-    table_version = 4
+    table_version = 5
     _col_units = {'hr_min': 'bpm', 'hr_max': 'bpm', 'rhr': 'bpm'}
 
     day = Column(DateTime, primary_key=True)
