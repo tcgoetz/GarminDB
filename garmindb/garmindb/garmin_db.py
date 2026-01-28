@@ -340,7 +340,7 @@ class Hrv(GarminDb.Base, idbutils.DbObject):
         'baseline_upper': 'ms'
     }
 
-    day = Column(Date, primary_key=True)
+    day = Column(DateTime, primary_key=True)
     weekly_avg = Column(Integer)
     last_night_avg = Column(Integer)
     last_night_5min_high = Column(Integer)

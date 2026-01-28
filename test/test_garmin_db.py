@@ -46,7 +46,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
             'resting_heart_rate_table': RestingHeartRate,
             'hrv_table': Hrv
         }
-        super().setUpClass(cls.garmin_db, table_dict, , table_can_be_empty=['hrv_table'])
+        super().setUpClass(cls.garmin_db, table_dict, table_can_be_empty=['hrv_table'])
 
     def check_col_stat(self, value_name, value, bounds):
         min_value, max_value = bounds
