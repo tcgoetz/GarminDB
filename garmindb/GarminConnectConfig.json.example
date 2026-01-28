@@ -31,9 +31,9 @@
         "itime"                         : true,
         "sleep"                         : true,
         "rhr"                           : true,
+        "hrv"                           : true,
         "weight"                        : true,
-        "activities"                    : true,
-        "hrv"                           : true
+        "activities"                    : true
     },
     "course_views": {
         "steps"                         : []
