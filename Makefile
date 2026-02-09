@@ -79,7 +79,7 @@ clean_venv:
 	rm -rf $(VENV)
 
 version_check:
-	python -c 'import sys; import garmindb.version; garmindb.version.python_dev_version_check(sys.argv[0])'
+	$(PYTHON_PATH) -c 'import sys; import garmindb.version; garmindb.version.python_dev_version_check(sys.argv[0])'
 
 update: submodules_update
 	git pull
