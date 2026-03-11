@@ -5,7 +5,7 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 import logging
-from sqlalchemy import Column, Date
+from sqlalchemy import Column, DateTime
 
 import idbutils
 
@@ -27,7 +27,7 @@ class YearsSummary(SummaryDb.Base, SummaryBase):
     table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
-    first_day = Column(Date, primary_key=True)
+    first_day = Column(DateTime, primary_key=True)
 
     @classmethod
     def create_view(cls, db):
@@ -44,7 +44,7 @@ class MonthsSummary(SummaryDb.Base, SummaryBase):
     table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
-    first_day = Column(Date, primary_key=True)
+    first_day = Column(DateTime, primary_key=True)
 
     @classmethod
     def create_view(cls, db):
@@ -61,7 +61,7 @@ class WeeksSummary(SummaryDb.Base, SummaryBase):
     table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
-    first_day = Column(Date, primary_key=True)
+    first_day = Column(DateTime, primary_key=True)
 
     @classmethod
     def create_view(cls, db):
@@ -78,7 +78,7 @@ class DaysSummary(SummaryDb.Base, SummaryBase):
     table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
-    day = Column(Date, primary_key=True)
+    day = Column(DateTime, primary_key=True)
 
     @classmethod
     def create_view(cls, db):

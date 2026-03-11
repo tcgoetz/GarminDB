@@ -42,6 +42,7 @@ class Download():
     garmin_connect_usersummary_url = "/usersummary-service/usersummary"
     garmin_connect_daily_summary_url = garmin_connect_usersummary_url + "/daily"
     garmin_connect_daily_hydration_url = garmin_connect_usersummary_url + "/hydration/allData"
+    garmin_connect_hrv_url = "/hrv-service/hrv"
 
     # https://connect.garmin.com/modern/proxy/usersummary-service/usersummary/hydration/allData/2019-11-29
 
@@ -319,3 +320,17 @@ class Download():
         """Download the hydration data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting hydration: %s (%d)", date, days)
         self.__get_stat(self.__get_hydration_day, directory_func, date, days, overwrite)
+
+    def __get_hrv_day(self, directory, day, overwrite=False):
+        date_str = day.strftime('%Y-%m-%d')
+        json_filename = f'{directory}/hrv_{date_str}'
+        url = f'{self.garmin_connect_hrv_url}/{date_str}'
+        try:
+            self.save_json_to_file(json_filename, self.garth.connectapi(url), overwrite)
+        except GarthHTTPError as e:
+            root_logger.error("Exception getting daily summary %s", e)
+
+    def get_hrv(self, directory, date, days, overwrite):
+        """Download the heart rate variability (HRV) data from Garmin Connect and save to a JSON file."""
+        root_logger.info("Getting hrv: %s (%d)", date, days)
+        self.__get_stat(self.__get_hrv_day, directory, date, days, overwrite)

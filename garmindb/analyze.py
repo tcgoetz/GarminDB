@@ -105,45 +105,45 @@ class Analyze():
 
         if days_all:
             for day in tqdm(days_all, unit='days'):
-                day_date = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
-                self.__populate_hr_intensity(day_date, garmin_mon_session, garmin_sum_session)
+                day_dt = datetime.datetime(year=year, month=1, day=1) + datetime.timedelta(day - 1)
+                self.__populate_hr_intensity(day_dt, garmin_mon_session, garmin_sum_session)
                 # Ensure a summarized Sleep row exists when only SleepEvents are present
-                self.__populate_sleep_for_day(day_date, garmin_session)
-                self.__calculate_day_stats(day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
+                self.__populate_sleep_for_day(day_dt, garmin_session)
+                self.__calculate_day_stats(day_dt, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
         days = Activities.s_get_days(garmin_act_session, year)
         if len(days):
             for day in tqdm(days, unit='days'):
-                stats = Activities.get_daily_stats(garmin_act_session, datetime.date(year, 1, 1) + datetime.timedelta(day - 1))
+                stats = Activities.get_daily_stats(garmin_act_session, datetime.datetime(year=year, month=1, day=1) + datetime.timedelta(day - 1))
                 DaysSummary.s_insert_or_update(garmin_sum_session, stats)
                 summarydb.DaysSummary.s_insert_or_update(sum_session, stats)
 
-    def __calculate_week_stats(self, day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
-        stats = DailySummary.get_weekly_stats(garmin_session, day_date)
+    def __calculate_week_stats(self, day_dt, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
+        stats = DailySummary.get_weekly_stats(garmin_session, day_dt)
         # prefer getting stats from the daily summary.
         if stats.get('rhr_avg') is None:
-            stats.update(RestingHeartRate.get_weekly_stats(garmin_session, day_date))
+            stats.update(RestingHeartRate.get_weekly_stats(garmin_session, day_dt))
         if stats.get('stress_avg') is None:
-            stats.update(Stress.get_weekly_stats(garmin_session, day_date))
+            stats.update(Stress.get_weekly_stats(garmin_session, day_dt))
         if stats.get('intensity_time') is None:
-            stats.update(MonitoringIntensity.get_weekly_stats(garmin_mon_session, day_date))
+            stats.update(MonitoringIntensity.get_weekly_stats(garmin_mon_session, day_dt))
         if stats.get('floors') is None:
-            stats.update(MonitoringClimb.get_weekly_stats(garmin_mon_session, day_date, self.measurement_system))
+            stats.update(MonitoringClimb.get_weekly_stats(garmin_mon_session, day_dt, self.measurement_system))
         if stats.get('steps') is None:
-            stats.update(Monitoring.get_weekly_stats(garmin_mon_session, day_date))
-        stats.update(MonitoringHeartRate.get_weekly_stats(garmin_mon_session, day_date))
-        stats.update(IntensityHR.get_weekly_stats(garmin_sum_session, day_date))
-        stats.update(Weight.get_weekly_stats(garmin_session, day_date))
-        stats.update(Sleep.get_weekly_stats(garmin_session, day_date))
-        stats.update(Activities.get_weekly_stats(garmin_act_session, day_date))
+            stats.update(Monitoring.get_weekly_stats(garmin_mon_session, day_dt))
+        stats.update(MonitoringHeartRate.get_weekly_stats(garmin_mon_session, day_dt))
+        stats.update(IntensityHR.get_weekly_stats(garmin_sum_session, day_dt))
+        stats.update(Weight.get_weekly_stats(garmin_session, day_dt))
+        stats.update(Sleep.get_weekly_stats(garmin_session, day_dt))
+        stats.update(Activities.get_weekly_stats(garmin_act_session, day_dt))
         # save it to the db
         WeeksSummary.s_insert_or_update(garmin_sum_session, stats)
         summarydb.WeeksSummary.s_insert_or_update(sum_session, stats)
 
     def __calculate_weeks(self, year, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session):
         for week_starting_day in tqdm(range(1, 365, 7), unit='weeks'):
-            day_date = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
-            if day_date < datetime.datetime.now().date():
-                self.__calculate_week_stats(day_date, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
+            day_dt = datetime.datetime(year=year, month=1, day=1) + datetime.timedelta(week_starting_day - 1)
+            if day_dt < datetime.datetime.now():
+                self.__calculate_week_stats(day_dt, garmin_session, garmin_mon_session, garmin_act_session, garmin_sum_session, sum_session)
 
     def __calculate_monitoring_month_stats(self, start_day_date, end_day_date, garmin_session, garmin_mon_session, garmin_sum_session, sum_session):
         stats = DailySummary.get_monthly_stats(garmin_session, start_day_date, end_day_date)
@@ -170,13 +170,14 @@ class Analyze():
         months = Monitoring.s_get_months(garmin_mon_session, year)
         if len(months):
             for month in tqdm(months, unit='months'):
-                start_day_date = datetime.date(year, month, 1)
-                end_day_date = datetime.date(year, month, calendar.monthrange(year, month)[1])
-                self.__calculate_monitoring_month_stats(start_day_date, end_day_date, garmin_session, garmin_mon_session, garmin_sum_session, sum_session)
+                start_day_dt = datetime.datetime(year=year, month=month, day=1)
+                end_day_dt = datetime.datetime(year=year, month=month, day=calendar.monthrange(year, month)[1])
+                self.__calculate_monitoring_month_stats(start_day_dt, end_day_dt, garmin_session, garmin_mon_session, garmin_sum_session, sum_session)
         months = Activities.s_get_months(garmin_act_session, year)
         if len(months):
             for month in tqdm(months, unit='months'):
-                stats = Activities.get_monthly_stats(garmin_act_session, datetime.date(year, month, 1), datetime.date(year, month, calendar.monthrange(year, month)[1]))
+                stats = Activities.get_monthly_stats(garmin_act_session, datetime.datetime(year=year, month=month, day=1),
+                                                     datetime.datetime(year=year, month=month, day=calendar.monthrange(year, month)[1]))
                 MonthsSummary.s_insert_or_update(garmin_sum_session, stats)
                 summarydb.MonthsSummary.s_insert_or_update(sum_session, stats)
 

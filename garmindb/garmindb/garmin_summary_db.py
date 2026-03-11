@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, Integer, Date, DateTime
+from sqlalchemy import Column, Integer, DateTime
 
 import idbutils
 
@@ -28,13 +28,13 @@ class YearsSummary(GarminSummaryDb.Base, SummaryBase):
     table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
-    first_day = Column(Date, primary_key=True)
+    first_day = Column(DateTime, primary_key=True)
 
     @classmethod
     def get_year(cls, db, year):
         """Return record for a given year."""
         with db.managed_session() as session:
-            return session.query(cls).filter(cls.first_day == datetime.date(day=1, month=1, year=year)).one_or_none()
+            return session.query(cls).filter(cls.first_day == datetime.datetime(day=1, month=1, year=year)).one_or_none()
 
     @classmethod
     def create_view(cls, db):
@@ -51,7 +51,7 @@ class MonthsSummary(GarminSummaryDb.Base, SummaryBase):
     table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
-    first_day = Column(Date, primary_key=True)
+    first_day = Column(DateTime, primary_key=True)
 
     @classmethod
     def create_view(cls, db):
@@ -68,7 +68,7 @@ class WeeksSummary(GarminSummaryDb.Base, SummaryBase):
     table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
-    first_day = Column(Date, primary_key=True)
+    first_day = Column(DateTime, primary_key=True)
 
     @classmethod
     def create_view(cls, db):
@@ -85,7 +85,7 @@ class DaysSummary(GarminSummaryDb.Base, SummaryBase):
     table_version = SummaryBase._table_version
     view_version = SummaryBase.view_version
 
-    day = Column(Date, primary_key=True)
+    day = Column(DateTime, primary_key=True)
 
     @classmethod
     def get_day(cls, db, day):

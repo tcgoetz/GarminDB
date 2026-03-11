@@ -79,7 +79,7 @@ clean_venv:
 	rm -rf $(VENV)
 
 version_check:
-	python -c 'import sys; import garmindb.version; garmindb.version.python_dev_version_check(sys.argv[0])'
+	$(PYTHON_PATH) -c 'import sys; import garmindb.version; garmindb.version.python_dev_version_check(sys.argv[0])'
 
 update: submodules_update
 	git pull
@@ -99,7 +99,7 @@ builddeps: $(VENV) devdeps
 
 build: builddeps
 	cp pyproject.toml.in pyproject.toml
-	uv add -r requirements.txt
+	uv add -r requirements.txt --frozen
 	$(PYTHON_PATH) -m build
 
 build_clean:

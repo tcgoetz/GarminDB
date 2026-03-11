@@ -15,6 +15,7 @@
         "weight_start_date"             : "12/31/2019",
         "sleep_start_date"              : "12/31/2019",
         "rhr_start_date"                : "12/31/2019",
+        "hrv_start_date"                : "12/31/2019",
         "monitoring_start_date"         : "12/31/2019",
         "download_latest_activities"    : 25,
         "download_all_activities"       : 1000
@@ -30,6 +31,7 @@
         "itime"                         : true,
         "sleep"                         : true,
         "rhr"                           : true,
+        "hrv"                           : true,
         "weight"                        : true,
         "activities"                    : true
     },

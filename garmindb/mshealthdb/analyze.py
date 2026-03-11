@@ -70,19 +70,19 @@ class Analyze():
         for year in years:
             days = self.__days_from_years(year)
             for day in days:
-                day_ts = datetime.date(year, 1, 1) + datetime.timedelta(day - 1)
+                day_ts = datetime.datetime(year=year, month=1, day=1) + datetime.timedelta(day - 1)
                 stats = MshDaysSummary.get_daily_stats(self.mshealthdb, day_ts)
                 stats.update(MSVaultWeight.get_daily_stats(self.mshealthdb, day_ts))
                 DaysSummary.insert_or_update(self.sumdb, stats, ignore_none=True)
             for week_starting_day in range(1, 365, 7):
-                day_ts = datetime.date(year, 1, 1) + datetime.timedelta(week_starting_day - 1)
+                day_ts = datetime.datetime(year=year, month=1, day=1) + datetime.timedelta(week_starting_day - 1)
                 stats = MshDaysSummary.get_weekly_stats(self.mshealthdb, day_ts)
                 stats.update(MSVaultWeight.get_weekly_stats(self.mshealthdb, day_ts))
                 WeeksSummary.insert_or_update(self.sumdb, stats, ignore_none=True)
             months = MshDaysSummary.get_months(self.mshealthdb, year)
             for month in months:
-                start_day_ts = datetime.date(year, month, 1)
-                end_day_ts = datetime.date(year, month, calendar.monthrange(year, month)[1])
+                start_day_ts = datetime.datetime(year=year, month=month, day=1)
+                end_day_ts = datetime.datetime(year=year, month=month, day=calendar.monthrange(year, month)[1])
                 stats = MshDaysSummary.get_monthly_stats(self.mshealthdb, start_day_ts, end_day_ts)
                 stats.update(MSVaultWeight.get_monthly_stats(self.mshealthdb, start_day_ts, end_day_ts))
                 MonthsSummary.insert_or_update(self.sumdb, stats, ignore_none=True)
