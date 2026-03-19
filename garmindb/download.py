@@ -54,7 +54,12 @@ class Download():
         self.gc_config = gc_config
         self.garth_session_file = self.gc_config.get_session_file()
         self.garth = GarthClient()
-        self.garth.configure(domain=self.gc_config.get_garmin_base_domain())
+        self.garth.configure(
+            domain=self.gc_config.get_garmin_base_domain(),
+            timeout=30,
+            retries=10,
+            backoff_factor=1.5,
+        )
 
     def __resume_session(self):
         if os.path.isfile(self.garth_session_file):
@@ -174,7 +179,7 @@ class Download():
         try:
             self.save_binary_file(zip_filename, url)
         except GarthHTTPError as e:
-            root_logger.error("Exception getting daily summary: %s", e)
+            root_logger.error("Exception getting monitoring data: %s", e)
 
     def get_monitoring(self, directory_func, date, days):
         """Download the daily monitoring data from Garmin Connect, unzip and save the raw files."""
@@ -199,7 +204,7 @@ class Download():
         try:
             self.save_json_to_file(json_filename, self.garth.connectapi(self.garmin_connect_weight_url, params=params), overwrite)
         except GarthHTTPError as e:
-            root_logger.error("Exception getting daily summary: %s", e)
+            root_logger.error("Exception getting weight data: %s", e)
 
     def get_weight(self, directory, date, days, overwrite):
         """Download the sleep data from Garmin Connect and save to a JSON file."""
@@ -280,7 +285,7 @@ class Download():
         try:
             self.save_json_to_file(json_filename, self.garth.connectapi(url, params=params), overwrite)
         except GarthHTTPError as e:
-            root_logger.error("Exception getting daily summary: %s", e)
+            root_logger.error("Exception getting sleep data: %s", e)
 
     def get_sleep(self, directory, date, days, overwrite):
         """Download the sleep data from Garmin Connect and save to a JSON file."""
@@ -300,7 +305,7 @@ class Download():
             self.save_json_to_file(json_filename, self.garth.connectapi(
                 url, params=params), overwrite)
         except GarthHTTPError as e:
-            root_logger.error("Exception getting daily summary %s", e)
+            root_logger.error("Exception getting rhr data: %s", e)
 
     def get_rhr(self, directory, date, days, overwrite):
         """Download the resting heart rate data from Garmin Connect and save to a JSON file."""
@@ -328,7 +333,7 @@ class Download():
         try:
             self.save_json_to_file(json_filename, self.garth.connectapi(url), overwrite)
         except GarthHTTPError as e:
-            root_logger.error("Exception getting daily summary %s", e)
+            root_logger.error("Exception getting hrv data: %s", e)
 
     def get_hrv(self, directory, date, days, overwrite):
         """Download the heart rate variability (HRV) data from Garmin Connect and save to a JSON file."""
