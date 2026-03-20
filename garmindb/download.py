@@ -44,6 +44,11 @@ class Download():
     garmin_connect_daily_hydration_url = garmin_connect_usersummary_url + "/hydration/allData"
     garmin_connect_hrv_url = "/hrv-service/hrv"
 
+    garmin_connect_golf_url = "/gcs-golfcommunity/api/v2"
+    garmin_connect_golf_scorecard_summary = garmin_connect_golf_url + "/scorecard/summary"
+    garmin_connect_golf_scorecard_detail = garmin_connect_golf_url + "/scorecard/detail"
+    garmin_connect_golf_shot = garmin_connect_golf_url + "/shot/scorecard"
+
     # https://connect.garmin.com/modern/proxy/usersummary-service/usersummary/hydration/allData/2019-11-29
 
     download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
@@ -334,3 +339,49 @@ class Download():
         """Download the heart rate variability (HRV) data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting hrv: %s (%d)", date, days)
         self.__get_stat(self.__get_hrv_day, directory, date, days, overwrite)
+
+    def __get_golf_scorecard_summaries(self):
+        root_logger.info("get_golf_scorecard_summaries")
+        try:
+            return self.garth.connectapi(self.garmin_connect_golf_scorecard_summary)
+        except GarthHTTPError as e:
+            root_logger.error("Exception getting golf summaries: %s", e)
+
+    def __save_golf_scorecard_details(self, directory, scorecard_id_str, overwrite):
+        root_logger.debug("save_golf_scorecard_details")
+        json_filename = f'{directory}/scorecard_detail_{scorecard_id_str}'
+        try:
+            url = f'{self.garmin_connect_golf_scorecard_detail}/{scorecard_id_str}'
+            self.save_json_to_file(json_filename, self.garth.connectapi(url), overwrite)
+        except GarthHTTPError as e:
+            root_logger.error("Exception getting golf details %s", e)
+
+    def __save_golf_shot_data(self, directory, scorecard_id_str, overwrite):
+        root_logger.debug("save_golf_shot_data")
+        json_filename = f'{directory}/scorecard_shot_{scorecard_id_str}'
+        try:
+            url = f'{self.garmin_connect_golf_shot}/{scorecard_id_str}/hole'
+            self.save_json_to_file(json_filename, self.garth.connectapi(url), overwrite)
+        except GarthHTTPError as e:
+            root_logger.error("Exception getting golf shot data %s", e)
+
+    def get_golf_scorecards(self, directory, overwrite=False):
+        """Download golf scorecards files from Garmin Connect and save the JSON files."""
+        logger.info("Getting golf scorecards to: '%s'", directory)
+        summary_response = self.__get_golf_scorecard_summaries()
+        summaries = summary_response.get("scorecardSummaries", []) if summary_response else []
+        for scorecard in tqdm(summaries or [], unit='scorecards'):
+            scorecard_id_str = str(scorecard.get("id"))
+            if not scorecard_id_str:
+                continue
+
+            root_logger.info("get_golf_scorecards: %s", scorecard_id_str)
+            json_filename = f'{directory}/scorecard_summary_{scorecard_id_str}'
+
+            if not os.path.isfile(json_filename + '.json') or overwrite:
+                self.save_json_to_file(json_filename, scorecard)
+                self.__save_golf_scorecard_details(directory, scorecard_id_str, overwrite)
+                self.__save_golf_shot_data(directory, scorecard_id_str, overwrite)
+                time.sleep(1)
+            else:
+                root_logger.info("get_golf_scorecards: skipping %s", scorecard_id_str)
