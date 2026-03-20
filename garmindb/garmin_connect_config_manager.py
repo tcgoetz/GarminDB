@@ -144,6 +144,10 @@ class GarminConnectConfigManager(JsonConfig):
         """Return the configured directory of where the resting heart rate files will be stored."""
         return self.__create_dir_if_needed(self.get_base_dir() + os.sep + 'RHR')
 
+    def get_golf_dir(self):
+        """Return the configured directory of where the golf files will be stored."""
+        return self.__create_dir_if_needed(self.get_base_dir() + os.sep + 'Golf')
+
     def get_fitbit_dir(self):
         """Return the configured directory of where the FitBit will be stored."""
         return self.__create_dir_if_needed(self.get_base_dir() + os.sep + 'FitBitFiles')
@@ -262,7 +266,7 @@ class GarminConnectConfigManager(JsonConfig):
     def enabled_stats(self):
         """Return all enabled statistics as a list of string names."""
         if not self.enabled_statistics:
-            json_enabled_stats_dict = self.config.get('enabled_stats', {stat_name: True for stat_name in list(Statistics)})
+            json_enabled_stats_dict = self.config.get('enabled_stats', {stat_name: True for stat_name in list(Statistics.__members__)})
             self.enabled_statistics = [Statistics.from_string(stat_name) for stat_name, stat_enabled in json_enabled_stats_dict.items() if stat_enabled]
         return self.enabled_statistics
 
