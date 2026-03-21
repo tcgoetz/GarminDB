@@ -144,7 +144,18 @@ class Download():
             download_date = date + datetime.timedelta(days=day)
             # always overwrite for yesterday and today since the last download may have been a partial result
             delta = datetime.datetime.now().date() - download_date
-            stat_function(directory, download_date, overwrite or delta.days <= self.download_days_overlap)
+            stat_overwrite = overwrite or delta.days <= self.download_days_overlap
+            for attempt in range(1, 6):
+                try:
+                    stat_function(directory, download_date, stat_overwrite)
+                    break
+                except Exception as e:
+                    if attempt == 5:
+                        root_logger.error("Failed to download %s after %d attempts: %s", download_date, attempt, e)
+                    else:
+                        backoff_seconds = attempt * 5
+                        root_logger.warning("Retrying %s after error on attempt %d/%d: %s", download_date, attempt, 5, e)
+                        time.sleep(backoff_seconds)
             # pause for a second between every page access
             time.sleep(1)
 
@@ -327,8 +338,9 @@ class Download():
         url = f'{self.garmin_connect_hrv_url}/{date_str}'
         try:
             self.save_json_to_file(json_filename, self.garth.connectapi(url), overwrite)
-        except GarthHTTPError as e:
-            root_logger.error("Exception getting daily summary %s", e)
+        except Exception as e:
+            root_logger.error("Exception getting hrv for %s: %s", date_str, e)
+            raise
 
     def get_hrv(self, directory, date, days, overwrite):
         """Download the heart rate variability (HRV) data from Garmin Connect and save to a JSON file."""
