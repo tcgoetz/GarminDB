@@ -71,7 +71,7 @@ class GarminDbMain():
                 logger.info("Downloading latest %s data from: %s", stat_name, last_ts)
                 last_ts_date_date = last_ts.date() if isinstance(last_ts, datetime.datetime) else last_ts
                 date = last_ts_date_date - datetime.timedelta(days=1)
-                days = (datetime.date.today() - date).days
+                days = (datetime.date.today() - date).days + 1
         else:
             date, days = self.gc_config.stat_start_date(stat_name)
             days = min((datetime.date.today() - date).days, days)
