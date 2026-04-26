@@ -6,6 +6,7 @@ __license__ = "GPL"
 
 import logging
 import sys
+from datetime import timedelta
 
 import fitfile
 
@@ -29,8 +30,41 @@ class ActivityFitFileProcessor(FitFileProcessor):
             root_logger.info("Loaded %d activity plugins %r for file %s", len(self.activity_fit_file_plugins), self.activity_fit_file_plugins, fit_file)
         # Create the db after setting up the plugins so that plugin tables are handled properly
         self.garmin_act_db = ActivitiesDb(self.db_params, self.debug - 1)
+        self._session_num = 0
+        # Multi-sport files have >1 session; all child sessions get a suffixed activity_id.
+        self._is_multi_sport_file = len(fit_file.session) > 1
+        if self._is_multi_sport_file:
+            self._build_multi_sport_index(fit_file)
         with self.garmin_db.managed_session() as self.garmin_db_session, self.garmin_act_db.managed_session() as self.garmin_act_db_session:
             self._write_message_types(fit_file, fit_file.message_types)
+
+    def _build_multi_sport_index(self, fit_file):
+        """Pre-compute per-session activity_ids, lap ranges, and time windows for multi-sport partitioning."""
+        base_id = File.id_from_path(fit_file.filename)
+        self._session_activity_ids = [f"{base_id}_{i + 1}" for i in range(len(fit_file.session))]
+        # Map global lap index -> (activity_id, lap_in_session)
+        self._lap_session_map = []
+        for session_idx, session in enumerate(fit_file.session):
+            nlaps = session.fields.get('num_laps') or 0
+            for lap_in_session in range(nlaps):
+                self._lap_session_map.append((self._session_activity_ids[session_idx], lap_in_session))
+        # Per-session time windows (UTC, end = start + total_elapsed_time) for record partitioning.
+        self._session_time_windows = []
+        for session in fit_file.session:
+            start_utc = session.fields.start_time
+            elapsed = session.fields.total_elapsed_time
+            end_utc = start_utc + timedelta(
+                hours=elapsed.hour, minutes=elapsed.minute,
+                seconds=elapsed.second, microseconds=elapsed.microsecond)
+            self._session_time_windows.append((start_utc, end_utc))
+        self._record_counts_per_session = [0] * len(fit_file.session)
+
+    def _session_for_timestamp(self, timestamp_utc):
+        """Return the session index that contains the given UTC timestamp, or None if outside all windows."""
+        for idx, (start, end) in enumerate(self._session_time_windows):
+            if start <= timestamp_utc <= end:
+                return idx
+        return None
 
     def _plugin_dispatch(self, handler_name, *args, **kwargs):
         return super()._plugin_dispatch(self.activity_fit_file_plugins, handler_name, *args, **kwargs)
@@ -38,16 +72,29 @@ class ActivityFitFileProcessor(FitFileProcessor):
     def _write_device_info_entry(self, fit_file, message_fields):
         device_serial_number = super()._write_device_info_entry(fit_file, message_fields)
         if device_serial_number:
-            activity_id = File.id_from_path(fit_file.filename)
-            entry = {'activity_id' : activity_id, 'device_serial_number' : device_serial_number}
-            if not ActivitiesDevices.s_exists(self.garmin_act_db_session, entry):
-                root_logger.debug("_write_device_info_entry activity_id %s, device serial number %s doesn't exist", activity_id, device_serial_number)
-                self.garmin_act_db_session.add(ActivitiesDevices(**entry))
+            if self._is_multi_sport_file:
+                activity_ids = self._session_activity_ids
+            else:
+                activity_ids = [File.id_from_path(fit_file.filename)]
+            for activity_id in activity_ids:
+                entry = {'activity_id' : activity_id, 'device_serial_number' : device_serial_number}
+                if not ActivitiesDevices.s_exists(self.garmin_act_db_session, entry):
+                    root_logger.debug("_write_device_info_entry activity_id %s, device serial number %s doesn't exist", activity_id, device_serial_number)
+                    self.garmin_act_db_session.add(ActivitiesDevices(**entry))
 
     def _write_lap(self, fit_file, message_type, messages):
-        """Write all lap messages to the database."""
-        for lap_num, message in enumerate(messages):
-            self._write_lap_entry(fit_file, message.fields, lap_num)
+        """Write all lap messages to the database, partitioned by session for multi-sport files."""
+        if self._is_multi_sport_file:
+            for global_lap_num, message in enumerate(messages):
+                if global_lap_num >= len(self._lap_session_map):
+                    # Stray lap beyond session num_laps — skip to avoid collisions.
+                    root_logger.warning("Skipping lap %d beyond session num_laps sum for %s", global_lap_num, fit_file.filename)
+                    continue
+                activity_id, lap_in_session = self._lap_session_map[global_lap_num]
+                self._write_lap_entry(fit_file, message.fields, lap_in_session, override_activity_id=activity_id)
+        else:
+            for lap_num, message in enumerate(messages):
+                self._write_lap_entry(fit_file, message.fields, lap_num)
 
     def _write_split(self, fit_file, message_type, messages):
         """Write all split messages to the database."""
@@ -55,14 +102,24 @@ class ActivityFitFileProcessor(FitFileProcessor):
             self._write_split_entry(fit_file, message.fields, split_num)
 
     def _write_record(self, fit_file, message_type, messages):
-        """Write all record messages to the database."""
-        for record_num, message in enumerate(messages):
-            self._write_record_entry(fit_file, message.fields, record_num)
+        """Write all record messages to the database, partitioned by session for multi-sport files."""
+        if self._is_multi_sport_file:
+            for message in messages:
+                session_idx = self._session_for_timestamp(message.fields.timestamp)
+                if session_idx is None:
+                    continue
+                activity_id = self._session_activity_ids[session_idx]
+                record_num = self._record_counts_per_session[session_idx]
+                self._record_counts_per_session[session_idx] += 1
+                self._write_record_entry(fit_file, message.fields, record_num, override_activity_id=activity_id)
+        else:
+            for record_num, message in enumerate(messages):
+                self._write_record_entry(fit_file, message.fields, record_num)
 
-    def _write_record_entry(self, fit_file, message_fields, record_num):
+    def _write_record_entry(self, fit_file, message_fields, record_num, override_activity_id=None):
         # We don't get record data from multiple sources so we don't need to coellesce data in the DB.
         # It's fastest to just write the new data out if it doesn't currently exist.
-        activity_id = File.id_from_path(fit_file.filename)
+        activity_id = override_activity_id or File.id_from_path(fit_file.filename)
         plugin_record = self._plugin_dispatch('write_record_entry', self.garmin_act_db_session, fit_file, activity_id, message_fields, record_num)
         if not ActivityRecords.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'record' : record_num}):
             record = {
@@ -83,42 +140,50 @@ class ActivityFitFileProcessor(FitFileProcessor):
             root_logger.debug("_write_record_entry activity_id %s, record %s doesn't exist", activity_id, record_num)
             self.garmin_act_db_session.add(ActivityRecords(**record))
 
-    def _write_lap_entry(self, fit_file, message_fields, lap_num):
-        # we don't get laps data from multiple sources so we don't need to coellesce data in the DB.
-        # It's fastest to just write new data out if the it doesn't currently exist.
-        activity_id = File.id_from_path(fit_file.filename)
+    def _write_lap_entry(self, fit_file, message_fields, lap_num, override_activity_id=None):
+        # Use insert_or_update so we coalesce with rows created by hr_zones_timer processed earlier.
+        activity_id = override_activity_id or File.id_from_path(fit_file.filename)
         plugin_lap = self._plugin_dispatch('write_lap_entry', self.garmin_act_db_session, fit_file, activity_id, message_fields, lap_num)
-        if not ActivityLaps.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'lap' : lap_num}):
-            lap = {
-                'activity_id'                       : File.id_from_path(fit_file.filename),
-                'lap'                               : lap_num,
-                'start_time'                        : fit_file.utc_datetime_to_local(message_fields.start_time),
-                'stop_time'                         : fit_file.utc_datetime_to_local(message_fields.timestamp),
-                'elapsed_time'                      : message_fields.get('total_elapsed_time'),
-                'moving_time'                       : message_fields.get('total_timer_time'),
-                'start_lat'                         : message_fields.get('start_position_lat'),
-                'start_long'                        : message_fields.get('start_position_long'),
-                'stop_lat'                          : message_fields.get('end_position_lat'),
-                'stop_long'                         : message_fields.get('end_position_long'),
-                'distance'                          : message_fields.get('total_distance'),
-                'cycles'                            : message_fields.get('total_cycles'),
-                'avg_hr'                            : message_fields.get('avg_heart_rate'),
-                'max_hr'                            : message_fields.get('max_heart_rate'),
-                'avg_rr'                            : message_fields.get('avg_respiration_rate'),
-                'max_rr'                            : message_fields.get('max_respiration_rate'),
-                'calories'                          : message_fields.get('total_calories'),
-                'avg_cadence'                       : message_fields.get('avg_cadence'),
-                'max_cadence'                       : message_fields.get('max_cadence'),
-                'avg_speed'                         : message_fields.get('avg_speed'),
-                'max_speed'                         : message_fields.get('max_speed'),
-                'ascent'                            : message_fields.get('total_ascent'),
-                'descent'                           : message_fields.get('total_descent'),
-                'max_temperature'                   : message_fields.get('max_temperature'),
-                'avg_temperature'                   : message_fields.get('avg_temperature'),
-            }
-            lap.update(plugin_lap)
-            root_logger.debug("writing lap %r for %s", lap, fit_file.filename)
-            self.garmin_act_db_session.add(ActivityLaps(**lap))
+        # For multi-sport children Garmin sets lap `timestamp` to the parent's start_time, so compute
+        # the real lap end from start_time + total_elapsed_time (same workaround as sessions).
+        start_time_utc = message_fields.start_time
+        if self._is_multi_sport_file:
+            elapsed = message_fields.get('total_elapsed_time')
+            stop_time_utc = start_time_utc + timedelta(
+                hours=elapsed.hour, minutes=elapsed.minute,
+                seconds=elapsed.second, microseconds=elapsed.microsecond) if elapsed else message_fields.timestamp
+        else:
+            stop_time_utc = message_fields.timestamp
+        lap = {
+            'activity_id'                       : activity_id,
+            'lap'                               : lap_num,
+            'start_time'                        : fit_file.utc_datetime_to_local(start_time_utc),
+            'stop_time'                         : fit_file.utc_datetime_to_local(stop_time_utc),
+            'elapsed_time'                      : message_fields.get('total_elapsed_time'),
+            'moving_time'                       : message_fields.get('total_timer_time'),
+            'start_lat'                         : message_fields.get('start_position_lat'),
+            'start_long'                        : message_fields.get('start_position_long'),
+            'stop_lat'                          : message_fields.get('end_position_lat'),
+            'stop_long'                         : message_fields.get('end_position_long'),
+            'distance'                          : message_fields.get('total_distance'),
+            'cycles'                            : message_fields.get('total_cycles'),
+            'avg_hr'                            : message_fields.get('avg_heart_rate'),
+            'max_hr'                            : message_fields.get('max_heart_rate'),
+            'avg_rr'                            : message_fields.get('avg_respiration_rate'),
+            'max_rr'                            : message_fields.get('max_respiration_rate'),
+            'calories'                          : message_fields.get('total_calories'),
+            'avg_cadence'                       : message_fields.get('avg_cadence'),
+            'max_cadence'                       : message_fields.get('max_cadence'),
+            'avg_speed'                         : message_fields.get('avg_speed'),
+            'max_speed'                         : message_fields.get('max_speed'),
+            'ascent'                            : message_fields.get('total_ascent'),
+            'descent'                           : message_fields.get('total_descent'),
+            'max_temperature'                   : message_fields.get('max_temperature'),
+            'avg_temperature'                   : message_fields.get('avg_temperature'),
+        }
+        lap.update(plugin_lap)
+        root_logger.debug("writing lap %r for %s", lap, fit_file.filename)
+        ActivityLaps.s_insert_or_update(self.garmin_act_db_session, lap, ignore_none=True, ignore_zero=True)
 
     def _write_split_entry(self, fit_file, message_fields, split_num):
         # we don't get splits data from multiple sources so we don't need to coellesce data in the DB.
@@ -316,13 +381,29 @@ class ActivityFitFileProcessor(FitFileProcessor):
         return {'sport' : fitfile.field_enums.name_for_enum(sport), 'sub_sport' : fitfile.field_enums.name_for_enum(sub_sport)}
 
     def _write_session_entry(self, fit_file, message_fields):
-        activity_id = File.id_from_path(fit_file.filename)
+        self._session_num += 1
+        base_activity_id = File.id_from_path(fit_file.filename)
         sport = message_fields.sport
         sub_sport = message_fields.sub_sport
+        is_multi_sport = self._is_multi_sport_file
+        if is_multi_sport:
+            activity_id = f"{base_activity_id}_{self._session_num}"
+        else:
+            activity_id = base_activity_id
+        # For multi-sport children Garmin sets `timestamp` to the parent's start_time, so compute
+        # the real session end from start_time + total_elapsed_time.
+        start_time_utc = message_fields.start_time
+        if is_multi_sport:
+            elapsed = message_fields.total_elapsed_time
+            stop_time_utc = start_time_utc + timedelta(
+                hours=elapsed.hour, minutes=elapsed.minute,
+                seconds=elapsed.second, microseconds=elapsed.microsecond)
+        else:
+            stop_time_utc = message_fields.timestamp
         activity = {
             'activity_id'                       : activity_id,
-            'start_time'                        : fit_file.utc_datetime_to_local(message_fields.start_time),
-            'stop_time'                         : fit_file.utc_datetime_to_local(message_fields.timestamp),
+            'start_time'                        : fit_file.utc_datetime_to_local(start_time_utc),
+            'stop_time'                         : fit_file.utc_datetime_to_local(stop_time_utc),
             'elapsed_time'                      : message_fields.total_elapsed_time,
             'moving_time'                       : message_fields.get('total_timer_time'),
             'start_lat'                         : message_fields.get('start_position_lat'),
@@ -349,16 +430,25 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'anaerobic_training_effect'         : message_fields.get('total_anaerobic_training_effect')
         }
         activity.update(self._plugin_dispatch('write_session_entry', self.garmin_act_db_session, fit_file, activity_id, message_fields))
-        # json metadata gives better values for sport and subsport, so use existing value if set
-        current = Activities.s_get(self.garmin_act_db_session, activity_id)
-        if current:
-            activity.update(self.__choose_sport(current.sport, current.sub_sport, sport, sub_sport))
-            root_logger.debug("Updating with %r", activity)
-            current.update_from_dict(activity, ignore_none=True, ignore_zero=True)
+        if is_multi_sport:
+            # Multi-sport child session: create a new activity entry with the correct sport
+            activity.update({'sport': sport.name if sport else 'unknown', 'sub_sport': sub_sport.name if sub_sport else 'unknown'})
+            current = Activities.s_get(self.garmin_act_db_session, activity_id)
+            if current:
+                current.update_from_dict(activity, ignore_none=True, ignore_zero=True)
+            else:
+                self.garmin_act_db_session.add(Activities(**activity))
         else:
-            activity.update({'sport': sport.name, 'sub_sport': sub_sport.name})
-            root_logger.debug("Adding %r", activity)
-            self.garmin_act_db_session.add(Activities(**activity))
+            # Single-session file: original behavior, coalesce with JSON-imported data
+            current = Activities.s_get(self.garmin_act_db_session, activity_id)
+            if current:
+                activity.update(self.__choose_sport(current.sport, current.sub_sport, sport, sub_sport))
+                root_logger.debug("Updating with %r", activity)
+                current.update_from_dict(activity, ignore_none=True, ignore_zero=True)
+            else:
+                activity.update({'sport': sport.name, 'sub_sport': sub_sport.name})
+                root_logger.debug("Adding %r", activity)
+                self.garmin_act_db_session.add(Activities(**activity))
         if sport is not None:
             function_name = '_write_' + sport.name + '_entry'
             try:
@@ -404,9 +494,14 @@ class ActivityFitFileProcessor(FitFileProcessor):
         """Write lap hz zones message to the database."""
         root_logger.info("writing lap hr zone data %r for %s", message_fields, fit_file.filename)
         activity_id = File.id_from_path(fit_file.filename)
+        global_lap = message_fields.get('record_num')
+        if self._is_multi_sport_file and global_lap is not None and global_lap < len(self._lap_session_map):
+            activity_id, lap_num = self._lap_session_map[global_lap]
+        else:
+            lap_num = global_lap
         lap = {
             'activity_id'   : activity_id,
-            'lap'           : message_fields.get('record_num'),
+            'lap'           : lap_num,
         }
         lap.update(self.__hr_zone_data(message_fields))
         root_logger.info("writing lap hr zone data %r for %s", lap, fit_file.filename)
@@ -416,6 +511,9 @@ class ActivityFitFileProcessor(FitFileProcessor):
         """Write session hz zones message to the database."""
         root_logger.info("writing session hr zone data %r for %s", message_fields, fit_file.filename)
         activity_id = File.id_from_path(fit_file.filename)
+        if self._is_multi_sport_file:
+            # record_num is the 0-indexed session number, matching the suffix used in _write_session_entry.
+            activity_id = f"{activity_id}_{message_fields.get('record_num') + 1}"
         session = {
             'activity_id'   : activity_id,
         }
