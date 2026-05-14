@@ -1,7 +1,7 @@
 """Test Download integration with the Garmin Connect auth adapter."""
 
-__author__ = "Tom Goetz"
-__copyright__ = "Copyright Tom Goetz"
+__author__ = "Ilya Verchenko"
+__copyright__ = "Copyright Ilya Verchenko"
 __license__ = "GPL"
 
 import json

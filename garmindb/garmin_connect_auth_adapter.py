@@ -1,7 +1,7 @@
 """Adapter around python-garminconnect authentication."""
 
-__author__ = "Tom Goetz"
-__copyright__ = "Copyright Tom Goetz"
+__author__ = "Ilya Verchenko"
+__copyright__ = "Copyright Ilya Verchenko"
 __license__ = "GPL"
 
 import logging
