@@ -5,11 +5,11 @@ __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
 
-python_required = (3, 10, 0)
+python_required = (3, 12, 0)
 dev_python_required = (3, 13, 9)
 python_tested = (3, 14, 2)
-version_info = (3, 7, 0)
-prerelease = False
+version_info = (3, 8, 0)
+prerelease = True
 
 
 def version_string():

@@ -58,9 +58,9 @@ class GarminConnectConfigManager(JsonConfig):
             os.makedirs(dir)
         return dir
 
-    def get_session_file(self):
-        """Return the path to the session file."""
-        return self.config_dir + os.sep + 'garth_session'
+    def get_token_store_file(self):
+        """Return the path to the Garmin Connect DI OAuth2 token store."""
+        return self.config_dir + os.sep + 'garmin_tokens.json'
 
     def get_db_type(self):
         """Return the type (SQLite, MySQL, etc) of database that is configured."""
@@ -169,10 +169,10 @@ class GarminConnectConfigManager(JsonConfig):
             try:
                 password = subprocess.check_output(["security", "find-internet-password", "-s", domain, "-w"])
                 if password:
-                    return password.rstrip()
+                    return password.decode(encoding="utf-8").rstrip()
             except Exception:
                 pass
-            raise ConfigException(f'Secure password was specified but no "Internet Password" entry was found in the Login Keychain for https://{domain}')
+            raise ConfigException(f'Secure password was specified but no "Internet Password" entry was found in the Login Keychain for https:////{domain}')
 
     def get_password_from_file(self):
         """Read the Garmin Connect password from a file."""

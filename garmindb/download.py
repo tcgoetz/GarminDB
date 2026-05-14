@@ -13,11 +13,11 @@ import time
 import tempfile
 import zipfile
 import json
-from garth import Client as GarthClient
-from garth.exc import GarthHTTPError, GarthException
 from tqdm import tqdm
 
 import fitfile.conversions as conversions
+
+from .garmin_connect_auth_adapter import GarminConnectAuthAdapter, GarminConnectAuthError
 
 
 logger = logging.getLogger(__file__)
@@ -52,53 +52,23 @@ class Download():
         """Create a new Download class instance."""
         logger.debug("__init__")
         self.gc_config = gc_config
-        self.garth_session_file = self.gc_config.get_session_file()
-        self.garth = GarthClient()
-        self.garth.configure(domain=self.gc_config.get_garmin_base_domain())
-
-    def __resume_session(self):
-        if os.path.isfile(self.garth_session_file):
-            root_logger.info("load session from %s", self.garth_session_file)
-            with open(self.garth_session_file, "r", encoding="utf-8") as file:
-                self.garth.loads(file.read())
-                return True
-        else:
-            root_logger.info("session file %s not found", self.garth_session_file)
-        return False
-
-    def __save_session(self):
-        root_logger.info("save session to %s", self.garth_session_file)
-        with open(self.garth_session_file, "w", encoding="utf-8") as file:
-            file.write(self.garth.dumps())
-
-    def __login(self):
-        username = self.gc_config.get_user()
-        password = self.gc_config.get_password()
-        if not username or not password:
-            print("Missing config: need username and password. Edit GarminConnectConfig.json.")
-            return
-
-        logger.debug("login: %s %s", username, password)
-        self.garth.login(username, password)
-        self.__save_session()
+        self.garmin = GarminConnectAuthAdapter(self.gc_config)
 
     def login(self):
-        """Use garth to resume to Garmin Connect session if possible, otherwise login."""
-        if not self.__resume_session():
-            self.__login()
-
+        """Authenticate to Garmin Connect."""
         try:
-            self.garth.username
-        except GarthException:
-            self.__login()
+            self.garmin.login()
+        except GarminConnectAuthError as e:
+            root_logger.error("login failed: %s", e)
+            return False
 
         profile_dir = self.gc_config.get_fit_files_dir()
-        self.save_json_to_file(f'{profile_dir}/social-profile', self.garth.profile)
-        self.save_json_to_file(f'{profile_dir}/user-settings', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/user-settings'), True)
-        self.save_json_to_file(f'{profile_dir}/personal-information', self.garth.connectapi(f'{self.garmin_connect_user_profile_url}/personal-information'), True)
+        self.save_json_to_file(f'{profile_dir}/social-profile', self.garmin.profile)
+        self.save_json_to_file(f'{profile_dir}/user-settings', self.garmin.connectapi(f'{self.garmin_connect_user_profile_url}/user-settings'), True)
+        self.save_json_to_file(f'{profile_dir}/personal-information', self.garmin.connectapi(f'{self.garmin_connect_user_profile_url}/personal-information'), True)
 
-        self.display_name = self.garth.profile['displayName']
-        self.full_name = self.garth.profile['fullName']
+        self.display_name = self.garmin.display_name
+        self.full_name = self.garmin.full_name
         root_logger.info("login: %s (%s)", self.full_name, self.display_name)
         return True
 
@@ -134,10 +104,9 @@ class Download():
         exists = os.path.isfile(filename)
         if not exists or overwrite:
             logger.debug("%s %s", 'Overwriting' if exists else 'Saving', filename)
-            response = self.garth.get("connectapi", url, api=True)
+            response = self.garmin.download(url)
             with open(filename, 'wb') as file:
-                for chunk in response:
-                    file.write(chunk)
+                file.write(response)
 
     def __get_stat(self, stat_function, directory, date, days, overwrite):
         for day in tqdm(range(0, days), unit='days'):
@@ -158,8 +127,8 @@ class Download():
         url = f'{self.garmin_connect_daily_summary_url}/{self.display_name}'
         json_filename = f'{directory_func(date.year)}/daily_summary_{date_str}'
         try:
-            self.save_json_to_file(json_filename, self.garth.connectapi(url, params=params), overwrite)
-        except GarthHTTPError as e:
+            self.save_json_to_file(json_filename, self.garmin.connectapi(url, params=params), overwrite)
+        except GarminConnectAuthError as e:
             root_logger.error("Exception getting daily summary: %s", e)
 
     def get_daily_summaries(self, directory_func, date, days, overwrite):
@@ -173,7 +142,7 @@ class Download():
         url = f'{self.garmin_connect_download_service_url}/wellness/{date.strftime("%Y-%m-%d")}'
         try:
             self.save_binary_file(zip_filename, url)
-        except GarthHTTPError as e:
+        except GarminConnectAuthError as e:
             root_logger.error("Exception getting daily summary: %s", e)
 
     def get_monitoring(self, directory_func, date, days):
@@ -197,8 +166,8 @@ class Download():
         }
         json_filename = f'{directory}/weight_{date_str}'
         try:
-            self.save_json_to_file(json_filename, self.garth.connectapi(self.garmin_connect_weight_url, params=params), overwrite)
-        except GarthHTTPError as e:
+            self.save_json_to_file(json_filename, self.garmin.connectapi(self.garmin_connect_weight_url, params=params), overwrite)
+        except GarminConnectAuthError as e:
             root_logger.error("Exception getting daily summary: %s", e)
 
     def get_weight(self, directory, date, days, overwrite):
@@ -214,8 +183,8 @@ class Download():
             "limit" : str(count)
         }
         try:
-            return self.garth.connectapi(self.garmin_connect_activity_search_url, params=params)
-        except GarthHTTPError as e:
+            return self.garmin.connectapi(self.garmin_connect_activity_search_url, params=params)
+        except GarminConnectAuthError as e:
             root_logger.error("Exception getting activity summary: %s", e)
 
     def __save_activity_details(self, directory, activity_id_str, overwrite):
@@ -224,8 +193,8 @@ class Download():
         try:
             url = f'{self.garmin_connect_activity_service_url}/{activity_id_str}'
             self.save_json_to_file(
-                json_filename, self.garth.connectapi(url), overwrite)
-        except GarthHTTPError as e:
+                json_filename, self.garmin.connectapi(url), overwrite)
+        except GarminConnectAuthError as e:
             root_logger.error("Exception getting daily summary %s", e)
 
     def __save_activity_file(self, activity_id_str):
@@ -234,7 +203,7 @@ class Download():
         url = f'{self.garmin_connect_download_service_url}/activity/{activity_id_str}'
         try:
             self.save_binary_file(zip_filename, url)
-        except GarthHTTPError as e:
+        except GarminConnectAuthError as e:
             root_logger.error("Exception downloading activity file: %s", e)
 
     def get_activities(self, directory, count, overwrite=False):
@@ -266,8 +235,8 @@ class Download():
         try:
             url = f'{self.garmin_connect_activity_service_url}/activityTypes'
             self.save_json_to_file(
-                json_filename, self.garth.connectapi(url), overwrite)
-        except GarthHTTPError as e:
+                json_filename, self.garmin.connectapi(url), overwrite)
+        except GarminConnectAuthError as e:
             root_logger.error("Exception getting activity types: %s", e)
 
     def __get_sleep_day(self, directory, date, overwrite=False):
@@ -278,8 +247,8 @@ class Download():
         }
         url = f'{self.garmin_connect_sleep_daily_url}/{self.display_name}'
         try:
-            self.save_json_to_file(json_filename, self.garth.connectapi(url, params=params), overwrite)
-        except GarthHTTPError as e:
+            self.save_json_to_file(json_filename, self.garmin.connectapi(url, params=params), overwrite)
+        except GarminConnectAuthError as e:
             root_logger.error("Exception getting daily summary: %s", e)
 
     def get_sleep(self, directory, date, days, overwrite):
@@ -297,9 +266,9 @@ class Download():
         }
         url = f'{self.garmin_connect_rhr}/{self.display_name}'
         try:
-            self.save_json_to_file(json_filename, self.garth.connectapi(
+            self.save_json_to_file(json_filename, self.garmin.connectapi(
                 url, params=params), overwrite)
-        except GarthHTTPError as e:
+        except GarminConnectAuthError as e:
             root_logger.error("Exception getting daily summary %s", e)
 
     def get_rhr(self, directory, date, days, overwrite):
@@ -312,8 +281,8 @@ class Download():
         json_filename = f'{directory_func(day.year)}/hydration_{date_str}'
         url = f'{self.garmin_connect_daily_hydration_url}/{date_str}'
         try:
-            self.save_json_to_file(json_filename, self.garth.connectapi(url), overwrite)
-        except GarthHTTPError as e:
+            self.save_json_to_file(json_filename, self.garmin.connectapi(url), overwrite)
+        except GarminConnectAuthError as e:
             root_logger.error("Exception getting hydration: %s", e)
 
     def get_hydration(self, directory_func, date, days, overwrite):
@@ -326,8 +295,8 @@ class Download():
         json_filename = f'{directory}/hrv_{date_str}'
         url = f'{self.garmin_connect_hrv_url}/{date_str}'
         try:
-            self.save_json_to_file(json_filename, self.garth.connectapi(url), overwrite)
-        except GarthHTTPError as e:
+            self.save_json_to_file(json_filename, self.garmin.connectapi(url), overwrite)
+        except GarminConnectAuthError as e:
             root_logger.error("Exception getting daily summary %s", e)
 
     def get_hrv(self, directory, date, days, overwrite):
