@@ -58,9 +58,9 @@ class GarminConnectConfigManager(JsonConfig):
             os.makedirs(dir)
         return dir
 
-    def get_session_file(self):
-        """Return the path to the session file."""
-        return self.config_dir + os.sep + 'garth_session'
+    def get_token_store_file(self):
+        """Return the path to the Garmin Connect DI OAuth2 token store."""
+        return self.config_dir + os.sep + 'garmin_tokens.json'
 
     def get_db_type(self):
         """Return the type (SQLite, MySQL, etc) of database that is configured."""

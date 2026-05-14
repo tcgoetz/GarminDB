@@ -43,6 +43,11 @@ class TestConfig(unittest.TestCase):
         monitoring_dir = self.gc_config.get_monitoring_dir(year)
         self.assertEqual(monitoring_dir, expected_monitoring_dir, f'actual {monitoring_dir} expected {expected_monitoring_dir}')
 
+    def test_token_store_file(self):
+        expected_token_store_file = self.homedir + os.sep + '.GarminDb' + os.sep + 'garmin_tokens.json'
+        token_store_file = self.gc_config.get_token_store_file()
+        self.assertEqual(token_store_file, expected_token_store_file, f'actual {token_store_file} expected {expected_token_store_file}')
+
     def test_db(self):
         db_params = self.gc_config.get_db_params()
         expect_db_type = 'sqlite'
