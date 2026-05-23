@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, String, Float, Integer, Boolean, DateTime, Time, Enum, ForeignKey, PrimaryKeyConstraint, desc, literal_column
+from sqlalchemy import Column, String, Float, Integer, BigInteger, Boolean, DateTime, Time, Enum, ForeignKey, PrimaryKeyConstraint, desc, literal_column
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -109,7 +109,7 @@ class Activities(ActivitiesDb.Base, ActivitiesCommon):
     sport = Column(String)
     sub_sport = Column(String)
 
-    device_serial_number = Column(Integer)
+    device_serial_number = Column(BigInteger)
 
     self_eval_feel = Column(String)
     self_eval_effort = Column(String)
@@ -326,7 +326,7 @@ class ActivitiesDevices(ActivitiesDb.Base, idbutils.DbObject):
     table_version = 1
 
     activity_id = Column(String)
-    device_serial_number = Column(Integer)
+    device_serial_number = Column(BigInteger)
     __table_args__ = (PrimaryKeyConstraint("activity_id", "device_serial_number"),)
 
     @classmethod

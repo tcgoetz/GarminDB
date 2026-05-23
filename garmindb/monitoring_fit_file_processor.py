@@ -41,7 +41,11 @@ class MonitoringFitFileProcessor(FitFileProcessor):
 
     @classmethod
     def __unpack_tuple(cls, entry, name, value, index):
-        if type(value) is tuple:
+        # The fitfile parser yields per-activity-type arrays as plain `list`,
+        # not `tuple`. sqlite was happy to store a stringified list in a Float
+        # column; postgres rejects it and the failure poisons the session for
+        # subsequent inserts. Accept either sequence shape.
+        if isinstance(value, (list, tuple)):
             entry[name] = value[index]
 
     def _write_monitoring_info_entry(self, fit_file, message_fields):

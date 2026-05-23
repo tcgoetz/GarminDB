@@ -7,7 +7,7 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, Integer, DateTime, Time, Float, Enum, FLOAT, UniqueConstraint, PrimaryKeyConstraint
+from sqlalchemy import Column, Integer, String, DateTime, Time, Float, Enum, FLOAT, UniqueConstraint, PrimaryKeyConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import fitfile
@@ -28,7 +28,7 @@ class MonitoringInfo(MonitoringDb.Base, idbutils.DbObject):
     table_version = 1
 
     timestamp = Column(DateTime)
-    file_id = Column(Integer, nullable=False)
+    file_id = Column(String, nullable=False)
     activity_type = Column(Enum(fitfile.field_enums.ActivityType))
     resting_metabolic_rate = Column(Integer)
     cycles_to_distance = Column(FLOAT)
