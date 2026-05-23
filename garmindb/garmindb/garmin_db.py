@@ -74,7 +74,9 @@ class Device(GarminDb.Base, idbutils.DbObject):
     @classmethod
     def local_device_serial_number(cls, serial_number, device_type):
         """Return a synthetic serial number for a sub device composed of the parent's serial number and the sub device type."""
-        return '%s%06d' % (serial_number, device_type.value)
+        # The returned value lands in an Integer column. Build it as int so postgres
+        # (and any other strict-typed backend) does not have to coerce from a string.
+        return int('%s%06d' % (serial_number, device_type.value))
 
 
 class DeviceInfo(GarminDb.Base, idbutils.DbObject):

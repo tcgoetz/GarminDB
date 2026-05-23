@@ -71,10 +71,13 @@ class GarminDbMain():
                 logger.info("Downloading latest %s data from: %s", stat_name, last_ts)
                 last_ts_date_date = last_ts.date() if isinstance(last_ts, datetime.datetime) else last_ts
                 date = last_ts_date_date - datetime.timedelta(days=1)
-                days = (datetime.date.today() - date).days
+                # `days` is the count of days to fetch starting at `date`. Adding 1
+                # so today's date is included; without it the most recent day is
+                # never pulled because (today - date).days excludes the endpoint.
+                days = (datetime.date.today() - date).days + 1
         else:
             date, days = self.gc_config.stat_start_date(stat_name)
-            days = min((datetime.date.today() - date).days, days)
+            days = min((datetime.date.today() - date).days + 1, days)
             logger.info("Downloading all %s data from: %s [%d]", stat_name, date, days)
         if date is None or days is None:
             logger.error("Missing config: need %s_start_date and download_days. Edit GarminConnectConfig.py.", stat_name)
