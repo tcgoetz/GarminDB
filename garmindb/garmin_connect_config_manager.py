@@ -221,7 +221,7 @@ class GarminConnectConfigManager(JsonConfig):
             # If still nothing, default to 20 days ago
             start_date = datetime.datetime.now().date() - datetime.timedelta(days=20)
         end_date = self.get_node_value_default('data', stat_type + '_end_date', datetime.datetime.now().date())
-        days = (end_date - start_date).days
+        days = (end_date - start_date).days + 1
         return (start_date, days)
 
     def device_mount_dir(self):
