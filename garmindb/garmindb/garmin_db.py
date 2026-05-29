@@ -54,7 +54,7 @@ class Device(GarminDb.Base, idbutils.DbObject):
     __tablename__ = 'devices'
 
     db = GarminDb
-    table_version = 4
+    table_version = 5
     unknown_device_serial_number = 9999999999
 
     Manufacturer = idbutils.derived_enum.derive('Manufacturer', fitfile.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
@@ -85,7 +85,7 @@ class DeviceInfo(GarminDb.Base, idbutils.DbObject):
     __tablename__ = 'device_info'
 
     db = GarminDb
-    table_version = 4
+    table_version = 5
     view_version = 6
 
     timestamp = Column(DateTime, nullable=False)

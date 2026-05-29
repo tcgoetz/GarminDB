@@ -25,7 +25,7 @@ class MonitoringInfo(MonitoringDb.Base, idbutils.DbObject):
     __tablename__ = 'monitoring_info'
 
     db = MonitoringDb
-    table_version = 1
+    table_version = 2
 
     timestamp = Column(DateTime)
     file_id = Column(String, nullable=False)

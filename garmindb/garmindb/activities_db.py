@@ -98,7 +98,7 @@ class Activities(ActivitiesDb.Base, ActivitiesCommon):
     __tablename__ = 'activities'
 
     db = ActivitiesDb
-    table_version = 5
+    table_version = 6
 
     activity_id = Column(String, primary_key=True)
     name = Column(String)
@@ -323,7 +323,7 @@ class ActivitiesDevices(ActivitiesDb.Base, idbutils.DbObject):
     __tablename__ = 'activities_devices'
 
     db = ActivitiesDb
-    table_version = 1
+    table_version = 2
 
     activity_id = Column(String)
     device_serial_number = Column(BigInteger)
