@@ -5,6 +5,6 @@ tqdm
 garminconnect>=0.3.3
 fitfile>=1.2.0
 tcxfile>=1.0.4
-idbutils>=1.1.0
+idbutils>=1.2.0
 # security fixes
 tornado>=6.4.2
