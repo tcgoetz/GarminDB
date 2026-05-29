@@ -8,7 +8,7 @@ import os
 import datetime
 import logging
 import re
-from sqlalchemy import Column, Integer, DateTime, Time, Float, String, Enum, ForeignKey, func, PrimaryKeyConstraint
+from sqlalchemy import Column, Integer, BigInteger, DateTime, Time, Float, String, Enum, ForeignKey, func, PrimaryKeyConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import fitfile
@@ -59,7 +59,7 @@ class Device(GarminDb.Base, idbutils.DbObject):
 
     Manufacturer = idbutils.derived_enum.derive('Manufacturer', fitfile.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
 
-    serial_number = Column(Integer, primary_key=True)
+    serial_number = Column(BigInteger, primary_key=True)
     timestamp = Column(DateTime)
     device_type = Column(String)
     manufacturer = Column(Enum(Manufacturer))
@@ -74,7 +74,9 @@ class Device(GarminDb.Base, idbutils.DbObject):
     @classmethod
     def local_device_serial_number(cls, serial_number, device_type):
         """Return a synthetic serial number for a sub device composed of the parent's serial number and the sub device type."""
-        return '%s%06d' % (serial_number, device_type.value)
+        # The returned value lands in an Integer column. Build it as int so postgres
+        # (and any other strict-typed backend) does not have to coerce from a string.
+        return int('%s%06d' % (serial_number, device_type.value))
 
 
 class DeviceInfo(GarminDb.Base, idbutils.DbObject):
@@ -88,7 +90,7 @@ class DeviceInfo(GarminDb.Base, idbutils.DbObject):
 
     timestamp = Column(DateTime, nullable=False)
     file_id = Column(String, ForeignKey('files.id'))
-    serial_number = Column(Integer, ForeignKey('devices.serial_number'), nullable=False)
+    serial_number = Column(BigInteger, ForeignKey('devices.serial_number'), nullable=False)
     software_version = Column(String)
     cum_operating_time = Column(Time, nullable=False, default=datetime.time.min)
     battery_status = Column(Enum(fitfile.field_enums.BatteryStatus))
@@ -135,7 +137,7 @@ class File(GarminDb.Base, idbutils.DbObject):
     id = Column(String, primary_key=True)
     name = Column(String, unique=True)
     type = Column(Enum(FileType), nullable=False)
-    serial_number = Column(Integer, ForeignKey('devices.serial_number'))
+    serial_number = Column(BigInteger, ForeignKey('devices.serial_number'))
 
     @classmethod
     def s_get_id(cls, session, pathname):

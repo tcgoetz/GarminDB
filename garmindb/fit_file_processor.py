@@ -128,8 +128,10 @@ class FitFileProcessor():
         serial_number = message_fields.serial_number
         source_type = message_fields.source_type
         # local devices are part of the main device. Base missing fields off of the main device.
+        # Fitfile returns 0 for an "invalid" / unset serial; treat the same as None so we
+        # don't collide on a shared 0 PK across multiple sensors in the same activity.
         if source_type is fitfile.field_enums.SourceType.local:
-            if serial_number is None and self.serial_number is not None and device_type is not None:
+            if (serial_number is None or serial_number == 0) and self.serial_number is not None and device_type is not None:
                 serial_number = Device.local_device_serial_number(self.serial_number, device_type)
         if serial_number is not None:
             manufacturer = Device.Manufacturer.convert(message_fields.manufacturer)
