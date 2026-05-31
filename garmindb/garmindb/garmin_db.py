@@ -284,7 +284,7 @@ class SleepEvents(GarminDb.Base, idbutils.DbObject):
         day_stop_ts = datetime.datetime.combine(day_date, datetime.time.max)
         result = cls._s_query(session, cls._time_from_secs(func.sum(cls._secs_from_time(cls.duration))), None, day_start_ts, day_stop_ts,
                               cls._secs_from_time(cls.duration)).filter(cls.event == sleep_level).scalar()
-        return datetime.datetime.strptime(result, '%H:%M:%S').time() if result is not None else datetime.time.min
+        return result if result is not None else datetime.time.min
 
     @classmethod
     def get_day_stats(cls, session, day_date):
