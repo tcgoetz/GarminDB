@@ -84,41 +84,39 @@ class ActivityFitFileProcessor(FitFileProcessor):
             self.garmin_act_db_session.add(ActivityRecords(**record))
 
     def _write_lap_entry(self, fit_file, message_fields, lap_num):
-        # we don't get laps data from multiple sources so we don't need to coellesce data in the DB.
-        # It's fastest to just write new data out if the it doesn't currently exist.
         activity_id = File.id_from_path(fit_file.filename)
         plugin_lap = self._plugin_dispatch('write_lap_entry', self.garmin_act_db_session, fit_file, activity_id, message_fields, lap_num)
-        if not ActivityLaps.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'lap' : lap_num}):
-            lap = {
-                'activity_id'                       : File.id_from_path(fit_file.filename),
-                'lap'                               : lap_num,
-                'start_time'                        : fit_file.utc_datetime_to_local(message_fields.start_time),
-                'stop_time'                         : fit_file.utc_datetime_to_local(message_fields.timestamp),
-                'elapsed_time'                      : message_fields.get('total_elapsed_time'),
-                'moving_time'                       : message_fields.get('total_timer_time'),
-                'start_lat'                         : message_fields.get('start_position_lat'),
-                'start_long'                        : message_fields.get('start_position_long'),
-                'stop_lat'                          : message_fields.get('end_position_lat'),
-                'stop_long'                         : message_fields.get('end_position_long'),
-                'distance'                          : message_fields.get('total_distance'),
-                'cycles'                            : message_fields.get('total_cycles'),
-                'avg_hr'                            : message_fields.get('avg_heart_rate'),
-                'max_hr'                            : message_fields.get('max_heart_rate'),
-                'avg_rr'                            : message_fields.get('avg_respiration_rate'),
-                'max_rr'                            : message_fields.get('max_respiration_rate'),
-                'calories'                          : message_fields.get('total_calories'),
-                'avg_cadence'                       : message_fields.get('avg_cadence'),
-                'max_cadence'                       : message_fields.get('max_cadence'),
-                'avg_speed'                         : message_fields.get('avg_speed'),
-                'max_speed'                         : message_fields.get('max_speed'),
-                'ascent'                            : message_fields.get('total_ascent'),
-                'descent'                           : message_fields.get('total_descent'),
-                'max_temperature'                   : message_fields.get('max_temperature'),
-                'avg_temperature'                   : message_fields.get('avg_temperature'),
-            }
-            lap.update(plugin_lap)
-            root_logger.debug("writing lap %r for %s", lap, fit_file.filename)
-            self.garmin_act_db_session.add(ActivityLaps(**lap))
+        lap = {
+            'activity_id'                       : activity_id,
+            'lap'                               : lap_num,
+            'start_time'                        : fit_file.utc_datetime_to_local(message_fields.start_time),
+            'stop_time'                         : fit_file.utc_datetime_to_local(message_fields.timestamp),
+            'elapsed_time'                      : message_fields.get('total_elapsed_time'),
+            'moving_time'                       : message_fields.get('total_timer_time'),
+            'start_lat'                         : message_fields.get('start_position_lat'),
+            'start_long'                        : message_fields.get('start_position_long'),
+            'stop_lat'                          : message_fields.get('end_position_lat'),
+            'stop_long'                         : message_fields.get('end_position_long'),
+            'distance'                          : message_fields.get('total_distance'),
+            'cycles'                            : message_fields.get('total_cycles'),
+            'avg_hr'                            : message_fields.get('avg_heart_rate'),
+            'max_hr'                            : message_fields.get('max_heart_rate'),
+            'avg_rr'                            : message_fields.get('avg_respiration_rate'),
+            'max_rr'                            : message_fields.get('max_respiration_rate'),
+            'calories'                          : message_fields.get('total_calories'),
+            'avg_cadence'                       : message_fields.get('avg_cadence'),
+            'max_cadence'                       : message_fields.get('max_cadence'),
+            'avg_speed'                         : message_fields.get('avg_speed'),
+            'max_speed'                         : message_fields.get('max_speed'),
+            'ascent'                            : message_fields.get('total_ascent'),
+            'descent'                           : message_fields.get('total_descent'),
+            'max_temperature'                   : message_fields.get('max_temperature'),
+            'min_temperature'                   : message_fields.get('min_temperature'),
+            'avg_temperature'                   : message_fields.get('avg_temperature'),
+        }
+        lap.update(plugin_lap)
+        root_logger.debug("writing lap %r for %s", lap, fit_file.filename)
+        ActivityLaps.s_insert_or_update(self.garmin_act_db_session, lap, ignore_none=True)
 
     def _write_split_entry(self, fit_file, message_fields, split_num):
         # we don't get splits data from multiple sources so we don't need to coellesce data in the DB.
@@ -344,6 +342,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'ascent'                            : message_fields.get('total_ascent'),
             'descent'                           : message_fields.get('total_descent'),
             'max_temperature'                   : message_fields.get('max_temperature'),
+            'min_temperature'                   : message_fields.get('min_temperature'),
             'avg_temperature'                   : message_fields.get('avg_temperature'),
             'training_effect'                   : message_fields.get('total_training_effect'),
             'anaerobic_training_effect'         : message_fields.get('total_anaerobic_training_effect')
