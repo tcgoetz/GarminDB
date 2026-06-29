@@ -179,6 +179,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'ascent'                            : message_fields.get('total_ascent'),
             'descent'                           : message_fields.get('total_descent'),
             'max_temperature'                   : message_fields.get('max_temperature'),
+            'min_temperature'                   : message_fields.get('min_temperature'),
             'avg_temperature'                   : message_fields.get('avg_temperature'),
         }
         lap.update(plugin_lap)
@@ -425,6 +426,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'ascent'                            : message_fields.get('total_ascent'),
             'descent'                           : message_fields.get('total_descent'),
             'max_temperature'                   : message_fields.get('max_temperature'),
+            'min_temperature'                   : message_fields.get('min_temperature'),
             'avg_temperature'                   : message_fields.get('avg_temperature'),
             'training_effect'                   : message_fields.get('total_training_effect'),
             'anaerobic_training_effect'         : message_fields.get('total_anaerobic_training_effect')
