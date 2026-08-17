@@ -509,13 +509,21 @@ class GarminHrvData(JsonFileProcessor):
             return 0
         if isinstance(day, str):
             day = self._parse_date(day)
+        # Garmin sends "baseline": null (not an absent key) for the several
+        # weeks before a personal HRV baseline exists, e.g. for a
+        # newly-registered device. dict.get(key, {}) only falls back to {}
+        # when the key is absent, not when its value is None, so that case
+        # reached _get_field() with a None object and raised
+        # "'NoneType' object is not subscriptable" on every single sync
+        # during that period.
+        baseline = hrv_summary.get('baseline') or {}
         point = {
             'day': day.date() if hasattr(day, 'date') else day,
             'weekly_avg': self._get_field(hrv_summary, 'weeklyAvg', int),
             'last_night_avg': self._get_field(hrv_summary, 'lastNightAvg', int),
             'last_night_5min_high': self._get_field(hrv_summary, 'lastNight5MinHigh', int),
-            'baseline_low': self._get_field(hrv_summary.get('baseline', {}), 'balancedLow', int),
-            'baseline_upper': self._get_field(hrv_summary.get('baseline', {}), 'balancedUpper', int),
+            'baseline_low': self._get_field(baseline, 'balancedLow', int),
+            'baseline_upper': self._get_field(baseline, 'balancedUpper', int),
             'status': self._get_field(hrv_summary, 'status', str)
         }
         Hrv.insert_or_update(self.garmin_db, point, ignore_none=True)
