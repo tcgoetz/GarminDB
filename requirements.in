@@ -1,8 +1,8 @@
-sqlalchemy~=2.0.51
+sqlalchemy~=2.0.52
 python-dateutil
 cached-property
 tqdm
-garminconnect>=0.3.6
+garminconnect>=0.3.11
 fitfile>=1.2.0
 tcxfile>=1.0.4
 idbutils>=1.2.0
