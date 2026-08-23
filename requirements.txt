@@ -1,8 +1,8 @@
-SQLAlchemy==2.0.51
+SQLAlchemy==2.0.52
 python-dateutil==2.9.0.post0
 cached-property==2.0.1
 tqdm==4.67.1
-garminconnect==0.3.6
+garminconnect==0.3.11
 fitfile>=1.2.0
 tcxfile>=1.0.4
 idbutils>=1.2.0
