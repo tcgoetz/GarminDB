@@ -193,12 +193,22 @@ class ActivityFitFileProcessor(FitFileProcessor):
         plugin_split = self._plugin_dispatch('write_split_entry', self.garmin_act_db_session, fit_file, activity_id, message_fields, split_num)
 
         if not ActivitySplits.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'split' : split_num}):
+            # Calculate stop_time as start_time + elapsed_time since FIT file timestamp is activity start time
+            start_time = fit_file.utc_datetime_to_local(message_fields.start_time)
+            elapsed_time = message_fields.get('total_elapsed_time')
+            if start_time and elapsed_time:
+                from datetime import timedelta
+                stop_time = start_time + timedelta(hours=elapsed_time.hour, minutes=elapsed_time.minute,
+                                                   seconds=elapsed_time.second, microseconds=elapsed_time.microsecond)
+            else:
+                stop_time = fit_file.utc_datetime_to_local(message_fields.timestamp)
+
             split = {
                 'activity_id'                       : File.id_from_path(fit_file.filename),
                 'split'                             : split_num,
-                'start_time'                        : fit_file.utc_datetime_to_local(message_fields.start_time),
-                'stop_time'                         : fit_file.utc_datetime_to_local(message_fields.timestamp),
-                'elapsed_time'                      : message_fields.get('total_elapsed_time'),
+                'start_time'                        : start_time,
+                'stop_time'                         : stop_time,
+                'elapsed_time'                      : elapsed_time,
                 'moving_time'                       : message_fields.get('total_timer_time'),
                 'avg_hr'                            : message_fields.get('avg_heart_rate'),
                 'max_hr'                            : message_fields.get('max_heart_rate'),
