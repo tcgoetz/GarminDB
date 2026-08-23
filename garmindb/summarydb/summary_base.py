@@ -159,7 +159,7 @@ class SummaryBase(DbObject):
             cls.round_col('hydration_goal'),
             cls.round_col('hydration_avg'),
             cls.round_col('sweat_loss_avg'),
-            cls.round_col('sweat_loss_avg'),
+            cls.round_col('sweat_loss'),
             cls.round_col('spo2_avg'),
             cls.round_col('rr_waking_avg'),
         ]

@@ -78,6 +78,14 @@ class GarminConnectConfigManager(JsonConfig):
         """Return the configured hostname of the database."""
         return self.get_node_value('db', 'host')
 
+    def get_db_port(self):
+        """Return the configured TCP port of the database (None falls back to driver default)."""
+        return self.get_node_value_default('db', 'port', None)
+
+    def get_db_database(self):
+        """Return the configured PostgreSQL database name (schemas are derived from each idbutils.DB.db_name)."""
+        return self.get_node_value('db', 'database')
+
     def get_db_dir(self, test_dir=False):
         """Return the configured directory of where the database will be stored."""
         return self.__create_dir_if_needed(self.get_base_dir(test_dir) + os.sep + 'DBs')
@@ -95,6 +103,12 @@ class GarminConnectConfigManager(JsonConfig):
             db_params['db_username'] = self.get_db_user()
             db_params['db_password'] = self.get_db_password()
             db_params['db_host'] = self.get_db_host()
+        elif db_type == "postgresql":
+            db_params['db_username'] = self.get_db_user()
+            db_params['db_password'] = self.get_db_password()
+            db_params['db_host'] = self.get_db_host()
+            db_params['db_port'] = self.get_db_port()
+            db_params['pg_database'] = self.get_db_database()
         return DbParams(**db_params)
 
     def get_base_dir(self, test_dir=False):
