@@ -6,7 +6,7 @@ __license__ = "GPL"
 
 import logging
 import datetime
-from sqlalchemy import Column, String, Float, Integer, Boolean, DateTime, Time, Enum, ForeignKey, PrimaryKeyConstraint, desc, literal_column
+from sqlalchemy import Column, String, Float, Integer, BigInteger, Boolean, DateTime, Time, Enum, ForeignKey, PrimaryKeyConstraint, desc, literal_column
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -98,7 +98,7 @@ class Activities(ActivitiesDb.Base, ActivitiesCommon):
     __tablename__ = 'activities'
 
     db = ActivitiesDb
-    table_version = 5
+    table_version = 6
 
     activity_id = Column(String, primary_key=True)
     name = Column(String)
@@ -109,7 +109,7 @@ class Activities(ActivitiesDb.Base, ActivitiesCommon):
     sport = Column(String)
     sub_sport = Column(String)
 
-    device_serial_number = Column(Integer)
+    device_serial_number = Column(BigInteger)
 
     self_eval_feel = Column(String)
     self_eval_effort = Column(String)
@@ -323,10 +323,10 @@ class ActivitiesDevices(ActivitiesDb.Base, idbutils.DbObject):
     __tablename__ = 'activities_devices'
 
     db = ActivitiesDb
-    table_version = 1
+    table_version = 2
 
     activity_id = Column(String)
-    device_serial_number = Column(Integer)
+    device_serial_number = Column(BigInteger)
     __table_args__ = (PrimaryKeyConstraint("activity_id", "device_serial_number"),)
 
     @classmethod
@@ -362,12 +362,14 @@ class SportActivities(idbutils.DbObject):
     @classmethod
     def _create_sport_view(cls, db, selectable, sport):
         """Create a database view for a sport based activity type."""
-        filter = literal_column(f'{Activities.sport} == "{sport}"')
+        # SQL equality is `=` and string literals use single quotes. sqlite
+        # tolerates `==` and double-quoted literals; postgres does not.
+        filter = literal_column(f"{Activities.sport} = '{sport}'")
         cls.create_join_view(db, f'{sport}_activities_view', selectable, Activities, filter, Activities.start_time.desc())
 
     @classmethod
     def _create_course_view(cls, db, selectable, course_id):
-        filter = literal_column(f'{Activities.course_id} == {course_id}')
+        filter = literal_column(f'{Activities.course_id} = {course_id}')
         cls.create_join_view(db, f'course_{course_id}_view', selectable, Activities, filter, Activities.start_time.desc())
 
     @classmethod
