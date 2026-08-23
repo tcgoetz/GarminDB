@@ -266,6 +266,18 @@ update_garmin:
 update_garmin_activities:
 	$(GARMINDB_CLI) --activities --download --import --analyze --latest
 
+download_garmin_golf:
+	$(GARMINDB_CLI) --golf --download
+
+redownload_garmin_golf:
+	$(GARMINDB_CLI) --golf --download --overwrite
+
+build_garmin_golf:
+	$(GARMINDB_CLI) --golf --import
+
+update_garmin_golf:
+	$(GARMINDB_CLI) --golf --download --import --latest
+
 copy_garmin_latest:
 	$(GARMINDB_CLI) --all --copy --import --analyze --latest
 
@@ -289,6 +301,9 @@ clean_garmin_monitoring_dbs:
 
 clean_garmin_activities_dbs:
 	$(GARMINDB_CLI) --delete_db --activities
+
+clean_garmin_golf_dbs:
+	$(GARMINDB_CLI) --delete_db --golf
 
 
 #

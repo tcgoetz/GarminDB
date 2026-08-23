@@ -51,6 +51,7 @@ class GarminDbMain():
         Statistics.rhr                   : GarminDb,
         Statistics.weight                : GarminDb,
         Statistics.hrv                   : GarminDb,
+        Statistics.golf                  : GarminDb,
         Statistics.activities            : ActivitiesDb
     }
 
@@ -168,6 +169,12 @@ class GarminDbMain():
                 download.get_hrv(hrv_dir, date, days, overwrite)
                 root_logger.info("Saved hrv files for %s (%d) to %s for processing", date, days, hrv_dir)
 
+        if Statistics.golf in stats:
+            golf_dir = self.gc_config.get_golf_dir()
+            root_logger.info("Downloading golf data to %s", golf_dir)
+            download.get_golf_scorecards(golf_dir, overwrite)
+            root_logger.info("Saved golf files to %s for processing", golf_dir)
+
 
     def import_data(self, debug, latest, stats):
         """Import previously downloaded Garmin data into the database."""
@@ -256,6 +263,21 @@ class GarminDbMain():
             if gfd.file_count() > 0:
                 gfd.process_files(ActivityFitFileProcessor(self.gc_config.get_db_params(), self.plugin_manager, debug))
 
+        if Statistics.golf in stats:
+            from garmindb import GarminGolfScorecardData, GarminGolfScorecardDetailData, GarminGolfShotData
+            golf_dir = self.gc_config.get_golf_dir()
+            ggsd = GarminGolfScorecardData(self.gc_config.get_db_params(), golf_dir, latest, debug)
+            if ggsd.file_count() > 0:
+                ggsd.process()
+            
+            ggsdd = GarminGolfScorecardDetailData(self.gc_config.get_db_params(), golf_dir, latest, debug)
+            if ggsdd.file_count() > 0:
+                ggsdd.process()
+                
+            ggshd = GarminGolfShotData(self.gc_config.get_db_params(), golf_dir, latest, debug)
+            if ggshd.file_count() > 0:
+                ggshd.process()
+
 
     def analyze_data(self, debug):
         """Analyze the downloaded and imported Garmin data and create summary tables."""
@@ -330,6 +352,7 @@ def main(argv):
     stats_group.add_argument("-m", "--monitoring", help="Download and/or import monitoring data.", dest='stats', action='append_const', const=Statistics.monitoring)
     stats_group.add_argument("-r", "--rhr", help="Download and/or import resting heart rate data.", dest='stats', action='append_const', const=Statistics.rhr)
     stats_group.add_argument("--hrv", help="Download and/or import heart rate variability data.", dest='stats', action='append_const', const=Statistics.hrv)
+    stats_group.add_argument("--golf", help="Download and/or import golf data.", dest='stats', action='append_const', const=Statistics.golf)
     stats_group.add_argument("-s", "--sleep", help="Download and/or import sleep data.", dest='stats', action='append_const', const=Statistics.sleep)
     stats_group.add_argument("-w", "--weight", help="Download and/or import weight data.", dest='stats', action='append_const', const=Statistics.weight)
     modifiers_group = parser.add_argument_group('Modifiers')
