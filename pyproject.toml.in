@@ -5,14 +5,12 @@ description = "Garmin Connect download and analysis"
 authors = [
     {name = "Tom Goetz"},
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 readme = "README.md"
 license = {text = "GPL"}
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Operating System :: MacOS :: MacOS X",

@@ -1,6 +1,12 @@
 {
     "db": {
-        "type"                          : "sqlite"
+        "type"                          : "sqlite",
+        "_comment_postgresql"           : "set 'type' to 'postgresql' and uncomment user/password/host/port/database to use a Postgres backend; each idbutils.DB lands in its own schema inside the named database",
+        "_user"                         : "",
+        "_password"                     : "",
+        "_host"                         : "127.0.0.1",
+        "_port"                         : 5432,
+        "_database"                     : ""
     },
     "garmin": {
         "domain"                        : "garmin.com"

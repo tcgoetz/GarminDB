@@ -58,9 +58,9 @@ class GarminConnectConfigManager(JsonConfig):
             os.makedirs(dir)
         return dir
 
-    def get_session_file(self):
-        """Return the path to the session file."""
-        return self.config_dir + os.sep + 'garth_session'
+    def get_token_store_file(self):
+        """Return the path to the Garmin Connect DI OAuth2 token store."""
+        return self.config_dir + os.sep + 'garmin_tokens.json'
 
     def get_db_type(self):
         """Return the type (SQLite, MySQL, etc) of database that is configured."""
@@ -77,6 +77,14 @@ class GarminConnectConfigManager(JsonConfig):
     def get_db_host(self):
         """Return the configured hostname of the database."""
         return self.get_node_value('db', 'host')
+
+    def get_db_port(self):
+        """Return the configured TCP port of the database (None falls back to driver default)."""
+        return self.get_node_value_default('db', 'port', None)
+
+    def get_db_database(self):
+        """Return the configured PostgreSQL database name (schemas are derived from each idbutils.DB.db_name)."""
+        return self.get_node_value('db', 'database')
 
     def get_db_dir(self, test_dir=False):
         """Return the configured directory of where the database will be stored."""
@@ -95,6 +103,12 @@ class GarminConnectConfigManager(JsonConfig):
             db_params['db_username'] = self.get_db_user()
             db_params['db_password'] = self.get_db_password()
             db_params['db_host'] = self.get_db_host()
+        elif db_type == "postgresql":
+            db_params['db_username'] = self.get_db_user()
+            db_params['db_password'] = self.get_db_password()
+            db_params['db_host'] = self.get_db_host()
+            db_params['db_port'] = self.get_db_port()
+            db_params['pg_database'] = self.get_db_database()
         return DbParams(**db_params)
 
     def get_base_dir(self, test_dir=False):
@@ -169,10 +183,10 @@ class GarminConnectConfigManager(JsonConfig):
             try:
                 password = subprocess.check_output(["security", "find-internet-password", "-s", domain, "-w"])
                 if password:
-                    return password.rstrip()
+                    return password.decode(encoding="utf-8").rstrip()
             except Exception:
                 pass
-            raise ConfigException(f'Secure password was specified but no "Internet Password" entry was found in the Login Keychain for https://{domain}')
+            raise ConfigException(f'Secure password was specified but no "Internet Password" entry was found in the Login Keychain for https:////{domain}')
 
     def get_password_from_file(self):
         """Read the Garmin Connect password from a file."""
