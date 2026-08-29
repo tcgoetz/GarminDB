@@ -5,7 +5,6 @@
         "ms-toolsai.vscode-jupyter-cell-tags",
         "ms-toolsai.jupyter-keymap",
         "ms-toolsai.jupyter-renderers",
-        "ms-vscode.makefile-tools",
-        "eamodio.gitlens"
+        "ms-vscode.makefile-tools"
     ]
 }
