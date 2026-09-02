@@ -20,7 +20,7 @@ from test_db_base import TestDBBase
 root_logger = logging.getLogger()
 handler = logging.FileHandler('monitoring_db.log', 'w')
 root_logger.addHandler(handler)
-root_logger.setLevel(logging.INFO)
+root_logger.setLevel(logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,11 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
             self.assertLess(datetime.datetime.now() - latest, datetime.timedelta(days=2))
 
     def fit_file_import(self, db_params):
-        gfd = GarminMonitoringFitData('test_files/fit/monitoring', latest=False, measurement_system=fitfile.field_enums.DisplayMeasure.statute, debug=2)
+        gfd = GarminMonitoringFitData('test_files/fit/monitoring', latest=False, measurement_system=fitfile.MeasurementSystem.statute, debug=2)
+        self.gfd_file_count = gfd.file_count()
+        if gfd.file_count() > 0:
+            gfd.process_files(MonitoringFitFileProcessor(db_params, self.plugin_manager))
+        gfd = GarminMonitoringFitData('test_files/fit/hrv', latest=False, measurement_system=fitfile.MeasurementSystem.statute, debug=2)
         self.gfd_file_count = gfd.file_count()
         if gfd.file_count() > 0:
             gfd.process_files(MonitoringFitFileProcessor(db_params, self.plugin_manager))
@@ -84,7 +88,7 @@ class TestMonitoringDB(TestDBBase, unittest.TestCase):
 
     def test_summary_json_file_import(self):
         db_params = self.gc_config.get_db_params(test_db=True)
-        gjsd = GarminSummaryData(db_params, 'test_files/json/monitoring/summary', latest=False, measurement_system=fitfile.field_enums.DisplayMeasure.statute, debug=2)
+        gjsd = GarminSummaryData(db_params, 'test_files/json/monitoring/summary', latest=False, measurement_system=fitfile.MeasurementSystem.statute, debug=2)
         if gjsd.file_count() > 0:
             gjsd.process()
         table_not_none_cols_dict = {

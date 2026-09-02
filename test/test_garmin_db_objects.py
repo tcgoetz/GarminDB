@@ -115,9 +115,9 @@ class TestGarminDbObjects(unittest.TestCase):
         result = Attributes.get_float(self.garmin_db, 2.2)
 
     def test_measurement_system(self):
-        result = Attributes.measurements_type(self.garmin_db, fitfile.field_enums.DisplayMeasure.metric)
-        self.assertEqual(result, fitfile.field_enums.DisplayMeasure.metric)
-        for value in fitfile.field_enums.DisplayMeasure:
+        result = Attributes.measurements_type(self.garmin_db, fitfile.MeasurementSystem.metric)
+        self.assertEqual(result, fitfile.MeasurementSystem.metric)
+        for value in fitfile.MeasurementSystem:
             Attributes.set(self.garmin_db, 'measurement_system', value)
             result = Attributes.measurements_type(self.garmin_db)
             self.assertEqual(result, value)

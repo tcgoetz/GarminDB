@@ -51,7 +51,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         cls.plugin_manager = PluginManager(cls.gc_config.get_plugins_dir(), cls.test_db_params)
         cls.test_mon_db = GarminDb(cls.test_db_params)
         cls.test_act_db = ActivitiesDb(cls.test_db_params, debug_level=1)
-        cls.measurement_system = fitfile.field_enums.DisplayMeasure.statute
+        cls.measurement_system = fitfile.MeasurementSystem.statute
         print(f"db params {repr(cls.test_db_params)}")
 
     def test_garmin_act_db_tables_exists(self):
@@ -74,11 +74,11 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
             self.assertGreaterEqual(field_min, min_value)
 
     def check_sport(self, activity):
-        sport = fitfile.Sport.from_string(activity.sport)
-        self.assertIsInstance(sport, fitfile.Sport, f'sport ({type(sport)}) from {repr(activity)}')
+        sport = fitfile.fields.Sport.from_string(activity.sport)
+        self.assertIsInstance(sport, fitfile.fields.Sport, f'sport ({type(sport)}) from {repr(activity)}')
         self.assertEqual(activity.sport, sport.name)
-        sub_sport = fitfile.SubSport.from_string(activity.sub_sport)
-        self.assertIsInstance(sub_sport, fitfile.SubSport, f'sub_sport ({type(sub_sport)}) from {repr(activity)}')
+        sub_sport = fitfile.fields.SubSport.from_string(activity.sub_sport)
+        self.assertIsInstance(sub_sport, fitfile.fields.SubSport, f'sub_sport ({type(sub_sport)}) from {repr(activity)}')
         self.assertEqual(activity.sub_sport, sub_sport.name)
 
     def check_activities(self):

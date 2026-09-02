@@ -39,4 +39,16 @@ endif
 
 MODULE=garmindb
 
+$(info $$PROJECT_BASE is [${PROJECT_BASE}])
+$(info $$VENV is [${VENV}])
+$(info $$PLATFORM is [${PLATFORM}])
+$(info $$SHELL is [${SHELL}])
+
+export PIP_PATH=$(VENV)/bin/$(PIP)
+$(info $$PIP_PATH is [${PIP_PATH}])
+export PYTHON_PATH=$(VENV)/bin/$(PYTHON)
+$(info $$PYTHON_PATH is [${PYTHON_PATH}])
+export GARMINDB_CLI=$(VENV)/bin/garmindb_cli.py
+$(info $$GARMINDB_CLI is [${GARMINDB_CLI}])
+
 export MODULE SHELL TIME PLATFORM PYTHON PIP FLAKE8

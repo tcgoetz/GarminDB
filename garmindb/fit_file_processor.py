@@ -103,14 +103,14 @@ class FitFileProcessor():
         if _manufacturer is not None:
             self.manufacturer = _manufacturer
         self.product = message_fields.product
-        device_type = fitfile.MainDeviceType.derive_device_type(self.manufacturer, self.product)
+        device_type = fitfile.fields.MainDeviceType.derive_device_type(self.manufacturer, self.product)
         if self.serial_number:
             device = {
                 'serial_number' : self.serial_number,
                 'timestamp'     : fit_file.utc_datetime_to_local(message_fields.time_created),
-                'device_type'   : fitfile.field_enums.name_for_enum(device_type),
+                'device_type'   : fitfile.name_for_enum(device_type),
                 'manufacturer'  : self.manufacturer,
-                'product'       : fitfile.field_enums.name_for_enum(self.product),
+                'product'       : fitfile.name_for_enum(self.product),
             }
             Device.s_insert_or_update(self.garmin_db_session, device)
         (file_id, file_name) = File.name_and_id_from_path(fit_file.filename)
@@ -124,13 +124,13 @@ class FitFileProcessor():
 
     def _write_device_info_entry(self, fit_file, message_fields):
         timestamp = fit_file.utc_datetime_to_local(message_fields.timestamp)
-        device_type = message_fields.get('device_type', fitfile.MainDeviceType.fitness_tracker)
+        device_type = message_fields.get('device_type', fitfile.fields.MainDeviceType.fitness_tracker)
         serial_number = message_fields.serial_number
         source_type = message_fields.source_type
         # local devices are part of the main device. Base missing fields off of the main device.
         # Fitfile returns 0 for an "invalid" / unset serial; treat the same as None so we
         # don't collide on a shared 0 PK across multiple sensors in the same activity.
-        if source_type is fitfile.field_enums.SourceType.local:
+        if source_type is fitfile.fields.SourceType.local:
             if (serial_number is None or serial_number == 0) and self.serial_number is not None and device_type is not None:
                 serial_number = Device.local_device_serial_number(self.serial_number, device_type)
         if serial_number is not None:
@@ -138,9 +138,9 @@ class FitFileProcessor():
             device = {
                 'serial_number'     : serial_number,
                 'timestamp'         : timestamp,
-                'device_type'       : fitfile.field_enums.name_for_enum(device_type),
+                'device_type'       : fitfile.name_for_enum(device_type),
                 'manufacturer'      : manufacturer or self.manufacturer,
-                'product'           : fitfile.field_enums.name_for_enum(message_fields.product or self.product),
+                'product'           : fitfile.name_for_enum(message_fields.product or self.product),
                 'hardware_version'  : message_fields.hardware_version
             }
             Device.s_insert_or_update(self.garmin_db_session, device, ignore_none=True)

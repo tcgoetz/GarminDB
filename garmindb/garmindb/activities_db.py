@@ -57,7 +57,7 @@ class ActivitiesCommon(idbutils.DbObject):
     stop_long = Column(Float)
 
     # heart rate zone data
-    hr_zones_method = Column(Enum(fitfile.enum_fields.HeartRateZonesMethod))
+    hr_calc_type = Column(Enum(fitfile.fields.HeartRateZoneCalc))
     # heart rate threashold that the zone starts at
     hrz_1_hr = Column(Integer)
     hrz_2_hr = Column(Integer)

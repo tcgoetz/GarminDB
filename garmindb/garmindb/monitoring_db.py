@@ -16,7 +16,7 @@ import idbutils
 
 logger = logging.getLogger(__name__)
 
-MonitoringDb = idbutils.DB.create('garmin_monitoring', 7, "Database for storing daily health monitoring data from a Garmin device.")
+MonitoringDb = idbutils.DB.create('garmin_monitoring', 8, "Database for storing daily health monitoring data from a Garmin device.")
 
 
 class MonitoringInfo(MonitoringDb.Base, idbutils.DbObject):
@@ -29,7 +29,7 @@ class MonitoringInfo(MonitoringDb.Base, idbutils.DbObject):
 
     timestamp = Column(DateTime)
     file_id = Column(String, nullable=False)
-    activity_type = Column(Enum(fitfile.field_enums.ActivityType))
+    activity_type = Column(Enum(fitfile.fields.ActivityType))
     resting_metabolic_rate = Column(Integer)
     cycles_to_distance = Column(FLOAT)
     cycles_to_calories = Column(FLOAT)
@@ -77,11 +77,27 @@ class MonitoringHeartRate(MonitoringDb.Base, idbutils.DbObject):
             'hr_max' : cls.s_get_col_max(session, cls.heart_rate, start_ts, end_ts),
         }
 
+
+class MonitoringRestingHeartRate(MonitoringDb.Base, idbutils.DbObject):
+    """Class that reprsents a database table holding resting heart rate data."""
+
+    __tablename__ = 'monitoring_rhr'
+
+    db = MonitoringDb
+    table_version = 1
+
+    timestamp = Column(DateTime, primary_key=True)
+    resting_heart_rate = Column(Integer, nullable=True)
+    day_resting_heart_rate = Column(Integer, nullable=False)
+
     @classmethod
-    def get_resting_heartrate(cls, db, wake_ts):
-        """Return a resting heart rate value for the day specified."""
-        start_ts = wake_ts - datetime.timedelta(0, 0, 0, 0, 10)
-        return cls.get_col_min(db, cls.heart_rate, start_ts, wake_ts, True)
+    def get_stats(cls, session, start_ts, end_ts):
+        """Return a dict of stats for table entries within the time span."""
+        return {
+            'rhr_avg' : cls.s_get_col_avg(session, cls.day_resting_heart_rate, start_ts, end_ts, True),
+            'rhr_min' : cls.s_get_col_min(session, cls.day_resting_heart_rate, start_ts, end_ts, True),
+            'rhr_max' : cls.s_get_col_max(session, cls.day_resting_heart_rate, start_ts, end_ts),
+        }
 
 
 class MonitoringIntensity(MonitoringDb.Base, idbutils.DbObject):
@@ -146,7 +162,7 @@ class MonitoringClimb(MonitoringDb.Base, idbutils.DbObject):
         """Return a dict of stats for table entries within the time span."""
         cum_ascent = func(session, cls.cum_ascent, start_ts, end_ts)
         if cum_ascent:
-            if measurement_system is fitfile.field_enums.DisplayMeasure.metric:
+            if measurement_system is fitfile.MeasurementSystem.metric:
                 floors = cum_ascent / cls.feet_to_floors
             else:
                 floors = cum_ascent / cls.meters_to_floors
@@ -193,7 +209,7 @@ class Monitoring(MonitoringDb.Base, idbutils.DbObject):
     table_version = 2
 
     timestamp = Column(DateTime, nullable=False)
-    activity_type = Column(Enum(fitfile.field_enums.ActivityType))
+    activity_type = Column(Enum(fitfile.fields.ActivityType))
     intensity = Column(Integer)
     duration = Column(Time, nullable=False, default=datetime.time.min)
     distance = Column(Float)
@@ -222,9 +238,9 @@ class Monitoring(MonitoringDb.Base, idbutils.DbObject):
         return {
             'steps': func(session, cls.steps, start_ts, end_ts),
             'calories_active_avg': (
-                cls.get_active_calories(session, fitfile.field_enums.ActivityType.running, start_ts, end_ts)
-                + cls.get_active_calories(session, fitfile.field_enums.ActivityType.cycling, start_ts, end_ts)
-                + cls.get_active_calories(session, fitfile.field_enums.ActivityType.walking, start_ts, end_ts)
+                cls.get_active_calories(session, fitfile.fields.ActivityType.running, start_ts, end_ts)
+                + cls.get_active_calories(session, fitfile.fields.ActivityType.cycling, start_ts, end_ts)
+                + cls.get_active_calories(session, fitfile.fields.ActivityType.walking, start_ts, end_ts)
             )
         }
 
@@ -322,13 +338,13 @@ class MonitoringHrvStatus(MonitoringDb.Base, idbutils.DbObject):
     table_version = 1
 
     timestamp = Column(DateTime, primary_key=True)
-    weekly_average = Column(Float)       # Weekly average RMSSD in milliseconds
-    last_night = Column(Float)           # Last night's RMSSD in milliseconds
-    last_night_average = Column(Float)   # Last night's average RMSSD
-    baseline_low = Column(Float)         # Baseline low bound
-    baseline_high = Column(Float)        # Baseline high bound
-    status = Column(Integer)             # HRV status: 0=unknown, 2=poor, 3=low, 4=balanced
-    reading_count = Column(Integer)      # Number of readings
+    weekly_average = Column(Float)                                  # Weekly average RMSSD in milliseconds
+    last_night = Column(Float)                                      # Last night's RMSSD in milliseconds
+    last_night_average = Column(Float)                              # Last night's average RMSSD
+    baseline_low = Column(Float)                                    # Baseline low bound
+    baseline_high = Column(Float)                                   # Baseline high bound
+    status = Column(Enum(fitfile.fields.HeartRateVarianceStatus))
+    reading_count = Column(Integer)                                 # Number of readings
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):

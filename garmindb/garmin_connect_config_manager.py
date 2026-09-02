@@ -12,7 +12,7 @@ import datetime
 import tempfile
 
 from idbutils import JsonConfig
-from fitfile import Sport
+from fitfile.fields import Sport
 
 from .statistics import Statistics
 from idbutils import DbParams

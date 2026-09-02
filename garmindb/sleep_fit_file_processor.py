@@ -32,14 +32,14 @@ class SleepFitFileProcessor(FitFileProcessor):
         logger.debug("sleep level message: %r", message_fields)
         timestamp = fit_file.utc_datetime_to_local(message_fields.timestamp)
         sleep_level = message_fields.get('sleep_level')
-        if sleep_level.value > fitfile.field_enums.SleepActivityLevel.unknown.value and self.last_sleep_event is not None and \
-           (sleep_level is not fitfile.field_enums.SleepActivityLevel.awake or self.last_sleep_level is not fitfile.field_enums.SleepActivityLevel.awake):
+        if sleep_level.value > fitfile.fields.SleepActivityLevel.unknown.value and self.last_sleep_event is not None and \
+           (sleep_level is not fitfile.fields.SleepActivityLevel.awake or self.last_sleep_level is not fitfile.fields.SleepActivityLevel.awake):
             sleep_event = {
                 'timestamp' : fit_file.utc_datetime_to_local(self.last_sleep_event),
                 'event'     : sleep_level.name,
                 'duration'  : fitfile.conversions.timedelta_to_time(timestamp - self.last_sleep_event)
             }
-            logger.debug("sleep level event: %r", sleep_event)
+            logger.debug("sleep level event: %r -> %r", message_fields, sleep_event)
             SleepEvents.s_insert_or_update(self.garmin_db_session, sleep_event)
         self.last_sleep_event = timestamp
         self.last_sleep_level = sleep_level

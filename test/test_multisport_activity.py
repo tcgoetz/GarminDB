@@ -95,7 +95,7 @@ class TestMultisportActivity(unittest.TestCase):
                              f'{activity_id}: laps should be 0..N contiguous, got {laps}')
 
     def test_lap_data_populated(self):
-        """Regression for the hr_zones_timer / lap write-order bug: lap rows must have distance and elapsed_time."""
+        """Regression for the time_in_zone / lap write-order bug: lap rows must have distance and elapsed_time."""
         run_id = f'{PARENT_ID}_3'  # running leg has 6 km laps
         with self.act_db.managed_session() as session:
             laps = session.query(ActivityLaps).filter(ActivityLaps.activity_id == run_id).all()

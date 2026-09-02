@@ -3,7 +3,7 @@ python-dateutil
 cached-property
 tqdm
 garminconnect>=0.3.11
-fitfile>=1.3.0
+fitfile>=2.0.0
 tcxfile>=1.0.4
 idbutils>=1.2.0
 # security fixes

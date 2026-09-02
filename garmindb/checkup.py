@@ -113,6 +113,6 @@ class Checkup():
         for device in devices:
             battery_level = DeviceInfo.get_col_latest_where(self.garmin_db, DeviceInfo.battery_status,
                                                             [DeviceInfo.serial_number == device.serial_number,
-                                                             DeviceInfo.battery_status != fitfile.field_enums.BatteryStatus.invalid])
-            if battery_level is fitfile.field_enums.BatteryStatus.low:
+                                                             DeviceInfo.battery_status != fitfile.fields.BatteryStatus.invalid])
+            if battery_level is fitfile.fields.BatteryStatus.low:
                 self.paragraph_func(f"Device {device.manufacturer} {device.product} ({device.serial_number}) has a low battery")

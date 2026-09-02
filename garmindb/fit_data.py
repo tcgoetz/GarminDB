@@ -22,7 +22,7 @@ root_logger = logging.getLogger()
 class FitData():
     """Class for importing FIT files into a database."""
 
-    def __init__(self, input_dir, debug, latest=False, recursive=False, fit_types=None, measurement_system=fitfile.field_enums.DisplayMeasure.metric):
+    def __init__(self, input_dir, debug, latest=False, recursive=False, fit_types=None, measurement_system=fitfile.MeasurementSystem.metric):
         """
         Return an instance of FitData.
 

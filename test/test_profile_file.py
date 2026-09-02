@@ -36,8 +36,8 @@ class TestProfileFile(unittest.TestCase):
             gus.process()
         gdb = GarminDb(db_params)
         measurement_system = Attributes.measurements_type(gdb)
-        self.assertEqual(measurement_system, fitfile.field_enums.DisplayMeasure.statute,
-                         'DisplayMeasure expected %r found %r from %r' % (fitfile.field_enums.DisplayMeasure.statute, measurement_system, gus.file_names))
+        self.assertEqual(measurement_system, fitfile.MeasurementSystem.statute,
+                         'DisplayMeasure expected %r found %r from %r' % (fitfile.MeasurementSystem.statute, measurement_system, gus.file_names))
 
     def test_parse_personalinfo(self):
         db_params = self.gc_config.get_db_params(test_db=True)

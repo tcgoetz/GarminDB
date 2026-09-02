@@ -45,6 +45,7 @@ $(TEST_GROUPS):
 	$(PYTHON_PATH) test_$@.py
 
 test_%:
+	echo $(PROJECT_BASE)
 	$(PYTHON_PATH) -m unittest -v $@
 
 .PHONY: all db file_parse db_objects clean

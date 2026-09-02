@@ -141,7 +141,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
             self.garmin_act_db_session.add(ActivityRecords(**record))
 
     def _write_lap_entry(self, fit_file, message_fields, lap_num, override_activity_id=None):
-        # Use insert_or_update so we coalesce with rows created by hr_zones_timer processed earlier.
+        # Use insert_or_update so we coalesce with rows created by time_in_zone processed earlier.
         activity_id = override_activity_id or File.id_from_path(fit_file.filename)
         plugin_lap = self._plugin_dispatch('write_lap_entry', self.garmin_act_db_session, fit_file, activity_id, message_fields, lap_num)
         # For multi-sport children Garmin sets lap `timestamp` to the parent's start_time, so compute
@@ -286,9 +286,9 @@ class ActivityFitFileProcessor(FitFileProcessor):
             }
 
             if 'grade' in route and route.get('grade') is not None:
-                if fitfile.SubSport.bouldering == fit_file.sub_sport_type:
+                if fitfile.fields.SubSport.bouldering == fit_file.sub_sport_type:
                     route['grade'] = bouldering_font_grade[int(route['grade'])]
-                elif fitfile.SubSport.indoor_climbing == fit_file.sub_sport_type:
+                elif fitfile.fields.SubSport.indoor_climbing == fit_file.sub_sport_type:
                     route['grade'] = indoor_font_grade[int(route['grade'])]
 
             split.update(plugin_split)
@@ -383,13 +383,13 @@ class ActivityFitFileProcessor(FitFileProcessor):
         root_logger.debug("Generic sport entry: %r", message_fields)
 
     def __choose_sport(self, current_sport, current_sub_sport, new_sport, new_sub_sport):
-        sport = fitfile.Sport.strict_from_string(current_sport)
-        sub_sport = fitfile.SubSport.strict_from_string(current_sub_sport)
+        sport = fitfile.fields.Sport.strict_from_string(current_sport)
+        sub_sport = fitfile.fields.SubSport.strict_from_string(current_sub_sport)
         if new_sport is not None and (sport is None or (not sport.preferred() and new_sport.preferred())):
             sport = new_sport
         if new_sub_sport is not None and (sub_sport is None or (not sub_sport.preferred() and new_sub_sport.preferred())):
             sub_sport = new_sub_sport
-        return {'sport' : fitfile.field_enums.name_for_enum(sport), 'sub_sport' : fitfile.field_enums.name_for_enum(sub_sport)}
+        return {'sport' : fitfile.name_for_enum(sport), 'sub_sport' : fitfile.name_for_enum(sub_sport)}
 
     def _write_session_entry(self, fit_file, message_fields):
         self._session_num += 1
@@ -472,26 +472,26 @@ class ActivityFitFileProcessor(FitFileProcessor):
             except Exception as e:
                 root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
 
-    def _write_hr_zones_timer_entry(self, fit_file, message_fields):
+    def _write_time_in_zone_entry(self, fit_file, message_fields):
         """Write hz zones message to the database."""
-        root_logger.info("writing hr zone data for %s", fit_file.filename)
         hr_zones_type = message_fields.get('hr_zones_timer_type')
-        if hr_zones_type is fitfile.field_enums.HeartRateZonesTimerType.lap:
-            self._write_hr_zones_timer_lap_entry(fit_file, message_fields)
-        elif hr_zones_type is fitfile.field_enums.HeartRateZonesTimerType.session:
-            self._write_hr_zones_timer_session_entry(fit_file, message_fields)
+        root_logger.info("writing hr zone data for %s : %r %r", fit_file.filename, hr_zones_type, message_fields)
+        if hr_zones_type is fitfile.fields.HeartRateZonesTimerType.lap:
+            self._write_time_in_zone_lap_entry(fit_file, message_fields)
+        elif hr_zones_type is fitfile.fields.HeartRateZonesTimerType.session:
+            self._write_time_in_zone_session_entry(fit_file, message_fields)
 
     def __hr_zone_data(self, message_fields):
-        hr_zones_time = message_fields.get('hr_zones_time')
+        time_in_hr_zone = message_fields.get('time_in_hr_zone')
         zone_data = {
-            'hr_zones_method'   : message_fields.get('hr_zones_method'),
-            'hrz_1_time'        : hr_zones_time[1],
-            'hrz_2_time'        : hr_zones_time[2],
-            'hrz_3_time'        : hr_zones_time[3],
-            'hrz_4_time'        : hr_zones_time[4],
-            'hrz_5_time'        : hr_zones_time[5]
+            'hr_calc_type'      : message_fields.get('hr_calc_type'),
+            'hrz_1_time'        : time_in_hr_zone[0],
+            'hrz_2_time'        : time_in_hr_zone[1],
+            'hrz_3_time'        : time_in_hr_zone[2],
+            'hrz_4_time'        : time_in_hr_zone[3],
+            'hrz_5_time'        : time_in_hr_zone[4]
         }
-        hr_zones = message_fields.get('hr_zones')
+        hr_zones = message_fields.get('hr_zone_high_boundary')
         if hr_zones:
             zone_data.update({
                 'hrz_1_hr'      : hr_zones[0],
@@ -502,11 +502,11 @@ class ActivityFitFileProcessor(FitFileProcessor):
             })
         return zone_data
 
-    def _write_hr_zones_timer_lap_entry(self, fit_file, message_fields):
+    def _write_time_in_zone_lap_entry(self, fit_file, message_fields):
         """Write lap hz zones message to the database."""
         root_logger.info("writing lap hr zone data %r for %s", message_fields, fit_file.filename)
         activity_id = File.id_from_path(fit_file.filename)
-        global_lap = message_fields.get('record_num')
+        global_lap = message_fields.get('reference_index')
         if self._is_multi_sport_file and global_lap is not None and global_lap < len(self._lap_session_map):
             activity_id, lap_num = self._lap_session_map[global_lap]
         else:
@@ -519,13 +519,14 @@ class ActivityFitFileProcessor(FitFileProcessor):
         root_logger.info("writing lap hr zone data %r for %s", lap, fit_file.filename)
         ActivityLaps.s_insert_or_update(self.garmin_act_db_session, lap, ignore_none=True, ignore_zero=True)
 
-    def _write_hr_zones_timer_session_entry(self, fit_file, message_fields):
+    def _write_time_in_zone_session_entry(self, fit_file, message_fields):
         """Write session hz zones message to the database."""
         root_logger.info("writing session hr zone data %r for %s", message_fields, fit_file.filename)
         activity_id = File.id_from_path(fit_file.filename)
+        reference_index = message_fields.get('reference_index')
         if self._is_multi_sport_file:
-            # record_num is the 0-indexed session number, matching the suffix used in _write_session_entry.
-            activity_id = f"{activity_id}_{message_fields.get('record_num') + 1}"
+            # reference_index is the 0-indexed session number, matching the suffix used in _write_session_entry.
+            activity_id = f"{activity_id}_{reference_index + 1}"
         session = {
             'activity_id'   : activity_id,
         }

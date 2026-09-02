@@ -35,7 +35,8 @@ class Analyze():
         self.sum_db = summarydb.SummaryDb(self.gc_config.get_db_params(), debug)
         self.garmin_act_db = ActivitiesDb(self.gc_config.get_db_params(), debug)
         self.measurement_system = Attributes.measurements_type(self.garmin_db)
-        self.unit_strings = fitfile.units.unit_strings[self.measurement_system]
+        logger.debug(f"measurement_system {repr(self.measurement_system)}")
+        self.unit_strings = fitfile.unit_strings[self.measurement_system]
 
     def __populate_hr_intensity(self, day_date, garmin_mon_session, garmin_sum_session, overwrite=False):
         if IntensityHR.s_row_count_for_day(garmin_sum_session, day_date) == 0 or overwrite:

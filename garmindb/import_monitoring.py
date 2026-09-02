@@ -308,8 +308,8 @@ class GarminUserSettings(GarminProfile):
 
     def _process_attributes(self, json_data):
         user_data = json_data['userData']
-        measurement_system = fitfile.field_enums.DisplayMeasure.from_string(user_data['measurementSystem'])
-        gender = fitfile.field_enums.Gender.from_string(user_data['gender'])
+        measurement_system = fitfile.MeasurementSystem.from_string(user_data['measurementSystem'])
+        gender = fitfile.fields.Gender.from_string(user_data['gender'])
         weight = fitfile.Weight.from_grams(user_data['weight'])
         height = fitfile.Distance.from_cm(user_data['height'])
         return {

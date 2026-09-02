@@ -40,12 +40,12 @@ class Attributes(GarminDb.Base, idbutils.KeyValueObject):
     @classmethod
     def measurements_type(cls, db, default=None):
         """Return the database units type (metric, statute, etc)."""
-        return fitfile.field_enums.DisplayMeasure.from_string(cls.get_string(db, 'measurement_system', default))
+        return fitfile.MeasurementSystem.from_string(cls.get_string(db, 'measurement_system', default))
 
     @classmethod
     def measurements_type_metric(cls, db):
         """Return True if the database units are metric."""
-        return (cls.measurements_type(db) == fitfile.field_enums.DisplayMeasure.metric)
+        return (cls.measurements_type(db) == fitfile.MeasurementSystem.metric)
 
 
 class Device(GarminDb.Base, idbutils.DbObject):
@@ -57,7 +57,7 @@ class Device(GarminDb.Base, idbutils.DbObject):
     table_version = 5
     unknown_device_serial_number = 9999999999
 
-    Manufacturer = idbutils.derived_enum.derive('Manufacturer', fitfile.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
+    Manufacturer = idbutils.derived_enum.derive('Manufacturer', fitfile.fields.Manufacturer, {'Microsoft' : 100001, 'Unknown': 100000})
 
     serial_number = Column(BigInteger, primary_key=True)
     timestamp = Column(DateTime)
@@ -69,7 +69,7 @@ class Device(GarminDb.Base, idbutils.DbObject):
     @property
     def product_as_enum(self):
         """Convert the product attribute from a string to an enum and return it."""
-        return fitfile.product_enum(self.manufacturer, self.product)
+        return fitfile.fields.product_enum(self.manufacturer, self.product)
 
     @classmethod
     def local_device_serial_number(cls, serial_number, device_type):
@@ -93,7 +93,7 @@ class DeviceInfo(GarminDb.Base, idbutils.DbObject):
     serial_number = Column(BigInteger, ForeignKey('devices.serial_number'), nullable=False)
     software_version = Column(String)
     cum_operating_time = Column(Time, nullable=False, default=datetime.time.min)
-    battery_status = Column(Enum(fitfile.field_enums.BatteryStatus))
+    battery_status = Column(Enum(fitfile.fields.BatteryStatus))
     battery_voltage = Column(Float)
 
     __table_args__ = (

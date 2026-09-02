@@ -21,11 +21,14 @@ root_logger.setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-test_activity_files     = False
-test_monitoring_files   = True
-test_sleep_files        = False
-test_metrics_files      = False
-test_unknown_files      = False
+test_activity_files             = True
+test_monitoring_files           = True
+test_hrv_files                  = True
+test_sleep_files                = True
+test_sleep_disruptions_files    = True
+test_metrics_files              = True
+test_skin_temp_files            = True
+test_unknown_files              = True
 
 
 class TestFitFile(unittest.TestCase):
@@ -33,7 +36,7 @@ class TestFitFile(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.measurement_system = fitfile.field_enums.DisplayMeasure.statute
+        cls.measurement_system = fitfile.MeasurementSystem.statute
         cls.file_path = 'test_files/fit'
 
     def check_message_fields(self, fit_file, message_type, message):
@@ -63,10 +66,10 @@ class TestFitFile(unittest.TestCase):
                     logger.info("Message: %r", message)
                 self.check_message_fields(fit_file, message_type, message)
 
-    def check_type(self, fit_file, message, key, expected_type):
-        if key in message.fields:
-            value = message.fields[key]
-            self.assertIsInstance(value, expected_type, 'file %s expected %r found %r' % (fit_file.filename, expected_type, value))
+    def check_type(self, fit_file, message, field_name, expected_type):
+        if field_name in message.fields:
+            value = message.fields[field_name]
+            self.assertIsInstance(value, expected_type, 'file %s field %s expected %r found %r' % (fit_file.filename, field_name, expected_type, value))
             logger.info("%s %r: %r", fit_file.filename, message.type, value)
 
     def check_value(self, fit_file, message, field_name, expected_value):
@@ -74,10 +77,15 @@ class TestFitFile(unittest.TestCase):
             value = message.fields[field_name]
             self.assertEqual(value, expected_value, 'file %s expected %r found %r' % (fit_file.filename, expected_value, value))
 
-    def check_value_range(self, fit_file, message, field_name, min_value, max_value, round_value=False):
+    def check_values(self, fit_file, message, field_name, expected_value_list):
         if field_name in message.fields:
             value = message.fields[field_name]
-            if value is not None:
+            self.assertIn(value, expected_value_list, 'file %s expected %r found %r' % (fit_file.filename, expected_value_list, value))
+
+    def check_value_range(self, fit_file, message, field_name, min_value, max_value, round_value=False):
+        if field_name in message.field_values and not message.field_values[field_name].is_invalid():
+            value = message.fields[field_name]
+            if value is not None and value:
                 if round_value:
                     value = round(value)
                 self.assertGreaterEqual(value, min_value, '%s expected greater than %r was %r: %s %r' %
@@ -117,8 +125,8 @@ class TestFitFile(unittest.TestCase):
             self.check_value(fit_file, message, 'type', file_type)
 
     def check_sport_value(self, fit_file, message):
-        self.check_type(fit_file, message, 'sport', fitfile.Sport)
-        self.check_type(fit_file, message, 'sub_sport', fitfile.SubSport)
+        self.check_type(fit_file, message, 'sport', fitfile.fields.Sport)
+        self.check_type(fit_file, message, 'sub_sport', fitfile.fields.SubSport)
 
     def check_sport(self, fit_file):
         sport = None
@@ -127,6 +135,8 @@ class TestFitFile(unittest.TestCase):
             self.check_sport_value(fit_file, sport_message)
             sport = sport_message.fields.sport
             sub_sport = sport_message.fields.sub_sport
+        self.assertEqual(sport, fit_file.sport_type, 'file %s expected %r found %r' % (fit_file.filename, fit_file.sport_type, sport))
+        self.assertEqual(sub_sport, fit_file.sub_sport_type, 'file %s expected %r found %r' % (fit_file.filename, fit_file.sub_sport_type, sub_sport))
         logger.info("%s: %r %r", fit_file.filename, sport, sub_sport)
         return (sport, sub_sport)
 
@@ -145,12 +155,12 @@ class TestFitFile(unittest.TestCase):
 
     def check_record(self, fit_file, sport, sub_sport, message_index, message):
         self.check_message_fields(fit_file, message.type, message)
-        if sport == fitfile.Sport.running or sport == fitfile.Sport.walking or sub_sport == fitfile.SubSport.elliptical:
+        if sport == fitfile.fields.Sport.running or sport == fitfile.fields.Sport.walking or sub_sport == fitfile.fields.SubSport.elliptical:
             self.check_step_record(fit_file, message_index, message)
 
     def check_lap_or_session(self, fit_file, sport, sub_sport, message_index, message):
         self.check_message_fields(fit_file, message.type, message)
-        if sport == fitfile.Sport.running or sport == fitfile.Sport.walking or sub_sport == fitfile.SubSport.elliptical:
+        if sport == fitfile.fields.Sport.running or sport == fitfile.fields.Sport.walking or sub_sport == fitfile.fields.SubSport.elliptical:
             self.check_step_lap_or_session(fit_file, message_index, message)
 
     def check_monitoring_messages(self, fit_file):
@@ -178,6 +188,13 @@ class TestFitFile(unittest.TestCase):
         logger.info('%s (%s) monitoring file message types: %s', filename, fit_file.time_created_local, fit_file.message_types)
         self.check_file_id(fit_file, fitfile.FileType.monitoring_b)
         self.check_monitoring_messages(fit_file)
+
+    def check_hrv_status_file(self, filename):
+        logger.info('parsing %s', filename)
+        fit_file = fitfile.file.File(filename, self.measurement_system)
+        logger.info('%s (%s) hrv status file message types: %s', filename, fit_file.time_created_local, fit_file.message_types)
+        self.check_message_types(fit_file, dump_message=True)
+        self.check_file_id(fit_file, fitfile.FileType.hrv_status)
 
     def check_activity_file(self, filename):
         logger.info('parsing %s', filename)
@@ -216,7 +233,18 @@ class TestFitFile(unittest.TestCase):
             for file_name in file_names:
                 self.check_monitoring_file(file_name)
         else:
-            logger.error("Add test files to %s", activity_path)
+            logger.error("Add test files to %s", monitoring_path)
+
+    @unittest.skipIf(not test_hrv_files, 'Test not selected')
+    def test_parse_hrv_status(self):
+        # root_logger.setLevel(logging.DEBUG)
+        hrv_path = self.file_path + '/hrv'
+        file_names = FileProcessor.dir_to_files(hrv_path, fitfile.file.name_regex, False)
+        if len(file_names) > 0:
+            for file_name in file_names:
+                self.check_hrv_status_file(file_name)
+        else:
+            logger.error("Add test files to %s", hrv_path)
 
     @unittest.skipIf(not test_activity_files, 'Test not selected')
     def test_parse_activity(self):
@@ -230,35 +258,56 @@ class TestFitFile(unittest.TestCase):
 
     @unittest.skipIf(not test_sleep_files, 'Test not selected')
     def test_parse_sleep(self):
-        activity_path = self.file_path + '/sleep'
-        file_names = FileProcessor.dir_to_files(activity_path, fitfile.file.name_regex, False)
+        sleep_path = self.file_path + '/sleep'
+        file_names = FileProcessor.dir_to_files(sleep_path, fitfile.file.name_regex, False)
         if len(file_names) > 0:
             for file_name in file_names:
                 self.check_sleep_file(file_name)
         else:
-            logger.error("Add test files to %s", activity_path)
+            logger.error("Add test files to %s", sleep_path)
+
+    @unittest.skipIf(not test_sleep_disruptions_files, 'Test not selected')
+    def test_parse_leep_disruptions(self):
+        sleep_path = self.file_path + '/sleep_disruptions'
+        file_names = FileProcessor.dir_to_files(sleep_path, fitfile.file.name_regex, False)
+        if len(file_names) > 0:
+            for file_name in file_names:
+                self.check_unknown_file(file_name)
+        else:
+            logger.error("Add test files to %s", sleep_path)
 
     @unittest.skipIf(not test_metrics_files, 'Test not selected')
     def test_parse_metrics(self):
         # root_logger.setLevel(logging.DEBUG)
-        activity_path = self.file_path + '/metrics'
-        file_names = FileProcessor.dir_to_files(activity_path, fitfile.file.name_regex, False)
+        metrics_path = self.file_path + '/metrics'
+        file_names = FileProcessor.dir_to_files(metrics_path, fitfile.file.name_regex, False)
         if len(file_names) > 0:
             for file_name in file_names:
                 self.check_unknown_file(file_name)
         else:
-            logger.error("Add test files to %s", activity_path)
+            logger.error("Add test files to %s", metrics_path)
+
+    @unittest.skipIf(not test_skin_temp_files, 'Test not selected')
+    def test_parse_skin_temp(self):
+        # root_logger.setLevel(logging.DEBUG)
+        skin_temp_path = self.file_path + '/skin_temp'
+        file_names = FileProcessor.dir_to_files(skin_temp_path, fitfile.file.name_regex, False)
+        if len(file_names) > 0:
+            for file_name in file_names:
+                self.check_unknown_file(file_name)
+        else:
+            logger.error("Add test files to %s", skin_temp_path)
 
     @unittest.skipIf(not test_unknown_files, 'Test not selected')
     def test_parse_unknown(self):
         # root_logger.setLevel(logging.DEBUG)
-        activity_path = self.file_path + '/unknown'
-        file_names = FileProcessor.dir_to_files(activity_path, fitfile.file.name_regex, False)
+        unknown_path = self.file_path + '/unknown'
+        file_names = FileProcessor.dir_to_files(unknown_path, fitfile.file.name_regex, False)
         if len(file_names) > 0:
             for file_name in file_names:
                 self.check_unknown_file(file_name)
         else:
-            logger.error("Add test files to %s", activity_path)
+            logger.error("Add test files to %s", unknown_path)
 
 
 if __name__ == '__main__':

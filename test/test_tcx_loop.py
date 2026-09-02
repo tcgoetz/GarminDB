@@ -8,7 +8,7 @@ import unittest
 import logging
 import datetime
 
-from fitfile import GarminProduct, Distance, Speed, Sport
+import fitfile
 from idbutils import Location
 
 from garmindb import Tcx
@@ -31,19 +31,19 @@ class TestLoop(unittest.TestCase):
         cls.tcx_filename_regex = r'.*\.tcx'
 
     def test_loop(self):
-        sport = Sport.boating.name
+        sport = fitfile.fields.Sport.boating.name
         start_time = datetime.datetime.now()
         stop_time = start_time + datetime.timedelta(hours=1)
-        product = GarminProduct.Fenix.name
+        product = fitfile.fields.GarminProduct.Fenix.name
         serial_number = 123412341234
         version = (1, 2, 3, 4)
-        lap_distance = Distance.from_meters(10)
+        lap_distance =fitfile.fields.Distance.from_meters(10)
         lap_calories = 100
         position1 = Location(1, 2)
         position2 = Location(3, 4)
-        record_alititude = Distance.from_meters(100)
+        record_alititude = fitfile.fields.Distance.from_meters(100)
         record_hr = 100
-        record_speed = Speed.from_mph(6.0)
+        record_speed = fitfile.fields.Speed.from_mph(6.0)
         # create a TCX XML tree
         tcx = Tcx()
         tcx.create(sport, start_time)

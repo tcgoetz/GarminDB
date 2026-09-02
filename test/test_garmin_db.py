@@ -33,7 +33,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
         cls.test_db_params = gc_config.get_db_params(test_db=True)
         print(f"db params {repr(cls.test_db_params)}")
         cls.garmin_db = GarminDb(db_params)
-        cls.measurement_system = fitfile.field_enums.DisplayMeasure.statute
+        cls.measurement_system = fitfile.MeasurementSystem.statute
         table_dict = {
             'attributes_table': Attributes,
             'device_table': Device,
@@ -119,12 +119,12 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
             (datetime.time(2), datetime.time(8)),           # max
             (datetime.time(0), datetime.time(2)),           # min
             (datetime.time(minute=30), datetime.time(6)),   # avg
-            (datetime.time(minute=10), datetime.time(6))    # latest
+            (datetime.time(minute=5), datetime.time(6))    # latest
         )
 
     def test_measurement_system(self):
-        measurement_system = Attributes.measurements_type(self.garmin_db, fitfile.field_enums.DisplayMeasure.metric)
-        self.assertIn(measurement_system, fitfile.field_enums.DisplayMeasure)
+        measurement_system = Attributes.measurements_type(self.garmin_db, fitfile.MeasurementSystem.metric)
+        self.assertIn(measurement_system, fitfile.MeasurementSystem)
 
     def test_sleep_import(self):
         gfd = GarminSleepFitData('test_files/fit/sleep', latest=False, measurement_system=self.measurement_system, debug=2)
