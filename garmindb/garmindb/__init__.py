@@ -6,9 +6,10 @@ __license__ = "GPL"
 
 # flake8: noqa
 
-from .garmin_db import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate, DailySummary, Hrv
+from .garmin_db import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, RestingHeartRate, DailySummary, Hrv
 from .monitoring_db import MonitoringDb, MonitoringInfo, MonitoringHeartRate, MonitoringRestingHeartRate, MonitoringIntensity, MonitoringClimb, Monitoring, \
     MonitoringRespirationRate, MonitoringPulseOx, MonitoringHrvValue, MonitoringHrvStatus
+from .sleep_db import SleepDb, SleepEvents, SleepAssessments, Sleep
 from .activities_db import ActivitiesDb, Activities, ActivityLaps, ActivityRecords, ActivitiesDevices, ActivitySplits, SportActivities, StepsActivities, \
     PaddleActivities, CycleActivities, ClimbingActivities
 from .garmin_summary_db import GarminSummaryDb, Summary, YearsSummary, MonthsSummary, WeeksSummary, DaysSummary, IntensityHR

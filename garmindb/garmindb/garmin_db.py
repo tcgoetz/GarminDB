@@ -26,7 +26,7 @@ class GarminDbError_IdNotFound(GarminDbError):
     """File id not found"""
 
 
-GarminDb = idbutils.DB.create('garmin', 14, "Database for storing health data from a Garmin device.")
+GarminDb = idbutils.DB.create('garmin', 15, "Database for storing health data from a Garmin device.")
 
 
 class Attributes(GarminDb.Base, idbutils.KeyValueObject):
@@ -218,90 +218,6 @@ class Stress(GarminDb.Base, idbutils.DbObject):
         """Return a dictionary of aggregate statistics for the given time period."""
         return {
             'stress_avg': cls.s_get_col_avg(session, cls.stress, start_ts, end_ts, True),
-        }
-
-
-class Sleep(GarminDb.Base, idbutils.DbObject):
-    """Class representing a sleep session."""
-
-    __tablename__ = 'sleep'
-
-    db = GarminDb
-    table_version = 4
-
-    day = Column(DateTime, primary_key=True)
-    start = Column(DateTime)
-    end = Column(DateTime)
-    total_sleep = Column(Time, nullable=False, default=datetime.time.min)
-    deep_sleep = Column(Time, nullable=False, default=datetime.time.min)
-    light_sleep = Column(Time, nullable=False, default=datetime.time.min)
-    rem_sleep = Column(Time, nullable=False, default=datetime.time.min)
-    awake = Column(Time, nullable=False, default=datetime.time.min)
-    avg_spo2 = Column(Float)
-    avg_rr = Column(Float)
-    avg_stress = Column(Float)
-    score = Column(Integer)
-    qualifier = Column(String)
-
-    @classmethod
-    def get_stats(cls, session, start_ts, end_ts):
-        """Return a dictionary of aggregate statistics for the given time period."""
-        return {
-            'sleep_avg'     : cls.s_get_time_col_avg(session, cls.total_sleep, start_ts, end_ts),
-            'sleep_min'     : cls.s_get_time_col_min(session, cls.total_sleep, start_ts, end_ts),
-            'sleep_max'     : cls.s_get_time_col_max(session, cls.total_sleep, start_ts, end_ts),
-            'rem_sleep_avg' : cls.s_get_time_col_avg(session, cls.rem_sleep, start_ts, end_ts),
-            'rem_sleep_min' : cls.s_get_time_col_min(session, cls.rem_sleep, start_ts, end_ts),
-            'rem_sleep_max' : cls.s_get_time_col_max(session, cls.rem_sleep, start_ts, end_ts),
-        }
-
-
-class SleepEvents(GarminDb.Base, idbutils.DbObject):
-    """Table that stores events recorded during sleep."""
-
-    __tablename__ = 'sleep_events'
-
-    db = GarminDb
-    table_version = 2
-
-    timestamp = Column(DateTime, primary_key=True)
-    event = Column(String)
-    duration = Column(Time, nullable=False, default=datetime.time.min)
-
-    @classmethod
-    def get_wake_time(cls, db, day_date):
-        """Return the wake time for a given date."""
-        day_start_ts = datetime.datetime.combine(day_date, datetime.time.min)
-        day_stop_ts = datetime.datetime.combine(day_date, datetime.time.max)
-        values = cls.get_col_values(db, cls.timestamp, cls.event, 'wake_time', day_start_ts, day_stop_ts)
-        if len(values) > 0:
-            return values[0][0]
-
-    @classmethod
-    def get_level_time(cls, session, day_date, sleep_level):
-        """Return the time in a given sleep level for a given date."""
-        day_start_ts = datetime.datetime.combine(day_date, datetime.time.min)
-        day_stop_ts = datetime.datetime.combine(day_date, datetime.time.max)
-        result = cls._s_query(session, cls._time_from_secs(func.sum(cls._secs_from_time(cls.duration))), None, day_start_ts, day_stop_ts,
-                              cls._secs_from_time(cls.duration)).filter(cls.event == sleep_level).scalar()
-        return result if result is not None else datetime.time.min
-
-    @classmethod
-    def get_day_stats(cls, session, day_date):
-        """Return a dictionary of aggregate statistics for the given time period."""
-        deep_sleep = cls.get_level_time(session, day_date, 'deep_sleep')
-        light_sleep = cls.get_level_time(session, day_date, 'light_sleep')
-        rem_sleep = cls.get_level_time(session, day_date, 'rem_sleep')
-        awake = cls.get_level_time(session, day_date, 'awake')
-        total_sleep = fitfile.conversions.add_time(
-            fitfile.conversions.add_time(deep_sleep, light_sleep), rem_sleep
-        )
-        return {
-            'total_sleep': total_sleep,
-            'deep_sleep': deep_sleep,
-            'light_sleep': light_sleep,
-            'rem_sleep': rem_sleep,
-            'awake': awake
         }
 
 

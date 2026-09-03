@@ -20,13 +20,13 @@ import zipfile
 import glob
 
 from garmindb import python_version_check, log_version, format_version
-from garmindb.garmindb import GarminDb, Attributes, Sleep, Weight, RestingHeartRate, Hrv, MonitoringDb, MonitoringHeartRate, ActivitiesDb, GarminSummaryDb
+from garmindb.garmindb import GarminDb, Attributes, Sleep, Weight, RestingHeartRate, Hrv, MonitoringDb, SleepDb, MonitoringHeartRate, ActivitiesDb, GarminSummaryDb
 from garmindb.summarydb import SummaryDb
 
 from garmindb import Download, Copy, Analyze
 from garmindb import FitFileProcessor, ActivityFitFileProcessor, MonitoringFitFileProcessor, SleepFitFileProcessor
 from garmindb import GarminUserSettings, GarminSocialProfile, GarminPersonalInformation, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepFitData, \
-    GarminSleepData, GarminRhrData, GarminSettingsFitData, GarminHydrationData
+    GarminConnectSleepData, GarminRhrData, GarminSettingsFitData, GarminHydrationData
 from garmindb import GarminJsonSummaryData, GarminJsonDetailsData, GarminTcxData, GarminActivitiesFitData
 from garmindb import ActivityExporter
 
@@ -47,7 +47,7 @@ class GarminDbMain():
         Statistics.monitoring            : MonitoringDb,
         Statistics.steps                 : MonitoringDb,
         Statistics.itime                 : MonitoringDb,
-        Statistics.sleep                 : GarminDb,
+        Statistics.sleep                 : SleepDb,
         Statistics.rhr                   : GarminDb,
         Statistics.weight                : GarminDb,
         Statistics.hrv                   : GarminDb,
@@ -137,7 +137,7 @@ class GarminDbMain():
                 root_logger.info("Saved monitoring files for %s (%d) to %s for processing", date, days, monitoring_dir)
 
         if Statistics.sleep in stats:
-            date, days = self.__get_date_and_days(GarminDb(self.gc_config.get_db_params()), latest, Sleep, Sleep.total_sleep, 'sleep')
+            date, days = self.__get_date_and_days(SleepDb(self.gc_config.get_db_params()), latest, Sleep, Sleep.total_sleep, 'sleep')
             if days > 0:
                 sleep_dir = self.gc_config.get_sleep_dir()
                 root_logger.info("Date range to update: %s (%d) to %s", date, days, sleep_dir)
@@ -215,14 +215,14 @@ class GarminDbMain():
                 gfd.process_files(MonitoringFitFileProcessor(self.gc_config.get_db_params(), self.plugin_manager, debug))
 
         if Statistics.sleep in stats:
-            # If we have sleep data from Garmin connect, use it, otherwise process FIT sleep files.
-            gsd = GarminSleepData(self.gc_config.get_db_params(), self.gc_config.get_sleep_dir(), latest, debug)
+            gsd = GarminSleepFitData(monitoring_dir, latest, measurement_system=measurement_system, debug=2)
+            sffp = SleepFitFileProcessor(self.gc_config.get_db_params())
+            if gsd.file_count() > 0:
+                gsd.process_files(sffp)
+
+            gsd = GarminConnectSleepData(self.gc_config.get_db_params(), self.gc_config.get_sleep_dir(), latest, debug)
             if gsd.file_count() > 0:
                 gsd.process()
-            else:
-                gsd = GarminSleepFitData(monitoring_dir, latest=False, measurement_system=measurement_system, debug=2)
-                if gsd.file_count() > 0:
-                    gsd.process_files(SleepFitFileProcessor(self.gc_config.get_db_params()))
 
         if Statistics.rhr in stats:
             rhr_dir = self.gc_config.get_rhr_dir()

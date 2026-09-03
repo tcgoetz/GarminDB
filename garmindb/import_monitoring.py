@@ -13,7 +13,7 @@ import enum
 import fitfile
 from idbutils import JsonFileProcessor, Conversions
 
-from .garmindb import GarminDb, Attributes, Weight, Sleep, SleepEvents, RestingHeartRate, DailySummary, Hrv
+from .garmindb import GarminDb, Attributes, Weight, RestingHeartRate, DailySummary, Hrv, SleepDb, Sleep, SleepEvents
 from .fit_data import FitData
 
 
@@ -128,12 +128,12 @@ class RemSleepActivityLevels(enum.Enum):
     awake = 3.0
 
 
-class GarminSleepData(JsonFileProcessor):
+class GarminConnectSleepData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect sleep data into a database."""
 
     def __init__(self, db_params, input_dir, latest, debug):
         """
-        Return an instance of GarminSleepData.
+        Return an instance of GarminConnectSleepData.
 
         Parameters:
         ----------
@@ -146,6 +146,7 @@ class GarminSleepData(JsonFileProcessor):
         logger.info("Processing sleep data")
         super().__init__(r'sleep_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
         self.garmin_db = GarminDb(db_params)
+        self.sleep_db = SleepDb(db_params)
         self.conversions = {
             'calendarDate': self._parse_date,
             'sleepTimeSeconds': fitfile.conversions.secs_to_dt_time,
@@ -206,23 +207,22 @@ class GarminSleepData(JsonFileProcessor):
             'score': score,
             'qualifier': qualifier
         }
-        Sleep.insert_or_update(self.garmin_db, day_data, ignore_none=True)
+        Sleep.insert_or_update(self.sleep_db, day_data, ignore_none=True)
         sleep_levels = json_data.get('sleepLevels')
-        if sleep_levels is None:
-            return 0
-        for sleep_level in sleep_levels:
-            start = sleep_level['startGMT']
-            start_local = start + datetime.timedelta(seconds=utc_offset)
-            end = sleep_level['endGMT']
-            event = sleep_activity_levels(sleep_level['activityLevel'])
-            duration = (datetime.datetime.min + (end - start)).time()
-            root_logger.info("Sleep event %r (%r) %r", start_local, start, event)
-            level_data = {
-                'timestamp': start_local,
-                'event': event.name,
-                'duration': duration
-            }
-            SleepEvents.insert_or_update(self.garmin_db, level_data, ignore_none=True)
+        if sleep_levels is not None:
+            for sleep_level in sleep_levels:
+                start = sleep_level['startGMT']
+                start_local = start + datetime.timedelta(seconds=utc_offset)
+                end = sleep_level['endGMT']
+                event = sleep_activity_levels(sleep_level['activityLevel'])
+                duration = (datetime.datetime.min + (end - start)).time()
+                root_logger.info("Sleep event %r (%r) %r", start_local, start, event)
+                level_data = {
+                    'timestamp': start_local,
+                    'event': event.name,
+                    'duration': duration
+                }
+                SleepEvents.find_or_create(self.sleep_db, level_data, ignore_none=True)
         return len(sleep_levels)
 
 
@@ -247,8 +247,8 @@ class GarminRhrData(JsonFileProcessor):
         self.conversions = {'statisticsStartDate': self._parse_date}
 
     def _process_json(self, json_data):
-        rhr_list = json_data['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE']
-        if len(rhr_list) > 0:
+        rhr_list = json_data['allMetrics']['metricsMap'].get('WELLNESS_RESTING_HEART_RATE')
+        if rhr_list and len(rhr_list) > 0:
             rhr = rhr_list[0].get('value')
             if rhr:
                 point = {

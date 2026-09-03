@@ -238,8 +238,11 @@ build_garmin_monitoring:
 import_garmin_monitoring:
 	$(GARMINDB_CLI) --monitoring --import --latest
 
-build_garmin_activities:
-	$(GARMINDB_CLI) --activities --import --analyze
+import_garmin_monitoring:
+	$(GARMINDB_CLI) --monitoring --import --latest
+
+build_garmin_sleep:
+	$(GARMINDB_CLI) --sleep --import --analyze
 
 copy_garmin_settings:
 	$(GARMINDB_CLI) --copy

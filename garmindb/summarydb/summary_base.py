@@ -46,6 +46,9 @@ class SummaryBase(DbObject):
     rem_sleep_avg = Column(Time, nullable=False, default=datetime.time.min)
     rem_sleep_min = Column(Time, nullable=False, default=datetime.time.min)
     rem_sleep_max = Column(Time, nullable=False, default=datetime.time.min)
+    sleep_score_avg = Column(Integer)
+    sleep_score_min = Column(Integer)
+    sleep_score_max = Column(Integer)
     stress_avg = Column(Integer)
     calories_avg = Column(Integer)
     calories_bmr_avg = Column(Integer)
@@ -147,6 +150,7 @@ class SummaryBase(DbObject):
             cls.round_col_txt('round((floors * 100) / floors_goal)', 'floors_goal_percent'),
             cls.sleep_avg.label('sleep_avg'),
             cls.rem_sleep_avg.label('rem_sleep_avg'),
+            cls.sleep_score_avg.label('sleep_score_avg'),
             cls.round_col('stress_avg'),
             cls.round_col('calories_avg'),
             cls.round_col('calories_bmr_avg'),
@@ -200,6 +204,7 @@ class SummaryBase(DbObject):
             cls.round_col_txt('round((floors * 100) / floors_goal)', 'floors_goal_percent'),
             cls.sleep_avg.label('sleep_avg'),
             cls.rem_sleep_avg.label('rem_sleep_avg'),
+            cls.sleep_score_avg.label('sleep_score_avg'),
             cls.round_col('stress_avg'),
             cls.round_col('calories_avg'),
             cls.round_col('calories_bmr_avg'),
