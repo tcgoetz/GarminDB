@@ -244,6 +244,10 @@ import_garmin_monitoring:
 build_garmin_sleep:
 	$(GARMINDB_CLI) --sleep --import --analyze
 
+build_garmin_hrv:
+#	$(GARMINDB_CLI) --hrv --import --analyze
+	$(GARMINDB_CLI) --hrv --analyze
+
 copy_garmin_settings:
 	$(GARMINDB_CLI) --copy
 

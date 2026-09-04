@@ -20,13 +20,16 @@ import zipfile
 import glob
 
 from garmindb import python_version_check, log_version, format_version
-from garmindb.garmindb import GarminDb, Attributes, Sleep, Weight, RestingHeartRate, Hrv, MonitoringDb, SleepDb, MonitoringHeartRate, ActivitiesDb, GarminSummaryDb
+from garmindb.garmindb import GarminDb, Attributes, Sleep, Weight, RestingHeartRate, MonitoringDb, SleepDb, MonitoringHeartRate, HrvDb, HrvStatusSummary, ActivitiesDb, GarminSummaryDb
 from garmindb.summarydb import SummaryDb
 
 from garmindb import Download, Copy, Analyze
-from garmindb import FitFileProcessor, ActivityFitFileProcessor, MonitoringFitFileProcessor, SleepFitFileProcessor
-from garmindb import GarminUserSettings, GarminSocialProfile, GarminPersonalInformation, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, GarminSleepFitData, \
+from garmindb import FitFileProcessor, ActivityFitFileProcessor, MonitoringFitFileProcessor
+from garmindb import GarminSleepFitData, SleepFitFileProcessor
+from garmindb import HrvFitFileProcessor, GarminHrvFitData
+from garmindb import GarminUserSettings, GarminSocialProfile, GarminPersonalInformation, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, \
     GarminConnectSleepData, GarminRhrData, GarminSettingsFitData, GarminHydrationData
+from garmindb import GarminConnectHrvData
 from garmindb import GarminJsonSummaryData, GarminJsonDetailsData, GarminTcxData, GarminActivitiesFitData
 from garmindb import ActivityExporter
 
@@ -50,7 +53,7 @@ class GarminDbMain():
         Statistics.sleep                 : SleepDb,
         Statistics.rhr                   : GarminDb,
         Statistics.weight                : GarminDb,
-        Statistics.hrv                   : GarminDb,
+        Statistics.hrv                   : HrvDb,
         Statistics.activities            : ActivitiesDb
     }
 
@@ -161,7 +164,7 @@ class GarminDbMain():
                 root_logger.info("Saved rhr files for %s (%d) to %s for processing", date, days, rhr_dir)
 
         if Statistics.hrv in stats:
-            date, days = self.__get_date_and_days(GarminDb(self.gc_config.get_db_params()), latest, Hrv, Hrv.day, 'hrv')
+            date, days = self.__get_date_and_days(HrvDb(self.gc_config.get_db_params()), latest, HrvStatusSummary, HrvStatusSummary.day, 'hrv')
             if days > 0:
                 hrv_dir = self.gc_config.get_rhr_dir() # HRV tends to be in the same place as RHR or monitoring
                 root_logger.info("Date range to update: %s (%d) to %s", date, days, hrv_dir)
@@ -216,9 +219,8 @@ class GarminDbMain():
 
         if Statistics.sleep in stats:
             gsd = GarminSleepFitData(monitoring_dir, latest, measurement_system=measurement_system, debug=2)
-            sffp = SleepFitFileProcessor(self.gc_config.get_db_params())
             if gsd.file_count() > 0:
-                gsd.process_files(sffp)
+                gsd.process_files(SleepFitFileProcessor(self.gc_config.get_db_params()))
 
             gsd = GarminConnectSleepData(self.gc_config.get_db_params(), self.gc_config.get_sleep_dir(), latest, debug)
             if gsd.file_count() > 0:
@@ -231,9 +233,12 @@ class GarminDbMain():
                 grhrd.process()
 
         if Statistics.hrv in stats:
-            from garmindb import GarminHrvData
+            ghd = GarminHrvFitData(monitoring_dir, latest, measurement_system=measurement_system, debug=2)
+            if ghd.file_count() > 0:
+                ghd.process_files(HrvFitFileProcessor(self.gc_config.get_db_params()))
+
             hrv_dir = self.gc_config.get_rhr_dir()
-            ghrvd = GarminHrvData(self.gc_config.get_db_params(), hrv_dir, latest, debug)
+            ghrvd = GarminConnectHrvData(self.gc_config.get_db_params(), hrv_dir, latest, debug)
             if ghrvd.file_count() > 0:
                 ghrvd.process()
 

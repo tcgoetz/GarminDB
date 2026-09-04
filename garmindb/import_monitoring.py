@@ -13,7 +13,7 @@ import enum
 import fitfile
 from idbutils import JsonFileProcessor, Conversions
 
-from .garmindb import GarminDb, Attributes, Weight, RestingHeartRate, DailySummary, Hrv, SleepDb, Sleep, SleepEvents
+from .garmindb import GarminDb, Attributes, Weight, RestingHeartRate, DailySummary, SleepDb, Sleep, SleepEvents, HrvDb, HrvStatusSummary
 from .fit_data import FitData
 
 
@@ -72,25 +72,7 @@ class GarminMonitoringFitData(FitData):
         debug (Boolean): enable debug logging
 
         """
-        super().__init__(input_dir, debug, latest, True, [fitfile.FileType.monitoring_b, fitfile.FileType.hrv_status], measurement_system)
-
-
-class GarminSleepFitData(FitData):
-    """Class for importing sleep FIT files into a database."""
-
-    def __init__(self, input_dir, latest, measurement_system, debug):
-        """
-        Return an instance of GarminSleepFitData.
-
-        Parameters:
-        ----------
-        input_dir (string): directory (full path) to check for monitoring data files
-        latest (Boolean): check for latest files only
-        measurement_system (enum): which measurement system to use when importing the files
-        debug (Boolean): enable debug logging
-
-        """
-        super().__init__(input_dir, debug, latest, True, [fitfile.FileType.sleep], measurement_system)
+        super().__init__(input_dir, debug, latest, True, [fitfile.FileType.monitoring_b], measurement_system)
 
 
 class GarminSettingsFitData(FitData):
@@ -222,6 +204,7 @@ class GarminConnectSleepData(JsonFileProcessor):
                     'event': event.name,
                     'duration': duration
                 }
+                # only insert if FIT files haven't supplied values
                 SleepEvents.find_or_create(self.sleep_db, level_data, ignore_none=True)
         return len(sleep_levels)
 
@@ -481,12 +464,12 @@ class GarminHydrationData(JsonFileProcessor):
         return 1
 
 
-class GarminHrvData(JsonFileProcessor):
+class GarminConnectHrvData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect heart rate variability (HRV) data into a database."""
 
     def __init__(self, db_params, input_dir, latest, debug):
         """
-        Return an instance of GarminHrvData.
+        Return an instance of GarminConnectHrvData.
 
         Parameters:
         ----------
@@ -497,7 +480,7 @@ class GarminHrvData(JsonFileProcessor):
 
         """
         super().__init__(r'hrv_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
-        self.garmin_db = GarminDb(db_params)
+        self.hrv_db = HrvDb(db_params)
         self.conversions = {'calendarDate': self._parse_date}
 
     def _process_json(self, json_data):
@@ -517,14 +500,16 @@ class GarminHrvData(JsonFileProcessor):
         # "'NoneType' object is not subscriptable" on every single sync
         # during that period.
         baseline = hrv_summary.get('baseline') or {}
-        point = {
-            'day': day.date() if hasattr(day, 'date') else day,
-            'weekly_avg': self._get_field(hrv_summary, 'weeklyAvg', int),
-            'last_night_avg': self._get_field(hrv_summary, 'lastNightAvg', int),
-            'last_night_5min_high': self._get_field(hrv_summary, 'lastNight5MinHigh', int),
-            'baseline_low': self._get_field(baseline, 'balancedLow', int),
-            'baseline_upper': self._get_field(baseline, 'balancedUpper', int),
-            'status': self._get_field(hrv_summary, 'status', str)
+        hrv_status_summary = {
+            'day'                       : day.date() if hasattr(day, 'date') else day,
+            'weekly_average'            : self._get_field(hrv_summary, 'weeklyAvg', int),
+            'last_night'                : self._get_field(hrv_summary, 'lastNight5MinHigh', int),
+            'last_night_average'        : self._get_field(hrv_summary, 'lastNightAvg', int),
+            'baseline_high'             : self._get_field(baseline, 'balancedUpper', int),
+            'baseline_low'              : self._get_field(baseline, 'balancedLow', int),
+            'hrv_status'                : self._get_field(hrv_summary, 'status', str)
         }
-        Hrv.insert_or_update(self.garmin_db, point, ignore_none=True)
+        logger.debug("hrv status summary: %r -> %r", baseline, hrv_status_summary)
+        # only insert if FIT files haven't supplied values
+        HrvStatusSummary.find_or_create(self.hrv_db, hrv_status_summary)
         return 1

@@ -17,7 +17,9 @@ class SummaryBase(DbObject):
 
     view_version = 10
     _table_version = 6
-    _col_units = {'hr_avg': 'bpm', 'hr_min': 'bpm', 'hr_max': 'bpm', 'rhr_avg': 'bpm', 'rhr_min': 'bpm', 'rhr_max': 'bpm', 'rr_waking_avg': 'brpm', 'rr_max': 'brpm',
+    _col_units = {'hr_avg': 'bpm', 'hr_min': 'bpm', 'hr_max': 'bpm', 'rhr_avg': 'bpm', 'rhr_min': 'bpm', 'rhr_max': 'bpm',
+                  'hrv_avg': 'ms', 'hrv_min': 'ms', 'hrv_max': 'ms',
+                  'rr_waking_avg': 'brpm', 'rr_max': 'brpm',
                   'rr_min': 'brpm'}
 
     hr_avg = Column(Float)
@@ -29,6 +31,9 @@ class SummaryBase(DbObject):
     inactive_hr_avg = Column(Float)
     inactive_hr_min = Column(Float)
     inactive_hr_max = Column(Float)
+    hrv_avg = Column(Float)
+    hrv_min = Column(Float)
+    hrv_max = Column(Float)
     weight_avg = Column(Float)
     weight_min = Column(Float)
     weight_max = Column(Float)
@@ -138,6 +143,7 @@ class SummaryBase(DbObject):
             cls.time_col.label('first_day'),
             cls.round_col('rhr_avg', 'rhr'),
             cls.round_col('inactive_hr_avg', 'inactive_hr'),
+            cls.round_col('rhv_avg', 'rhv'),
             cls.round_col('weight_avg', 'weight'),
             cls.intensity_time.label('intensity_time'),
             cls.moderate_activity_time.label('moderate_activity_time'),
@@ -194,6 +200,7 @@ class SummaryBase(DbObject):
             cls.round_col('hr_max'),
             cls.round_col('rhr_avg', 'rhr'),
             cls.round_col('inactive_hr_avg', 'inactive_hr'),
+            cls.round_col('hrv_avg'),
             cls.round_col('weight_avg', 'weight'),
             cls.intensity_time.label('intensity_time'), cls.moderate_activity_time.label('moderate_activity_time'), cls.vigorous_activity_time.label('vigorous_activity_time'),
             cls.steps.label('steps'),

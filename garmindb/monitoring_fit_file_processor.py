@@ -14,7 +14,7 @@ import idbutils
 
 from .garmindb import File
 from .garmindb import MonitoringDb, Monitoring, MonitoringInfo, MonitoringHeartRate, MonitoringRestingHeartRate, MonitoringIntensity, MonitoringClimb, MonitoringRespirationRate, \
-    MonitoringPulseOx, MonitoringHrvValue, MonitoringHrvStatus
+    MonitoringPulseOx
 from .fit_file_processor import FitFileProcessor
 
 
@@ -116,39 +116,10 @@ class MonitoringFitFileProcessor(FitFileProcessor):
 
     def _write_pulse_ox_entry(self, fit_file, message_fields):
         logger.debug("pulse_ox message: %r", message_fields)
-        if fit_file.type is fitfile.FileType.monitoring_b:
-            pulse_ox = message_fields.get('pulse_ox')
-            if pulse_ox is not None:
-                pulse_ox_entry = {
-                    'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),
-                    'pulse_ox': pulse_ox,
-                }
-                MonitoringPulseOx.s_insert_or_update(self.garmin_mon_db_session, pulse_ox_entry)
-        else:
-            raise ValueError(f'Unexpected file type {repr(fit_file.type)} for pulse ox')
-
-    def _write_hrv_value_entry(self, fit_file, message_fields):
-        """Write an HRV reading entry to the database."""
-        logger.debug("hrv_value message: %r", message_fields)
-        hrv_value = message_fields.get('hrv_value')
-        if hrv_value is not None and hrv_value > 0:
-            hrv_entry = {
+        pulse_ox = message_fields.get('pulse_ox')
+        if pulse_ox is not None:
+            pulse_ox_entry = {
                 'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),
-                'hrv': hrv_value
+                'pulse_ox': pulse_ox,
             }
-            MonitoringHrvValue.s_insert_or_update(self.garmin_mon_db_session, hrv_entry)
-
-    def _write_hrv_status_summary_entry(self, fit_file, message_fields):
-        """Write an HRV status summary entry to the database."""
-        hrv_status_entry = {
-            'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),
-            'weekly_average': message_fields.get('weekly_average'),
-            'last_night': message_fields.get('last_night'),
-            'last_night_average': message_fields.get('last_night_average'),
-            'baseline_low': message_fields.get('baseline_low'),
-            'baseline_high': message_fields.get('baseline_high'),
-            'status': message_fields.get('hrv_status'),
-            'reading_count': message_fields.get('reading_count'),
-        }
-        logger.debug("hrv_status_summary message: %r - > %r", message_fields, hrv_status_entry)
-        MonitoringHrvStatus.s_insert_or_update(self.garmin_mon_db_session, hrv_status_entry)
+            MonitoringPulseOx.s_insert_or_update(self.garmin_mon_db_session, pulse_ox_entry)

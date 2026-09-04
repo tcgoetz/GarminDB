@@ -10,7 +10,7 @@ import logging
 import fitfile
 
 from garmindb import GarminConnectConfigManager
-from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, RestingHeartRate, Hrv
+from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, RestingHeartRate, HrvStatusSummary
 
 from test_db_base import TestDBBase
 
@@ -41,7 +41,7 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
             'weight_table': Weight,
             'stress_table': Stress,
             'resting_heart_rate_table': RestingHeartRate,
-            'hrv_table': Hrv
+            'hrv_table': HrvStatusSummary
         }
         super().setUpClass(cls.garmin_db, table_dict, table_can_be_empty=['hrv_table'])
 

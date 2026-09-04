@@ -11,12 +11,31 @@ import datetime
 import fitfile
 
 from .garmindb import SleepDb, SleepEvents, SleepAssessments, Sleep
+from .fit_data import FitData
 from .fit_file_processor import FitFileProcessor
 
 
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
+
+
+class GarminSleepFitData(FitData):
+    """Class for importing sleep FIT files into a database."""
+
+    def __init__(self, input_dir, latest, measurement_system, debug):
+        """
+        Return an instance of GarminSleepFitData.
+
+        Parameters:
+        ----------
+        input_dir (string): directory (full path) to check for monitoring data files
+        latest (Boolean): check for latest files only
+        measurement_system (enum): which measurement system to use when importing the files
+        debug (Boolean): enable debug logging
+
+        """
+        super().__init__(input_dir, debug, latest, True, [fitfile.FileType.sleep], measurement_system)
 
 
 class SleepFitFileProcessor(FitFileProcessor):
