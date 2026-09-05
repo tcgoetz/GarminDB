@@ -8,7 +8,7 @@ __license__ = "GPL"
 
 from .garmin_db import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, RestingHeartRate, DailySummary
 from .monitoring_db import MonitoringDb, MonitoringInfo, MonitoringHeartRate, MonitoringRestingHeartRate, MonitoringIntensity, MonitoringClimb, Monitoring, \
-    MonitoringRespirationRate, MonitoringPulseOx
+    MonitoringRespirationRate, MonitoringSpo2
 from .sleep_db import SleepDb, SleepEvents, SleepAssessments, Sleep
 from .hrv_db import HrvDb, HrvValue, HrvStatusSummary
 from .activities_db import ActivitiesDb, Activities, ActivityLaps, ActivityRecords, ActivitiesDevices, ActivitySplits, SportActivities, StepsActivities, \

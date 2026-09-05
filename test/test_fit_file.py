@@ -22,11 +22,11 @@ logger = logging.getLogger(__name__)
 
 
 test_activity_files             = False
-test_monitoring_files           = True
+test_monitoring_files           = False
 test_hrv_files                  = False
 test_sleep_files                = False
 test_sleep_disruptions_files    = False
-test_metrics_files              = False
+test_metrics_files              = True
 test_skin_temp_files            = False
 test_unknown_files              = False
 

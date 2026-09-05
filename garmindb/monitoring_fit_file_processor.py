@@ -14,7 +14,7 @@ import idbutils
 
 from .garmindb import File
 from .garmindb import MonitoringDb, Monitoring, MonitoringInfo, MonitoringHeartRate, MonitoringRestingHeartRate, MonitoringIntensity, MonitoringClimb, MonitoringRespirationRate, \
-    MonitoringPulseOx
+    MonitoringSpo2
 from .fit_file_processor import FitFileProcessor
 
 
@@ -114,12 +114,14 @@ class MonitoringFitFileProcessor(FitFileProcessor):
             else:
                 raise ValueError(f'Unexpected file type {repr(fit_file.type)} for respiration message')
 
-    def _write_pulse_ox_entry(self, fit_file, message_fields):
-        logger.debug("pulse_ox message: %r", message_fields)
-        pulse_ox = message_fields.get('pulse_ox')
-        if pulse_ox is not None:
-            pulse_ox_entry = {
+    def _write_spo2_entry(self, fit_file, message_fields):
+        logger.debug("spo2 message: %r", message_fields)
+        spo2 = message_fields.get('reading_spo2')
+        if spo2 is not None:
+            spo2_entry = {
                 'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),
-                'pulse_ox': pulse_ox,
+                'reading_spo2': spo2,
+                'reading_confidence': message_fields.get('reading_confidence'),
+                'measurement_type': message_fields.get('mode'),
             }
-            MonitoringPulseOx.s_insert_or_update(self.garmin_mon_db_session, pulse_ox_entry)
+            MonitoringSpo2.s_insert_or_update(self.garmin_mon_db_session, spo2_entry)

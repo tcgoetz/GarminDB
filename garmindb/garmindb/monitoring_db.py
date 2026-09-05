@@ -287,22 +287,24 @@ class MonitoringRespirationRate(MonitoringDb.Base, idbutils.DbObject):
         }
 
 
-class MonitoringPulseOx(MonitoringDb.Base, idbutils.DbObject):
-    """Class that represents a database table holding pulse ox measurements in percent."""
+class MonitoringSpo2(MonitoringDb.Base, idbutils.DbObject):
+    """Class that represents a database table holding spo2 ox measurements in percent."""
 
-    __tablename__ = 'monitoring_pulse_ox'
+    __tablename__ = 'monitoring_spo2'
 
     db = MonitoringDb
     table_version = 1
 
     timestamp = Column(DateTime, primary_key=True)
-    pulse_ox = Column(Float, nullable=False)
+    reading_spo2 = Column(Float, nullable=False)
+    reading_confidence = Column(Integer)
+    measurement_type = Column(Enum(fitfile.fields.Spo2MeasurementType))
 
     @classmethod
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dict of stats for table entries within the time span."""
         return {
-            'pulse_ox_avg' : cls.s_get_col_avg(session, cls.pulse_ox, start_ts, end_ts, True),
-            'pulse_ox_min' : cls.s_get_col_min(session, cls.pulse_ox, start_ts, end_ts, True),
-            'pulse_ox_max' : cls.s_get_col_max(session, cls.pulse_ox, start_ts, end_ts),
+            'spo2_ox_avg' : cls.s_get_col_avg(session, cls.spo2, start_ts, end_ts, True),
+            'spo2_ox_min' : cls.s_get_col_min(session, cls.spo2, start_ts, end_ts, True),
+            'spo2_ox_max' : cls.s_get_col_max(session, cls.spo2, start_ts, end_ts),
         }
