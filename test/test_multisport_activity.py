@@ -19,8 +19,8 @@ from garmindb.garmindb import ActivitiesDb, Activities, ActivityLaps, ActivityRe
 
 
 root_logger = logging.getLogger()
-root_logger.addHandler(logging.FileHandler('multisport_activity.log', 'w'))
-root_logger.setLevel(logging.WARNING)
+root_logger.addHandler(logging.FileHandler('test_multisport_activity.log', 'w'))
+root_logger.setLevel(logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 
@@ -44,16 +44,12 @@ class TestMultisportActivity(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.gc_config = GarminConnectConfigManager()
-        cls.tmp_dir = tempfile.mkdtemp(prefix='garmindb_multisport_test_')
-        cls.db_params = DbParams(db_type='sqlite', db_path=cls.tmp_dir)
-        cls.act_db = ActivitiesDb(cls.db_params)
-        plugin_manager = PluginManager(cls.gc_config.get_plugins_dir(), cls.db_params)
-        processor = ActivityFitFileProcessor(cls.db_params, plugin_manager, debug=0)
+        cls.test_db_params = cls.gc_config.get_db_params(test_db=True)
+        root_logger.debug("test_db_params %r", cls.test_db_params)
+        cls.act_db = ActivitiesDb(cls.test_db_params, debug_level=1)
+        plugin_manager = PluginManager(cls.gc_config.get_plugins_dir(), cls.test_db_params)
+        processor = ActivityFitFileProcessor(cls.test_db_params, plugin_manager, debug=0)
         processor.write_file(fitfile.file.File(FIXTURE))
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(cls.tmp_dir, ignore_errors=True)
 
     def test_creates_one_row_per_session(self):
         with self.act_db.managed_session() as session:

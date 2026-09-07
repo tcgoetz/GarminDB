@@ -21,14 +21,14 @@ root_logger.setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-test_activity_files             = False
-test_monitoring_files           = False
-test_hrv_files                  = False
-test_sleep_files                = False
-test_sleep_disruptions_files    = False
+test_activity_files             = True
+test_monitoring_files           = True
+test_hrv_files                  = True
+test_sleep_files                = True
+test_sleep_disruptions_files    = True
 test_metrics_files              = True
-test_skin_temp_files            = False
-test_unknown_files              = False
+test_skin_temp_files            = True
+test_unknown_files              = True
 
 
 class TestFitFile(unittest.TestCase):
@@ -47,10 +47,10 @@ class TestFitFile(unittest.TestCase):
         for field_name in message.field_values:
             if not message.field_values[field_name].is_invalid() and field_name.startswith('unknown'):
                 if message_type not in unknown_message_fields:
-                    logger.info("Unknown %s message field: %s value %s", message_type, field_name, message.fields[field_name])
+                    logger.info("Unknown %s message field: %s value: %r", message_type, field_name, message.fields[field_name])
                     unknown_message_fields[message_type] = [field_name]
                 elif field_name not in unknown_message_fields[message_type]:
-                    logger.info("Unknown %s message field: %s value: %s", message_type, field_name, message.fields[field_name])
+                    logger.info("Unknown %s message field: %s value: %r", message_type, field_name, message.fields[field_name])
                     unknown_message_fields[message_type].append(field_name)
 
     def check_message_types(self, fit_file, dump_message=False):

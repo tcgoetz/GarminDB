@@ -507,7 +507,7 @@ class GarminConnectHrvData(JsonFileProcessor):
             'last_night_average'        : self._get_field(hrv_summary, 'lastNightAvg', int),
             'baseline_high'             : self._get_field(baseline, 'balancedUpper', int),
             'baseline_low'              : self._get_field(baseline, 'balancedLow', int),
-            'hrv_status'                : self._get_field(hrv_summary, 'status', str)
+            'hrv_status'                : self._get_field(hrv_summary, 'status', str).lower()
         }
         logger.debug("hrv status summary: %r -> %r", baseline, hrv_status_summary)
         # only insert if FIT files haven't supplied values
