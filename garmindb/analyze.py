@@ -213,6 +213,7 @@ class Analyze():
         years_sleep = Sleep.get_years(self.sleep_db)
         years_hrv = HrvStatusSummary.get_years(self.hrv_db)
         years_all = sorted(list(set(years_mon + years_act + years_sleep + years_hrv)))
+        logger.info("Summarizing years %s\n  monitoring %s\n  activities %s\n  sleep %s\n  hrv %s", years_all, years_mon, years_act, years_sleep, years_hrv)
         for year in years_all:
             self.__calculate_year(year)
 
