@@ -392,16 +392,8 @@ class ActivityFitFileProcessor(FitFileProcessor):
             activity_id = f"{base_activity_id}_{self._session_num}"
         else:
             activity_id = base_activity_id
-        # For multi-sport children Garmin sets `timestamp` to the parent's start_time, so compute
-        # the real session end from start_time + total_elapsed_time.
         start_time_utc = message_fields.start_time
-        if is_multi_sport:
-            elapsed = message_fields.total_elapsed_time
-            stop_time_utc = start_time_utc + timedelta(
-                hours=elapsed.hour, minutes=elapsed.minute,
-                seconds=elapsed.second, microseconds=elapsed.microsecond)
-        else:
-            stop_time_utc = message_fields.timestamp
+        stop_time_utc = start_time_utc + fitfile.conversions.time_to_timedelta(message_fields.total_elapsed_time)
         activity = {
             'activity_id'                       : activity_id,
             'start_time'                        : fit_file.utc_datetime_to_local(start_time_utc),
