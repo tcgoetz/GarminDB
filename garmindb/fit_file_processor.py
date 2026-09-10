@@ -77,7 +77,8 @@ class FitFileProcessor():
 
     def _write_message_types(self, fit_file, message_types):
         """Write all messages from the FIT file to the database ordered by message type."""
-        root_logger.info("Importing %s (%s) [%s] with message types: %s", fit_file.filename, fit_file.time_created_local, fit_file.type, message_types)
+        root_logger.info("Importing %s (%s) [%s] with %d messages and types: %s",
+                         fit_file.filename, fit_file.time_created_local, fit_file.type, len(fit_file.messages), message_types)
         #
         # Some ordering is important: 1. create new file entries 2. create new device entries
         #

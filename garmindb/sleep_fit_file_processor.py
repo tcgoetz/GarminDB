@@ -68,22 +68,24 @@ class SleepFitFileProcessor(FitFileProcessor):
         }
         with self.garmin_db.managed_session() as self.garmin_db_session, self.sleep_db.managed_session() as self.sleep_db_session:
             self._write_message_types(fit_file, fit_file.message_types)
-            if self.sleep_start is not None and self.sleep_stop is not None:
-                sleep = {
-                    'day'           : fit_file.utc_datetime_to_local(self.sleep_stop).replace(hour=0, minute=0, second=0, microsecond=0),
-                    'start'         : fit_file.utc_datetime_to_local(self.sleep_start),
-                    'end'           : fit_file.utc_datetime_to_local(self.sleep_stop),
-                    'total_sleep'   : fitfile.conversions.timedelta_to_time(self.time_in_level[fitfile.fields.SleepActivityLevel.light_sleep]
-                                                                            + self.time_in_level[fitfile.fields.SleepActivityLevel.deep_sleep]
-                                                                            + self.time_in_level[fitfile.fields.SleepActivityLevel.rem_sleep]),
-                    'deep_sleep'    : fitfile.conversions.timedelta_to_time(self.time_in_level[fitfile.fields.SleepActivityLevel.deep_sleep]),
-                    'light_sleep'   : fitfile.conversions.timedelta_to_time(self.time_in_level[fitfile.fields.SleepActivityLevel.light_sleep]),
-                    'rem_sleep'     : fitfile.conversions.timedelta_to_time(self.time_in_level[fitfile.fields.SleepActivityLevel.rem_sleep]),
-                    'awake'         : fitfile.conversions.timedelta_to_time(self.time_in_level[fitfile.fields.SleepActivityLevel.awake]),
-                    'score'         : self.overall_sleep_score
-                }
-                root_logger.debug("sleep summary: %r", sleep)
-                Sleep.s_insert_or_update(self.sleep_db_session, sleep)
+            if (self.sleep_start is None or self.sleep_start > datetime.datetime.now(datetime.timezone.utc)
+               or self.sleep_stop is None or self.sleep_stop > datetime.datetime.now(datetime.timezone.utc)):
+                raise ValueError(f'bad time for fitfile {fitfile}: type {fitfile.type} start {self.sleep_start} stop {self.sleep_stop}')
+            sleep = {
+                'day'           : fit_file.utc_datetime_to_local(self.sleep_stop).replace(hour=0, minute=0, second=0, microsecond=0),
+                'start'         : fit_file.utc_datetime_to_local(self.sleep_start),
+                'end'           : fit_file.utc_datetime_to_local(self.sleep_stop),
+                'total_sleep'   : fitfile.conversions.timedelta_to_time(self.time_in_level[fitfile.fields.SleepActivityLevel.light_sleep]
+                                                                        + self.time_in_level[fitfile.fields.SleepActivityLevel.deep_sleep]
+                                                                        + self.time_in_level[fitfile.fields.SleepActivityLevel.rem_sleep]),
+                'deep_sleep'    : fitfile.conversions.timedelta_to_time(self.time_in_level[fitfile.fields.SleepActivityLevel.deep_sleep]),
+                'light_sleep'   : fitfile.conversions.timedelta_to_time(self.time_in_level[fitfile.fields.SleepActivityLevel.light_sleep]),
+                'rem_sleep'     : fitfile.conversions.timedelta_to_time(self.time_in_level[fitfile.fields.SleepActivityLevel.rem_sleep]),
+                'awake'         : fitfile.conversions.timedelta_to_time(self.time_in_level[fitfile.fields.SleepActivityLevel.awake]),
+                'score'         : self.overall_sleep_score
+            }
+            root_logger.debug("sleep summary: %r", sleep)
+            Sleep.s_insert_or_update(self.sleep_db_session, sleep)
 
     def _write_event_entry(self, fit_file, message_fields):
         if message_fields.get('event') == fitfile.fields.Event.sleep:
