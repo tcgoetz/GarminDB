@@ -53,7 +53,7 @@ class FitData():
                     fit_file_processor.write_file(fit_file)
                     root_logger.debug("Wrote %s to the database", fit_file)
                 else:
-                    root_logger.info("skipping non-matching %s", fit_file)
+                    root_logger.debug("skipping non-matching %s", fit_file)
             except Exception as e:
                 logger.error("Failed to parse %s: %s", file_name, e)
                 root_logger.error("Failed to parse %s: %s - %s", file_name, e, traceback.format_exc())

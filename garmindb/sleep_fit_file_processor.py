@@ -10,7 +10,7 @@ import datetime
 
 import fitfile
 
-from .garmindb import SleepDb, SleepEvents, SleepAssessments, Sleep
+from .garmindb import SleepDb, SleepEvents, SleepAssessments, Sleep, Naps
 from .fit_data import FitData
 from .fit_file_processor import FitFileProcessor
 
@@ -126,7 +126,7 @@ class SleepFitFileProcessor(FitFileProcessor):
             'feedback'      : message_fields.get('nap_period_feedback'),
         }
         root_logger.debug("sleep summary: %r", sleep)
-        Sleep.s_insert_or_update(self.sleep_db_session, sleep)
+        Naps.s_insert_or_update(self.sleep_db_session, sleep)
 
     def _write_sleep_level_entry(self, fit_file, message_fields):
         sleep_level = message_fields.get('sleep_level')
