@@ -125,3 +125,18 @@ class SleepAssessments(SleepDb.Base, idbutils.DbObject):
     rem_sleep_score = Column(Integer)
     sleep_restlessness_score = Column(Integer)
     awakenings_count = Column(Integer)
+
+
+class Naps(SleepDb.Base, idbutils.DbObject):
+    """Table that stores sleep assessments."""
+
+    __tablename__ = 'naps'
+
+    db = SleepDb
+    table_version = 1
+
+    day = Column(DateTime, primary_key=True)
+    start = Column(DateTime)
+    end = Column(DateTime)
+    duration = Column(Time, nullable=False, default=datetime.time.min)
+    feedback = Column(Enum(fitfile.fields.NapPeriodFeedback))
