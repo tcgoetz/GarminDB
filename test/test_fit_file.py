@@ -10,14 +10,9 @@ import datetime
 import re
 
 import fitfile
-from idbutils import FileProcessor
 
 
 root_logger = logging.getLogger()
-handler = logging.FileHandler('test_fit_file.log', 'w')
-root_logger.addHandler(handler)
-root_logger.setLevel(logging.DEBUG)
-
 logger = logging.getLogger(__name__)
 
 
