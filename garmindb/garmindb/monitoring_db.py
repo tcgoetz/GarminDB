@@ -23,6 +23,7 @@ class MonitoringInfo(MonitoringDb.Base, idbutils.DbObject):
     """Class representing data from a health monitoring file."""
 
     __tablename__ = 'monitoring_info'
+    __time_col_name__ = 'timestamp'
 
     db = MonitoringDb
     table_version = 2
@@ -61,6 +62,7 @@ class MonitoringHeartRate(MonitoringDb.Base, idbutils.DbObject):
     """Class that reprsents a database table holding resting heart rate data."""
 
     __tablename__ = 'monitoring_hr'
+    __time_col_name__ = 'timestamp'
 
     db = MonitoringDb
     table_version = 1
@@ -82,6 +84,7 @@ class MonitoringRestingHeartRate(MonitoringDb.Base, idbutils.DbObject):
     """Class that reprsents a database table holding resting heart rate data."""
 
     __tablename__ = 'monitoring_rhr'
+    __time_col_name__ = 'timestamp'
 
     db = MonitoringDb
     table_version = 1
@@ -104,6 +107,7 @@ class MonitoringIntensity(MonitoringDb.Base, idbutils.DbObject):
     """Class representing monitoring data about cardio minutes."""
 
     __tablename__ = 'monitoring_intensity'
+    __time_col_name__ = 'timestamp'
 
     db = MonitoringDb
     table_version = 1
@@ -139,6 +143,7 @@ class MonitoringClimb(MonitoringDb.Base, idbutils.DbObject):
     """Class representing monitoring data about elvation gained."""
 
     __tablename__ = 'monitoring_climb'
+    __time_col_name__ = 'timestamp'
 
     db = MonitoringDb
     table_version = 1
@@ -204,6 +209,7 @@ class Monitoring(MonitoringDb.Base, idbutils.DbObject):
     """A table containing monitoring data."""
 
     __tablename__ = 'monitoring'
+    __time_col_name__ = 'timestamp'
 
     db = MonitoringDb
     table_version = 2
@@ -270,6 +276,7 @@ class MonitoringRespirationRate(MonitoringDb.Base, idbutils.DbObject):
     """Class that represents a database table holding respiration rate measured in breaths per minute."""
 
     __tablename__ = 'monitoring_rr'
+    __time_col_name__ = 'timestamp'
 
     db = MonitoringDb
     table_version = 1
@@ -291,6 +298,7 @@ class MonitoringSpo2(MonitoringDb.Base, idbutils.DbObject):
     """Class that represents a database table holding spo2 ox measurements in percent."""
 
     __tablename__ = 'monitoring_spo2'
+    __time_col_name__ = 'timestamp'
 
     db = MonitoringDb
     table_version = 1

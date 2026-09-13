@@ -22,6 +22,7 @@ class DaysSummary(MSHealthDb.Base, idbutils.DbObject):
     """A table that holds summarized information about a day with one row per day."""
 
     __tablename__ = 'days_summary'
+    __time_col_name__ = "day"
 
     db = MSHealthDb
     table_version = 1
@@ -177,6 +178,7 @@ class MSVaultWeight(MSHealthDb.Base, idbutils.DbObject):
     """Class for a database table holding weight data from Microsoft Health Vault."""
 
     __tablename__ = 'weight'
+    __time_col_name__ = "timestamp"
 
     db = MSHealthDb
     table_version = 1

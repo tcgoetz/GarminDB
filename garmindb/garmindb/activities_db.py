@@ -37,6 +37,7 @@ class ActivityLengths(ActivitiesDb.Base, ActivitiesLengthsCommon):
     """Pool length from an activity."""
 
     __tablename__ = 'activity_lengths'
+    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 1
@@ -79,7 +80,7 @@ class ActivityLengths(ActivitiesDb.Base, ActivitiesLengthsCommon):
             return cls.s_get_activity(session, activity_id)
 
 
-class ActivitiesSplitsCommon(ActivitiesLengthsCommon):
+class ActivitiesSplitSummariessCommon(ActivitiesLengthsCommon):
     """Database object mixin for storing data common to activities, splits and laps."""
 
     # kms or miles
@@ -97,85 +98,12 @@ class ActivitiesSplitsCommon(ActivitiesLengthsCommon):
     min_temperature = Column(Float)
     avg_temperature = Column(Float)
 
-    # degrees
-    start_lat = Column(Float)
-    start_long = Column(Float)
-    stop_lat = Column(Float)
-    stop_long = Column(Float)
 
-    avg_power = Column(Integer)
-    max_power = Column(Integer)
-    normalized_power = Column(Integer)
-
-    @hybrid_property
-    def start_loc(self):
-        """Return the starting location of activity segment as a Location instance."""
-        return idbutils.Location(self.start_lat, self.start_long)
-
-    @start_loc.setter
-    def start_loc(self, start_location):
-        self.start_lat = start_location.lat_deg
-        self.start_long = start_location.long_deg
-
-    @hybrid_property
-    def stop_loc(self):
-        """Return the ending location of activity segment as a Location instance."""
-        return idbutils.Location(self.stop_lat, self.stop_long)
-
-    @stop_loc.setter
-    def stop_loc(self, stop_location):
-        self.stop_lat = stop_location.lat_deg
-        self.stop_long = stop_location.long_deg
-
-
-class ActivitySplits(ActivitiesDb.Base, ActivitiesSplitsCommon):
-    """Class that holds data for an activity split."""
-
-    __tablename__ = 'activity_splits'
-
-    db = ActivitiesDb
-    table_version = 1
-
-    activity_id = Column(String, ForeignKey('activities.activity_id'))
-    split = Column(Integer)
-    start_time = Column(DateTime)
-    stop_time = Column(DateTime)
-    max_temperature = Column(Float)
-    grade = Column(String)          # climbing grade
-    completed = Column(Boolean)     # climbing route
-    falls = Column(Integer)         # climbing number of falls
-
-    __table_args__ = (PrimaryKeyConstraint("activity_id", "split"),)
-
-    @classmethod
-    def s_get(cls, session, activity_id, split_number, default=None):
-        """Return a single instance for the given id."""
-        instance = session.query(cls).filter(cls.activity_id == activity_id).filter(cls.split == split_number).scalar()
-        if instance is None:
-            return default
-        return instance
-
-    @classmethod
-    def s_get_from_dict(cls, session, values_dict):
-        """Return a single activity instance for the given id."""
-        return cls.s_get(session, values_dict['activity_id'], values_dict['split'])
-
-    @classmethod
-    def s_get_activity(cls, session, activity_id):
-        """Return all splits for a given activity_id."""
-        return session.query(cls).filter(cls.activity_id == activity_id).all()
-
-    @classmethod
-    def get_activity(cls, db, activity_id):
-        """Return all splits for a given activity_id."""
-        with db.managed_session() as session:
-            return cls.s_get_activity(session, activity_id)
-
-
-class ActivitySplitSummaries(ActivitiesDb.Base, ActivitiesSplitsCommon):
+class ActivitySplitSummaries(ActivitiesDb.Base, ActivitiesSplitSummariessCommon):
     """Class that holds data for an activity split summary."""
 
     __tablename__ = 'activity_split_summaries'
+    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 1
@@ -211,13 +139,133 @@ class ActivitySplitSummaries(ActivitiesDb.Base, ActivitiesSplitsCommon):
             return cls.s_get_activity(session, activity_id)
 
 
-class ActivitiesLapsCommon(ActivitiesSplitsCommon):
-    """Database object mixin for storing data common to activities and laps."""
+class ActivitiesSplitsCommon(ActivitiesSplitSummariessCommon):
+    """Database object mixin for storing data common to activities, splits and laps."""
+
+    __time_col_name__ = "start_time"
 
     start_time = Column(DateTime)
     stop_time = Column(DateTime)
-    moving_time = Column(Time, nullable=False, default=datetime.time.min)
+
+    # degrees
+    start_lat = Column(Float)
+    start_long = Column(Float)
+    stop_lat = Column(Float)
+    stop_long = Column(Float)
+
+    avg_power = Column(Integer)
+    max_power = Column(Integer)
+    normalized_power = Column(Integer)
+
     max_temperature = Column(Float)
+
+    @hybrid_property
+    def start_loc(self):
+        """Return the starting location of activity segment as a Location instance."""
+        return idbutils.Location(self.start_lat, self.start_long)
+
+    @start_loc.setter
+    def start_loc(self, start_location):
+        self.start_lat = start_location.lat_deg
+        self.start_long = start_location.long_deg
+
+    @hybrid_property
+    def stop_loc(self):
+        """Return the ending location of activity segment as a Location instance."""
+        return idbutils.Location(self.stop_lat, self.stop_long)
+
+    @stop_loc.setter
+    def stop_loc(self, stop_location):
+        self.stop_lat = stop_location.lat_deg
+        self.stop_long = stop_location.long_deg
+
+
+class ActivitySplits(ActivitiesDb.Base, ActivitiesSplitsCommon):
+    """Class that holds data for an activity split."""
+
+    __tablename__ = 'activity_splits'
+    __get_col_name__ = "activity_id"
+
+    db = ActivitiesDb
+    table_version = 1
+
+    activity_id = Column(String, ForeignKey('activities.activity_id'))
+    split = Column(Integer)
+
+    __table_args__ = (PrimaryKeyConstraint("activity_id", "split"),)
+
+    @classmethod
+    def s_get(cls, session, activity_id, split_number, default=None):
+        """Return a single instance for the given id."""
+        instance = session.query(cls).filter(cls.activity_id == activity_id).filter(cls.split == split_number).scalar()
+        if instance is None:
+            return default
+        return instance
+
+    @classmethod
+    def s_get_from_dict(cls, session, values_dict):
+        """Return a single activity instance for the given id."""
+        return cls.s_get(session, values_dict['activity_id'], values_dict['split'])
+
+    @classmethod
+    def s_get_activity(cls, session, activity_id):
+        """Return all splits for a given activity_id."""
+        return session.query(cls).filter(cls.activity_id == activity_id).all()
+
+    @classmethod
+    def get_activity(cls, db, activity_id):
+        """Return all splits for a given activity_id."""
+        with db.managed_session() as session:
+            return cls.s_get_activity(session, activity_id)
+
+
+class ActivityClimbingSplits(ActivitiesDb.Base, idbutils.DbObject):
+    """Class that holds data for an activity climbing split."""
+
+    __tablename__ = 'activity_climbing_splits'
+    __get_col_name__ = "activity_id"
+
+    db = ActivitiesDb
+    table_version = 1
+
+    activity_id = Column(String, ForeignKey('activities.activity_id'))
+    split = Column(Integer)
+
+    grade = Column(String)          # climbing grade
+    completed = Column(Boolean)     # climbing route
+    falls = Column(Integer)         # climbing number of falls
+
+    __table_args__ = (PrimaryKeyConstraint("activity_id", "split"),)
+
+    @classmethod
+    def s_get(cls, session, activity_id, split_number, default=None):
+        """Return a single instance for the given id."""
+        instance = session.query(cls).filter(cls.activity_id == activity_id).filter(cls.split == split_number).scalar()
+        if instance is None:
+            return default
+        return instance
+
+    @classmethod
+    def s_get_from_dict(cls, session, values_dict):
+        """Return a single activity instance for the given id."""
+        return cls.s_get(session, values_dict['activity_id'], values_dict['split'])
+
+    @classmethod
+    def s_get_activity(cls, session, activity_id):
+        """Return all splits for a given activity_id."""
+        return session.query(cls).filter(cls.activity_id == activity_id).all()
+
+    @classmethod
+    def get_activity(cls, db, activity_id):
+        """Return all splits for a given activity_id."""
+        with db.managed_session() as session:
+            return cls.s_get_activity(session, activity_id)
+
+
+class ActivitiesLapsCommon(ActivitiesSplitsCommon):
+    """Database object mixin for storing data common to activities and laps."""
+
+    moving_time = Column(Time, nullable=False, default=datetime.time.min)
     cycles = Column(Float)
 
     # ml
@@ -247,6 +295,7 @@ class Activities(ActivitiesDb.Base, ActivitiesLapsCommon):
     """Class represents a database table that contains data about recorded activities."""
 
     __tablename__ = 'activities'
+    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 6
@@ -337,6 +386,7 @@ class ActivityLaps(ActivitiesDb.Base, ActivitiesLapsCommon):
     """Class that holds data for an activity lap."""
 
     __tablename__ = 'activity_laps'
+    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 4
@@ -385,6 +435,7 @@ class ActivityRecords(ActivitiesDb.Base, idbutils.DbObject):
     """Encapsilates record for a single point in time from an activity."""
 
     __tablename__ = 'activity_records'
+    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 3
@@ -431,6 +482,7 @@ class ActivitiesDevices(ActivitiesDb.Base, idbutils.DbObject):
     """Class represents a database table that maps device ids to activities (by id) that they were used in."""
 
     __tablename__ = 'activities_devices'
+    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 2
@@ -453,6 +505,8 @@ class ActivitiesDevices(ActivitiesDb.Base, idbutils.DbObject):
 
 class SportActivities(idbutils.DbObject):
     """Base class for all sport based activity tables."""
+
+    __get_col_name__ = "activity_id"
 
     @declared_attr
     def activity_id(cls):

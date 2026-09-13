@@ -208,6 +208,7 @@ class Analyze():
     def summary(self):
         """Summarize Garmin health data. Daily, weekly, and monthly, tables will be generated."""
         logger.info("Summarizing")
+        years_act = Activities.get_years(self.garmin_act_db)
         years_mon = Monitoring.get_years(self.garmin_mon_db)
         years_act = Activities.get_years(self.garmin_act_db)
         years_sleep = Sleep.get_years(self.sleep_db)

@@ -21,6 +21,7 @@ class HrvValue(HrvDb.Base, idbutils.DbObject):
     """Table that stores events recorded during sleep."""
 
     __tablename__ = 'hrv_value'
+    __time_col_name__ = 'timestamp'
 
     db = HrvDb
     table_version = 1
@@ -42,6 +43,7 @@ class HrvStatusSummary(HrvDb.Base, idbutils.DbObject):
     """Class representing a sleep session. Data in this table comes for FIT files"""
 
     __tablename__ = 'hrv_status_summary'
+    __time_col_name__ = 'day'
 
     db = HrvDb
     table_version = 1

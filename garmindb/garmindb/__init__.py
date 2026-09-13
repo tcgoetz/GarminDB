@@ -11,6 +11,6 @@ from .monitoring_db import MonitoringDb, MonitoringInfo, MonitoringHeartRate, Mo
     MonitoringRespirationRate, MonitoringSpo2
 from .sleep_db import SleepDb, SleepEvents, SleepAssessments, Sleep, Naps
 from .hrv_db import HrvDb, HrvValue, HrvStatusSummary
-from .activities_db import ActivitiesDb, Activities, ActivityLaps, ActivityRecords, ActivitiesDevices, ActivitySplits, SportActivities, StepsActivities, \
-    PaddleActivities, CycleActivities, ClimbingActivities, ActivityLengths, ActivitySplitSummaries, SwimmingActivities
+from .activities_db import ActivitiesDb, Activities, ActivityLaps, ActivityRecords, ActivitiesDevices, ActivitySplits, ActivityClimbingSplits, SportActivities, \
+    StepsActivities, PaddleActivities, CycleActivities, ClimbingActivities, ActivityLengths, ActivitySplitSummaries, SwimmingActivities
 from .garmin_summary_db import GarminSummaryDb, Summary, YearsSummary, MonthsSummary, WeeksSummary, DaysSummary, IntensityHR

@@ -22,6 +22,7 @@ class SleepEvents(SleepDb.Base, idbutils.DbObject):
     """Table that stores events recorded during sleep."""
 
     __tablename__ = 'sleep_events'
+    __time_col_name__ = 'timestamp'
 
     db = SleepDb
     table_version = 1
@@ -71,6 +72,7 @@ class Sleep(SleepDb.Base, idbutils.DbObject):
     """Class representing a sleep session. Data in this table comes for FIT files"""
 
     __tablename__ = 'sleep'
+    __time_col_name__ = 'day'
 
     db = SleepDb
     table_version = 1
@@ -109,6 +111,7 @@ class SleepAssessments(SleepDb.Base, idbutils.DbObject):
     """Table that stores sleep assessments."""
 
     __tablename__ = 'sleep_assessments'
+    __time_col_name__ = 'day'
 
     db = SleepDb
     table_version = 1
@@ -131,6 +134,7 @@ class Naps(SleepDb.Base, idbutils.DbObject):
     """Table that stores sleep assessments."""
 
     __tablename__ = 'naps'
+    __time_col_name__ = 'day'
 
     db = SleepDb
     table_version = 1

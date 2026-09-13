@@ -10,8 +10,8 @@ from datetime import timedelta
 
 import fitfile
 
-from .garmindb import File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, ActivitySplits, ActivitiesDevices, StepsActivities, SwimmingActivities, \
-    CycleActivities, ClimbingActivities, PaddleActivities, ActivityLengths, ActivitySplitSummaries
+from .garmindb import File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, ActivitySplits, ActivityClimbingSplits, ActivitiesDevices, StepsActivities, \
+    SwimmingActivities,  CycleActivities, ClimbingActivities, PaddleActivities, ActivityLengths, ActivitySplitSummaries
 from .fit_file_processor import FitFileProcessor
 
 
@@ -165,6 +165,37 @@ class ActivityFitFileProcessor(FitFileProcessor):
         root_logger.debug("writing length %r for %s", length, fit_file.filename)
         ActivityLengths.s_insert_or_update(self.garmin_act_db_session, length, ignore_none=True, ignore_zero=True)
 
+    def _write_split_summary(self, fit_file, message_type, messages):
+        """Write all split summary essages to the database."""
+        root_logger.debug("writing %d split summaries for %s", len(messages), fit_file.filename)
+        for split_summary_num, message in enumerate(messages):
+            self._write_split_summary_entry(fit_file, message.fields, split_summary_num)
+
+    def __get_split_summary_common(self, message_fields):
+        split_commmon = {
+            'distance'              : message_fields.get('total_distance'),
+            'min_temperature'       : message_fields.get('min_temperature'),
+            'avg_temperature'       : message_fields.get('avg_temperature'),
+            'avg_hr'                : message_fields.get('avg_heart_rate'),
+            'max_hr'                : message_fields.get('max_heart_rate'),
+            'avg_cadence'           : message_fields.get('avg_cadence'),
+            'max_cadence'           : message_fields.get('max_cadence'),
+        }
+        split_commmon.update(self.__get_length_common(message_fields))
+        return split_commmon
+
+    def _write_split_summary_entry(self, fit_file, message_fields, split_summary_num):
+        split_summary = {
+            'activity_id'   : self.activity_id,
+            'split_summary' : split_summary_num,
+            'num_splits'    : message_fields.get('num_splits'),
+            'ascent'        : message_fields.get('total_ascent'),
+            'descent'       : message_fields.get('total_descent'),
+        }
+        split_summary.update(self.__get_split_summary_common(message_fields))
+        root_logger.debug("writing split_summary %r for %s", split_summary, fit_file.filename)
+        ActivitySplitSummaries.s_insert_or_update(self.garmin_act_db_session, split_summary, ignore_none=True, ignore_zero=True)
+
     def _write_split(self, fit_file, message_type, messages):
         """Write all split messages to the database."""
         root_logger.debug("writing %d splits for %s", len(messages), fit_file.filename)
@@ -173,9 +204,6 @@ class ActivityFitFileProcessor(FitFileProcessor):
 
     def __get_split_common(self, message_fields):
         split_commmon = {
-            'distance'              : message_fields.get('total_distance'),
-            'min_temperature'       : message_fields.get('min_temperature'),
-            'avg_temperature'       : message_fields.get('avg_temperature'),
             'start_lat'             : message_fields.get('start_position_lat'),
             'start_long'            : message_fields.get('start_position_long'),
             'stop_lat'              : message_fields.get('end_position_lat'),
@@ -184,12 +212,12 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'max_hr'                : message_fields.get('max_heart_rate'),
             'avg_cadence'           : message_fields.get('avg_cadence'),
             'max_cadence'           : message_fields.get('max_cadence'),
-
+            'max_temperature'       : message_fields.get('max_temperature'),
             'avg_power'             : message_fields.get('avg_power'),
             'max_power'             : message_fields.get('max_power'),
             'normalized_power'      : message_fields.get('normalized_power'),
         }
-        split_commmon.update(self.__get_length_common(message_fields))
+        split_commmon.update(self.__get_split_summary_common(message_fields))
         return split_commmon
 
     def _write_split_entry(self, fit_file, message_fields, split_num):
@@ -210,41 +238,28 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'split'                 : split_num,
             'start_time'            : start_time,
             'stop_time'             : stop_time,
-            'max_temperature'       : message_fields.get('max_temperature'),
             'elapsed_time'          : elapsed_time,
             'ascent'                : message_fields.get('ascent'),
             'descent'               : message_fields.get('descent'),
-            'grade'                 : message_fields.get('grade'),
-            'completed'             : message_fields.get('completed'),
-            'falls'                 : message_fields.get('falls'),
         }
         split.update(self.__get_split_common(message_fields))
         split.update(plugin_split)
-
         root_logger.debug("writing split %r for %s", split, fit_file.filename)
         ActivitySplits.s_insert_or_update(self.garmin_act_db_session, split, ignore_none=True, ignore_zero=True)
 
-    def _write_split_summary(self, fit_file, message_type, messages):
-        """Write all split summary essages to the database."""
-        root_logger.debug("writing %d split summaries for %s", len(messages), fit_file.filename)
-        for split_summary_num, message in enumerate(messages):
-            self._write_split_summary_entry(fit_file, message.fields, split_summary_num)
-
-    def _write_split_summary_entry(self, fit_file, message_fields, split_summary_num):
-        split_summary = {
-            'activity_id'   : self.activity_id,
-            'split_summary' : split_summary_num,
-            'num_splits'    : message_fields.get('num_splits'),
-            'ascent'        : message_fields.get('total_ascent'),
-            'descent'       : message_fields.get('total_descent'),
-        }
-        split_summary.update(self.__get_split_common(message_fields))
-        root_logger.debug("writing split_summary %r for %s", split_summary, fit_file.filename)
-        ActivitySplitSummaries.s_insert_or_update(self.garmin_act_db_session, split_summary, ignore_none=True, ignore_zero=True)
+        if message_fields.get('grade') is not None or message_fields.get('completed') is not None or message_fields.get('falls') is not None:
+            climbing_split = {
+                'activity_id'           : self.activity_id,
+                'split'                 : split_num,
+                'grade'                 : message_fields.get('grade'),
+                'completed'             : message_fields.get('completed'),
+                'falls'                 : message_fields.get('falls'),
+            }
+            root_logger.debug("writing climbing split %r for %s", climbing_split, fit_file.filename)
+            ActivityClimbingSplits.s_insert_or_update(self.garmin_act_db_session, climbing_split, ignore_none=True, ignore_zero=True)
 
     def __get_lap_common(self, message_fields):
         lap_common = {
-            'max_temperature'       : message_fields.get('max_temperature'),
             'ascent'                : message_fields.get('total_ascent'),
             'descent'               : message_fields.get('total_descent'),
             'cycles'                : message_fields.get('total_cycles'),

@@ -22,6 +22,7 @@ class DaysSummary(FitBitDb.Base, idbutils.DbObject):
     """A table that holds summarized information about a day with one row per day."""
 
     __tablename__ = 'days_summary'
+    __time_col_name__ = "day"
 
     db = FitBitDb
     table_version = 2

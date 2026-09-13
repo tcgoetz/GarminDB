@@ -52,6 +52,8 @@ class Device(GarminDb.Base, idbutils.DbObject):
     """Class representing a Garmin device."""
 
     __tablename__ = 'devices'
+    __get_col_name__ = 'serial_number'
+    __time_col_name__ = 'timestamp'
 
     db = GarminDb
     table_version = 5
@@ -83,6 +85,7 @@ class DeviceInfo(GarminDb.Base, idbutils.DbObject):
     """Class representing a Garmin device info message from a FIT file."""
 
     __tablename__ = 'device_info'
+    __time_col_name__ = 'timestamp'
 
     db = GarminDb
     table_version = 5
@@ -126,6 +129,7 @@ class File(GarminDb.Base, idbutils.DbObject):
     """Class representing a data file."""
 
     __tablename__ = 'files'
+    __get_col_name__ = "id"
 
     db = GarminDb
     table_version = 3
@@ -185,6 +189,7 @@ class Weight(GarminDb.Base, idbutils.DbObject):
     """Class representing a weight entry."""
 
     __tablename__ = 'weight'
+    __time_col_name__ = 'day'
 
     db = GarminDb
     table_version = 2
@@ -206,6 +211,7 @@ class Stress(GarminDb.Base, idbutils.DbObject):
     """Class representing a stress reading."""
 
     __tablename__ = 'stress'
+    __time_col_name__ = 'timestamp'
 
     db = GarminDb
     table_version = 1
@@ -225,6 +231,7 @@ class RestingHeartRate(GarminDb.Base, idbutils.DbObject):
     """Class representing a daily resting heart rate reading."""
 
     __tablename__ = 'resting_hr'
+    __time_col_name__ = 'day'
 
     db = GarminDb
     table_version = 2
@@ -247,6 +254,7 @@ class DailySummary(GarminDb.Base, idbutils.DbObject):
     """Class representing a Garmin daily summary."""
 
     __tablename__ = 'daily_summary'
+    __time_col_name__ = 'day'
 
     db = GarminDb
     table_version = 5

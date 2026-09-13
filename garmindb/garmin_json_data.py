@@ -234,9 +234,9 @@ class GarminJsonDetailsData(GarminJsonActivityData):
         max_speed = fitfile.conversions.mps_to_mph(summary_dto.get('maxSpeed'))
         run = {
             'activity_id'       : activity_id,
-            'avg_pace'          : fitfile.conversions.perhour_speed_to_pace(avg_speed),
-            'avg_moving_pace'   : fitfile.conversions.perhour_speed_to_pace(avg_moving_speed),
-            'max_pace'          : fitfile.conversions.perhour_speed_to_pace(max_speed),
+            'avg_pace'          : fitfile.conversions.perhour_speed_to_pace(avg_speed) if avg_speed else None,
+            'avg_moving_pace'   : fitfile.conversions.perhour_speed_to_pace(avg_moving_speed) if avg_moving_speed else None,
+            'max_pace'          : fitfile.conversions.perhour_speed_to_pace(max_speed) if max_speed else None,
         }
         root_logger.debug("steps_activity for %d: %r", activity_id, run)
         StepsActivities.s_insert_or_update(self.garmin_act_db_session, run, ignore_none=True)
@@ -262,6 +262,9 @@ class GarminJsonDetailsData(GarminJsonActivityData):
 
     def _process_resort_skiing_snowboarding(self, sub_sport, activity_id, json_data):
         root_logger.debug("resort_skiing_snowboarding for %d: %r", activity_id, json_data)
+
+    def _process_resort_skiing_snowboarding_ws(self, sub_sport, activity_id, json_data):
+        return self._process_resort_skiing_snowboarding(sub_sport, activity_id, json_data)
 
     def _process_snowshoeing(self, sub_sport, activity_id, json_data):
         root_logger.debug("snow_shoe for %d: %r", activity_id, json_data)

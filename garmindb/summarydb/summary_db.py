@@ -22,6 +22,7 @@ class YearsSummary(SummaryDb.Base, SummaryBase):
     """Object representing summarized monthly health data."""
 
     __tablename__ = 'years_summary'
+    __time_col_name__ = "first_day"
 
     db = SummaryDb
     table_version = SummaryBase._table_version
@@ -39,6 +40,7 @@ class MonthsSummary(SummaryDb.Base, SummaryBase):
     """Object representing summarized monthly health data."""
 
     __tablename__ = 'months_summary'
+    __time_col_name__ = "first_day"
 
     db = SummaryDb
     table_version = SummaryBase._table_version
@@ -56,6 +58,7 @@ class WeeksSummary(SummaryDb.Base, SummaryBase):
     """Object representing summarized weekly health data."""
 
     __tablename__ = 'weeks_summary'
+    __time_col_name__ = "first_day"
 
     db = SummaryDb
     table_version = SummaryBase._table_version
@@ -73,6 +76,7 @@ class DaysSummary(SummaryDb.Base, SummaryBase):
     """Object representing summarized daily health data."""
 
     __tablename__ = 'days_summary'
+    __time_col_name__ = "day"
 
     db = SummaryDb
     table_version = SummaryBase._table_version
