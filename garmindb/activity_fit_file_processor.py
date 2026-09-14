@@ -10,8 +10,9 @@ from datetime import timedelta
 
 import fitfile
 
-from .garmindb import File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, ActivitySplits, ActivityClimbingSplits, ActivitiesDevices, StepsActivities, \
-    SwimmingActivities,  CycleActivities, ClimbingActivities, PaddleActivities, ActivityLengths, ActivitySplitSummaries
+from .garmindb import File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, ActivitySplits, ActivityClimbingSplits, ActivitiesDevices, ActivitiesDeviceUsed, \
+    StepsActivities, SwimmingActivities,  CycleActivities, ClimbingActivities, PaddleActivities, ActivityLengths, ActivitySplitSummaries, ActivitiesBestEffort, \
+    Attributes
 from .fit_file_processor import FitFileProcessor
 
 
@@ -32,6 +33,10 @@ class ActivityFitFileProcessor(FitFileProcessor):
         self.garmin_act_db = ActivitiesDb(self.db_params, self.debug - 1)
         self._session_num = 0
         self.activity_id = File.id_from_path(fit_file.filename)
+        self.activity_start = None
+        self.activity_stop = None
+        self.activity_total_time = None
+        self.activity_session_count = None
         # Multi-sport files have > 1 session; all child sessions get a suffixed activity_id.
         self._is_multi_sport_file = len(fit_file.session) > 1
         if self._is_multi_sport_file:
@@ -69,6 +74,35 @@ class ActivityFitFileProcessor(FitFileProcessor):
     def _plugin_dispatch(self, handler_name, *args, **kwargs):
         return super()._plugin_dispatch(self.activity_fit_file_plugins, handler_name, *args, **kwargs)
 
+    def __write_attribute(self, timestamp, attribute_name, attribute_value):
+        Attributes.s_set_newer(self.garmin_act_db_session, attribute_name, attribute_value, timestamp)
+
+    def _write_activity_entry(self, fit_file, message_fields):
+        self.activity_session_count = message_fields.get('num_sessions'),
+        self.activity_total_time = message_fields.get('total_timer_time')
+
+    def _write_best_effort_entry(self, fit_file, message_fields):
+        start_time = fit_file.utc_datetime_to_local(message_fields.start_time)
+        distance = message_fields.get('distance')
+        time = message_fields.get('time')
+        personal_record = message_fields.get('personal_record')
+        if start_time and distance and time:
+            sport = message_fields.get('sport')
+            best_effort = {
+                'activity_id'       : self.activity_id,
+                'start_time'        : start_time,
+                'sport'             : sport,
+                'distance'          : distance,
+                'time'              : time,
+                'personal_record'   : personal_record
+            }
+            root_logger.info("writing best_effort %r -> %r for %s", message_fields, best_effort, fit_file.filename)
+            root_logger.info("writing best_effort distance %r", distance)
+            ActivitiesBestEffort.s_insert_or_update(self.garmin_act_db_session, best_effort, ignore_none=True, ignore_zero=True)
+            if personal_record:
+                distance_int = int(distance)
+                self.__write_attribute(start_time, f'PR {distance_int} {sport.name}', str(time))
+
     def _write_device_info_entry(self, fit_file, message_fields):
         device_serial_number = super()._write_device_info_entry(fit_file, message_fields)
         if device_serial_number:
@@ -81,6 +115,31 @@ class ActivityFitFileProcessor(FitFileProcessor):
                 if not ActivitiesDevices.s_exists(self.garmin_act_db_session, entry):
                     root_logger.debug("_write_device_info_entry activity_id %s, device serial number %s doesn't exist", activity_id, device_serial_number)
                     self.garmin_act_db_session.add(ActivitiesDevices(**entry))
+
+    def _write_device_used_entry(self, fit_file, message_fields):
+        speed_device = message_fields.get('speed')
+        distance_device = message_fields.get('distance')
+        cadence_device = message_fields.get('cadence')
+        heart_rate_device = message_fields.get('heart_rate')
+        device_used = {
+            'activity_id'                       : self.activity_id,
+            'speed_device_serial_number'        : self.device_index_to_serial_number[speed_device] if speed_device else None,
+            'distance_device_serial_number'     : self.device_index_to_serial_number[distance_device] if distance_device else None,
+            'cadence_device_serial_number'      : self.device_index_to_serial_number[cadence_device] if cadence_device else None,
+            'heart_rate_device_serial_number'   : self.device_index_to_serial_number[heart_rate_device] if heart_rate_device else None,
+        }
+        root_logger.debug("writing device_used %r for %s", device_used, fit_file.filename)
+        ActivitiesDeviceUsed.s_insert_or_update(self.garmin_act_db_session, device_used, ignore_none=True, ignore_zero=True)
+
+    def _write_event_entry(self, fit_file, message_fields):
+        # new sleep files use start and stop events for sleep start and stop
+        if message_fields.get('event') == fitfile.fields.Event.timer:
+            if message_fields.get('event_type') == fitfile.fields.EventType.start and fitfile.checks.dt_is_valid(message_fields.timestamp):
+                self.activity_start = message_fields.timestamp
+                root_logger.debug("activity start event: %s", self.activity_start)
+            elif message_fields.get('event_type') == fitfile.fields.EventType.stop_all and fitfile.checks.dt_is_valid(message_fields.timestamp):
+                self.activity_stop = message_fields.timestamp
+                root_logger.debug("activity stop event: %s", self.activity_stop)
 
     def _write_lap(self, fit_file, message_type, messages):
         """Write all lap messages to the database, partitioned by session for multi-sport files."""
@@ -416,7 +475,8 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'cycles'                            : message_fields.get('total_cycles'),
             'laps'                              : message_fields.get('num_laps'),
             'training_effect'                   : message_fields.get('total_training_effect'),
-            'anaerobic_training_effect'         : message_fields.get('total_anaerobic_training_effect')
+            'anaerobic_training_effect'         : message_fields.get('total_anaerobic_training_effect'),
+            'primary_benefit'                   : message_fields.get('primary_benefit'),
         }
         activity.update(self.__get_lap_common(message_fields))
         activity.update(self._plugin_dispatch('write_session_entry', self.garmin_act_db_session, fit_file, activity_id, message_fields))
@@ -511,3 +571,11 @@ class ActivityFitFileProcessor(FitFileProcessor):
         session.update(self.__hr_zone_data(message_fields))
         root_logger.debug("writing session hr zone data %r for %s", session, fit_file.filename)
         Activities.s_insert_or_update(self.garmin_act_db_session, session, ignore_none=True, ignore_zero=True)
+
+    def _write_user_metrics_entry(self, fit_file, message_fields):
+        root_logger.info("user metrics message: %r", message_fields)
+        timestamp = fit_file.time_created_local
+        attribute_names = ['activity_class', 'lactate_threshold_heart_rate', 'lactate_threshold_heart_rate', 'lactate_threshold_power', 'lactate_threshold_speed', 'height',
+                           'weight', 'max_heart_rate', 'resting_heart_rate']
+        self._write_attributes(timestamp, message_fields, attribute_names)
+        self._write_measurement_sytem_attributes(timestamp, message_fields)

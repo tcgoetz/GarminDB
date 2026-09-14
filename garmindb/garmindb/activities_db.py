@@ -20,6 +20,25 @@ logger = logging.getLogger(__name__)
 ActivitiesDb = idbutils.DB.create('garmin_activities', 13, "Database for storing activities data.")
 
 
+class Attributes(ActivitiesDb.Base, idbutils.KeyValueObject):
+    """Object representing generic key-value data from a Garmin device."""
+
+    __tablename__ = 'attributes'
+
+    db = ActivitiesDb
+    table_version = 1
+
+    @classmethod
+    def measurements_type(cls, db, default=None):
+        """Return the database units type (metric, statute, etc)."""
+        return fitfile.MeasurementSystem.from_string(cls.get_string(db, 'measurement_system', default))
+
+    @classmethod
+    def measurements_type_metric(cls, db):
+        """Return True if the database units are metric."""
+        return (cls.measurements_type(db) == fitfile.MeasurementSystem.metric)
+
+
 class ActivitiesLengthsCommon(idbutils.DbObject):
     """Database object mixin for storing data common to activities, splits, lengths, and laps."""
 
@@ -315,9 +334,9 @@ class Activities(ActivitiesDb.Base, ActivitiesLapsCommon):
     self_eval_effort = Column(String)
 
     training_load = Column(Float)
-
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)
+    primary_benefit = Column(Enum(fitfile.fields.Benefit))
 
     def is_steps_activity(self):
         """Return if the activity is a steps based activity."""
@@ -478,6 +497,35 @@ class ActivityRecords(ActivitiesDb.Base, idbutils.DbObject):
         self.position_long = location.long_deg
 
 
+class ActivitiesBestEffort(ActivitiesDb.Base, idbutils.DbObject):
+    """Class represents a database table that records best efforts for a given activity."""
+
+    __tablename__ = 'activities_best_effort'
+    __get_col_name__ = "activity_id"
+    __time_col_name__ = "start_time"
+
+    db = ActivitiesDb
+    table_version = 2
+
+    activity_id = Column(String, ForeignKey('activities.activity_id'), primary_key=True)
+    start_time = Column(DateTime)
+    sport = Column(Enum(fitfile.fields.Sport))
+    distance = Column(Float)
+    time = Column(Time, nullable=False, default=datetime.time.min)
+    personal_record = Column(Boolean)
+
+    @classmethod
+    def s_get_activity(cls, session, activity_id):
+        """Return all activity best effort records for a given activity_id."""
+        return session.query(cls).filter(cls.activity_id == activity_id).all()
+
+    @classmethod
+    def get_activity(cls, db, activity_id):
+        """Return all activity best effort records for a given activity_id."""
+        with db.managed_session() as session:
+            return cls.s_get_activity(session, activity_id)
+
+
 class ActivitiesDevices(ActivitiesDb.Base, idbutils.DbObject):
     """Class represents a database table that maps device ids to activities (by id) that they were used in."""
 
@@ -489,7 +537,36 @@ class ActivitiesDevices(ActivitiesDb.Base, idbutils.DbObject):
 
     activity_id = Column(String)
     device_serial_number = Column(BigInteger)
+
     __table_args__ = (PrimaryKeyConstraint("activity_id", "device_serial_number"),)
+
+    @classmethod
+    def s_get_activity(cls, session, activity_id):
+        """Return all activity devices records for a given activity_id."""
+        return session.query(cls).filter(cls.activity_id == activity_id).all()
+
+    @classmethod
+    def get_activity(cls, db, activity_id):
+        """Return all activity devices records for a given activity_id."""
+        with db.managed_session() as session:
+            return cls.s_get_activity(session, activity_id)
+
+
+class ActivitiesDeviceUsed(ActivitiesDb.Base, idbutils.DbObject):
+    """Class represents a database table that show which devices were used for metrics during activities (by serial number)."""
+
+    __tablename__ = 'activities_devices_used'
+    __get_col_name__ = "activity_id"
+
+    db = ActivitiesDb
+    table_version = 2
+
+    activity_id = Column(String, ForeignKey('activities.activity_id'), primary_key=True)
+    speed_device_serial_number = Column(BigInteger)
+    distance_device_serial_number = Column(BigInteger)
+    cadence_device_serial_number = Column(BigInteger)
+    elevation_device_serial_number = Column(BigInteger)
+    heart_rate_device_serial_number = Column(BigInteger)
 
     @classmethod
     def s_get_activity(cls, session, activity_id):

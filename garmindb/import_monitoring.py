@@ -297,12 +297,18 @@ class GarminUserSettings(GarminProfile):
         height = fitfile.Distance.from_cm(user_data['height'])
         return {
             'measurement_system': str(measurement_system),
+            'activity_level': user_data['activityLevel'],
+            'birth_date': user_data['birthDate'],
             'gender': str(gender),
             'weight': weight.kgs_or_lbs(measurement_system),
             'height': height.meters_or_feet(measurement_system),
+            'handedness': user_data['handedness'].lower(),
             'vo2max_running': user_data['vo2MaxRunning'],
             'vo2max_cycling': user_data['vo2MaxCycling'],
-            'handedness': user_data['handedness'].lower()
+            'running_lactate_threshhold_date': user_data['firstbeatRunningLtTimestamp'],
+            'lactate_threshold_heart_rate': str(user_data['lactateThresholdHeartRate']),
+            'moderate_intensity_minutes_hr_zone': str(user_data['moderateIntensityMinutesHrZone']),
+            'vigorous_intensity_minutes_hr_zone': str(user_data['vigorousIntensityMinutesHrZone']),
         }
 
 
