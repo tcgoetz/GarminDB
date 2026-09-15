@@ -18,7 +18,7 @@ from test_db_base import TestDBBase
 
 
 root_logger = logging.getLogger()
-root_logger.addHandler(logging.FileHandler('activities_db.log', 'w'))
+root_logger.addHandler(logging.FileHandler('test_activities_db.log', 'w'))
 root_logger.setLevel(logging.DEBUG)
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,9 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.gc_config = GarminConnectConfigManager()
-        cls.garmin_act_db = ActivitiesDb(cls.gc_config.get_db_params())
+        cls.db_params = cls.gc_config.get_db_params()
+        cls.garmin_act_db = ActivitiesDb(cls.db_params)
+        root_logger.info(f"db params {repr(cls.db_params)}")
         table_dict = {
             'activities_table' : Activities,
             'activity_laps_table' : ActivityLaps,
@@ -52,7 +54,7 @@ class TestActivitiesDb(TestDBBase, unittest.TestCase):
         cls.test_mon_db = GarminDb(cls.test_db_params)
         cls.test_act_db = ActivitiesDb(cls.test_db_params, debug_level=1)
         cls.measurement_system = fitfile.MeasurementSystem.statute
-        print(f"db params {repr(cls.test_db_params)}")
+        root_logger.info(f"test db params {repr(cls.test_db_params)}")
 
     def test_garmin_act_db_tables_exists(self):
         self.assertGreater(Activities.row_count(self.garmin_act_db), 0)

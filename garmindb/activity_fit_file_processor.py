@@ -12,7 +12,7 @@ import fitfile
 
 from .garmindb import File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps, ActivitySplits, ActivityClimbingSplits, ActivitiesDevices, ActivitiesDeviceUsed, \
     StepsActivities, SwimmingActivities,  CycleActivities, ClimbingActivities, PaddleActivities, ActivityLengths, ActivitySplitSummaries, ActivitiesBestEffort, \
-    Attributes
+    Attributes, ActivitiesEvaluations
 from .fit_file_processor import FitFileProcessor
 
 
@@ -82,12 +82,13 @@ class ActivityFitFileProcessor(FitFileProcessor):
         self.activity_total_time = message_fields.get('total_timer_time')
 
     def _write_best_effort_entry(self, fit_file, message_fields):
+        root_logger.info("writing best_effort message %r for %s", message_fields, fit_file.filename)
         start_time = fit_file.utc_datetime_to_local(message_fields.start_time)
-        distance = message_fields.get('distance')
+        distance = message_fields.get('best_effort_distance')
         time = message_fields.get('time')
-        personal_record = message_fields.get('personal_record')
         if start_time and distance and time:
             sport = message_fields.get('sport')
+            personal_record = message_fields.get('personal_record')
             best_effort = {
                 'activity_id'       : self.activity_id,
                 'start_time'        : start_time,
@@ -96,12 +97,10 @@ class ActivityFitFileProcessor(FitFileProcessor):
                 'time'              : time,
                 'personal_record'   : personal_record
             }
-            root_logger.info("writing best_effort %r -> %r for %s", message_fields, best_effort, fit_file.filename)
-            root_logger.info("writing best_effort distance %r", distance)
+            root_logger.info("writing best_effort %r for %s", best_effort, fit_file.filename)
             ActivitiesBestEffort.s_insert_or_update(self.garmin_act_db_session, best_effort, ignore_none=True, ignore_zero=True)
             if personal_record:
-                distance_int = int(distance)
-                self.__write_attribute(start_time, f'PR {distance_int} {sport.name}', str(time))
+                self.__write_attribute(start_time, f'PR {distance} {sport.name}', str(time))
 
     def _write_device_info_entry(self, fit_file, message_fields):
         device_serial_number = super()._write_device_info_entry(fit_file, message_fields)
@@ -475,6 +474,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'cycles'                            : message_fields.get('total_cycles'),
             'laps'                              : message_fields.get('num_laps'),
             'training_effect'                   : message_fields.get('total_training_effect'),
+            'training_load'                     : message_fields.get('training_load'),
             'anaerobic_training_effect'         : message_fields.get('total_anaerobic_training_effect'),
             'primary_benefit'                   : message_fields.get('primary_benefit'),
         }
@@ -509,6 +509,15 @@ class ActivityFitFileProcessor(FitFileProcessor):
                     root_logger.warning("No sport handler for type %s from %s: %s", sport, fit_file.filename, message_fields)
             except Exception as e:
                 root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
+        feel = message_fields.get('workout_feel')
+        effort = message_fields.get('workout_rpe')
+        if feel or effort:
+            evuation = {
+                'activity_id'       : activity_id,
+                'self_eval_feel'    : feel,
+                'self_eval_effort'  : effort
+            }
+            ActivitiesEvaluations.s_find_or_create(self.garmin_act_db_session, evuation)
 
     def _write_time_in_zone_entry(self, fit_file, message_fields):
         """Write hz zones message to the database."""

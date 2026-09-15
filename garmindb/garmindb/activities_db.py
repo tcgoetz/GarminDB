@@ -249,7 +249,6 @@ class ActivityClimbingSplits(ActivitiesDb.Base, idbutils.DbObject):
 
     activity_id = Column(String, ForeignKey('activities.activity_id'))
     split = Column(Integer)
-
     grade = Column(String)          # climbing grade
     completed = Column(Boolean)     # climbing route
     falls = Column(Integer)         # climbing number of falls
@@ -323,16 +322,9 @@ class Activities(ActivitiesDb.Base, ActivitiesLapsCommon):
     name = Column(String)
     description = Column(String)
     type = Column(String)
-    course_id = Column(Integer)
     laps = Column(Integer)
     sport = Column(String)
     sub_sport = Column(String)
-
-    device_serial_number = Column(BigInteger)
-
-    self_eval_feel = Column(String)
-    self_eval_effort = Column(String)
-
     training_load = Column(Float)
     training_effect = Column(Float)
     anaerobic_training_effect = Column(Float)
@@ -510,7 +502,7 @@ class ActivitiesBestEffort(ActivitiesDb.Base, idbutils.DbObject):
     activity_id = Column(String, ForeignKey('activities.activity_id'), primary_key=True)
     start_time = Column(DateTime)
     sport = Column(Enum(fitfile.fields.Sport))
-    distance = Column(Float)
+    distance = Column(String)
     time = Column(Time, nullable=False, default=datetime.time.min)
     personal_record = Column(Boolean)
 
@@ -522,6 +514,30 @@ class ActivitiesBestEffort(ActivitiesDb.Base, idbutils.DbObject):
     @classmethod
     def get_activity(cls, db, activity_id):
         """Return all activity best effort records for a given activity_id."""
+        with db.managed_session() as session:
+            return cls.s_get_activity(session, activity_id)
+
+
+class ActivitiesCourses(ActivitiesDb.Base, idbutils.DbObject):
+    """Class represents a database table that maps activities to course ids."""
+
+    __tablename__ = 'activities_courses'
+    __get_col_name__ = "activity_id"
+
+    db = ActivitiesDb
+    table_version = 2
+
+    activity_id = Column(String, primary_key=True)
+    course_id = Column(Integer)
+
+    @classmethod
+    def s_get_activity(cls, session, activity_id):
+        """Return all activity devices records for a given activity_id."""
+        return session.query(cls).filter(cls.activity_id == activity_id).all()
+
+    @classmethod
+    def get_activity(cls, db, activity_id):
+        """Return all activity devices records for a given activity_id."""
         with db.managed_session() as session:
             return cls.s_get_activity(session, activity_id)
 
@@ -539,6 +555,31 @@ class ActivitiesDevices(ActivitiesDb.Base, idbutils.DbObject):
     device_serial_number = Column(BigInteger)
 
     __table_args__ = (PrimaryKeyConstraint("activity_id", "device_serial_number"),)
+
+    @classmethod
+    def s_get_activity(cls, session, activity_id):
+        """Return all activity devices records for a given activity_id."""
+        return session.query(cls).filter(cls.activity_id == activity_id).all()
+
+    @classmethod
+    def get_activity(cls, db, activity_id):
+        """Return all activity devices records for a given activity_id."""
+        with db.managed_session() as session:
+            return cls.s_get_activity(session, activity_id)
+
+
+class ActivitiesEvaluations(ActivitiesDb.Base, idbutils.DbObject):
+    """Class represents a database table that that stores self evaluations for activities."""
+
+    __tablename__ = 'activities_evaluations'
+    __get_col_name__ = "activity_id"
+
+    db = ActivitiesDb
+    table_version = 1
+
+    activity_id = Column(String, ForeignKey('activities.activity_id'), primary_key=True)
+    self_eval_feel = Column(String)
+    self_eval_effort = Column(String)
 
     @classmethod
     def s_get_activity(cls, session, activity_id):
@@ -598,7 +639,7 @@ class SportActivities(idbutils.DbObject):
         """Create a database view for a activity type."""
         view_name = cls._get_default_view_name()
         logger.debug("Creating activity view %s if needed.", view_name)
-        cls.create_join_view(db, view_name, selectable, Activities, order_by=Activities.start_time.desc())
+        cls.create_join_view(db, view_name, selectable, [Activities], order_by=Activities.start_time.desc())
 
     @classmethod
     def _create_sport_view(cls, db, selectable, sport):
@@ -606,12 +647,12 @@ class SportActivities(idbutils.DbObject):
         # SQL equality is `=` and string literals use single quotes. sqlite
         # tolerates `==` and double-quoted literals; postgres does not.
         filter = literal_column(f"{Activities.sport} = '{sport}'")
-        cls.create_join_view(db, f'{sport}_activities_view', selectable, Activities, filter, Activities.start_time.desc())
+        cls.create_join_view(db, f'{sport}_activities_view', selectable, [Activities], filter, Activities.start_time.desc())
 
     @classmethod
     def _create_course_view(cls, db, selectable, course_id):
-        filter = literal_column(f'{Activities.course_id} = {course_id}')
-        cls.create_join_view(db, f'course_{course_id}_view', selectable, Activities, filter, Activities.start_time.desc())
+        filter = literal_column(f'{ActivitiesCourses.course_id} = {course_id}')
+        cls.create_join_view(db, f'course_{course_id}_view', selectable, [Activities, ActivitiesCourses], filter, Activities.start_time.desc())
 
     @classmethod
     def create_view(cls, db):
@@ -669,7 +710,7 @@ class StepsActivities(ActivitiesDb.Base, SportActivities):
         if include_type:
             selectable.append(Activities.type.label('type'))
         if include_course:
-            selectable.append(Activities.course_id.label('course_id'))
+            selectable.append(ActivitiesCourses.course_id.label('course_id'))
         selectable += [
             Activities.start_time.label('start_time'),
             Activities.stop_time.label('stop_time'),

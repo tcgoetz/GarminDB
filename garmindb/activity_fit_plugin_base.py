@@ -15,6 +15,7 @@ logger = logging.getLogger(__file__)
 class ActivityFitPluginBase(PluginBase):
     """Base class for GarminDb activity FIT file plugins that handle data based on ids of applications or developer fields, sport or sub-sport ids, etc."""
 
+    __plugin_interface_version__ = 1
     _type = 'ActivityFit'
 
     @classmethod
@@ -36,6 +37,10 @@ class ActivityFitPluginBase(PluginBase):
     def init_activity(cls, act_db_class, activities_table):
         """Initialize an instance of the plugin as an activity FIT file plugin."""
         logger.info("Initializing tables for activity plugin %s with activities table %s", cls.__name__, activities_table)
+        plugin_interface_implementation_version = getattr(cls, '__plugin_interface_implementation_version__', 0)
+        if plugin_interface_implementation_version != cls.__plugin_interface_version__:
+            raise Exception(f'Error loading plugin {cls.__name__} version mismatch: '
+                            + f'{cls.__plugin_interface_version__} vs {plugin_interface_implementation_version} - update plugin!')
         if hasattr(cls, '_records_tablename') and 'record' not in cls._tables:
             cls._tables['record'] = activities_table.create(cls._records_tablename, act_db_class, cls._records_version, cls._records_pk, cls._records_cols)
         if hasattr(cls, '_laps_tablename') and 'lap' not in cls._tables:

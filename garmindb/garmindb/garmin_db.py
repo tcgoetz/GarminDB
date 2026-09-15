@@ -122,7 +122,7 @@ class DeviceInfo(GarminDb.Base, idbutils.DbObject):
             Device.hardware_version.label('hardware_version'),
             cls.battery_status.label('battery_status')
         ]
-        cls.create_join_view(db, cls._get_default_view_name(), cols, Device, order_by=cls.timestamp.desc())
+        cls.create_join_view(db, cls._get_default_view_name(), cols, [Device], order_by=cls.timestamp.desc())
 
 
 class File(GarminDb.Base, idbutils.DbObject):
