@@ -130,11 +130,17 @@ class ActivityFitFileProcessor(FitFileProcessor):
                 'position_long'                     : message_fields.get('position_long'),
                 'distance'                          : message_fields.get('distance'),
                 'cadence'                           : message_fields.get('cadence'),
+                'fractional_cadence'                : message_fields.get('fractional_cadence'),
                 'hr'                                : message_fields.get('heart_rate'),
                 'rr'                                : message_fields.get('respiration_rate'),
                 'altitude'                          : message_fields.get('altitude'),
                 'speed'                             : message_fields.get('speed'),
                 'temperature'                       : message_fields.get('temperature'),
+                'power'                             : message_fields.get('power'),
+                'vertical_oscillation'              : message_fields.get('avg_vertical_oscillation'),
+                'vertical_ratio'                    : message_fields.get('vertical_ratio'),
+                'step_length'                       : message_fields.get('step_length'),
+                'ground_contact_time'               : message_fields.get('stance_time'),
             }
             record.update(plugin_record)
             root_logger.debug("_write_record_entry activity_id %s, record %s doesn't exist", activity_id, record_num)
@@ -181,6 +187,10 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'max_temperature'                   : message_fields.get('max_temperature'),
             'min_temperature'                   : message_fields.get('min_temperature'),
             'avg_temperature'                   : message_fields.get('avg_temperature'),
+            'avg_power'                         : message_fields.get('avg_power'),
+            'max_power'                         : message_fields.get('max_power'),
+            'normalized_power'                  : message_fields.get('normalized_power'),
+            'lap_trigger'                       : message_fields.get('lap_trigger'),
         }
         lap.update(plugin_lap)
         root_logger.debug("writing lap %r for %s", lap, fit_file.filename)
@@ -428,6 +438,9 @@ class ActivityFitFileProcessor(FitFileProcessor):
             'max_temperature'                   : message_fields.get('max_temperature'),
             'min_temperature'                   : message_fields.get('min_temperature'),
             'avg_temperature'                   : message_fields.get('avg_temperature'),
+            'avg_power'                         : message_fields.get('avg_power'),
+            'max_power'                         : message_fields.get('max_power'),
+            'normalized_power'                  : message_fields.get('normalized_power'),
             'training_effect'                   : message_fields.get('total_training_effect'),
             'anaerobic_training_effect'         : message_fields.get('total_anaerobic_training_effect')
         }

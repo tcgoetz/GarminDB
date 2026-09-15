@@ -39,6 +39,10 @@ class ActivitiesCommon(idbutils.DbObject):
     calories = Column(Integer)
     avg_cadence = Column(Integer)
     max_cadence = Column(Integer)
+    # watts
+    avg_power = Column(Integer)
+    max_power = Column(Integer)
+    normalized_power = Column(Integer)
     # kmph or mph
     avg_speed = Column(Float)
     max_speed = Column(Float)
@@ -98,7 +102,7 @@ class Activities(ActivitiesDb.Base, ActivitiesCommon):
     __tablename__ = 'activities'
 
     db = ActivitiesDb
-    table_version = 6
+    table_version = 7
 
     activity_id = Column(String, primary_key=True)
     name = Column(String)
@@ -188,10 +192,12 @@ class ActivityLaps(ActivitiesDb.Base, ActivitiesCommon):
     __tablename__ = 'activity_laps'
 
     db = ActivitiesDb
-    table_version = 4
+    table_version = 5
 
     activity_id = Column(String, ForeignKey('activities.activity_id'))
     lap = Column(Integer)
+    # how the lap was triggered (manual, distance, time, ...)
+    lap_trigger = Column(Enum(fitfile.enum_fields.LapTrigger))
 
     __table_args__ = (PrimaryKeyConstraint("activity_id", "lap"),)
 
@@ -236,7 +242,7 @@ class ActivitySplits(ActivitiesDb.Base, ActivitiesCommon):
     __tablename__ = 'activity_splits'
 
     db = ActivitiesDb
-    table_version = 1
+    table_version = 2
 
     activity_id = Column(String, ForeignKey('activities.activity_id'))
     split = Column(Integer)
@@ -277,7 +283,7 @@ class ActivityRecords(ActivitiesDb.Base, idbutils.DbObject):
     __tablename__ = 'activity_records'
 
     db = ActivitiesDb
-    table_version = 3
+    table_version = 4
 
     activity_id = Column(String, ForeignKey('activities.activity_id'))
     record = Column(Integer)
@@ -286,12 +292,18 @@ class ActivityRecords(ActivitiesDb.Base, idbutils.DbObject):
     position_long = Column(Float)   # degrees
     distance = Column(Float)
     cadence = Column(Integer)
+    fractional_cadence = Column(Float)  # rpm, add to cadence for the true instantaneous cadence
     altitude = Column(Float)
     hr = Column(Integer)            # beats per minute
     rr = Column(Float)              # breaths per minute
     altitude = Column(Float)        # feet or meters
     speed = Column(Float)           # kmph or mph
     temperature = Column(Float)     # C or F
+    power = Column(Integer)                 # watts
+    vertical_oscillation = Column(Float)    # m or ft
+    vertical_ratio = Column(Float)          # %
+    step_length = Column(Float)             # m or ft
+    ground_contact_time = Column(Time)      # ms, represented as a time of day
 
     __table_args__ = (PrimaryKeyConstraint("activity_id", "record"),)
 
