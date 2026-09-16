@@ -694,6 +694,8 @@ class StepsActivities(ActivitiesDb.Base, SportActivities):
     avg_ground_contact_time = Column(Time, nullable=False, default=datetime.time.min)
     avg_stance_time_percent = Column(Float)
     vo2_max = Column(Float)
+    lactate_threshold_heart_rate = Column(Float)
+    lactate_threshold_speed = Column(Float)
 
     @classmethod
     def _view_selectable(cls, include_sport=False, include_subsport=False, include_type=False, include_course=False, include_rr=False, include_running_dynamics=False):
@@ -758,9 +760,9 @@ class StepsActivities(ActivitiesDb.Base, SportActivities):
 
     @classmethod
     def create_view(cls, db):
-        cls._create_activity_view(db, cls._view_selectable(include_sport=True, include_subsport=True, include_type=True, include_course=True))
+        cls._create_activity_view(db, cls._view_selectable(include_sport=True, include_subsport=True, include_type=True))
         cls._create_sport_view(db, cls._view_selectable(), "walking")
-        cls._create_sport_view(db, cls._view_selectable(include_course=True, include_subsport=True, include_rr=True, include_running_dynamics=True), "running")
+        cls._create_sport_view(db, cls._view_selectable(include_subsport=True, include_rr=True, include_running_dynamics=True), "running")
         cls._create_sport_view(db, cls._view_selectable(), "hiking")
 
     @classmethod

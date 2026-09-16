@@ -38,7 +38,7 @@ class FitData():
         self.measurement_system = measurement_system
         self.debug = debug
         self.fit_types = fit_types
-        self.file_names = FileProcessor.dir_to_files(input_dir, fitfile.file.name_regex, latest, recursive)
+        self.file_names = sorted(FileProcessor.dir_to_files(input_dir, fitfile.file.name_regex, latest, recursive))
 
     def file_count(self):
         """Return the number of files that will be processed."""

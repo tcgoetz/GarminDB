@@ -262,7 +262,7 @@ class GarminProfile(JsonFileProcessor):
         logger.info("Processing profile data")
         super().__init__(file_regex, input_dir=input_dir, latest=False, debug=debug)
         self.garmin_db = GarminDb(db_params)
-        self.conversions = {'calendarDate': self._parse_date}
+        self.conversions = {}
 
     def _process_json(self, json_data):
         attributes = self._process_attributes(json_data)
@@ -288,6 +288,7 @@ class GarminUserSettings(GarminProfile):
         """
         logger.info("Processing user settings data")
         super().__init__(db_params, r'^user-settings\.json', input_dir=input_dir, debug=debug)
+        self.conversions = {'firstbeatRunningLtTimestamp': self._parse_timestamp}
 
     def _process_attributes(self, json_data):
         user_data = json_data['userData']

@@ -195,7 +195,8 @@ class FitFileProcessor():
     def _write_training_file_entry(self, fit_file, message_fields):
         root_logger.debug("Training file entry: %r", message_fields)
 
-    def __write_attribute(self, timestamp, attribute_name, attribute_value):
+    def _write_attribute_db(self, timestamp, attribute_name, attribute_value):
+        root_logger.info("Writing attribute to garmin db: %r -> %r at %r", attribute_value, attribute_name, timestamp)
         Attributes.s_set_newer(self.garmin_db_session, attribute_name, attribute_value, timestamp)
 
     def _write_attribute(self, timestamp, message_fields, attribute_name, db_attribute_name=None):
@@ -203,8 +204,7 @@ class FitFileProcessor():
         if attribute is not None:
             if db_attribute_name is None:
                 db_attribute_name = attribute_name
-            root_logger.info("Writing attribute: %r -> %r at %r", attribute, db_attribute_name, timestamp)
-            self.__write_attribute(timestamp, attribute_name, attribute)
+            self._write_attribute_db(timestamp, attribute_name, attribute)
 
     def _write_attributes(self, timestamp, message_fields, attribute_names):
         for attribute_name in attribute_names:

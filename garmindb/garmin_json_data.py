@@ -111,14 +111,14 @@ class GarminJsonSummaryData(GarminJsonActivityData):
         avg_step_length = self._get_field_obj(activity_summary, 'avgStrideLength', fitfile.Distance.from_meters)
         run = {
             'activity_id'               : activity_id,
-            'steps'                     : self._get_field(activity_summary, 'steps', float),
-            'avg_steps_per_min'         : self._get_field(activity_summary, 'averageRunningCadenceInStepsPerMinute', float),
-            'max_steps_per_min'         : self._get_field(activity_summary, 'maxRunningCadenceInStepsPerMinute', float),
+            'steps'                     : self._get_field(activity_summary, 'steps', int),
+            'avg_steps_per_min'         : self._get_field(activity_summary, 'averageRunningCadenceInStepsPerMinute', float, 1),
+            'max_steps_per_min'         : self._get_field(activity_summary, 'maxRunningCadenceInStepsPerMinute', float, 1),
             'avg_step_length'           : avg_step_length.meters_or_feet(self.measurement_system) if avg_step_length else None,
             'avg_gct_balance'           : self._get_field(activity_summary, 'avgGroundContactBalance', float),
             'avg_vertical_oscillation'  : avg_vertical_oscillation.meters_or_feet(self.measurement_system) if avg_vertical_oscillation else None,
             'avg_ground_contact_time'   : fitfile.conversions.ms_to_dt_time(self._get_field(activity_summary, 'avgGroundContactTime', float)),
-            'vo2_max'                   : self._get_field(activity_summary, 'vO2MaxValue', float),
+            'vo2_max'                   : self._get_field(activity_summary, 'vO2MaxValue', float, 1),
         }
         StepsActivities.s_insert_or_update(self.garmin_act_db_session, run, ignore_none=True)
 
@@ -156,14 +156,14 @@ class GarminJsonSummaryData(GarminJsonActivityData):
     def _process_paddling(self, sub_sport, activity_id, activity_summary):
         activity = {
             'activity_id'               : activity_id,
-            'avg_cadence'               : self._get_field(activity_summary, 'avgStrokeCadence', float),
-            'max_cadence'               : self._get_field(activity_summary, 'maxStrokeCadence', float),
+            'avg_cadence'               : self._get_field(activity_summary, 'avgStrokeCadence', float, 1),
+            'max_cadence'               : self._get_field(activity_summary, 'maxStrokeCadence', float, 1),
         }
         Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
         avg_stroke_distance = fitfile.Distance.from_meters(self._get_field(activity_summary, 'avgStrokeDistance', float))
         paddle = {
             'activity_id'               : activity_id,
-            'strokes'                   : self._get_field(activity_summary, 'strokes', float),
+            'strokes'                   : self._get_field(activity_summary, 'strokes', int),
             'avg_stroke_distance'       : avg_stroke_distance.meters_or_feet(self.measurement_system),
         }
         PaddleActivities.s_insert_or_update(self.garmin_act_db_session, paddle, ignore_none=True)
@@ -171,14 +171,14 @@ class GarminJsonSummaryData(GarminJsonActivityData):
     def _process_cycling(self, sub_sport, activity_id, activity_summary):
         activity = {
             'activity_id'               : activity_id,
-            'avg_cadence'               : self._get_field(activity_summary, 'averageBikingCadenceInRevPerMinute', float),
-            'max_cadence'               : self._get_field(activity_summary, 'maxBikingCadenceInRevPerMinute', float),
+            'avg_cadence'               : self._get_field(activity_summary, 'averageBikingCadenceInRevPerMinute', float, 1),
+            'max_cadence'               : self._get_field(activity_summary, 'maxBikingCadenceInRevPerMinute', float, 1),
         }
         Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
         ride = {
             'activity_id'               : activity_id,
-            'strokes'                   : self._get_field(activity_summary, 'strokes', float),
-            'vo2_max'                   : self._get_field(activity_summary, 'vO2MaxValue', float),
+            'strokes'                   : self._get_field(activity_summary, 'strokes', int),
+            'vo2_max'                   : self._get_field(activity_summary, 'vO2MaxValue', float, 1),
         }
         CycleActivities.s_insert_or_update(self.garmin_act_db_session, ride, ignore_none=True)
 

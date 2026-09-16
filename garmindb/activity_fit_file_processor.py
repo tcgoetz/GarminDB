@@ -74,15 +74,55 @@ class ActivityFitFileProcessor(FitFileProcessor):
     def _plugin_dispatch(self, handler_name, *args, **kwargs):
         return super()._plugin_dispatch(self.activity_fit_file_plugins, handler_name, *args, **kwargs)
 
-    def __write_attribute(self, timestamp, attribute_name, attribute_value):
+    def _write_attribute_db(self, timestamp, attribute_name, attribute_value):
+        root_logger.info("Writing attribute to activity db: %r -> %r at %r", attribute_value, attribute_name, timestamp)
         Attributes.s_set_newer(self.garmin_act_db_session, attribute_name, attribute_value, timestamp)
 
     def _write_activity_entry(self, fit_file, message_fields):
         self.activity_session_count = message_fields.get('num_sessions'),
         self.activity_total_time = message_fields.get('total_timer_time')
 
+    def _write_steps_activity_metrics_entry(self, fit_file, sport, message_fields):
+        lactate_threshold_heart_rate = message_fields.get('lactate_threshold_heart_rate')
+        lactate_threshold_speed = message_fields.get('lactate_threshold_speed')
+        vo2_max = message_fields.get('activity_vo2_max')
+        activity_metrics = {
+            'activity_id'                   : self.activity_id,
+            'vo2_max'                       : vo2_max,
+            'lactate_threshold_heart_rate'  : lactate_threshold_heart_rate,
+            'lactate_threshold_speed'       : lactate_threshold_speed,
+        }
+        root_logger.info("_write_steps_activity_metrics_entry: %r", activity_metrics)
+        StepsActivities.s_insert_or_update(self.garmin_act_db_session, activity_metrics, ignore_none=True, ignore_zero=True)
+        if vo2_max:
+            self._write_attribute_db(fit_file.time_created_local, f'{sport.name} vo2max', vo2_max)
+        attribute_names = ['lactate_threshold_heart_rate', 'lactate_threshold_speed']
+        self._write_attributes(fit_file.time_created_local, message_fields, attribute_names)
+
+    def _write_running_activity_metrics_entry(self, fit_file, sport, message_fields):
+        return self._write_steps_activity_metrics_entry(fit_file, sport, message_fields)
+
+    def _write_walking_activity_metrics_entry(self, fit_file, sport, message_fields):
+        return self._write_steps_activity_metrics_entry(fit_file, sport, message_fields)
+
+    def _write_activity_metrics_entry(self, fit_file, message_fields):
+        sport = message_fields.get('sport')
+        if sport is not None:
+            root_logger.info("writing %s activity_metrics message %r for %s", sport.name, message_fields, fit_file.filename)
+            function_name = '_write_' + sport.name + '_activity_metrics_entry'
+            try:
+                function = getattr(self, function_name, None)
+                if function is not None:
+                    function(fit_file, sport, message_fields)
+                else:
+                    root_logger.warning("No activity_metrics sport handler for type %s from %s: %s", sport, fit_file.filename, message_fields)
+            except Exception as e:
+                root_logger.error("Exception in %s from %s: %s", function_name, fit_file.filename, e)
+        else:
+            root_logger.info("no sport for activity_metrics message %r for %s", message_fields, fit_file.filename)
+
     def _write_best_effort_entry(self, fit_file, message_fields):
-        root_logger.info("writing best_effort message %r for %s", message_fields, fit_file.filename)
+        root_logger.debug("writing best_effort message %r for %s", message_fields, fit_file.filename)
         start_time = fit_file.utc_datetime_to_local(message_fields.start_time)
         distance = message_fields.get('best_effort_distance')
         time = message_fields.get('time')
@@ -100,7 +140,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
             root_logger.info("writing best_effort %r for %s", best_effort, fit_file.filename)
             ActivitiesBestEffort.s_insert_or_update(self.garmin_act_db_session, best_effort, ignore_none=True, ignore_zero=True)
             if personal_record:
-                self.__write_attribute(start_time, f'PR {distance} {sport.name}', str(time))
+                self._write_attribute_db(start_time, f'PR {distance} {sport.name}', str(time))
 
     def _write_device_info_entry(self, fit_file, message_fields):
         device_serial_number = super()._write_device_info_entry(fit_file, message_fields)
@@ -583,8 +623,6 @@ class ActivityFitFileProcessor(FitFileProcessor):
 
     def _write_user_metrics_entry(self, fit_file, message_fields):
         root_logger.info("user metrics message: %r", message_fields)
-        timestamp = fit_file.time_created_local
-        attribute_names = ['activity_class', 'lactate_threshold_heart_rate', 'lactate_threshold_heart_rate', 'lactate_threshold_power', 'lactate_threshold_speed', 'height',
-                           'weight', 'max_heart_rate', 'resting_heart_rate']
-        self._write_attributes(timestamp, message_fields, attribute_names)
-        self._write_measurement_sytem_attributes(timestamp, message_fields)
+        attribute_names = ['activity_class', 'height', 'weight', 'max_heart_rate', 'resting_heart_rate']
+        self._write_attributes(fit_file.time_created_local, message_fields, attribute_names)
+        self._write_measurement_sytem_attributes(fit_file.time_created_local, message_fields)
