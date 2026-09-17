@@ -25,7 +25,9 @@ root_logger = logging.getLogger()
 class GarminWeightData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect weight data into a database."""
 
-    def __init__(self, db_params, input_dir, latest, measurement_system, debug):
+    _progress_label = 'Processing weight JSON files'
+
+    def __init__(self, db_params, input_dir, latest, measurement_system, debug, simple_output=False):
         """
         Return an instance of GarminWeightData.
 
@@ -36,10 +38,11 @@ class GarminWeightData(JsonFileProcessor):
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
         logger.info("Processing weight data")
-        super().__init__(r'weight_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
+        super().__init__(r'weight_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug, simple_output=simple_output)
         self.measurement_system = measurement_system
         self.garmin_db = GarminDb(db_params)
         self.conversions = {'startDate': self._parse_date}
@@ -60,7 +63,9 @@ class GarminWeightData(JsonFileProcessor):
 class GarminMonitoringFitData(FitData):
     """Class for importing monitoring FIT files into a database."""
 
-    def __init__(self, input_dir, latest, measurement_system, debug):
+    _progress_label = 'Processing monitoring FIT files'
+
+    def __init__(self, input_dir, latest, measurement_system, debug, simple_output=False):
         """
         Return an instance of GarminMonitoringFitData.
 
@@ -70,15 +75,18 @@ class GarminMonitoringFitData(FitData):
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
-        super().__init__(input_dir, debug, latest, True, [fitfile.FileType.monitoring_b], measurement_system)
+        super().__init__(input_dir, debug, latest, True, [fitfile.FileType.monitoring_b], measurement_system, simple_output=simple_output)
 
 
 class GarminSettingsFitData(FitData):
     """Class for importing settings FIT files into a database."""
 
-    def __init__(self, input_dir, debug):
+    _progress_label = 'Processing settings FIT files'
+
+    def __init__(self, input_dir, debug, simple_output=False):
         """
         Return an instance of GarminSettingsFitData.
 
@@ -86,9 +94,10 @@ class GarminSettingsFitData(FitData):
         ----------
         input_dir (string): directory (full path) to check for settings data files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
-        super().__init__(input_dir, debug, fit_types=[fitfile.FileType.settings])
+        super().__init__(input_dir, debug, fit_types=[fitfile.FileType.settings], simple_output=simple_output)
 
 
 class SleepActivityLevels(enum.Enum):
@@ -113,7 +122,9 @@ class RemSleepActivityLevels(enum.Enum):
 class GarminConnectSleepData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect sleep data into a database."""
 
-    def __init__(self, db_params, input_dir, latest, debug):
+    _progress_label = 'Processing sleep JSON files'
+
+    def __init__(self, db_params, input_dir, latest, debug, simple_output=False):
         """
         Return an instance of GarminConnectSleepData.
 
@@ -123,10 +134,11 @@ class GarminConnectSleepData(JsonFileProcessor):
         input_dir (string): directory (full path) to check for sleep data files
         latest (Boolean): check for latest files only
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
         logger.info("Processing sleep data")
-        super().__init__(r'sleep_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
+        super().__init__(r'sleep_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug, simple_output=simple_output)
         self.garmin_db = GarminDb(db_params)
         self.sleep_db = SleepDb(db_params)
         self.conversions = {
@@ -212,7 +224,9 @@ class GarminConnectSleepData(JsonFileProcessor):
 class GarminRhrData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect resting heart rate data into a database."""
 
-    def __init__(self, db_params, input_dir, latest, debug):
+    _progress_label = 'Processing resting heart rate JSON files'
+
+    def __init__(self, db_params, input_dir, latest, debug, simple_output=False):
         """
         Return an instance of GarminRhrData.
 
@@ -222,10 +236,11 @@ class GarminRhrData(JsonFileProcessor):
         input_dir (string): directory (full path) to check for resting heart rate data files
         latest (Boolean): check for latest files only
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
         logger.info("Processing rhr data")
-        super().__init__(r'rhr_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
+        super().__init__(r'rhr_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug, simple_output=simple_output)
         self.garmin_db = GarminDb(db_params)
         self.conversions = {'statisticsStartDate': self._parse_date}
 
@@ -247,7 +262,7 @@ class GarminRhrData(JsonFileProcessor):
 class GarminProfile(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect profile data into a database."""
 
-    def __init__(self, db_params, file_regex, input_dir, debug):
+    def __init__(self, db_params, file_regex, input_dir, debug, simple_output=False):
         """
         Return an instance of GarminProfile.
 
@@ -257,10 +272,11 @@ class GarminProfile(JsonFileProcessor):
         file_regex (string): matches files to be processed
         input_dir (string): directory (full path) to check for profile data files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
         logger.info("Processing profile data")
-        super().__init__(file_regex, input_dir=input_dir, latest=False, debug=debug)
+        super().__init__(file_regex, input_dir=input_dir, latest=False, debug=debug, simple_output=simple_output)
         self.garmin_db = GarminDb(db_params)
         self.conversions = {}
 
@@ -275,7 +291,9 @@ class GarminProfile(JsonFileProcessor):
 class GarminUserSettings(GarminProfile):
     """Class for importing JSON formatted Garmin Connect user settings data into a database."""
 
-    def __init__(self, db_params, input_dir, debug):
+    _progress_label = 'Processing user settings JSON files'
+
+    def __init__(self, db_params, input_dir, debug, simple_output=False):
         """
         Return an instance of GarminProfile.
 
@@ -284,10 +302,11 @@ class GarminUserSettings(GarminProfile):
         db_params (object): configuration data for accessing the database
         input_dir (string): directory (full path) to check for profile data files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
         logger.info("Processing user settings data")
-        super().__init__(db_params, r'^user-settings\.json', input_dir=input_dir, debug=debug)
+        super().__init__(db_params, r'^user-settings\.json', input_dir=input_dir, debug=debug, simple_output=simple_output)
         self.conversions = {'firstbeatRunningLtTimestamp': self._parse_timestamp}
 
     def _process_attributes(self, json_data):
@@ -316,7 +335,9 @@ class GarminUserSettings(GarminProfile):
 class GarminPersonalInformation(GarminProfile):
     """Class for importing JSON formatted Garmin Connect user personal information data into a database."""
 
-    def __init__(self, db_params, input_dir, debug):
+    _progress_label = 'Processing personal information JSON files'
+
+    def __init__(self, db_params, input_dir, debug, simple_output=False):
         """
         Return an instance of GarminProfile.
 
@@ -325,10 +346,11 @@ class GarminPersonalInformation(GarminProfile):
         db_params (object): configuration data for accessing the database
         input_dir (string): directory (full path) to check for profile data files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
         logger.info("Processing user personal information data")
-        super().__init__(db_params, r'^personal-information\.json', input_dir=input_dir, debug=debug)
+        super().__init__(db_params, r'^personal-information\.json', input_dir=input_dir, debug=debug, simple_output=simple_output)
 
     def _process_attributes(self, json_data):
         user_info = json_data['userInfo']
@@ -342,7 +364,9 @@ class GarminPersonalInformation(GarminProfile):
 class GarminSocialProfile(GarminProfile):
     """Class for importing JSON formatted Garmin Connect social profile data into a database."""
 
-    def __init__(self, db_params, input_dir, debug):
+    _progress_label = 'Processing social profile JSON files'
+
+    def __init__(self, db_params, input_dir, debug, simple_output=False):
         """
         Return an instance of GarminProfile.
 
@@ -351,10 +375,11 @@ class GarminSocialProfile(GarminProfile):
         db_params (object): configuration data for accessing the database
         input_dir (string): directory (full path) to check for profile data files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
         logger.info("Processing user settings data")
-        super().__init__(db_params, r'^social-profile\.json', input_dir=input_dir, debug=debug)
+        super().__init__(db_params, r'^social-profile\.json', input_dir=input_dir, debug=debug, simple_output=simple_output)
 
     def _process_attributes(self, json_data):
         return {
@@ -367,7 +392,9 @@ class GarminSocialProfile(GarminProfile):
 class GarminSummaryData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect daily summary data into a database."""
 
-    def __init__(self, db_params, input_dir, latest, measurement_system, debug):
+    _progress_label = 'Processing daily summary JSON files'
+
+    def __init__(self, db_params, input_dir, latest, measurement_system, debug, simple_output=False):
         """
         Return an instance of GarminSummaryData.
 
@@ -378,10 +405,11 @@ class GarminSummaryData(JsonFileProcessor):
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
         logger.info("Processing daily summary data")
-        super().__init__(r'daily_summary_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug, recursive=True)
+        super().__init__(r'daily_summary_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug, recursive=True, simple_output=simple_output)
         self.input_dir = input_dir
         self.measurement_system = measurement_system
         self.garmin_db = GarminDb(db_params)
@@ -433,7 +461,9 @@ class GarminSummaryData(JsonFileProcessor):
 class GarminHydrationData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect daily summary data into a database."""
 
-    def __init__(self, db_params, input_dir, latest, measurement_system, debug):
+    _progress_label = 'Processing hydration JSON files'
+
+    def __init__(self, db_params, input_dir, latest, measurement_system, debug, simple_output=False):
         """
         Return an instance of GarminHydrationData.
 
@@ -444,10 +474,11 @@ class GarminHydrationData(JsonFileProcessor):
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
         logger.debug("Processing daily hydration data")
-        super().__init__(r'hydration_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug, recursive=True)
+        super().__init__(r'hydration_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug, recursive=True, simple_output=simple_output)
         self.input_dir = input_dir
         self.measurement_system = measurement_system
         self.garmin_db = GarminDb(db_params)
@@ -474,7 +505,9 @@ class GarminHydrationData(JsonFileProcessor):
 class GarminConnectHrvData(JsonFileProcessor):
     """Class for importing JSON formatted Garmin Connect heart rate variability (HRV) data into a database."""
 
-    def __init__(self, db_params, input_dir, latest, debug):
+    _progress_label = 'Processing HRV JSON files'
+
+    def __init__(self, db_params, input_dir, latest, debug, simple_output=False):
         """
         Return an instance of GarminConnectHrvData.
 
@@ -484,9 +517,10 @@ class GarminConnectHrvData(JsonFileProcessor):
         input_dir (string): directory (full path) to check for HRV data files
         latest (Boolean): check for latest files only
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
-        super().__init__(r'hrv_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug)
+        super().__init__(r'hrv_\d{4}-\d{2}-\d{2}\.json', input_dir=input_dir, latest=latest, debug=debug, simple_output=simple_output)
         self.hrv_db = HrvDb(db_params)
         self.conversions = {'calendarDate': self._parse_date}
 

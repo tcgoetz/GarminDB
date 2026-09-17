@@ -23,7 +23,9 @@ root_logger = logging.getLogger()
 class GarminSleepFitData(FitData):
     """Class for importing sleep FIT files into a database."""
 
-    def __init__(self, input_dir, latest, measurement_system, debug):
+    _progress_label = 'Processing sleep FIT files'
+
+    def __init__(self, input_dir, latest, measurement_system, debug, simple_output=False):
         """
         Return an instance of GarminSleepFitData.
 
@@ -33,9 +35,10 @@ class GarminSleepFitData(FitData):
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
-        super().__init__(input_dir, debug, latest, True, [fitfile.FileType.sleep], measurement_system)
+        super().__init__(input_dir, debug, latest, True, [fitfile.FileType.sleep], measurement_system, simple_output=simple_output)
 
 
 class SleepFitFileProcessor(FitFileProcessor):

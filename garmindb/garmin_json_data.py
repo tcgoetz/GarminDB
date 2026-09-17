@@ -24,7 +24,7 @@ root_logger = logging.getLogger()
 class GarminJsonActivityData(JsonFileProcessor):
     """Base class for importing Garmin activity data from JSON formatted Garmin Connect details downloads."""
 
-    def __init__(self, db_params, file_regex, input_dir, latest, measurement_system, debug):
+    def __init__(self, db_params, file_regex, input_dir, latest, measurement_system, debug, simple_output=False):
         """
         Return an instance of GarminJsonDetailsData.
 
@@ -35,9 +35,10 @@ class GarminJsonActivityData(JsonFileProcessor):
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
-        super().__init__(file_regex, input_dir=input_dir, latest=latest, debug=debug)
+        super().__init__(file_regex, input_dir=input_dir, latest=latest, debug=debug, simple_output=simple_output)
         self.measurement_system = measurement_system
         self.garmin_act_db = ActivitiesDb(db_params, self.debug - 1)
         self.conversions = {}
@@ -89,7 +90,9 @@ class GarminJsonActivityData(JsonFileProcessor):
 class GarminJsonSummaryData(GarminJsonActivityData):
     """Class for importing Garmin activity data from JSON formatted Garmin Connect summary downloads."""
 
-    def __init__(self, db_params, input_dir, latest, measurement_system, debug):
+    _progress_label = 'Processing activity summary JSON files'
+
+    def __init__(self, db_params, input_dir, latest, measurement_system, debug, simple_output=False):
         """
         Return an instance of GarminTcxData.
 
@@ -100,10 +103,11 @@ class GarminJsonSummaryData(GarminJsonActivityData):
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
         logger.info("Processing %s activities summary data from %s", 'latest' if latest else 'all', input_dir)
-        super().__init__(db_params, r'activity_\d*\.json', input_dir, latest, measurement_system, debug)
+        super().__init__(db_params, r'activity_\d*\.json', input_dir, latest, measurement_system, debug, simple_output=simple_output)
 
     def _process_steps_activity(self, activity_id, activity_summary):
         root_logger.debug("process_steps_activity for %s", activity_id)
@@ -211,7 +215,9 @@ class GarminJsonSummaryData(GarminJsonActivityData):
 class GarminJsonDetailsData(GarminJsonActivityData):
     """Class for importing Garmin activity data from JSON formatted Garmin Connect details downloads."""
 
-    def __init__(self, db_params, input_dir, latest, measurement_system, debug):
+    _progress_label = 'Processing activity detail JSON files'
+
+    def __init__(self, db_params, input_dir, latest, measurement_system, debug, simple_output=False):
         """
         Return an instance of GarminJsonDetailsData.
 
@@ -222,10 +228,11 @@ class GarminJsonDetailsData(GarminJsonActivityData):
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
         logger.info("Processing activities detail data")
-        super().__init__(db_params, r'activity_details_\d*\.json', input_dir, latest, measurement_system, debug)
+        super().__init__(db_params, r'activity_details_\d*\.json', input_dir, latest, measurement_system, debug, simple_output=simple_output)
 
     def _process_steps_activity(self, sub_sport, activity_id, json_data):
         summary_dto = json_data['summaryDTO']

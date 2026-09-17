@@ -8,11 +8,11 @@ import sys
 import logging
 import datetime
 import calendar
-from tqdm import tqdm
 
 import fitfile
 
 from garmindb import summarydb
+from .progress import progress
 from .garmindb import GarminDb, Attributes, Weight, Stress, RestingHeartRate, IntensityHR
 from .garmindb import MonitoringDb, Monitoring, MonitoringHeartRate, MonitoringIntensity, MonitoringClimb
 from .garmindb import SleepDb, Sleep
@@ -28,9 +28,10 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 class Analyze():
     """Object for analyzing health data from Garmin devices."""
 
-    def __init__(self, gc_config, debug):
+    def __init__(self, gc_config, debug, simple_output=False):
         """Return an instance of the Analyze class."""
         self.gc_config = gc_config
+        self.simple_output = simple_output
         self.garmin_db = GarminDb(self.gc_config.get_db_params(), debug)
         self.garmin_mon_db = MonitoringDb(self.gc_config.get_db_params(), debug)
         self.sleep_db = SleepDb(self.gc_config.get_db_params(), debug)
@@ -89,13 +90,13 @@ class Analyze():
         days_all = sorted(set(days_mon) | set(days_sleep))
 
         if days_all:
-            for day in tqdm(days_all, unit='days'):
+            for day in progress(days_all, f'Analyzing monitoring and sleep days for {year}', unit='days', simple_output=self.simple_output):
                 day_dt = datetime.datetime(year=year, month=1, day=1) + datetime.timedelta(day - 1)
                 self.__populate_hr_intensity(day_dt, garmin_mon_session, garmin_sum_session)
                 self.__calculate_day_stats(day_dt, garmin_session, garmin_mon_session, sleep_session, hrv_session, garmin_act_session, garmin_sum_session, sum_session)
         days = Activities.s_get_days(garmin_act_session, year)
         if len(days):
-            for day in tqdm(days, unit='days'):
+            for day in progress(days, f'Analyzing activity days for {year}', unit='days', simple_output=self.simple_output):
                 stats = Activities.get_daily_stats(garmin_act_session, datetime.datetime(year=year, month=1, day=1) + datetime.timedelta(day - 1))
                 DaysSummary.s_insert_or_update(garmin_sum_session, stats)
                 summarydb.DaysSummary.s_insert_or_update(sum_session, stats)
@@ -124,7 +125,7 @@ class Analyze():
         summarydb.WeeksSummary.s_insert_or_update(sum_session, stats)
 
     def __calculate_weeks(self, year, garmin_session, garmin_mon_session, sleep_session, hrv_session, garmin_act_session, garmin_sum_session, sum_session):
-        for week_starting_day in tqdm(range(1, 365, 7), unit='weeks'):
+        for week_starting_day in progress(range(1, 365, 7), f'Analyzing weeks for {year}', unit='weeks', simple_output=self.simple_output):
             day_dt = datetime.datetime(year=year, month=1, day=1) + datetime.timedelta(week_starting_day - 1)
             if day_dt < datetime.datetime.now():
                 self.__calculate_week_stats(day_dt, garmin_session, garmin_mon_session, sleep_session, hrv_session, garmin_act_session, garmin_sum_session, sum_session)
@@ -154,13 +155,13 @@ class Analyze():
     def __calculate_months(self, year, garmin_session, garmin_mon_session, sleep_session, hrv_session, garmin_act_session, garmin_sum_session, sum_session):
         months = Monitoring.s_get_months(garmin_mon_session, year)
         if len(months):
-            for month in tqdm(months, unit='months'):
+            for month in progress(months, f'Analyzing monitoring months for {year}', unit='months', simple_output=self.simple_output):
                 start_day_dt = datetime.datetime(year=year, month=month, day=1)
                 end_day_dt = datetime.datetime(year=year, month=month, day=calendar.monthrange(year, month)[1])
                 self.__calculate_monitoring_month_stats(start_day_dt, end_day_dt, garmin_session, garmin_mon_session, sleep_session, hrv_session, garmin_sum_session, sum_session)
         months = Activities.s_get_months(garmin_act_session, year)
         if len(months):
-            for month in tqdm(months, unit='months'):
+            for month in progress(months, f'Analyzing activity months for {year}', unit='months', simple_output=self.simple_output):
                 stats = Activities.get_monthly_stats(garmin_act_session, datetime.datetime(year=year, month=month, day=1),
                                                      datetime.datetime(year=year, month=month, day=calendar.monthrange(year, month)[1]))
                 MonthsSummary.s_insert_or_update(garmin_sum_session, stats)

@@ -85,10 +85,10 @@ class GarminDbMain():
         return (date, days)
 
 
-    def copy_data(self, overwrite, latest, stats):
+    def copy_data(self, overwrite, latest, stats, simple_output=False):
         """Copy data from a mounted Garmin USB device to files."""
         logger.info("___Copying Data___")
-        copy = Copy(self.gc_config)
+        copy = Copy(self.gc_config, simple_output=simple_output)
 
         settings_dir = self.gc_config.get_fit_files_dir()
         root_logger.info("Copying settings to %s", settings_dir)
@@ -110,11 +110,11 @@ class GarminDbMain():
             copy.copy_sleep(monitoring_dir, latest)
 
 
-    def download_data(self, overwrite, latest, stats):
+    def download_data(self, overwrite, latest, stats, simple_output=False):
         """Download selected activity types from Garmin Connect and save the data in files. Overwrite previously downloaded data if indicated."""
         logger.info("___Downloading %s Data___", 'Latest' if latest else 'All')
 
-        download = Download(self.gc_config)
+        download = Download(self.gc_config, simple_output=simple_output)
         if not download.login():
             logger.error("Failed to login!")
             sys.exit()
@@ -172,25 +172,25 @@ class GarminDbMain():
                 root_logger.info("Saved hrv files for %s (%d) to %s for processing", date, days, hrv_dir)
 
 
-    def import_data(self, debug, latest, stats):
+    def import_data(self, debug, latest, stats, simple_output=False):
         """Import previously downloaded Garmin data into the database."""
         logger.info("___Importing %s Data___", 'Latest' if latest else 'All')
 
         # Import the user profile and/or settings FIT file first so that we can get the measurement system and some other things sorted out first.
         fit_files_dir = self.gc_config.get_fit_files_dir()
-        gus = GarminUserSettings(self.gc_config.get_db_params(), fit_files_dir, debug)
+        gus = GarminUserSettings(self.gc_config.get_db_params(), fit_files_dir, debug, simple_output=simple_output)
         if gus.file_count() > 0:
             gus.process()
 
-        gpi = GarminPersonalInformation(self.gc_config.get_db_params(), fit_files_dir, debug)
+        gpi = GarminPersonalInformation(self.gc_config.get_db_params(), fit_files_dir, debug, simple_output=simple_output)
         if gpi.file_count() > 0:
             gpi.process()
 
-        gsp = GarminSocialProfile(self.gc_config.get_db_params(), fit_files_dir, debug)
+        gsp = GarminSocialProfile(self.gc_config.get_db_params(), fit_files_dir, debug, simple_output=simple_output)
         if gsp.file_count() > 0:
             gsp.process()
 
-        gsfd = GarminSettingsFitData(fit_files_dir, debug)
+        gsfd = GarminSettingsFitData(fit_files_dir, debug, simple_output=simple_output)
         if gsfd.file_count() > 0:
             gsfd.process_files(FitFileProcessor(self.gc_config.get_db_params(), self.plugin_manager, debug))
 
@@ -199,73 +199,73 @@ class GarminDbMain():
 
         if Statistics.weight in stats:
             weight_dir = self.gc_config.get_weight_dir()
-            gwd = GarminWeightData(self.gc_config.get_db_params(), weight_dir, latest, measurement_system, debug)
+            gwd = GarminWeightData(self.gc_config.get_db_params(), weight_dir, latest, measurement_system, debug, simple_output=simple_output)
             if gwd.file_count() > 0:
                 gwd.process()
 
         monitoring_dir = self.gc_config.get_monitoring_base_dir()
         if Statistics.monitoring in stats:
-            gsd = GarminSummaryData(self.gc_config.get_db_params(), monitoring_dir, latest, measurement_system, debug)
+            gsd = GarminSummaryData(self.gc_config.get_db_params(), monitoring_dir, latest, measurement_system, debug, simple_output=simple_output)
             if gsd.file_count() > 0:
                 gsd.process()
 
-            ghd = GarminHydrationData(self.gc_config.get_db_params(), monitoring_dir, latest, measurement_system, debug)
+            ghd = GarminHydrationData(self.gc_config.get_db_params(), monitoring_dir, latest, measurement_system, debug, simple_output=simple_output)
             if ghd.file_count() > 0:
                 ghd.process()
 
-            gfd = GarminMonitoringFitData(monitoring_dir, latest, measurement_system, debug)
+            gfd = GarminMonitoringFitData(monitoring_dir, latest, measurement_system, debug, simple_output=simple_output)
             if gfd.file_count() > 0:
                 gfd.process_files(MonitoringFitFileProcessor(self.gc_config.get_db_params(), self.plugin_manager, debug))
 
         if Statistics.sleep in stats:
-            gsd = GarminSleepFitData(monitoring_dir, latest, measurement_system=measurement_system, debug=2)
+            gsd = GarminSleepFitData(monitoring_dir, latest, measurement_system=measurement_system, debug=2, simple_output=simple_output)
             if gsd.file_count() > 0:
                 gsd.process_files(SleepFitFileProcessor(self.gc_config.get_db_params()))
 
-            gsd = GarminConnectSleepData(self.gc_config.get_db_params(), self.gc_config.get_sleep_dir(), latest, debug)
+            gsd = GarminConnectSleepData(self.gc_config.get_db_params(), self.gc_config.get_sleep_dir(), latest, debug, simple_output=simple_output)
             if gsd.file_count() > 0:
                 gsd.process()
 
         if Statistics.rhr in stats:
             rhr_dir = self.gc_config.get_rhr_dir()
-            grhrd = GarminRhrData(self.gc_config.get_db_params(), rhr_dir, latest, debug)
+            grhrd = GarminRhrData(self.gc_config.get_db_params(), rhr_dir, latest, debug, simple_output=simple_output)
             if grhrd.file_count() > 0:
                 grhrd.process()
 
         if Statistics.hrv in stats:
-            ghd = GarminHrvFitData(monitoring_dir, latest, measurement_system=measurement_system, debug=2)
+            ghd = GarminHrvFitData(monitoring_dir, latest, measurement_system=measurement_system, debug=2, simple_output=simple_output)
             if ghd.file_count() > 0:
                 ghd.process_files(HrvFitFileProcessor(self.gc_config.get_db_params()))
 
             hrv_dir = self.gc_config.get_rhr_dir()
-            ghrvd = GarminConnectHrvData(self.gc_config.get_db_params(), hrv_dir, latest, debug)
+            ghrvd = GarminConnectHrvData(self.gc_config.get_db_params(), hrv_dir, latest, debug, simple_output=simple_output)
             if ghrvd.file_count() > 0:
                 ghrvd.process()
 
         if Statistics.activities in stats:
             activities_dir = self.gc_config.get_activities_dir()
             # Tcx fields are less precise than the JSON files, so load Tcx first and overwrite with better JSON values.
-            gtd = GarminTcxData(activities_dir, latest, measurement_system, debug)
+            gtd = GarminTcxData(activities_dir, latest, measurement_system, debug, simple_output=simple_output)
             if gtd.file_count() > 0:
                 gtd.process_files(self.gc_config.get_db_params())
 
-            gjsd = GarminJsonSummaryData(self.gc_config.get_db_params(), activities_dir, latest, measurement_system, debug)
+            gjsd = GarminJsonSummaryData(self.gc_config.get_db_params(), activities_dir, latest, measurement_system, debug, simple_output=simple_output)
             if gjsd.file_count() > 0:
                 gjsd.process()
 
-            gdjd = GarminJsonDetailsData(self.gc_config.get_db_params(), activities_dir, latest, measurement_system, debug)
+            gdjd = GarminJsonDetailsData(self.gc_config.get_db_params(), activities_dir, latest, measurement_system, debug, simple_output=simple_output)
             if gdjd.file_count() > 0:
                 gdjd.process()
 
-            gfd = GarminActivitiesFitData(activities_dir, latest, measurement_system, debug)
+            gfd = GarminActivitiesFitData(activities_dir, latest, measurement_system, debug, simple_output=simple_output)
             if gfd.file_count() > 0:
                 gfd.process_files(ActivityFitFileProcessor(self.gc_config.get_db_params(), self.plugin_manager, debug))
 
 
-    def analyze_data(self, debug):
+    def analyze_data(self, debug, simple_output=False):
         """Analyze the downloaded and imported Garmin data and create summary tables."""
         logger.info("___Analyzing Data___")
-        analyze = Analyze(self.gc_config, debug - 1)
+        analyze = Analyze(self.gc_config, debug - 1, simple_output=simple_output)
         analyze.summary()
         analyze.create_dynamic_views()
 
@@ -341,6 +341,7 @@ def main(argv):
     modifiers_group.add_argument("-l", "--latest", help="Only download and/or import the latest data.", action="store_true", default=False)
     modifiers_group.add_argument("-o", "--overwrite", help="Overwrite existing files when downloading. The default is to only download missing files.",
                                  action="store_true", default=False)
+    modifiers_group.add_argument("--simple-output", help="Print progress as lines instead of updating progress bars.", action="store_true", default=False)
     args = parser.parse_args()
 
     log_version(sys.argv[0])
@@ -367,20 +368,20 @@ def main(argv):
 
     if args.rebuild_db:
         garminDbMain.delete_dbs([GarminDbMain.stats_to_db_map[stat] for stat in garminDbMain.gc_config.enabled_stats()] + garminDbMain.summary_dbs)
-        garminDbMain.import_data(args.trace, args.latest, garminDbMain.gc_config.enabled_stats())
-        garminDbMain.analyze_data(args.trace)
+        garminDbMain.import_data(args.trace, args.latest, garminDbMain.gc_config.enabled_stats(), simple_output=args.simple_output)
+        garminDbMain.analyze_data(args.trace, simple_output=args.simple_output)
 
     if args.copy_data:
-        garminDbMain.copy_data(args.overwrite, args.latest, stats)
+        garminDbMain.copy_data(args.overwrite, args.latest, stats, simple_output=args.simple_output)
 
     if args.download_data:
-        garminDbMain.download_data(args.overwrite, args.latest, stats)
+        garminDbMain.download_data(args.overwrite, args.latest, stats, simple_output=args.simple_output)
 
     if args.import_data:
-        garminDbMain.import_data(args.trace, args.latest, stats)
+        garminDbMain.import_data(args.trace, args.latest, stats, simple_output=args.simple_output)
 
     if args.analyze_data:
-        garminDbMain.analyze_data(args.trace)
+        garminDbMain.analyze_data(args.trace, simple_output=args.simple_output)
 
     if args.export_activity:
         garminDbMain.export_activity(args.trace, os.getcwd(), args.export_activity)

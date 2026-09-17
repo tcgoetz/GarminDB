@@ -7,12 +7,13 @@ __license__ = "GPL"
 import os
 import sys
 import shutil
-from tqdm import tqdm
 import logging
 from datetime import datetime
 
 import fitfile
 from idbutils import FileProcessor
+
+from .progress import progress
 
 
 logger = logging.getLogger(__file__)
@@ -22,9 +23,10 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 class Copy():
     """Class for copying data from a USB mounted Garmin device."""
 
-    def __init__(self, gc_config):
+    def __init__(self, gc_config, simple_output=False):
         """Create a Copy object given the directory where the Garmin USB device is mounted."""
         self.gc_config = gc_config
+        self.simple_output = simple_output
         device_mount_dir = self.gc_config.device_mount_dir()
         if not os.path.exists(device_mount_dir):
             raise RuntimeError(f'Device mount directory {device_mount_dir} not found')
@@ -35,7 +37,7 @@ class Copy():
         """Copy FIT files from a USB mounted Garmin device to the given directory."""
         file_names = FileProcessor.dir_to_files(src_dir, fitfile.file.name_regex, latest)
         logger.info("Copying files from %s to %s", src_dir, dest_dir)
-        for file in tqdm(file_names, unit='files'):
+        for file in progress(file_names, 'Copying FIT files', unit='files', simple_output=self.simple_output):
             dest = dest_dir
             if parse_as_ts:
                 dt = os.path.basename(file).split('.fit')[0]
