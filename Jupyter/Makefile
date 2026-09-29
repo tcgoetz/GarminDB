@@ -16,6 +16,7 @@ $(info $$PYTHON_PATH is [${PYTHON_PATH}])
 
 all: deps
 
+install:
 
 deps:
 	$(PIP_PATH) install --upgrade --requirement requirements.txt
