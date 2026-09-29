@@ -7,11 +7,11 @@ __license__ = "GPL"
 
 import sys
 import logging
-from tqdm import tqdm
 import traceback
 
 from idbutils import FileProcessor
 from .tcx import Tcx
+from .progress import progress
 
 from .garmindb import GarminDb, Device, File, ActivitiesDb, Activities, ActivityRecords, ActivityLaps
 
@@ -24,7 +24,7 @@ root_logger = logging.getLogger()
 class GarminTcxData():
     """Class for importing Garmin activity data from TCX files."""
 
-    def __init__(self, input_dir, latest, measurement_system, debug):
+    def __init__(self, input_dir, latest, measurement_system, debug, simple_output=False):
         """
         Return an instance of GarminTcxData.
 
@@ -35,11 +35,13 @@ class GarminTcxData():
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
         logger.info("Processing activities tcx data")
         self.measurement_system = measurement_system
         self.debug = debug
+        self.simple_output = simple_output
         if input_dir:
             self.file_names = FileProcessor.dir_to_files(input_dir, Tcx.filename_regex, latest)
 
@@ -140,7 +142,7 @@ class GarminTcxData():
         garmin_db = GarminDb(db_params, self.debug - 1)
         garmin_act_db = ActivitiesDb(db_params, self.debug - 1)
         with garmin_db.managed_session() as self.garmin_db_session, garmin_act_db.managed_session() as self.garmin_act_db_session:
-            for file_name in tqdm(self.file_names, unit='files'):
+            for file_name in progress(self.file_names, 'Processing activity TCX files', unit='files', simple_output=self.simple_output):
                 try:
                     self.__process_file(file_name)
                 except Exception as e:

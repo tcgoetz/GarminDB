@@ -13,11 +13,11 @@ import time
 import tempfile
 import zipfile
 import json
-from tqdm import tqdm
 
 import fitfile.conversions as conversions
 
 from .garmin_connect_auth_adapter import GarminConnectAuthAdapter, GarminConnectAuthError
+from .progress import progress
 
 
 logger = logging.getLogger(__file__)
@@ -48,10 +48,11 @@ class Download():
 
     download_days_overlap = 3  # Existing donloaded data will be redownloaded and overwritten if it is within this number of days of now.
 
-    def __init__(self, gc_config):
+    def __init__(self, gc_config, simple_output=False):
         """Create a new Download class instance."""
         logger.debug("__init__")
         self.gc_config = gc_config
+        self.simple_output = simple_output
         self.garmin = GarminConnectAuthAdapter(self.gc_config)
 
     def login(self):
@@ -108,8 +109,8 @@ class Download():
             with open(filename, 'wb') as file:
                 file.write(response)
 
-    def __get_stat(self, stat_function, directory, date, days, overwrite):
-        for day in tqdm(range(0, days), unit='days'):
+    def __get_stat(self, stat_function, directory, date, days, overwrite, label='Downloading data'):
+        for day in progress(range(0, days), label, unit='days', simple_output=self.simple_output):
             download_date = date + datetime.timedelta(days=day)
             # always overwrite for yesterday and today since the last download may have been a partial result
             delta = datetime.datetime.now().date() - download_date
@@ -145,7 +146,7 @@ class Download():
     def get_daily_summaries(self, directory_func, date, days, overwrite):
         """Download the daily summary data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting daily summaries: %s (%d)", date, days)
-        self.__get_stat(self.__get_summary_day, directory_func, date, days, overwrite)
+        self.__get_stat(self.__get_summary_day, directory_func, date, days, overwrite, 'Downloading daily summaries')
 
     def __get_monitoring_day(self, date):
         root_logger.info("get_monitoring_day: %s to %s", date, self.temp_dir)
@@ -159,7 +160,7 @@ class Download():
     def get_monitoring(self, directory_func, date, days):
         """Download the daily monitoring data from Garmin Connect, unzip and save the raw files."""
         root_logger.info("Getting monitoring: %s (%d)", date, days)
-        for day in tqdm(range(0, days), unit='days'):
+        for day in progress(range(0, days), 'Downloading monitoring data', unit='days', simple_output=self.simple_output):
             day_date = date + datetime.timedelta(day)
             self.temp_dir = tempfile.mkdtemp()
             self.__get_monitoring_day(day_date)
@@ -185,7 +186,7 @@ class Download():
         """Download the sleep data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting weight: %s (%d)", date, days)
         self.__get_stat(self.__get_weight_day,
-                        directory, date, days, overwrite)
+                        directory, date, days, overwrite, 'Downloading weight data')
 
     def __get_activity_summaries(self, start, count):
         root_logger.info("get_activity_summaries")
@@ -222,7 +223,7 @@ class Download():
         self.temp_dir = tempfile.mkdtemp()
         logger.info("Getting activities: '%s' (%d) temp %s", directory, count, self.temp_dir)
         activities = self.__get_activity_summaries(0, count)
-        for activity in tqdm(activities or [], unit='activities'):
+        for activity in progress(activities or [], 'Downloading activities', unit='activities', simple_output=self.simple_output):
             activity_id_str = str(activity['activityId'])
             activity_name_str = conversions.printable(activity.get('activityName'))
             root_logger.info("get_activities: %s (%s)", activity_name_str, activity_id_str)
@@ -265,7 +266,7 @@ class Download():
     def get_sleep(self, directory, date, days, overwrite):
         """Download the sleep data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting sleep: %s (%d)", date, days)
-        self.__get_stat(self.__get_sleep_day, directory, date, days, overwrite)
+        self.__get_stat(self.__get_sleep_day, directory, date, days, overwrite, 'Downloading sleep data')
 
     def __get_rhr_day(self, directory, day, overwrite=False):
         date_str = day.strftime('%Y-%m-%d')
@@ -285,7 +286,7 @@ class Download():
     def get_rhr(self, directory, date, days, overwrite):
         """Download the resting heart rate data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting rhr: %s (%d)", date, days)
-        self.__get_stat(self.__get_rhr_day, directory, date, days, overwrite)
+        self.__get_stat(self.__get_rhr_day, directory, date, days, overwrite, 'Downloading resting heart rate data')
 
     def __get_hydration_day(self, directory_func, day, overwrite=False):
         date_str = day.strftime('%Y-%m-%d')
@@ -299,7 +300,7 @@ class Download():
     def get_hydration(self, directory_func, date, days, overwrite):
         """Download the hydration data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting hydration: %s (%d)", date, days)
-        self.__get_stat(self.__get_hydration_day, directory_func, date, days, overwrite)
+        self.__get_stat(self.__get_hydration_day, directory_func, date, days, overwrite, 'Downloading hydration data')
 
     def __get_hrv_day(self, directory, day, overwrite=False):
         date_str = day.strftime('%Y-%m-%d')
@@ -314,4 +315,4 @@ class Download():
     def get_hrv(self, directory, date, days, overwrite):
         """Download the heart rate variability (HRV) data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting hrv: %s (%d)", date, days)
-        self.__get_stat(self.__get_hrv_day, directory, date, days, overwrite)
+        self.__get_stat(self.__get_hrv_day, directory, date, days, overwrite, 'Downloading HRV data')

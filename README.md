@@ -36,6 +36,17 @@ GarminDb releases are hosted on [PyPI](https://pypi.org/project/garmindb/). Garm
 
 Update to the latest release with `pip install --upgrade garmindb`.
 
+For container logs or redirected output, add `--simple-output` to the main CLI command:
+
+```sh
+garmindb_cli.py --all --download --import --analyze --latest --simple-output
+```
+
+This replaces progress bars with flushed, newline-delimited start and final-count messages on stderr, including JSON imports.
+Counts describe items visited, including skipped items and handled failures; they do not count successful downloads or committed database rows.
+A final count marks the end of that traversal, which may precede later steps such as archive extraction or database commit.
+Existing diagnostics and `--trace` behavior are unchanged. Without the flag, progress bars remain enabled.
+
 ## From Source
 
 The scripts are automated with [Make](https://www.gnu.org/software/make/manual/make.html). Run the Make commands in a terminal window.

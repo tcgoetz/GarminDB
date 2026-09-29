@@ -13,7 +13,9 @@ from .fit_data import FitData
 class GarminActivitiesFitData(FitData):
     """Class for importing Garmin activity data from FIT files."""
 
-    def __init__(self, input_dir, latest, measurement_system, debug):
+    _progress_label = 'Processing activity FIT files'
+
+    def __init__(self, input_dir, latest, measurement_system, debug, simple_output=False):
         """
         Return an instance of GarminActivitiesFitData.
 
@@ -24,6 +26,7 @@ class GarminActivitiesFitData(FitData):
         latest (Boolean): check for latest files only
         measurement_system (enum): which measurement system to use when importing the files
         debug (Boolean): enable debug logging
+        simple_output (Boolean): print progress as lines instead of a progress bar
 
         """
-        super().__init__(input_dir, debug, latest, False, [fitfile.FileType.activity], measurement_system)
+        super().__init__(input_dir, debug, latest, False, [fitfile.FileType.activity], measurement_system, simple_output=simple_output)
