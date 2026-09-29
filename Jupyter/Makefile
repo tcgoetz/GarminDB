@@ -18,6 +18,8 @@ all: deps
 
 install:
 
+test:
+
 deps:
 	$(PIP_PATH) install --upgrade --requirement requirements.txt
 
