@@ -32,6 +32,8 @@ requirements.txt:
 requirements_graphs.txt:
 	$(PIP_PATH) freeze -r requirements_graphs.in > requirements_graphs.txt
 
+flake8:
+
 clean:
 	rm -f *.pyc
 	rm -f *.log
