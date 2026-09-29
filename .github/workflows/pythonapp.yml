@@ -8,15 +8,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v7.0.1
       with:
         submodules: 'true'
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Set up Python 3.13
-      uses: actions/setup-python@v2
+      uses: astral-sh/setup-uv@v10.2.0
+    - name: Set up Python 3.14
+      uses: actions/setup-python@v7
       with:
-        python-version: 3.13
+        python-version: 3.14
     - name: Setup repo
       run: |
         make setup_repo
