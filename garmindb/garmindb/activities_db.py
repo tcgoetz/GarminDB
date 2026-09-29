@@ -522,13 +522,15 @@ class ActivitiesCourses(ActivitiesDb.Base, idbutils.DbObject):
     def get_fastest_by_course_id(cls, db, course_id):
         """Return an activities items for the activity with the matching course_id with the fastest speed."""
         with db.managed_session() as session:
-            return session.query(Activities, cls).filter(cls.course_id == course_id).filter(cls.activity_id == Activities.activity_id).order_by(desc(Activities.avg_speed)).limit(1).one_or_none()
+            return (session.query(Activities, cls).filter(cls.course_id == course_id).
+                    filter(cls.activity_id == Activities.activity_id).order_by(desc(Activities.avg_speed)).limit(1).one_or_none())
 
     @classmethod
     def get_slowest_by_course_id(cls, db, course_id):
         """Return an activities items for the activity with the matching course_id with the slowest speed."""
         with db.managed_session() as session:
-            return session.query(Activities, cls).filter(cls.course_id == course_id).filter(cls.activity_id == Activities.activity_id).order_by(Activities.avg_speed).limit(1).one_or_none()
+            return (session.query(Activities, cls).filter(cls.course_id == course_id).
+                    filter(cls.activity_id == Activities.activity_id).order_by(Activities.avg_speed).limit(1).one_or_none())
 
 
 class ActivitiesDevices(ActivitiesDb.Base, idbutils.DbObject):
