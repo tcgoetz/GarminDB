@@ -335,24 +335,6 @@ class Activities(ActivitiesDb.Base, ActivitiesLapsCommon):
         return self.sport in ['walking', 'running', 'hiking']
 
     @classmethod
-    def get_by_course_id(cls, db, course_id):
-        """Return all activities items for activities with the matching course_id."""
-        with db.managed_session() as session:
-            return session.query(cls).filter(cls.course_id == course_id).order_by(cls.start_time).all()
-
-    @classmethod
-    def get_fastest_by_course_id(cls, db, course_id):
-        """Return an activities items for the activity with the matching course_id with the fastest speed."""
-        with db.managed_session() as session:
-            return session.query(cls).filter(cls.course_id == course_id).order_by(desc(cls.avg_speed)).limit(1).one_or_none()
-
-    @classmethod
-    def get_slowest_by_course_id(cls, db, course_id):
-        """Return an activities items for the activity with the matching course_id with the slowest speed."""
-        with db.managed_session() as session:
-            return session.query(cls).filter(cls.course_id == course_id).order_by(cls.avg_speed).limit(1).one_or_none()
-
-    @classmethod
     def get_by_sport(cls, db, sport):
         """Return all activities items for a given sport type."""
         with db.managed_session() as session:
@@ -531,15 +513,22 @@ class ActivitiesCourses(ActivitiesDb.Base, idbutils.DbObject):
     course_id = Column(Integer)
 
     @classmethod
-    def s_get_activity(cls, session, activity_id):
-        """Return all activity devices records for a given activity_id."""
-        return session.query(cls).filter(cls.activity_id == activity_id).all()
+    def get_by_course_id(cls, db, course_id):
+        """Return all activities items for activities with the matching course_id."""
+        with db.managed_session() as session:
+            return session.query(cls).filter(cls.course_id == course_id).order_by(cls.start_time).all()
 
     @classmethod
-    def get_activity(cls, db, activity_id):
-        """Return all activity devices records for a given activity_id."""
+    def get_fastest_by_course_id(cls, db, course_id):
+        """Return an activities items for the activity with the matching course_id with the fastest speed."""
         with db.managed_session() as session:
-            return cls.s_get_activity(session, activity_id)
+            return session.query(Activities, cls).filter(cls.course_id == course_id).filter(cls.activity_id == Activities.activity_id).order_by(desc(Activities.avg_speed)).limit(1).one_or_none()
+
+    @classmethod
+    def get_slowest_by_course_id(cls, db, course_id):
+        """Return an activities items for the activity with the matching course_id with the slowest speed."""
+        with db.managed_session() as session:
+            return session.query(Activities, cls).filter(cls.course_id == course_id).filter(cls.activity_id == Activities.activity_id).order_by(Activities.avg_speed).limit(1).one_or_none()
 
 
 class ActivitiesDevices(ActivitiesDb.Base, idbutils.DbObject):

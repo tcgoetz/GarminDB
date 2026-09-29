@@ -7,6 +7,7 @@ __license__ = "GPL"
 import logging
 import sys
 import traceback
+import enum
 
 import fitfile
 
@@ -199,16 +200,22 @@ class FitFileProcessor():
         root_logger.info("Writing attribute to garmin db: %r -> %r at %r", attribute_value, attribute_name, timestamp)
         Attributes.s_set_newer(self.garmin_db_session, attribute_name, attribute_value, timestamp)
 
-    def _write_attribute(self, timestamp, message_fields, attribute_name, db_attribute_name=None):
+    def _write_attribute(self, timestamp, message_fields, attribute_name, db_attribute_name=None, ignore_zero=False):
         attribute = message_fields.get(attribute_name)
         if attribute is not None:
             if db_attribute_name is None:
                 db_attribute_name = attribute_name
-            self._write_attribute_db(timestamp, attribute_name, attribute)
+            if isinstance(attribute, enum.Enum):
+                self._write_attribute_db(timestamp, db_attribute_name, attribute.name)
+            elif isinstance(attribute, int) or isinstance(attribute, float):
+                if ignore_zero is False or attribute > 0:
+                    self._write_attribute_db(timestamp, db_attribute_name, attribute)
+            else:
+                self._write_attribute_db(timestamp, db_attribute_name, attribute)
 
-    def _write_attributes(self, timestamp, message_fields, attribute_names):
+    def _write_attributes(self, timestamp, message_fields, attribute_names, ignore_zero=False):
         for attribute_name in attribute_names:
-            self._write_attribute(timestamp, message_fields, attribute_name)
+            self._write_attribute(timestamp, message_fields, attribute_name, ignore_zero=ignore_zero)
 
     def _write_measurement_sytem_attributes(self, timestamp, message_fields):
         for attribute_name in ['dist_setting', 'speed_setting', 'height_setting', 'temperature_setting']:
@@ -230,9 +237,11 @@ class FitFileProcessor():
         timestamp = fit_file.time_created_local
         attribute_names = [
             'gender', 'height', 'weight', 'age', 'year_of_birth', 'language', 'dist_setting', 'weight_setting', 'position_setting', 'elev_setting', 'sleep_time', 'wake_time',
-            'speed_setting', 'time_last_lthr_update', 'user_running_step_length', 'user_walking_step_length'
+            'speed_setting', 'time_last_lthr_update'
         ]
         self._write_attributes(timestamp, message_fields, attribute_names)
+        attribute_names = ['user_running_step_length', 'user_walking_step_length']
+        self._write_attributes(timestamp, message_fields, attribute_names, ignore_zero=True)
         self._write_measurement_sytem_attributes(timestamp, message_fields)
 
     def _write_zones_target_entry(self, fit_file, message_fields):

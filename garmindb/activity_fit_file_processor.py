@@ -94,10 +94,9 @@ class ActivityFitFileProcessor(FitFileProcessor):
         }
         root_logger.info("_write_steps_activity_metrics_entry: %r", activity_metrics)
         StepsActivities.s_insert_or_update(self.garmin_act_db_session, activity_metrics, ignore_none=True, ignore_zero=True)
-        if vo2_max:
-            self._write_attribute_db(fit_file.time_created_local, f'{sport.name} vo2max', vo2_max)
+        self._write_attribute(fit_file.time_created_local, message_fields, 'vo2_max', db_attribute_name=f'{sport.name} vo2max', ignore_zero=True)
         attribute_names = ['lactate_threshold_heart_rate', 'lactate_threshold_speed']
-        self._write_attributes(fit_file.time_created_local, message_fields, attribute_names)
+        self._write_attributes(fit_file.time_created_local, message_fields, attribute_names, ignore_zero=True)
 
     def _write_running_activity_metrics_entry(self, fit_file, sport, message_fields):
         return self._write_steps_activity_metrics_entry(fit_file, sport, message_fields)
@@ -140,7 +139,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
             root_logger.info("writing best_effort %r for %s", best_effort, fit_file.filename)
             ActivitiesBestEffort.s_insert_or_update(self.garmin_act_db_session, best_effort, ignore_none=True, ignore_zero=True)
             if personal_record:
-                self._write_attribute_db(start_time, f'PR {distance} {sport.name}', str(time))
+                self._write_attribute(start_time, message_fields, 'time', db_attribute_name=f'PR {distance} {sport.name}', ignore_zero=True)
 
     def _write_device_info_entry(self, fit_file, message_fields):
         device_serial_number = super()._write_device_info_entry(fit_file, message_fields)
@@ -623,6 +622,6 @@ class ActivityFitFileProcessor(FitFileProcessor):
 
     def _write_user_metrics_entry(self, fit_file, message_fields):
         root_logger.info("user metrics message: %r", message_fields)
-        attribute_names = ['activity_class', 'height', 'weight', 'max_heart_rate', 'resting_heart_rate']
-        self._write_attributes(fit_file.time_created_local, message_fields, attribute_names)
+        attribute_names = ['activity_class', 'height', 'weight', 'max_heart_rate']
+        self._write_attributes(fit_file.time_created_local, message_fields, attribute_names, ignore_zero=True)
         self._write_measurement_sytem_attributes(fit_file.time_created_local, message_fields)

@@ -284,7 +284,10 @@ class GarminProfile(JsonFileProcessor):
         attributes = self._process_attributes(json_data)
         logger.info("Processing profile data: %r", attributes)
         for attribute_name, attribute_value in attributes.items():
-            Attributes.set_newer(self.garmin_db, attribute_name, attribute_value)
+            if isinstance(attribute_value, enum.Enum):
+                Attributes.set_newer(self.garmin_db, attribute_name, attribute_value.name)
+            else:
+                Attributes.set_newer(self.garmin_db, attribute_name, attribute_value)
         return len(attributes)
 
 
@@ -316,19 +319,19 @@ class GarminUserSettings(GarminProfile):
         weight = fitfile.Weight.from_grams(user_data['weight'])
         height = fitfile.Distance.from_cm(user_data['height'])
         return {
-            'measurement_system': str(measurement_system),
+            'measurement_system': measurement_system,
             'activity_level': user_data['activityLevel'],
             'birth_date': user_data['birthDate'],
-            'gender': str(gender),
-            'weight': weight.kgs_or_lbs(measurement_system),
-            'height': height.meters_or_feet(measurement_system),
+            'gender': gender,
+            'weight': round(weight.kgs_or_lbs(measurement_system), 1),
+            'height': round(height.meters_or_feet(measurement_system), 1),
             'handedness': user_data['handedness'].lower(),
             'vo2max_running': user_data['vo2MaxRunning'],
             'vo2max_cycling': user_data['vo2MaxCycling'],
             'running_lactate_threshhold_date': user_data['firstbeatRunningLtTimestamp'],
-            'lactate_threshold_heart_rate': str(user_data['lactateThresholdHeartRate']),
-            'moderate_intensity_minutes_hr_zone': str(user_data['moderateIntensityMinutesHrZone']),
-            'vigorous_intensity_minutes_hr_zone': str(user_data['vigorousIntensityMinutesHrZone']),
+            'lactate_threshold_heart_rate': user_data['lactateThresholdHeartRate'],
+            'moderate_intensity_minutes_hr_zone': user_data['moderateIntensityMinutesHrZone'],
+            'vigorous_intensity_minutes_hr_zone': user_data['vigorousIntensityMinutesHrZone'],
         }
 
 
@@ -425,36 +428,35 @@ class GarminSummaryData(JsonFileProcessor):
             self._get_field(json_data, 'totalDistanceMeters', int))
         summary = {
             'day': json_data['calendarDate'],
-            'hr_min': self._get_field(json_data, 'minHeartRate', float),
-            'hr_max': self._get_field(json_data, 'maxHeartRate', float),
-            'rhr': self._get_field(json_data, 'restingHeartRate', float),
-            'stress_avg': self._get_field(json_data, 'averageStressLevel', float),
+            'hr_min': self._get_field(json_data, 'minHeartRate', int),
+            'hr_max': self._get_field(json_data, 'maxHeartRate', int),
+            'rhr': self._get_field(json_data, 'restingHeartRate', int),
+            'stress_avg': self._get_field(json_data, 'averageStressLevel', float, 1),
             'step_goal': self._get_field(json_data, 'dailyStepGoal', int),
             'steps': self._get_field(json_data, 'totalSteps', int),
-            'floors_goal': self._get_field(json_data, 'userFloorsAscendedGoal', float),
-            'moderate_activity_time': json_data.get('moderateIntensityMinutes'),
-            'vigorous_activity_time': json_data.get('vigorousIntensityMinutes'),
-            'intensity_time_goal': json_data.get('intensityMinutesGoal'),
-            'floors_up': self._get_field(json_data, 'floorsAscended', float),
-            'floors_down': self._get_field(json_data, 'floorsDescended', float),
+            'floors_goal': self._get_field(json_data, 'userFloorsAscendedGoal', int),
+            'moderate_activity_time': self._get_field(json_data, 'moderateIntensityMinutes', int),
+            'vigorous_activity_time': self._get_field(json_data, 'vigorousIntensityMinutes', int),
+            'intensity_time_goal': self._get_field(json_data, 'intensityMinutesGoal', int),
+            'floors_up': self._get_field(json_data, 'floorsAscended', int),
+            'floors_down': self._get_field(json_data, 'floorsDescended', int),
             'distance': distance.kms_or_miles(self.measurement_system),
-            'calories_goal': self._get_field(json_data, 'netCalorieGoal', float),
-            'calories_total': self._get_field(json_data, 'totalKilocalories', float),
-            'calories_bmr': self._get_field(json_data, 'bmrKilocalories', float),
-            'calories_active': self._get_field(json_data, 'activeKilocalories', float),
-            'calories_consumed': self._get_field(json_data, 'consumedKilocalories', float),
+            'calories_goal': self._get_field(json_data, 'netCalorieGoal', int),
+            'calories_total': self._get_field(json_data, 'totalKilocalories', int),
+            'calories_bmr': self._get_field(json_data, 'bmrKilocalories', int),
+            'calories_active': self._get_field(json_data, 'activeKilocalories', int),
+            'calories_consumed': self._get_field(json_data, 'consumedKilocalories', int),
             'spo2_avg': self._get_field(json_data, 'averageSpo2', float),
             'spo2_min': self._get_field(json_data, 'lowestSpo2', float),
-            'rr_waking_avg': self._get_field(json_data, 'avgWakingRespirationValue', float),
-            'rr_max': self._get_field(json_data, 'highestRespirationValue', float),
-            'rr_min': self._get_field(json_data, 'lowestRespirationValue', float),
+            'rr_waking_avg': self._get_field(json_data, 'avgWakingRespirationValue', int),
+            'rr_max': self._get_field(json_data, 'highestRespirationValue', int),
+            'rr_min': self._get_field(json_data, 'lowestRespirationValue', int),
             'bb_charged': self._get_field(json_data, 'bodyBatteryChargedValue', int),
             'bb_max': self._get_field(json_data, 'bodyBatteryHighestValue', int),
             'bb_min': self._get_field(json_data, 'bodyBatteryLowestValue', int),
             'description': self._get_field(json_data, 'wellnessDescription'),
         }
-        DailySummary.insert_or_update(
-            self.garmin_db, summary, ignore_none=True)
+        DailySummary.insert_or_update(self.garmin_db, summary, ignore_none=True)
         return 1
 
 
@@ -497,8 +499,7 @@ class GarminHydrationData(JsonFileProcessor):
             'sweat_loss': sweat_loss.ml_or_oz(self.measurement_system, rounded=True)
         }
         root_logger.debug("Processing daily hydration data %r", summary)
-        DailySummary.insert_or_update(
-            self.garmin_db, summary, ignore_none=True)
+        DailySummary.insert_or_update(self.garmin_db, summary, ignore_none=True)
         return 1
 
 

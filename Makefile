@@ -43,7 +43,7 @@ update_copy_dbs: copy_garmin_latest
 #
 # Project maintainance targets
 #
-SUBMODULES=Fit Tcx utilities
+SUBMODULES=Fit Tcx utilities Jupyter
 SUBDIRS=fitbitdb garmindb healthdb mshealthdb
 
 $(CONF_DIR):
@@ -140,12 +140,6 @@ requirements.txt:
 dev-requirements.txt:
 	$(PIP_PATH) freeze -r dev-requirements.in > dev-requirements.txt
 
-Jupyter/requirements.txt:
-	$(PIP_PATH) freeze -r Jupyter/requirements.in > Jupyter/requirements.txt
-
-Jupyter/requirements_graphs.txt:
-	$(PIP_PATH) freeze -r Jupyter/requirements_graphs.in > Jupyter/requirements_graphs.txt
-
 update_pip_packages:
 	$(PIP_PATH) list --outdated | egrep -v "Package|---" | cut -d' ' -f1 | xargs pip install --upgrade
 
@@ -158,13 +152,7 @@ $(SUBMODULES:%=%-devdeps):
 devdeps: $(SUBMODULES:%=%-devdeps)
 	$(PIP_PATH) install --upgrade --requirement dev-requirements.txt
 
-graphdeps:
-	$(PIP_PATH) install --upgrade --requirement Jupyter/requirements_graphs.txt
-
-jupiterdeps: graphdeps
-	$(PIP_PATH) install --upgrade --requirement Jupyter/requirements.txt
-
-alldeps: update_pip_packages deps devdeps jupiterdeps
+alldeps: update_pip_packages deps devdeps
 
 $(SUBMODULES:%=%-remove_deps):
 	$(MAKE) -C $(subst -remove_deps,,$@) remove_deps
@@ -172,8 +160,6 @@ $(SUBMODULES:%=%-remove_deps):
 remove_deps: $(SUBMODULES:%=%-remove_deps)
 	$(PIP_PATH) uninstall -y --requirement requirements.txt
 	$(PIP_PATH) uninstall -y --requirement dev-requirements.txt
-	$(PIP_PATH) uninstall -y --requirement Jupyter/requirements.txt
-	$(PIP_PATH) uninstall -y --requirement Jupyter/requirements_graphs.txt
 
 clean_deps: remove_deps
 
@@ -189,13 +175,11 @@ clean: $(SUBMODULES:%=%-clean) $(SUBDIRS:%=%-clean) test_clean build_clean
 	rm -f *.pyc
 	rm -f *.log
 	rm -f scripts/*.log
-	rm -f Jupyter/*.log
 	rm -f *.spec
 	rm -f *.zip
 	rm -f *.png
 	rm -f *stats.txt
 	rm -f scripts/*stats.txt
-	rm -f Jupyter/*stats.txt
 	rm -rf __pycache__
 
 realclean: clean clean_venv

@@ -96,10 +96,8 @@ class MonitoringFitFileProcessor(FitFileProcessor):
             'resting_heart_rate'        : message_fields.get('resting_heart_rate'),
             'day_resting_heart_rate'    : message_fields.get('current_day_resting_heart_rate'),
         }
-        if fit_file.type is fitfile.FileType.monitoring_b:
-            MonitoringRestingHeartRate.s_insert_or_update(self.garmin_mon_db_session, rhr_data)
-        else:
-            raise ValueError(f'Unexpected file type {repr(fit_file.type)} for monitoring_hr_data message')
+        MonitoringRestingHeartRate.s_insert_or_update(self.garmin_mon_db_session, rhr_data)
+        self._write_attribute(fit_file.time_created_local, message_fields, 'day_resting_heart_rate', 'resting_heart_rate', ignore_zero=True)
 
     def _write_respiration_rate_entry(self, fit_file, message_fields):
         logger.debug("respiration_rate message: %r", message_fields)
