@@ -59,7 +59,6 @@ class SummaryBase(DbObject):
     calories_bmr_avg = Column(Integer)
     calories_active_avg = Column(Integer)
     calories_goal = Column(Integer)
-    calories_active_avg = Column(Integer)
     calories_consumed_avg = Column(Integer)
     activities = Column(Integer)
     activities_calories = Column(Integer)

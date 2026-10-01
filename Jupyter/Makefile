@@ -18,6 +18,8 @@ all: deps
 
 install:
 
+uninstall:
+
 test:
 
 deps:
