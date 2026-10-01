@@ -494,9 +494,9 @@ class GarminHydrationData(JsonFileProcessor):
         sweat_loss = fitfile.Volume.from_milliliters(json_data['sweatLossInML'])
         summary = {
             'day': json_data['calendarDate'],
-            'hydration_intake': hydration_intake.ml_or_oz(self.measurement_system, rounded=True),
-            'hydration_goal': hydration_goal.ml_or_oz(self.measurement_system, rounded=True),
-            'sweat_loss': sweat_loss.ml_or_oz(self.measurement_system, rounded=True)
+            'hydration_intake': hydration_intake.ml_or_oz(self.measurement_system, precision=0),
+            'hydration_goal': hydration_goal.ml_or_oz(self.measurement_system, precision=0),
+            'sweat_loss': sweat_loss.ml_or_oz(self.measurement_system, precision=0)
         }
         root_logger.debug("Processing daily hydration data %r", summary)
         DailySummary.insert_or_update(self.garmin_db, summary, ignore_none=True)

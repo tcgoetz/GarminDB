@@ -240,6 +240,9 @@ copy_garmin:
 update_garmin:
 	$(GARMINDB_CLI) --all --download --import --analyze --latest
 
+import_garmin_activities:
+	$(GARMINDB_CLI) --activities --import
+
 update_garmin_activities:
 	$(GARMINDB_CLI) --activities --download --import --analyze --latest
 
