@@ -225,6 +225,9 @@ import_garmin_monitoring:
 import_garmin_monitoring:
 	$(GARMINDB_CLI) --monitoring --import --latest
 
+import_garmin_sleep:
+	$(GARMINDB_CLI) --sleep --import
+
 build_garmin_sleep:
 	$(GARMINDB_CLI) --sleep --import --analyze
 

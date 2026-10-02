@@ -106,7 +106,7 @@ class SleepFitFileProcessor(FitFileProcessor):
 
     def _write_event_entry(self, fit_file, message_fields):
         # new sleep files use start and stop events for sleep start and stop
-        if message_fields.get('event') == fitfile.fields.Event.sleep:
+        if message_fields.get('event') == fitfile.fields.Event.detect_sleep:
             if message_fields.get('event_type') == fitfile.fields.EventType.start and fitfile.checks.dt_is_valid(message_fields.timestamp):
                 self.sleep_start = message_fields.timestamp
                 self.last_sleep_event = self.sleep_start
@@ -136,7 +136,7 @@ class SleepFitFileProcessor(FitFileProcessor):
         # don't record consecutive awake events
         if sleep_level is not fitfile.fields.SleepActivityLevel.awake or self.last_sleep_level is not fitfile.fields.SleepActivityLevel.awake:
             # don't record unmeasurable sleep events
-            if sleep_level.value > fitfile.fields.SleepActivityLevel.unmeasurable.value and self.last_sleep_event:
+            if sleep_level.value > fitfile.fields.SleepActivityLevel.unmeasurable.value and self.last_sleep_event is not None and message_fields.timestamp > self.last_sleep_event:
                 duration = fitfile.conversions.timedelta_to_time(message_fields.timestamp - self.last_sleep_event)
                 self.time_in_level[sleep_level] += fitfile.conversions.time_to_timedelta(duration)
                 sleep_event = {

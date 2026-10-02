@@ -164,7 +164,7 @@ class FitFileProcessor():
 
     def _write_stress_level_entry(self, fit_file, message_fields):
         stress = {
-            'timestamp' : message_fields.local_timestamp,
+            'timestamp' : message_fields.stress_level_time,
             'stress'    : message_fields.stress_level
         }
         Stress.s_insert_or_update(self.garmin_db_session, stress)
