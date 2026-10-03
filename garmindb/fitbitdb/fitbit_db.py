@@ -79,9 +79,9 @@ class DaysSummary(FitBitDb.Base, idbutils.DbObject):
     @classmethod
     def __get_weight_stats(cls, db, start_ts, end_ts):
         stats = {
-            'weight_avg': cls.get_col_avg(db, cls.weight, start_ts, end_ts, True),
-            'weight_min': cls.get_col_min(db, cls.weight, start_ts, end_ts, True),
-            'weight_max': cls.get_col_max(db, cls.weight, start_ts, end_ts),
+            'weight_avg': cls.get_col_avg(db, cls.weight, start_ts, end_ts, True, 1),
+            'weight_min': cls.get_col_min(db, cls.weight, start_ts, end_ts, True, 1),
+            'weight_max': cls.get_col_max(db, cls.weight, start_ts, end_ts, precision=1),
         }
         return stats
 
@@ -95,8 +95,8 @@ class DaysSummary(FitBitDb.Base, idbutils.DbObject):
 
     @classmethod
     def __get_calories_stats(cls, db, start_ts, end_ts):
-        calories_bmr_avg = cls.get_col_avg(db, cls.calories_bmr, start_ts, end_ts)
-        calories_active_avg = cls.get_col_avg(db, cls.activities_calories, start_ts, end_ts)
+        calories_bmr_avg = cls.get_col_avg(db, cls.calories_bmr, start_ts, end_ts, precision=0)
+        calories_active_avg = cls.get_col_avg(db, cls.activities_calories, start_ts, end_ts, precision=0)
         if calories_bmr_avg is not None and calories_active_avg is not None:
             calories_avg = calories_bmr_avg + calories_active_avg
         else:

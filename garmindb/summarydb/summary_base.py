@@ -16,21 +16,21 @@ class SummaryBase(DbObject):
     """Base class for implementing summary database objects."""
 
     view_version = 10
-    _table_version = 6
+    _table_version = 7
     _col_units = {'hr_avg': 'bpm', 'hr_min': 'bpm', 'hr_max': 'bpm', 'rhr_avg': 'bpm', 'rhr_min': 'bpm', 'rhr_max': 'bpm',
                   'hrv_avg': 'ms', 'hrv_min': 'ms', 'hrv_max': 'ms',
                   'rr_waking_avg': 'brpm', 'rr_max': 'brpm',
                   'rr_min': 'brpm'}
 
-    hr_avg = Column(Float)
-    hr_min = Column(Float)
-    hr_max = Column(Float)
-    rhr_avg = Column(Float)
-    rhr_min = Column(Float)
-    rhr_max = Column(Float)
-    inactive_hr_avg = Column(Float)
-    inactive_hr_min = Column(Float)
-    inactive_hr_max = Column(Float)
+    hr_avg = Column(Integer)
+    hr_min = Column(Integer)
+    hr_max = Column(Integer)
+    rhr_avg = Column(Integer)
+    rhr_min = Column(Integer)
+    rhr_max = Column(Integer)
+    inactive_hr_avg = Column(Integer)
+    inactive_hr_min = Column(Integer)
+    inactive_hr_max = Column(Integer)
     hrv_avg = Column(Float)
     hrv_min = Column(Float)
     hrv_max = Column(Float)

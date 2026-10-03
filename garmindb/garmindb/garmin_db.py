@@ -201,9 +201,9 @@ class Weight(GarminDb.Base, idbutils.DbObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
         return {
-            'weight_avg': cls.s_get_col_avg(session, cls.weight, start_ts, end_ts, True),
-            'weight_min': cls.s_get_col_min(session, cls.weight, start_ts, end_ts, True),
-            'weight_max': cls.s_get_col_max(session, cls.weight, start_ts, end_ts)
+            'weight_avg': cls.s_get_col_avg(session, cls.weight, start_ts, end_ts, True, 1),
+            'weight_min': cls.s_get_col_min(session, cls.weight, start_ts, end_ts, True, 1),
+            'weight_max': cls.s_get_col_max(session, cls.weight, start_ts, end_ts, precision=1)
         }
 
 
@@ -223,7 +223,7 @@ class Stress(GarminDb.Base, idbutils.DbObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
         return {
-            'stress_avg': cls.s_get_col_avg(session, cls.stress, start_ts, end_ts, True),
+            'stress_avg': cls.s_get_col_avg(session, cls.stress, start_ts, end_ts, True, 1),
         }
 
 
@@ -244,9 +244,9 @@ class RestingHeartRate(GarminDb.Base, idbutils.DbObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
         return {
-            'rhr_avg': cls.s_get_col_avg(session, cls.resting_heart_rate, start_ts, end_ts, ignore_le_zero=True),
-            'rhr_min': cls.s_get_col_min(session, cls.resting_heart_rate, start_ts, end_ts, ignore_le_zero=True),
-            'rhr_max': cls.s_get_col_max(session, cls.resting_heart_rate, start_ts, end_ts),
+            'rhr_avg': cls.s_get_col_avg(session, cls.resting_heart_rate, start_ts, end_ts, ignore_le_zero=True, precision=1),
+            'rhr_min': cls.s_get_col_min(session, cls.resting_heart_rate, start_ts, end_ts, ignore_le_zero=True, precision=1),
+            'rhr_max': cls.s_get_col_max(session, cls.resting_heart_rate, start_ts, end_ts, precision=1),
         }
 
 
@@ -342,35 +342,35 @@ class DailySummary(GarminDb.Base, idbutils.DbObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
         return {
-            'rhr_avg'                   : cls.s_get_col_avg(session, cls.rhr, start_ts, end_ts),
-            'rhr_min'                   : cls.s_get_col_min(session, cls.rhr, start_ts, end_ts),
-            'rhr_max'                   : cls.s_get_col_max(session, cls.rhr, start_ts, end_ts),
-            'stress_avg'                : cls.s_get_col_avg(session, cls.stress_avg, start_ts, end_ts),
+            'rhr_avg'                   : cls.s_get_col_avg(session, cls.rhr, start_ts, end_ts, precision=1),
+            'rhr_min'                   : cls.s_get_col_min(session, cls.rhr, start_ts, end_ts, precision=1),
+            'rhr_max'                   : cls.s_get_col_max(session, cls.rhr, start_ts, end_ts, precision=1),
+            'stress_avg'                : cls.s_get_col_avg(session, cls.stress_avg, start_ts, end_ts, precision=1),
             'steps'                     : cls.s_get_col_sum(session, cls.steps, start_ts, end_ts),
             'steps_goal'                : cls.s_get_col_sum(session, cls.step_goal, start_ts, end_ts),
-            'floors'                    : cls.s_get_col_sum(session, cls.floors_up, start_ts, end_ts),
+            'floors'                    : cls.s_get_col_sum(session, cls.floors_up, start_ts, end_ts, precision=0),
             'floors_goal'               : cls.s_get_col_sum(session, cls.floors_goal, start_ts, end_ts),
             'intensity_time'            : cls.s_get_time_col_avg(session, cls.intensity_time, start_ts, end_ts),
             'moderate_activity_time'    : cls.s_get_time_col_avg(session, cls.moderate_activity_time, start_ts, end_ts),
             'vigorous_activity_time'    : cls.s_get_time_col_sum(session, cls.vigorous_activity_time, start_ts, end_ts),
             'intensity_time_goal'       : cls.s_get_time_col_avg(session, cls.intensity_time_goal, start_ts, end_ts),
-            'calories_goal'             : cls.s_get_col_sum(session, cls.calories_goal, start_ts, end_ts),
-            'calories_avg'              : cls.s_get_col_avg(session, cls.calories_total, start_ts, end_ts),
-            'calories_bmr_avg'          : cls.s_get_col_avg(session, cls.calories_bmr, start_ts, end_ts),
-            'calories_active_avg'       : cls.s_get_col_avg(session, cls.calories_active, start_ts, end_ts),
-            'calories_consumed_avg'     : cls.s_get_col_avg(session, cls.calories_consumed, start_ts, end_ts),
-            'hydration_goal'            : cls.s_get_col_sum(session, cls.hydration_goal, start_ts, end_ts),
-            'hydration_avg'             : cls.s_get_col_avg(session, cls.hydration_intake, start_ts, end_ts),
-            'hydration_intake'          : cls.s_get_col_sum(session, cls.hydration_intake, start_ts, end_ts),
-            'sweat_loss_avg'            : cls.s_get_col_avg(session, cls.sweat_loss, start_ts, end_ts),
-            'sweat_loss'                : cls.s_get_col_sum(session, cls.sweat_loss, start_ts, end_ts),
-            'spo2_avg'                  : cls.s_get_col_avg(session, cls.spo2_avg, start_ts, end_ts),
-            'spo2_min'                  : cls.s_get_col_min(session, cls.spo2_min, start_ts, end_ts),
-            'rr_waking_avg'             : cls.s_get_col_avg(session, cls.rr_waking_avg, start_ts, end_ts),
-            'rr_max'                    : cls.s_get_col_max(session, cls.rr_max, start_ts, end_ts),
-            'rr_min'                    : cls.s_get_col_min(session, cls.rr_min, start_ts, end_ts),
-            'bb_max'                    : cls.s_get_col_avg(session, cls.bb_max, start_ts, end_ts),
-            'bb_min'                    : cls.s_get_col_avg(session, cls.bb_min, start_ts, end_ts),
+            'calories_goal'             : cls.s_get_col_sum(session, cls.calories_goal, start_ts, end_ts, precision=0),
+            'calories_avg'              : cls.s_get_col_avg(session, cls.calories_total, start_ts, end_ts, precision=0),
+            'calories_bmr_avg'          : cls.s_get_col_avg(session, cls.calories_bmr, start_ts, end_ts, precision=0),
+            'calories_active_avg'       : cls.s_get_col_avg(session, cls.calories_active, start_ts, end_ts, precision=0),
+            'calories_consumed_avg'     : cls.s_get_col_avg(session, cls.calories_consumed, start_ts, end_ts, precision=0),
+            'hydration_goal'            : cls.s_get_col_sum(session, cls.hydration_goal, start_ts, end_ts, precision=0),
+            'hydration_avg'             : cls.s_get_col_avg(session, cls.hydration_intake, start_ts, end_ts, precision=0),
+            'hydration_intake'          : cls.s_get_col_sum(session, cls.hydration_intake, start_ts, end_ts, precision=0),
+            'sweat_loss_avg'            : cls.s_get_col_avg(session, cls.sweat_loss, start_ts, end_ts, precision=0),
+            'sweat_loss'                : cls.s_get_col_sum(session, cls.sweat_loss, start_ts, end_ts, precision=0),
+            'spo2_avg'                  : cls.s_get_col_avg(session, cls.spo2_avg, start_ts, end_ts, precision=1),
+            'spo2_min'                  : cls.s_get_col_min(session, cls.spo2_min, start_ts, end_ts, precision=1),
+            'rr_waking_avg'             : cls.s_get_col_avg(session, cls.rr_waking_avg, start_ts, end_ts, precision=0),
+            'rr_max'                    : cls.s_get_col_max(session, cls.rr_max, start_ts, end_ts, precision=0),
+            'rr_min'                    : cls.s_get_col_min(session, cls.rr_min, start_ts, end_ts, precision=0),
+            'bb_max'                    : cls.s_get_col_avg(session, cls.bb_max, start_ts, end_ts, precision=0),
+            'bb_min'                    : cls.s_get_col_avg(session, cls.bb_min, start_ts, end_ts, precision=0),
         }
 
     @classmethod

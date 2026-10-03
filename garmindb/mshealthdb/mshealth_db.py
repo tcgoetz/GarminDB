@@ -69,9 +69,9 @@ class DaysSummary(MSHealthDb.Base, idbutils.DbObject):
     def get_hr_stats(cls, db, start_ts, end_ts):
         """Return a dictionary of aggregate heart rate statistics for the given time period."""
         return {
-            'hr_avg' : cls.get_col_avg(db, cls.hr_avg, start_ts, end_ts, True),
-            'hr_min' : cls.get_col_min(db, cls.hr_min, start_ts, end_ts, True),
-            'hr_max' : cls.get_col_max(db, cls.hr_max, start_ts, end_ts),
+            'hr_avg' : cls.get_col_avg(db, cls.hr_avg, start_ts, end_ts, True, 1),
+            'hr_min' : cls.get_col_min(db, cls.hr_min, start_ts, end_ts, True, 1),
+            'hr_max' : cls.get_col_max(db, cls.hr_max, start_ts, end_ts, precision=1),
         }
 
     @classmethod
@@ -111,8 +111,8 @@ class DaysSummary(MSHealthDb.Base, idbutils.DbObject):
     @classmethod
     def get_calories_stats(cls, db, start_ts, end_ts):
         """Return a dictionary of aggregate calorie statistics for the given time period."""
-        calories_avg = cls.get_col_avg(db, cls.calories, start_ts, end_ts)
-        calories_active_avg = cls.get_col_avg(db, cls.activity_calories, start_ts, end_ts)
+        calories_avg = cls.get_col_avg(db, cls.calories, start_ts, end_ts, precision=0)
+        calories_active_avg = cls.get_col_avg(db, cls.activity_calories, start_ts, end_ts, precision=0)
         if calories_active_avg is not None:
             calories_bmr_avg = calories_avg - calories_active_avg
         else:
@@ -190,8 +190,8 @@ class MSVaultWeight(MSHealthDb.Base, idbutils.DbObject):
     def get_stats(cls, db, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
         stats = {
-            'weight_avg' : cls.get_col_avg(db, cls.weight, start_ts, end_ts, True),
-            'weight_min' : cls.get_col_min(db, cls.weight, start_ts, end_ts, True),
-            'weight_max' : cls.get_col_max(db, cls.weight, start_ts, end_ts),
+            'weight_avg' : cls.get_col_avg(db, cls.weight, start_ts, end_ts, True, 1),
+            'weight_min' : cls.get_col_min(db, cls.weight, start_ts, end_ts, True, 1),
+            'weight_max' : cls.get_col_max(db, cls.weight, start_ts, end_ts, precision=1),
         }
         return stats

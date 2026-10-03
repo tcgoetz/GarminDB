@@ -74,9 +74,9 @@ class MonitoringHeartRate(MonitoringDb.Base, idbutils.DbObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dict of stats for table entries within the time span."""
         return {
-            'hr_avg' : cls.s_get_col_avg(session, cls.heart_rate, start_ts, end_ts, True),
-            'hr_min' : cls.s_get_col_min(session, cls.heart_rate, start_ts, end_ts, True),
-            'hr_max' : cls.s_get_col_max(session, cls.heart_rate, start_ts, end_ts),
+            'hr_avg' : cls.s_get_col_avg(session, cls.heart_rate, start_ts, end_ts, True, 0),
+            'hr_min' : cls.s_get_col_min(session, cls.heart_rate, start_ts, end_ts, True, 0),
+            'hr_max' : cls.s_get_col_max(session, cls.heart_rate, start_ts, end_ts, precision=0),
         }
 
 
@@ -97,9 +97,9 @@ class MonitoringRestingHeartRate(MonitoringDb.Base, idbutils.DbObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dict of stats for table entries within the time span."""
         return {
-            'rhr_avg' : cls.s_get_col_avg(session, cls.day_resting_heart_rate, start_ts, end_ts, True),
-            'rhr_min' : cls.s_get_col_min(session, cls.day_resting_heart_rate, start_ts, end_ts, True),
-            'rhr_max' : cls.s_get_col_max(session, cls.day_resting_heart_rate, start_ts, end_ts),
+            'rhr_avg' : cls.s_get_col_avg(session, cls.day_resting_heart_rate, start_ts, end_ts, True, 0),
+            'rhr_min' : cls.s_get_col_min(session, cls.day_resting_heart_rate, start_ts, end_ts, True, 0),
+            'rhr_max' : cls.s_get_col_max(session, cls.day_resting_heart_rate, start_ts, end_ts, precision=0),
         }
 
 
@@ -168,9 +168,9 @@ class MonitoringClimb(MonitoringDb.Base, idbutils.DbObject):
         cum_ascent = func(session, cls.cum_ascent, start_ts, end_ts)
         if cum_ascent:
             if measurement_system is fitfile.MeasurementSystem.metric:
-                floors = cum_ascent / cls.feet_to_floors
+                floors = round(cum_ascent / cls.feet_to_floors)
             else:
-                floors = cum_ascent / cls.meters_to_floors
+                floors = round(cum_ascent / cls.meters_to_floors)
         else:
             floors = 0
         return {'floors' : floors}
@@ -243,7 +243,7 @@ class Monitoring(MonitoringDb.Base, idbutils.DbObject):
         """Return a dict of stats for table entries within the time span."""
         return {
             'steps': func(session, cls.steps, start_ts, end_ts),
-            'calories_active_avg': (
+            'calories_active_avg': round(
                 cls.get_active_calories(session, fitfile.fields.ActivityType.running, start_ts, end_ts)
                 + cls.get_active_calories(session, fitfile.fields.ActivityType.cycling, start_ts, end_ts)
                 + cls.get_active_calories(session, fitfile.fields.ActivityType.walking, start_ts, end_ts)

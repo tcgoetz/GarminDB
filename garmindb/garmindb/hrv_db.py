@@ -63,7 +63,7 @@ class HrvStatusSummary(HrvDb.Base, idbutils.DbObject):
     def get_stats(cls, session, start_ts, end_ts):
         """Return a dictionary of aggregate statistics for the given time period."""
         return {
-            'hrv_avg'         : cls.s_get_col_avg(session, cls.last_night, start_ts, end_ts),
-            'hrv_min'         : cls.s_get_col_min(session, cls.last_night, start_ts, end_ts),
-            'hrv_max'         : cls.s_get_col_max(session, cls.last_night, start_ts, end_ts),
+            'hrv_avg'         : cls.s_get_col_avg(session, cls.last_night, start_ts, end_ts, precision=1),
+            'hrv_min'         : cls.s_get_col_min(session, cls.last_night, start_ts, end_ts, precision=1),
+            'hrv_max'         : cls.s_get_col_max(session, cls.last_night, start_ts, end_ts, precision=1),
         }

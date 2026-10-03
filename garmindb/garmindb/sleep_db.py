@@ -101,9 +101,9 @@ class Sleep(SleepDb.Base, idbutils.DbObject):
             'rem_sleep_avg'     : cls.s_get_time_col_avg(session, cls.rem_sleep, start_ts, end_ts),
             'rem_sleep_min'     : cls.s_get_time_col_min(session, cls.rem_sleep, start_ts, end_ts),
             'rem_sleep_max'     : cls.s_get_time_col_max(session, cls.rem_sleep, start_ts, end_ts),
-            'sleep_score_avg'   : cls.s_get_col_avg(session, cls.score, start_ts, end_ts),
-            'sleep_score_min'   : cls.s_get_col_min(session, cls.score, start_ts, end_ts),
-            'sleep_score_max'   : cls.s_get_col_max(session, cls.score, start_ts, end_ts),
+            'sleep_score_avg'   : cls.s_get_col_avg(session, cls.score, start_ts, end_ts, precision=0),
+            'sleep_score_min'   : cls.s_get_col_min(session, cls.score, start_ts, end_ts, precision=0),
+            'sleep_score_max'   : cls.s_get_col_max(session, cls.score, start_ts, end_ts, precision=0),
         }
 
 
