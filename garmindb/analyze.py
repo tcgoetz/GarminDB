@@ -220,7 +220,8 @@ class Analyze():
         years_mon = Monitoring.get_years(self.garmin_mon_db)
         years_act = Activities.get_years(self.garmin_act_db)
         years_sleep = SleepEvents.get_years(self.garmin_db)
-        years_all = sorted(list(set(years_mon + years_act + years_sleep)))
+        # Rows with no timestamp (eg activities with no start_time) produce a None year; drop them before sorting.
+        years_all = sorted(list(set(years_mon + years_act + years_sleep) - {None}))
 
         for year in years_all:
 
