@@ -68,6 +68,7 @@ class FitFileProcessor():
         self.serial_number = None
         self.manufacturer = None
         self.product = None
+        self.device_index_to_serial_number = {}
         for message in messages:
             self._write_file_id_entry(fit_file, message.fields)
 

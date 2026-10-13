@@ -161,10 +161,10 @@ class ActivityFitFileProcessor(FitFileProcessor):
         heart_rate_device = message_fields.get('heart_rate')
         device_used = {
             'activity_id'                       : self.activity_id,
-            'speed_device_serial_number'        : self.device_index_to_serial_number[speed_device] if speed_device else None,
-            'distance_device_serial_number'     : self.device_index_to_serial_number[distance_device] if distance_device else None,
-            'cadence_device_serial_number'      : self.device_index_to_serial_number[cadence_device] if cadence_device else None,
-            'heart_rate_device_serial_number'   : self.device_index_to_serial_number[heart_rate_device] if heart_rate_device else None,
+            'speed_device_serial_number'        : self.device_index_to_serial_number.get(speed_device) if speed_device else None,
+            'distance_device_serial_number'     : self.device_index_to_serial_number.get(distance_device) if distance_device else None,
+            'cadence_device_serial_number'      : self.device_index_to_serial_number.get(cadence_device) if cadence_device else None,
+            'heart_rate_device_serial_number'   : self.device_index_to_serial_number.get(heart_rate_device) if heart_rate_device else None,
         }
         root_logger.debug("writing device_used %r for %s", device_used, fit_file.filename)
         ActivitiesDeviceUsed.s_insert_or_update(self.garmin_act_db_session, device_used, ignore_none=True, ignore_zero=True)
