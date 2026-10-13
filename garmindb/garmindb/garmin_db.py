@@ -250,6 +250,36 @@ class RestingHeartRate(GarminDb.Base, idbutils.DbObject):
         }
 
 
+class LifestyleLogging(GarminDb.Base, idbutils.DbObject):
+    """Class representing a daily lifestyle logging data."""
+
+    __tablename__ = 'lifestyle_logging'
+    __time_col_name__ = 'day'
+
+    db = GarminDb
+    table_version = 2
+
+    day = Column(DateTime)
+    name = Column(String)
+    subtype_name = Column(String)
+    amount = Column(Integer)
+
+    __table_args__ = (PrimaryKeyConstraint("day", "name", "subtype_name"),)
+
+    @classmethod
+    def s_get(cls, session, day, name, subtype_name='', default=None):
+        """Return a single instance for the given cols."""
+        instance = session.query(cls).filter(cls.day == day).filter(cls.name == name).filter(cls.subtype_name == subtype_name).scalar()
+        if instance is None:
+            return default
+        return instance
+
+    @classmethod
+    def s_get_from_dict(cls, session, values_dict):
+        """Return a single lifestyle logging instance for the given cols."""
+        return cls.s_get(session, values_dict['day'], values_dict['name'], values_dict['subtype_name'] if values_dict.get('subtype_name') else '')
+
+
 class DailySummary(GarminDb.Base, idbutils.DbObject):
     """Class representing a Garmin daily summary."""
 

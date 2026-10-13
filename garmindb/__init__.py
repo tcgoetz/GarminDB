@@ -35,6 +35,7 @@ from .version import format_version, log_version, python_version_check
 
 from .import_monitoring import GarminMonitoringFitData, GarminSummaryData, GarminUserSettings, GarminSocialProfile, GarminPersonalInformation, GarminWeightData, \
     GarminConnectSleepData, GarminRhrData, GarminSettingsFitData, GarminHydrationData, GarminConnectHrvData
+from .import_lifestyle_logging import GarminConnectLifestyleLogging
 from .activities_fit_data import GarminActivitiesFitData
 from .garmin_tcx_data import GarminTcxData
 from .garmin_json_data import GarminJsonSummaryData, GarminJsonDetailsData

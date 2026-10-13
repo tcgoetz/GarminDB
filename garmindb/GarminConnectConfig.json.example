@@ -38,6 +38,7 @@
         "sleep"                         : true,
         "rhr"                           : true,
         "hrv"                           : true,
+        "lifestyle"                     : true,
         "weight"                        : true,
         "activities"                    : true
     },

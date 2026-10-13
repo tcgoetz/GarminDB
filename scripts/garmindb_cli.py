@@ -20,7 +20,8 @@ import zipfile
 import glob
 
 from garmindb import python_version_check, log_version, format_version
-from garmindb.garmindb import GarminDb, Attributes, Sleep, Weight, RestingHeartRate, MonitoringDb, SleepDb, MonitoringHeartRate, HrvDb, HrvStatusSummary, ActivitiesDb, GarminSummaryDb
+from garmindb.garmindb import GarminDb, Attributes, Sleep, Weight, RestingHeartRate, MonitoringDb, SleepDb, MonitoringHeartRate, HrvDb, HrvStatusSummary, \
+    LifestyleLogging, ActivitiesDb, GarminSummaryDb
 from garmindb.summarydb import SummaryDb
 
 from garmindb import Download, Copy, Analyze
@@ -30,6 +31,7 @@ from garmindb import HrvFitFileProcessor, GarminHrvFitData
 from garmindb import GarminUserSettings, GarminSocialProfile, GarminPersonalInformation, GarminWeightData, GarminSummaryData, GarminMonitoringFitData, \
     GarminConnectSleepData, GarminRhrData, GarminSettingsFitData, GarminHydrationData
 from garmindb import GarminConnectHrvData
+from garmindb import GarminConnectLifestyleLogging
 from garmindb import GarminJsonSummaryData, GarminJsonDetailsData, GarminTcxData, GarminActivitiesFitData
 from garmindb import ActivityExporter
 
@@ -166,10 +168,18 @@ class GarminDbMain():
         if Statistics.hrv in stats:
             date, days = self.__get_date_and_days(HrvDb(self.gc_config.get_db_params()), latest, HrvStatusSummary, HrvStatusSummary.day, 'hrv')
             if days > 0:
-                hrv_dir = self.gc_config.get_rhr_dir() # HRV tends to be in the same place as RHR or monitoring
+                hrv_dir = self.gc_config.get_rhr_dir() # HRV is in the same place as RHR
                 root_logger.info("Date range to update: %s (%d) to %s", date, days, hrv_dir)
                 download.get_hrv(hrv_dir, date, days, overwrite)
                 root_logger.info("Saved hrv files for %s (%d) to %s for processing", date, days, hrv_dir)
+
+        if Statistics.lifestyle in stats:
+            date, days = self.__get_date_and_days(HrvDb(self.gc_config.get_db_params()), latest, LifestyleLogging, LifestyleLogging.day, 'lifestyle')
+            if days > 0:
+                lifestyle_dir = self.gc_config.get_lifestyle_dir()
+                root_logger.info("Date range to update: %s (%d) to %s", date, days, lifestyle_dir)
+                download.get_lifestyle_logging(lifestyle_dir, date, days, overwrite)
+                root_logger.info("Saved lifestyle logging files for %s (%d) to %s for processing", date, days, lifestyle_dir)
 
 
     def import_data(self, debug, latest, stats, simple_output=False):
@@ -241,6 +251,12 @@ class GarminDbMain():
             ghrvd = GarminConnectHrvData(self.gc_config.get_db_params(), hrv_dir, latest, debug, simple_output=simple_output)
             if ghrvd.file_count() > 0:
                 ghrvd.process()
+
+        if Statistics.lifestyle in stats:
+            lifestyle_dir = self.gc_config.get_lifestyle_dir()
+            gcll = GarminConnectLifestyleLogging(self.gc_config.get_db_params(), lifestyle_dir, latest, debug, simple_output=simple_output)
+            if gcll.file_count() > 0:
+                gcll.process()
 
         if Statistics.activities in stats:
             activities_dir = self.gc_config.get_activities_dir()
@@ -335,6 +351,7 @@ def main(argv):
     stats_group.add_argument("-m", "--monitoring", help="Download and/or import monitoring data.", dest='stats', action='append_const', const=Statistics.monitoring)
     stats_group.add_argument("-r", "--rhr", help="Download and/or import resting heart rate data.", dest='stats', action='append_const', const=Statistics.rhr)
     stats_group.add_argument("--hrv", help="Download and/or import heart rate variability data.", dest='stats', action='append_const', const=Statistics.hrv)
+    stats_group.add_argument("--lifestyle", help="Download and/or import lifestyle logging data.", dest='stats', action='append_const', const=Statistics.lifestyle)
     stats_group.add_argument("-s", "--sleep", help="Download and/or import sleep data.", dest='stats', action='append_const', const=Statistics.sleep)
     stats_group.add_argument("-w", "--weight", help="Download and/or import weight data.", dest='stats', action='append_const', const=Statistics.weight)
     modifiers_group = parser.add_argument_group('Modifiers')

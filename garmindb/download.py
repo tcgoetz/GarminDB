@@ -39,6 +39,8 @@ class Download():
 
     garmin_connect_download_service_url = "/download-service/files"
 
+    garmin_connect_liestyle_logging_url = "/lifestylelogging-service/dailyLog"
+
     garmin_connect_usersummary_url = "/usersummary-service/usersummary"
     garmin_connect_daily_summary_url = garmin_connect_usersummary_url + "/daily"
     garmin_connect_daily_hydration_url = garmin_connect_usersummary_url + "/hydration/allData"
@@ -124,7 +126,7 @@ class Download():
                         root_logger.error("Failed to download %s after %d attempts: %s", download_date, attempt, e)
                     else:
                         backoff_seconds = attempt * 5
-                        root_logger.warning("Retrying %s after error on attempt %d/%d: %s", download_date, attempt, 5, e)
+                        root_logger.warning("Retrying %s after error on attempt %d/%d: %r", download_date, attempt, 5, e)
                         time.sleep(backoff_seconds)
             # pause for a second between every page access
             time.sleep(1)
@@ -316,3 +318,17 @@ class Download():
         """Download the heart rate variability (HRV) data from Garmin Connect and save to a JSON file."""
         root_logger.info("Getting hrv: %s (%d)", date, days)
         self.__get_stat(self.__get_hrv_day, directory, date, days, overwrite, 'Downloading HRV data')
+
+    def __get_lifestyle_logging_day(self, directory, day, overwrite=False):
+        date_str = day.strftime('%Y-%m-%d')
+        json_filename = f'{directory}/lifestyle_logging_{date_str}'
+        url = f'{self.garmin_connect_liestyle_logging_url}/{date_str}'
+        try:
+            self.save_json_to_file(json_filename, self.garmin.connectapi(url), overwrite)
+        except GarminConnectAuthError as e:
+            root_logger.error("Exception getting hydration: %s", e)
+
+    def get_lifestyle_logging(self, directory, date, days, overwrite):
+        """Download the lifestyle logging data from Garmin Connect and save to a JSON file."""
+        root_logger.info("Getting lifestyle logging: %s (%d)", date, days)
+        self.__get_stat(self.__get_lifestyle_logging_day, directory, date, days, overwrite, 'Downloading lifestyle logging data')

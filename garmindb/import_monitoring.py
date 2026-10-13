@@ -253,8 +253,7 @@ class GarminRhrData(JsonFileProcessor):
                     'day': json_data['statisticsStartDate'],
                     'resting_heart_rate': rhr
                 }
-                RestingHeartRate.insert_or_update(
-                    self.garmin_db, point, ignore_none=True)
+                RestingHeartRate.insert_or_update(self.garmin_db, point, ignore_none=True)
                 return 1
         return 0
 
