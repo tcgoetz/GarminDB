@@ -47,6 +47,8 @@ Counts describe items visited, including skipped items and handled failures; the
 A final count marks the end of that traversal, which may precede later steps such as archive extraction or database commit.
 Existing diagnostics and `--trace` behavior are unchanged. Without the flag, progress bars remain enabled.
 
+With a SQLite database, files are imported on one process per CPU. Use `--jobs N` to set the number of processes, `--jobs 1` imports the files one after the other.
+
 ## From Source
 
 The scripts are automated with [Make](https://www.gnu.org/software/make/manual/make.html). Run the Make commands in a terminal window.
