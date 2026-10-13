@@ -150,9 +150,7 @@ class ActivityFitFileProcessor(FitFileProcessor):
                 activity_ids = [self.activity_id]
             for activity_id in activity_ids:
                 entry = {'activity_id' : activity_id, 'device_serial_number' : device_serial_number}
-                if not ActivitiesDevices.s_exists(self.garmin_act_db_session, entry):
-                    root_logger.debug("_write_device_info_entry activity_id %s, device serial number %s doesn't exist", activity_id, device_serial_number)
-                    self.garmin_act_db_session.add(ActivitiesDevices(**entry))
+                ActivitiesDevices.s_find_or_create(self.garmin_act_db_session, entry)
 
     def _write_device_used_entry(self, fit_file, message_fields):
         speed_device = message_fields.get('speed')
@@ -213,24 +211,22 @@ class ActivityFitFileProcessor(FitFileProcessor):
         # It's fastest to just write the new data out if it doesn't currently exist.
         activity_id = override_activity_id or self.activity_id
         plugin_record = self._plugin_dispatch('write_record_entry', self.garmin_act_db_session, fit_file, activity_id, message_fields, record_num)
-        if not ActivityRecords.s_exists(self.garmin_act_db_session, {'activity_id' : activity_id, 'record' : record_num}):
-            record = {
-                'activity_id'                       : activity_id,
-                'record'                            : record_num,
-                'timestamp'                         : fit_file.utc_datetime_to_local(message_fields.timestamp),
-                'position_lat'                      : message_fields.get('position_lat'),
-                'position_long'                     : message_fields.get('position_long'),
-                'distance'                          : message_fields.get('distance'),
-                'cadence'                           : message_fields.get('cadence'),
-                'hr'                                : message_fields.get('heart_rate'),
-                'rr'                                : message_fields.get('respiration_rate'),
-                'altitude'                          : message_fields.get('altitude'),
-                'speed'                             : message_fields.get('speed'),
-                'temperature'                       : message_fields.get('temperature'),
-            }
-            record.update(plugin_record)
-            root_logger.debug("_write_record_entry creating activity_id %s, record %s", activity_id, record_num)
-            self.garmin_act_db_session.add(ActivityRecords(**record))
+        record = {
+            'activity_id'                       : activity_id,
+            'record'                            : record_num,
+            'timestamp'                         : fit_file.utc_datetime_to_local(message_fields.timestamp),
+            'position_lat'                      : message_fields.get('position_lat'),
+            'position_long'                     : message_fields.get('position_long'),
+            'distance'                          : message_fields.get('distance'),
+            'cadence'                           : message_fields.get('cadence'),
+            'hr'                                : message_fields.get('heart_rate'),
+            'rr'                                : message_fields.get('respiration_rate'),
+            'altitude'                          : message_fields.get('altitude'),
+            'speed'                             : message_fields.get('speed'),
+            'temperature'                       : message_fields.get('temperature'),
+        }
+        record.update(plugin_record)
+        ActivityRecords.s_find_or_create(self.garmin_act_db_session, record)
 
     def _write_length(self, fit_file, message_type, messages):
         """Write all length messages to the database."""
