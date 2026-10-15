@@ -174,7 +174,7 @@ class GarminDbMain():
                 root_logger.info("Saved hrv files for %s (%d) to %s for processing", date, days, hrv_dir)
 
         if Statistics.lifestyle in stats:
-            date, days = self.__get_date_and_days(HrvDb(self.gc_config.get_db_params()), latest, LifestyleLogging, LifestyleLogging.day, 'lifestyle')
+            date, days = self.__get_date_and_days(GarminDb(self.gc_config.get_db_params()), latest, LifestyleLogging, LifestyleLogging.day, 'lifestyle')
             if days > 0:
                 lifestyle_dir = self.gc_config.get_lifestyle_dir()
                 root_logger.info("Date range to update: %s (%d) to %s", date, days, lifestyle_dir)
