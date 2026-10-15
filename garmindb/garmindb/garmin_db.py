@@ -52,7 +52,6 @@ class Device(GarminDb.Base, idbutils.DbObject):
     """Class representing a Garmin device."""
 
     __tablename__ = 'devices'
-    __get_col_name__ = 'serial_number'
     __time_col_name__ = 'timestamp'
 
     db = GarminDb
@@ -129,7 +128,6 @@ class File(GarminDb.Base, idbutils.DbObject):
     """Class representing a data file."""
 
     __tablename__ = 'files'
-    __get_col_name__ = "id"
 
     db = GarminDb
     table_version = 3
