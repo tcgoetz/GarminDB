@@ -52,18 +52,18 @@ class GarminJsonActivityData(JsonFileProcessor):
         max_temperature = self._get_field_obj(json_data, 'maxTemperature', fitfile.Temperature.from_celsius)
         min_temperature = self._get_field_obj(json_data, 'minTemperature', fitfile.Temperature.from_celsius)
         avg_temperature = self._get_field_obj(json_data, 'averageTemperature', fitfile.Temperature.from_celsius)
-        start_time = dateutil.parser.parse(self._get_field(json_data, 'startTimeLocal'), ignoretz=True)
+        start_time = self._get_field(json_data, 'startTimeLocal', lambda value: dateutil.parser.parse(value, ignoretz=True))
         elapsed_time = fitfile.conversions.secs_to_dt_time(self._get_field(json_data, 'elapsedDuration', int))
         return {
             'start_time'                : start_time,
-            'stop_time'                 : start_time + fitfile.conversions.time_to_timedelta(elapsed_time) if elapsed_time is not None else None,
+            'stop_time'                 : start_time + fitfile.conversions.time_to_timedelta(elapsed_time) if start_time is not None and elapsed_time is not None else None,
             'elapsed_time'              : elapsed_time,
             'moving_time'               : fitfile.conversions.secs_to_dt_time(self._get_field(json_data, 'movingDuration', int)),
             'start_lat'                 : self._get_field(json_data, 'startLatitude', float),
             'start_long'                : self._get_field(json_data, 'startLongitude', float),
             'stop_lat'                  : self._get_field(json_data, 'endLatitude', float),
             'stop_long'                 : self._get_field(json_data, 'endLongitude', float),
-            'distance'                  : distance.kms_or_miles(self.measurement_system),
+            'distance'                  : distance.kms_or_miles(self.measurement_system) if distance is not None else None,
             'laps'                      : self._get_field(json_data, 'lapCount'),
             'avg_hr'                    : self._get_field(json_data, 'averageHR', float, 1),
             'max_hr'                    : self._get_field(json_data, 'maxHR', float, 1),
