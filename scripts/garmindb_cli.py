@@ -49,14 +49,15 @@ root_logger = logging.getLogger()
 class GarminDbMain():
 
     stats_to_db_map = {
-        Statistics.monitoring            : MonitoringDb,
-        Statistics.steps                 : MonitoringDb,
-        Statistics.itime                 : MonitoringDb,
-        Statistics.sleep                 : SleepDb,
-        Statistics.rhr                   : GarminDb,
-        Statistics.weight                : GarminDb,
-        Statistics.hrv                   : HrvDb,
-        Statistics.activities            : ActivitiesDb
+        Statistics.monitoring       : MonitoringDb,
+        Statistics.steps            : MonitoringDb,
+        Statistics.itime            : MonitoringDb,
+        Statistics.sleep            : SleepDb,
+        Statistics.rhr              : GarminDb,
+        Statistics.weight           : GarminDb,
+        Statistics.lifestyle        : GarminDb,
+        Statistics.hrv              : HrvDb,
+        Statistics.activities       : ActivitiesDb
     }
 
     summary_dbs = [GarminSummaryDb, SummaryDb]
