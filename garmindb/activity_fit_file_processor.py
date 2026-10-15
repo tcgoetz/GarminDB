@@ -345,10 +345,11 @@ class ActivityFitFileProcessor(FitFileProcessor):
         ActivitySplits.s_insert_or_update(self.garmin_act_db_session, split, ignore_none=True, ignore_zero=True)
 
         if message_fields.get('grade') is not None or message_fields.get('completed') is not None or message_fields.get('falls') is not None:
+            grade = message_fields.get('grade')
             climbing_split = {
                 'activity_id'           : self.activity_id,
                 'split'                 : split_num,
-                'grade'                 : message_fields.get('grade'),
+                'grade'                 : None if isinstance(grade, fitfile.UnknownEnumValue) else fitfile.name_for_enum(grade),
                 'completed'             : message_fields.get('completed'),
                 'falls'                 : message_fields.get('falls'),
             }

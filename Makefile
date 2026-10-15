@@ -234,6 +234,9 @@ build_garmin_sleep:
 build_garmin_hrv:
 	$(GARMINDB_CLI) --hrv --import --analyze
 
+build_garmin_lifestyle:
+	$(GARMINDB_CLI) --lifestyle --download --import
+
 copy_garmin_settings:
 	$(GARMINDB_CLI) --copy
 
