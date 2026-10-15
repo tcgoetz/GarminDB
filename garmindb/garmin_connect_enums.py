@@ -87,6 +87,7 @@ class Sport(enum.Enum):
     cross_country_skiing                    = 81
     stand_up_paddleboarding                 = 87
     golf                                    = 88
+    multi_sport                             = 89
     bmx                                     = 131
     hunting_fishing                         = 133
     surfing                                 = 137
@@ -105,6 +106,7 @@ class Sport(enum.Enum):
     safety                                  = 157
     assistance                              = 158
     incident_detected                       = 159
+    pilates                                 = 160
     ccr_diving                              = 161
     auto_racing                             = 162
     yoga_gym                                = 163
@@ -278,7 +280,8 @@ def convert_gc_sport_to_fit(gc_sport, gc_sub_sport):
         Sport.obstacle_run                          : fitfile.fields.SubSport.obstacle,
         Sport.indoor_running                        : fitfile.fields.SubSport.indoor_running,
         Sport.indoor_climbing                       : fitfile.fields.SubSport.indoor_climbing,
-        Sport.bouldering                            : fitfile.fields.SubSport.bouldering
+        Sport.bouldering                            : fitfile.fields.SubSport.bouldering,
+        Sport.pilates                               : fitfile.fields.SubSport.pilates
 
     }
     remap_winter_sports = {
@@ -320,7 +323,8 @@ def convert_gc_sport_to_fit(gc_sport, gc_sub_sport):
         Sport.fishing                                 : fitfile.fields.Sport.fishing,
         Sport.whitewater_rafting                      : fitfile.fields.Sport.rafting,
         Sport.kayaking                                : fitfile.fields.Sport.kayaking,
-        Sport.stand_up_paddleboarding_v2              : fitfile.fields.Sport.stand_up_paddleboarding
+        Sport.stand_up_paddleboarding_v2              : fitfile.fields.Sport.stand_up_paddleboarding,
+        Sport.multi_sport                             : fitfile.fields.Sport.multisport
     }
     special_remaps = {
         Sport.other                                   : remap_gc_sport_to_fit.get(gc_sub_sport, gc_sub_sport),

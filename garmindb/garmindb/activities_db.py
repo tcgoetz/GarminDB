@@ -56,7 +56,6 @@ class ActivityLengths(ActivitiesDb.Base, ActivitiesLengthsCommon):
     """Pool length from an activity."""
 
     __tablename__ = 'activity_lengths'
-    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 1
@@ -122,7 +121,6 @@ class ActivitySplitSummaries(ActivitiesDb.Base, ActivitiesSplitSummariessCommon)
     """Class that holds data for an activity split summary."""
 
     __tablename__ = 'activity_split_summaries'
-    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 1
@@ -203,7 +201,6 @@ class ActivitySplits(ActivitiesDb.Base, ActivitiesSplitsCommon):
     """Class that holds data for an activity split."""
 
     __tablename__ = 'activity_splits'
-    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 1
@@ -242,7 +239,6 @@ class ActivityClimbingSplits(ActivitiesDb.Base, idbutils.DbObject):
     """Class that holds data for an activity climbing split."""
 
     __tablename__ = 'activity_climbing_splits'
-    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 1
@@ -313,7 +309,6 @@ class Activities(ActivitiesDb.Base, ActivitiesLapsCommon):
     """Class represents a database table that contains data about recorded activities."""
 
     __tablename__ = 'activities'
-    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 6
@@ -379,7 +374,6 @@ class ActivityLaps(ActivitiesDb.Base, ActivitiesLapsCommon):
     """Class that holds data for an activity lap."""
 
     __tablename__ = 'activity_laps'
-    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 4
@@ -428,7 +422,6 @@ class ActivityRecords(ActivitiesDb.Base, idbutils.DbObject):
     """Encapsilates record for a single point in time from an activity."""
 
     __tablename__ = 'activity_records'
-    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 3
@@ -475,7 +468,6 @@ class ActivitiesBestEffort(ActivitiesDb.Base, idbutils.DbObject):
     """Class represents a database table that records best efforts for a given activity."""
 
     __tablename__ = 'activities_best_effort'
-    __get_col_name__ = "activity_id"
     __time_col_name__ = "start_time"
 
     db = ActivitiesDb
@@ -504,7 +496,6 @@ class ActivitiesCourses(ActivitiesDb.Base, idbutils.DbObject):
     """Class represents a database table that maps activities to course ids."""
 
     __tablename__ = 'activities_courses'
-    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 2
@@ -537,7 +528,6 @@ class ActivitiesDevices(ActivitiesDb.Base, idbutils.DbObject):
     """Class represents a database table that maps device ids to activities (by id) that they were used in."""
 
     __tablename__ = 'activities_devices'
-    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 2
@@ -563,7 +553,6 @@ class ActivitiesEvaluations(ActivitiesDb.Base, idbutils.DbObject):
     """Class represents a database table that that stores self evaluations for activities."""
 
     __tablename__ = 'activities_evaluations'
-    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 1
@@ -588,7 +577,6 @@ class ActivitiesDeviceUsed(ActivitiesDb.Base, idbutils.DbObject):
     """Class represents a database table that show which devices were used for metrics during activities (by serial number)."""
 
     __tablename__ = 'activities_devices_used'
-    __get_col_name__ = "activity_id"
 
     db = ActivitiesDb
     table_version = 2
@@ -614,8 +602,6 @@ class ActivitiesDeviceUsed(ActivitiesDb.Base, idbutils.DbObject):
 
 class SportActivities(idbutils.DbObject):
     """Base class for all sport based activity tables."""
-
-    __get_col_name__ = "activity_id"
 
     @declared_attr
     def activity_id(cls):
