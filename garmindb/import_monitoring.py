@@ -218,7 +218,7 @@ class GarminConnectSleepData(JsonFileProcessor):
                 }
                 # only insert if FIT files haven't supplied values
                 SleepEvents.find_or_create(self.sleep_db, level_data, ignore_none=True)
-        return len(sleep_levels)
+        return 1 + len(sleep_levels or [])
 
 
 class GarminRhrData(JsonFileProcessor):
