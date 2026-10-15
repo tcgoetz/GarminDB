@@ -80,7 +80,6 @@ class Analyze():
         stats.update(Sleep.get_daily_stats(sleep_session, day_date))
         stats.update(HrvStatusSummary.get_daily_stats(hrv_session, day_date))
         # save it to the db
-        logger.debug(f"day {repr(stats)}")
         DaysSummary.s_insert_or_update(garmin_sum_session, stats)
         summarydb.DaysSummary.s_insert_or_update(sum_session, stats)
 
