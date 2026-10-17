@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 PARENT_ID = '22638574127'
 FIXTURE = f'test_files/fit/activity/{PARENT_ID}_ACTIVITY.fit'
 EXPECTED_SESSION_LAP_COUNTS = [14, 1, 6, 1, 3]  # swim / T1 / run / T2 / swim
+EXPECTED_RECORD_COUNT = 3682  # the file has one more record, which is outside of every session
 EXPECTED_SPORTS = [
     ('swimming', 'lap_swimming'),
     ('transition', 'generic'),
@@ -49,7 +50,8 @@ class TestMultisportActivity(unittest.TestCase):
         cls.act_db = ActivitiesDb(cls.test_db_params, debug_level=1)
         plugin_manager = PluginManager(cls.gc_config.get_plugins_dir(), cls.test_db_params)
         processor = ActivityFitFileProcessor(cls.test_db_params, plugin_manager, debug=0)
-        processor.write_file(fitfile.file.File(FIXTURE))
+        cls.fit_file = fitfile.file.File(FIXTURE)
+        processor.write_file(cls.fit_file)
 
     def test_creates_one_row_per_session(self):
         with self.act_db.managed_session() as session:
@@ -106,6 +108,18 @@ class TestMultisportActivity(unittest.TestCase):
                 activity_id = f'{PARENT_ID}_{i}'
                 count = session.query(ActivityRecords).filter(ActivityRecords.activity_id == activity_id).count()
                 self.assertGreater(count, 0, f'{activity_id} should have at least one record')
+
+    def test_every_record_is_written(self):
+        with self.act_db.managed_session() as session:
+            count = session.query(ActivityRecords).filter(ActivityRecords.activity_id.like(f'{PARENT_ID}_%')).count()
+        self.assertEqual(count, EXPECTED_RECORD_COUNT)
+
+    def test_importing_again_does_not_duplicate_or_lose_records(self):
+        plugin_manager = PluginManager(self.gc_config.get_plugins_dir(), self.test_db_params)
+        ActivityFitFileProcessor(self.test_db_params, plugin_manager, debug=0).write_file(self.fit_file)
+        with self.act_db.managed_session() as session:
+            count = session.query(ActivityRecords).filter(ActivityRecords.activity_id.like(f'{PARENT_ID}_%')).count()
+        self.assertEqual(count, EXPECTED_RECORD_COUNT)
 
     def test_devices_linked_to_every_child(self):
         with self.act_db.managed_session() as session:
