@@ -37,3 +37,4 @@ from .import_monitoring import GarminMonitoringFitData, GarminSleepFitData, Garm
 from .activities_fit_data import GarminActivitiesFitData
 from .garmin_tcx_data import GarminTcxData
 from .garmin_json_data import GarminJsonSummaryData, GarminJsonDetailsData
+from .garmin_golf_data import GarminGolfScorecardData, GarminGolfScorecardDetailData, GarminGolfShotData

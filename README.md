@@ -17,6 +17,7 @@ What they can do:
 * Automatically download and import Garmin daily monitoring files (all day heart rate, activity, climb/descend, stress, and intensity minutes) from the user's Garmin Connect "Daily Summary" page.
 * Extract sleep, weight, and resting heart rate data from Garmin Connect, store it as JSON files, and import it into the DB.
 * Download and import activity files from Garmin Connect. A summary table for all activities and more detailed data for some activity types. Lap and record entries for activities.
+* Download and import Golf files from Garmin Connect, including scorecard summaries, holes, and detailed shot types.
 * Summarizing data into a DB with tables containing daily, weekly, monthly, and yearly summaries.
 * Graph your data from the commandline or with Jupyter notebooks.
 * Retain downloaded JSON and FIT files so that the DB can be regenerated without connecting to or redownloading data from Garmin Connect.

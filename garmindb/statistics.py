@@ -19,6 +19,7 @@ class Statistics(enum.Enum):
     weight = 6
     activities = 7
     hrv = 8
+    golf = 9
 
     @classmethod
     def from_string(cls, string):

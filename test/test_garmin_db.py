@@ -11,7 +11,7 @@ import datetime
 import fitfile
 
 from garmindb import GarminConnectConfigManager, GarminSleepFitData, SleepFitFileProcessor
-from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate, Hrv
+from garmindb.garmindb import GarminDb, Attributes, Device, DeviceInfo, File, Weight, Stress, Sleep, SleepEvents, RestingHeartRate, Hrv, GolfScorecard, GolfHole, GolfShot
 
 from test_db_base import TestDBBase
 
@@ -44,9 +44,12 @@ class TestGarminDb(TestDBBase, unittest.TestCase):
             'sleep_table': Sleep,
             'sleep_events_table': SleepEvents,
             'resting_heart_rate_table': RestingHeartRate,
-            'hrv_table': Hrv
+            'hrv_table': Hrv,
+            'golf_scorecards_table': GolfScorecard,
+            'golf_holes_table': GolfHole,
+            'golf_shots_table': GolfShot
         }
-        super().setUpClass(cls.garmin_db, table_dict, table_can_be_empty=['hrv_table'])
+        super().setUpClass(cls.garmin_db, table_dict, table_can_be_empty=['hrv_table', 'golf_scorecards_table', 'golf_holes_table', 'golf_shots_table'])
 
     def check_col_stat(self, value_name, value, bounds):
         min_value, max_value = bounds

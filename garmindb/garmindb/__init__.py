@@ -12,3 +12,4 @@ from .monitoring_db import MonitoringDb, MonitoringInfo, MonitoringHeartRate, Mo
 from .activities_db import ActivitiesDb, Activities, ActivityLaps, ActivityRecords, ActivitiesDevices, ActivitySplits, SportActivities, StepsActivities, \
     PaddleActivities, CycleActivities, ClimbingActivities
 from .garmin_summary_db import GarminSummaryDb, Summary, YearsSummary, MonthsSummary, WeeksSummary, DaysSummary, IntensityHR
+from .golf_db import GolfScorecard, GolfHole, GolfShot
