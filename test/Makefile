@@ -33,7 +33,7 @@ fit_file: $(FIT_FILE_TEST_GROUPS)
 
 db_objects: $(DB_OBJECTS_TEST_GROUPS)
 
-verify_commit: module_versions db_objects $(OUTPUT_TEST_GROUPS)
+verify_commit: module_versions db_objects fit_file $(OUTPUT_TEST_GROUPS)
 
 clean:
 	echo "Cleaning test"
