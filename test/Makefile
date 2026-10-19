@@ -11,7 +11,7 @@ include $(PROJECT_BASE)/defines.mk
 DB_TEST_GROUPS=garmin_db activities_db multisport_activity monitoring_db garmin_summary_db summary_db
 DB_OBJECTS_TEST_GROUPS=garmin_db_objects climbing_split sleep_json activity_types activity_json device_used
 FIT_FILE_TEST_GROUPS=activity_fit_file hrv_fit_file metrics_fit_file monitoring_fit_file skin_temp_fit_file sleep_disruptions_fit_file sleep_fit_file unknown_fit_file
-FILE_PARSE_TEST_GROUPS=tcx_loop tcx_file profile_file
+FILE_PARSE_TEST_GROUPS=tcx_loop tcx_file profile_file parallel_import
 OUTPUT_TEST_GROUPS=progress simple_output
 ALL_TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS) $(FIT_FILE_TEST_GROUPS) $(OUTPUT_TEST_GROUPS)
 MANUAL_TEST_GROUPS=copy

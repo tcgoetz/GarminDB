@@ -19,6 +19,8 @@ import tempfile
 import zipfile
 import glob
 
+from idbutils import parallel
+
 from garmindb import python_version_check, log_version, format_version
 from garmindb.garmindb import GarminDb, Attributes, Sleep, Weight, RestingHeartRate, MonitoringDb, SleepDb, MonitoringHeartRate, HrvDb, HrvStatusSummary, \
     LifestyleLogging, ActivitiesDb, GarminSummaryDb
@@ -40,7 +42,6 @@ from garmindb import Statistics
 from garmindb import OpenWithBaseCamp, OpenWithGoogleEarth
 
 
-logging.basicConfig(filename='garmindb.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 root_logger = logging.getLogger()
@@ -328,6 +329,7 @@ class GarminDbMain():
 
 def main(argv):
     """Manage Garmin device data."""
+    logging.basicConfig(filename='garmindb.log', filemode='w', level=logging.INFO)
     python_version_check(sys.argv[0])
 
     parser = argparse.ArgumentParser()
@@ -357,6 +359,7 @@ def main(argv):
     stats_group.add_argument("-w", "--weight", help="Download and/or import weight data.", dest='stats', action='append_const', const=Statistics.weight)
     modifiers_group = parser.add_argument_group('Modifiers')
     modifiers_group.add_argument("-l", "--latest", help="Only download and/or import the latest data.", action="store_true", default=False)
+    modifiers_group.add_argument("-j", "--jobs", help="Number of processes to import with. The default is one per CPU.", type=int, default=0)
     modifiers_group.add_argument("-o", "--overwrite", help="Overwrite existing files when downloading. The default is to only download missing files.",
                                  action="store_true", default=False)
     modifiers_group.add_argument("--simple-output", help="Print progress as lines instead of updating progress bars.", action="store_true", default=False)
@@ -368,6 +371,8 @@ def main(argv):
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)
+
+    parallel.set_workers(args.jobs)
 
     garminDbMain = GarminDbMain(args.config)
     if args.all:
