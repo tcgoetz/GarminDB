@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 # Garmin names each activity FIT file <activity_id>_ACTIVITY.fit; the parent id is the filename prefix.
-PARENT_ID = '22638574127'
+PARENT_ID = '10000000001'
 FIXTURE = f'test_files/fit/activity/{PARENT_ID}_ACTIVITY.fit'
 EXPECTED_SESSION_LAP_COUNTS = [14, 1, 6, 1, 3]  # swim / T1 / run / T2 / swim
 EXPECTED_RECORD_COUNT = 3682  # the file has one more record, which is outside of every session
