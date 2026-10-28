@@ -303,7 +303,7 @@ class GarminJsonDetailsData(GarminJsonActivityData):
 
     def _activities_process_json(self, json_data):
         activity_id = json_data['activityId']
-        event_dto = json_data['eventTypeDTO']
+        event_dto = json_data.get('eventTypeDTO')
         metadata_dto = json_data['metadataDTO']
         summary_dto = json_data['summaryDTO']
         sport, sub_sport = get_details_sport(json_data)
@@ -311,11 +311,12 @@ class GarminJsonDetailsData(GarminJsonActivityData):
             'activity_id'           : activity_id,
             'name'                  : json_data.get('activityName'),
             'description'           : self._get_field(json_data, 'description'),
-            'type'                  : event_dto['typeKey'],
             'sport'                 : sport.name if sport is not None else None,
             'sub_sport'             : sub_sport.name if sub_sport is not None else None,
             'training_load'         : self._get_field(summary_dto, 'activityTrainingLoad', float, 1)
         }
+        if event_dto:
+            activity.update({'type': event_dto['typeKey']})
         activity.update(self._process_common(summary_dto))
         Activities.s_insert_or_update(self.garmin_act_db_session, activity, ignore_none=True)
         course_id = self._get_field(metadata_dto, 'associatedCourseId', int)
