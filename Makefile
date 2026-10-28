@@ -244,11 +244,13 @@ copy_garmin:
 	$(GARMINDB_CLI) --all --copy --import --analyze
 
 update_garmin:
-	# $(GARMINDB_CLI) --all --download --import --analyze --latest
-	$(GARMINDB_CLI) --all --analyze --latest
+	$(GARMINDB_CLI) --all --download --import --analyze --latest
 
 import_garmin_activities:
 	$(GARMINDB_CLI) --activities --import
+
+download_garmin_activities:
+	$(GARMINDB_CLI) --activities --download --import --analyze
 
 update_garmin_activities:
 	$(GARMINDB_CLI) --activities --download --import --analyze --latest

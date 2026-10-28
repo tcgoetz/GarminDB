@@ -93,14 +93,25 @@ class Download():
         return object.__str__()
 
     @classmethod
+    def _load_json_from_file(cls, full_filename):
+        """Save JSON formatted data to a file."""
+        with open(full_filename, 'r') as file:
+            return json.load(file)
+
+    @classmethod
+    def _save_json_to_file(cls, full_filename, json_data, verb):
+        """Save JSON formatted data to a file."""
+        logger.debug("%s %s", verb, full_filename)
+        with open(full_filename, 'w') as file:
+            file.write(json.dumps(json_data, default=cls.__convert_to_json))
+
+    @classmethod
     def save_json_to_file(cls, filename, json_data, overwrite=False):
         """Save JSON formatted data to a file."""
         full_filename = f'{filename}.json'
         exists = os.path.isfile(full_filename)
         if not exists or overwrite:
-            logger.debug("%s %s", 'Overwriting' if exists else 'Saving', full_filename)
-            with open(full_filename, 'w') as file:
-                file.write(json.dumps(json_data, default=cls.__convert_to_json))
+            cls._save_json_to_file(full_filename, json_data, 'Overwriting' if exists else 'Saving')
 
     def save_binary_file(self, filename, url, overwrite=False):
         """Save binary data to a file."""
@@ -201,18 +212,31 @@ class Download():
         except GarminConnectAuthError as e:
             root_logger.error("Exception getting activity summary: %s", e)
 
-    def __save_activity_details(self, directory, activity_id_str, overwrite):
+    def __save_activity_details(self, directory, activity_id_str):
+        """Download activity details and save it if it doesn't exist on disk or the download is newer. Return True if saved."""
         root_logger.debug("save_activity_details")
         json_filename = f'{directory}/activity_details_{activity_id_str}'
+        full_filename = f'{json_filename}.json'
+        url = f'{self.garmin_connect_activity_service_url}/{activity_id_str}'
         try:
-            url = f'{self.garmin_connect_activity_service_url}/{activity_id_str}'
-            self.save_json_to_file(
-                json_filename, self.garmin.connectapi(url), overwrite)
+            json_data = self.garmin.connectapi(url)
+            exists = os.path.isfile(full_filename)
+            if exists:
+                existing_activity_json = self._load_json_from_file(full_filename)
+                existing_date = existing_activity_json['metadataDTO']['lastUpdateDate']
+                new_date = json_data['metadataDTO']['lastUpdateDate']
+                if new_date > existing_date:
+                    self._save_json_to_file(full_filename, json_data, 'Updating')
+                    return True
+                root_logger.info("Skipping existing and up-to-date %s", full_filename)
+                return False
+            self._save_json_to_file(full_filename, json_data, 'Saving')
+            return True
         except GarminConnectAuthError as e:
-            root_logger.error("Exception getting daily summary %s", e)
+            root_logger.error("Exception getting activity details %s", e)
 
     def __save_activity_file(self, activity_id_str):
-        root_logger.debug("save_activity_file: %s", activity_id_str)
+        root_logger.info("save_activity_file: %s", activity_id_str)
         zip_filename = f'{self.temp_dir}/activity_{activity_id_str}.zip'
         url = f'{self.garmin_connect_download_service_url}/activity/{activity_id_str}'
         try:
@@ -220,26 +244,26 @@ class Download():
         except GarminConnectAuthError as e:
             root_logger.error("Exception downloading activity file: %s", e)
 
+    def get_activity(self, directory, activity, overwrite):
+        activity_id_str = str(activity['activityId'])
+        activity_name_str = conversions.printable(activity.get('activityName'))
+        if self.__save_activity_details(directory, activity_id_str):
+            root_logger.info("get_activity: %s (%s)", activity_name_str, activity_id_str)
+            self.save_json_to_file(f'{directory}/activity_{activity_id_str}', activity)
+            if not os.path.isfile(f'{directory}/{activity_id_str}.fit') or overwrite:
+                self.__save_activity_file(activity_id_str)
+            else:
+                root_logger.info("get_activity: skipping download of %s, already present", activity_id_str)
+        # pause for a second between every page access
+        time.sleep(1)
+
     def get_activities(self, directory, count, overwrite=False):
         """Download activities files from Garmin Connect and save the raw files."""
         self.temp_dir = tempfile.mkdtemp()
         logger.info("Getting activities: '%s' (%d) temp %s", directory, count, self.temp_dir)
         activities = self.__get_activity_summaries(0, count)
         for activity in progress(activities or [], 'Downloading activities', unit='activities', simple_output=self.simple_output):
-            activity_id_str = str(activity['activityId'])
-            activity_name_str = conversions.printable(activity.get('activityName'))
-            root_logger.info("get_activities: %s (%s)", activity_name_str, activity_id_str)
-            json_filename = f'{directory}/activity_{activity_id_str}'
-            if not os.path.isfile(json_filename + '.json') or overwrite:
-                root_logger.info("get_activities: %s <- %r", json_filename, activity)
-                self.__save_activity_details(directory, activity_id_str, overwrite)
-                self.save_json_to_file(json_filename, activity)
-                if not os.path.isfile(f'{directory}/{activity_id_str}.fit') or overwrite:
-                    self.__save_activity_file(activity_id_str)
-                # pause for a second between every page access
-                time.sleep(1)
-            else:
-                root_logger.info("get_activities: skipping download of %s, already present", activity_id_str)
+            self.get_activity(directory, activity, overwrite)
         self.__unzip_files(directory)
 
     def get_activity_types(self, directory, overwrite):
