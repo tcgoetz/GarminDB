@@ -8,6 +8,7 @@ import logging
 import sys
 import traceback
 import datetime
+import operator
 
 import fitfile
 import idbutils
@@ -33,11 +34,33 @@ class MonitoringFitFileProcessor(FitFileProcessor):
             root_logger.info("Loaded %d activity plugins %r for file %s", len(self.activity_fit_file_plugins), self.activity_fit_file_plugins, fit_file)
         # Create the db after setting up the plugins so that plugin tables are handled properly
         self.garmin_mon_db = MonitoringDb(self.db_params, self.debug - 1)
+        self._set_utc_offsets(fit_file)
         with self.garmin_db.managed_session() as self.garmin_db_session, self.garmin_mon_db.managed_session() as self.garmin_mon_db_session:
             self._write_message_types(fit_file, fit_file.message_types)
 
     def _plugin_dispatch(self, handler_name, *args, **kwargs):
         return super()._plugin_dispatch(self.monitoring_fit_file_plugins, handler_name, *args, **kwargs)
+
+    def _set_utc_offsets(self, fit_file):
+        """Remember every UTC offset in the file. The watch writes a monitoring_info message when its offset changes (daylight saving time, travel)."""
+        utc_offsets = []
+        for message in fit_file[fitfile.MessageType.monitoring_info]:
+            timestamp = message.fields.get('timestamp')
+            local_timestamp = message.fields.get('local_timestamp')
+            if timestamp is not None and local_timestamp is not None:
+                utc_offsets.append((timestamp, (local_timestamp - timestamp.replace(tzinfo=None)).total_seconds()))
+        self.utc_offsets = sorted(utc_offsets, key=operator.itemgetter(0))
+
+    def _utc_datetime_to_local(self, fit_file, dt):
+        """Return a local datetime based on the UTC offset in effect at dt, or the file's UTC offset before the first monitoring_info message."""
+        if dt.tzinfo is not datetime.timezone.utc:
+            return dt.replace(tzinfo=None)
+        utc_offset = fit_file.utc_offset
+        for offset_timestamp, offset in self.utc_offsets:
+            if offset_timestamp > dt:
+                break
+            utc_offset = offset
+        return (dt + datetime.timedelta(seconds=utc_offset)).replace(tzinfo=None)
 
     @classmethod
     def __unpack_tuple(cls, entry, name, value, index):
@@ -65,7 +88,7 @@ class MonitoringFitFileProcessor(FitFileProcessor):
     def _write_monitoring_entry(self, fit_file, message_fields):
         # Only include not None values so that we match and update only if a table's columns if it has values.
         entry = idbutils.list_and_dict.dict_filter_none_values(message_fields)
-        timestamp = fit_file.utc_datetime_to_local(message_fields.timestamp)
+        timestamp = self._utc_datetime_to_local(fit_file, message_fields.timestamp)
         # Hack: daily monitoring summaries appear at 00:00:00 localtime for the PREVIOUS day. Subtract a second so they appear in the previous day.
         if timestamp.time() == datetime.time.min:
             timestamp = timestamp - datetime.timedelta(seconds=1)
@@ -94,7 +117,7 @@ class MonitoringFitFileProcessor(FitFileProcessor):
         rr = message_fields.get('respiration_rate')
         if rr > 0:
             respiration = {
-                'timestamp' : fit_file.utc_datetime_to_local(message_fields.timestamp),
+                'timestamp' : self._utc_datetime_to_local(fit_file, message_fields.timestamp),
                 'rr'        : rr,
             }
             if fit_file.type is fitfile.FileType.monitoring_b:
@@ -108,7 +131,7 @@ class MonitoringFitFileProcessor(FitFileProcessor):
             pulse_ox = message_fields.get('pulse_ox')
             if pulse_ox is not None:
                 pulse_ox_entry = {
-                    'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),
+                    'timestamp': self._utc_datetime_to_local(fit_file, message_fields.timestamp),
                     'pulse_ox': pulse_ox,
                 }
                 MonitoringPulseOx.s_insert_or_update(self.garmin_mon_db_session, pulse_ox_entry)
@@ -122,7 +145,7 @@ class MonitoringFitFileProcessor(FitFileProcessor):
         if hrv_value is not None and hrv_value > 0:
             # HRV values are scaled by 128 in the FIT file
             hrv_entry = {
-                'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),
+                'timestamp': self._utc_datetime_to_local(fit_file, message_fields.timestamp),
                 'hrv': hrv_value / 128.0,  # Convert to milliseconds
             }
             MonitoringHrvValue.s_insert_or_update(self.garmin_mon_db_session, hrv_entry)
@@ -132,7 +155,7 @@ class MonitoringFitFileProcessor(FitFileProcessor):
         logger.debug("hrv_status_summary message: %r", message_fields)
         # HRV values are scaled by 128 in the FIT file
         hrv_status_entry = {
-            'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),
+            'timestamp': self._utc_datetime_to_local(fit_file, message_fields.timestamp),
             'weekly_average': message_fields.get('weekly_average', 0) / 128.0 if message_fields.get('weekly_average') else None,
             'last_night': message_fields.get('last_night', 0) / 128.0 if message_fields.get('last_night') else None,
             'last_night_average': message_fields.get('last_night_average', 0) / 128.0 if message_fields.get('last_night_average') else None,
