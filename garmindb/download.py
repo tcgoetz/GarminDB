@@ -113,6 +113,14 @@ class Download():
         if not exists or overwrite:
             cls._save_json_to_file(full_filename, json_data, 'Overwriting' if exists else 'Saving')
 
+    @classmethod
+    def _skip_download(cls, json_filename, overwrite):
+        """Return True if the JSON file was already downloaded and should not be overwritten, so the request can be skipped."""
+        if not overwrite and os.path.isfile(f'{json_filename}.json'):
+            root_logger.debug("Skipping download of %s.json, already present", json_filename)
+            return True
+        return False
+
     def save_binary_file(self, filename, url, overwrite=False):
         """Save binary data to a file."""
         exists = os.path.isfile(filename)
@@ -151,6 +159,8 @@ class Download():
         }
         url = f'{self.garmin_connect_daily_summary_url}/{self.display_name}'
         json_filename = f'{directory_func(date.year)}/daily_summary_{date_str}'
+        if self._skip_download(json_filename, overwrite):
+            return
         try:
             self.save_json_to_file(json_filename, self.garmin.connectapi(url, params=params), overwrite)
         except GarminConnectAuthError as e:
@@ -190,6 +200,8 @@ class Download():
             '_'         : str(conversions.dt_to_epoch_ms(conversions.date_to_dt(day)))
         }
         json_filename = f'{directory}/weight_{date_str}'
+        if self._skip_download(json_filename, overwrite):
+            return
         try:
             self.save_json_to_file(json_filename, self.garmin.connectapi(self.garmin_connect_weight_url, params=params), overwrite)
         except GarminConnectAuthError as e:
@@ -279,6 +291,8 @@ class Download():
 
     def __get_sleep_day(self, directory, date, overwrite=False):
         json_filename = f'{directory}/sleep_{date}'
+        if self._skip_download(json_filename, overwrite):
+            return
         params = {
             'date'                  : date.strftime("%Y-%m-%d"),
             'nonSleepBufferMinutes' : 60
@@ -297,6 +311,8 @@ class Download():
     def __get_rhr_day(self, directory, day, overwrite=False):
         date_str = day.strftime('%Y-%m-%d')
         json_filename = f'{directory}/rhr_{date_str}'
+        if self._skip_download(json_filename, overwrite):
+            return
         params = {
             'fromDate'  : date_str,
             'untilDate' : date_str,
@@ -317,6 +333,8 @@ class Download():
     def __get_hydration_day(self, directory_func, day, overwrite=False):
         date_str = day.strftime('%Y-%m-%d')
         json_filename = f'{directory_func(day.year)}/hydration_{date_str}'
+        if self._skip_download(json_filename, overwrite):
+            return
         url = f'{self.garmin_connect_daily_hydration_url}/{date_str}'
         try:
             self.save_json_to_file(json_filename, self.garmin.connectapi(url), overwrite)
@@ -331,6 +349,8 @@ class Download():
     def __get_hrv_day(self, directory, day, overwrite=False):
         date_str = day.strftime('%Y-%m-%d')
         json_filename = f'{directory}/hrv_{date_str}'
+        if self._skip_download(json_filename, overwrite):
+            return
         url = f'{self.garmin_connect_hrv_url}/{date_str}'
         try:
             self.save_json_to_file(json_filename, self.garmin.connectapi(url), overwrite)
@@ -346,6 +366,8 @@ class Download():
     def __get_lifestyle_logging_day(self, directory, day, overwrite=False):
         date_str = day.strftime('%Y-%m-%d')
         json_filename = f'{directory}/lifestyle_logging_{date_str}'
+        if self._skip_download(json_filename, overwrite):
+            return
         url = f'{self.garmin_connect_liestyle_logging_url}/{date_str}'
         try:
             self.save_json_to_file(json_filename, self.garmin.connectapi(url), overwrite)
