@@ -36,6 +36,7 @@ from garmindb import GarminJsonSummaryData, GarminJsonDetailsData, GarminTcxData
 from garmindb import ActivityExporter
 
 from garmindb import GarminConnectConfigManager, PluginManager
+from garmindb.garmin_connect_auth_adapter import GarminConnectRateLimitError
 from garmindb import Statistics
 from garmindb import OpenWithBaseCamp, OpenWithGoogleEarth
 
@@ -393,7 +394,10 @@ def main(argv):
         garminDbMain.copy_data(args.overwrite, args.latest, stats, simple_output=args.simple_output)
 
     if args.download_data:
-        garminDbMain.download_data(args.overwrite, args.latest, stats, simple_output=args.simple_output)
+        try:
+            garminDbMain.download_data(args.overwrite, args.latest, stats, simple_output=args.simple_output)
+        except GarminConnectRateLimitError as e:
+            logger.error("Stopped downloading: %s. Files downloaded so far are kept; try again in a few hours.", e)
 
     if args.import_data:
         garminDbMain.import_data(args.trace, args.latest, stats, simple_output=args.simple_output)

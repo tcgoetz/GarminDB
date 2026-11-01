@@ -16,7 +16,7 @@ import json
 
 import fitfile.conversions as conversions
 
-from .garmin_connect_auth_adapter import GarminConnectAuthAdapter, GarminConnectAuthError
+from .garmin_connect_auth_adapter import GarminConnectAuthAdapter, GarminConnectAuthError, GarminConnectRateLimitError
 from .progress import progress
 
 
@@ -132,6 +132,9 @@ class Download():
                 try:
                     stat_function(directory, download_date, stat_overwrite)
                     break
+                except GarminConnectRateLimitError:
+                    # Unlike the transient failures retried below, a rate limit doesn't clear within the backoff.
+                    raise
                 except Exception as e:
                     if attempt == 5:
                         root_logger.error("Failed to download %s after %d attempts: %s", download_date, attempt, e)

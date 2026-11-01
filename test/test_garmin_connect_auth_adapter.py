@@ -9,8 +9,9 @@ import tempfile
 import unittest
 
 from garminconnect import GarminConnectAuthenticationError
+from garminconnect import GarminConnectTooManyRequestsError
 
-from garmindb.garmin_connect_auth_adapter import GarminConnectAuthAdapter, GarminConnectAuthError
+from garmindb.garmin_connect_auth_adapter import GarminConnectAuthAdapter, GarminConnectAuthError, GarminConnectRateLimitError
 
 
 class FakeConfig:
@@ -128,6 +129,25 @@ class TestGarminConnectAuthAdapter(unittest.TestCase):
             {"path": "/example", "kwargs": {"params": {"a": "b"}}},
         )
         self.assertEqual(adapter.download("/file"), b"downloaded")
+
+    def test_rate_limited_requests_raise_rate_limit_error(self):
+        class RateLimitedGarmin(FakeGarmin):
+            def connectapi(self, path, **kwargs):
+                if path == "/userprofile-service/socialProfile":
+                    return super().connectapi(path, **kwargs)
+                raise GarminConnectTooManyRequestsError("429 Too Many Requests")
+
+            def download(self, path, **kwargs):
+                raise GarminConnectTooManyRequestsError("429 Too Many Requests")
+
+        adapter = GarminConnectAuthAdapter(self.config, garmin_factory=RateLimitedGarmin)
+        adapter.login()
+
+        with self.assertRaisesRegex(GarminConnectRateLimitError, "too many requests"):
+            adapter.connectapi("/example")
+        with self.assertRaisesRegex(GarminConnectRateLimitError, "too many requests"):
+            adapter.download("/file")
+        self.assertFalse(issubclass(GarminConnectRateLimitError, GarminConnectAuthError))
 
 
 if __name__ == "__main__":
