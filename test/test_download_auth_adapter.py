@@ -167,6 +167,21 @@ class TestDownloadAuthAdapter(unittest.TestCase):
         self.assertNotIn(old_day.strftime("%Y-%m-%d"), requested)
         self.assertIn(today.strftime("%Y-%m-%d"), requested)
 
+    def test_get_stat_only_pauses_after_requests(self):
+        download = self.create_download()
+        download.display_name = "display"
+        adapter = FakeAdapter.instances[0]
+        start_date = datetime.date(2024, 1, 1)
+        for day in range(0, 5):
+            with open(os.path.join(self.temp_dir.name, f"sleep_{start_date + datetime.timedelta(days=day)}.json"), "w", encoding="utf-8") as file:
+                file.write("{}")
+
+        with patch("garmindb.download.time.sleep") as sleep:
+            download.get_sleep(self.temp_dir.name, start_date, 8, False)
+
+        self.assertEqual(len(adapter.connectapi_calls), 3)
+        self.assertEqual(sleep.call_count, 3)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
