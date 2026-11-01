@@ -66,6 +66,12 @@ class GarminConnectAuthAdapter:
                 self.client.login(token_store_file)
                 self.__load_profile()
                 return True
+            except GarminConnectTooManyRequestsError as e:
+                # A credential login while rate limited only adds SSO requests and is likely to be rejected as well.
+                self.client = None
+                raise GarminConnectAuthError(
+                    f"Garmin Connect token login was rate limited, too many requests (HTTP 429): {e}; not falling back to credential login"
+                ) from e
             except _GARMINCONNECT_ERRORS as e:
                 logger.warning(
                     "cached Garmin Connect token login failed for %s: %s; falling back to credential login",
