@@ -142,6 +142,87 @@ class TestDownloadAuthAdapter(unittest.TestCase):
         self.assertEqual(path, "/usersummary-service/usersummary/daily/display")
         self.assertEqual(kwargs["params"]["calendarDate"], "2024-01-02")
 
+    def daily_stat_downloads(self, download):
+        """Return (file name prefix, function downloading one day) for every daily stat."""
+        directory = self.temp_dir.name
+
+        def year_dir(_year):
+            return directory
+
+        return [
+            ("daily_summary_", lambda day, overwrite: download._Download__get_summary_day(year_dir, day, overwrite)),
+            ("weight_", lambda day, overwrite: download._Download__get_weight_day(directory, day, overwrite)),
+            ("sleep_", lambda day, overwrite: download._Download__get_sleep_day(directory, day, overwrite)),
+            ("rhr_", lambda day, overwrite: download._Download__get_rhr_day(directory, day, overwrite)),
+            ("hydration_", lambda day, overwrite: download._Download__get_hydration_day(year_dir, day, overwrite)),
+            ("hrv_", lambda day, overwrite: download._Download__get_hrv_day(directory, day, overwrite)),
+            ("lifestyle_logging_", lambda day, overwrite: download._Download__get_lifestyle_logging_day(directory, day, overwrite)),
+        ]
+
+    def test_daily_stats_skip_request_for_existing_files(self):
+        download = self.create_download()
+        download.display_name = "display"
+        adapter = FakeAdapter.instances[0]
+        day = datetime.date(2024, 1, 2)
+
+        for prefix, get_day in self.daily_stat_downloads(download):
+            filename = os.path.join(self.temp_dir.name, f"{prefix}{day}.json")
+            with open(filename, "w", encoding="utf-8") as file:
+                file.write('{"existing": true}')
+            adapter.connectapi_calls = []
+
+            get_day(day, False)
+            self.assertEqual(adapter.connectapi_calls, [], f"{prefix}: existing file requested again")
+            with open(filename, encoding="utf-8") as file:
+                self.assertEqual(json.load(file), {"existing": True})
+
+            get_day(day, True)
+            self.assertEqual(len(adapter.connectapi_calls), 1, f"{prefix}: overwrite did not request")
+
+    def test_daily_stats_request_missing_files(self):
+        download = self.create_download()
+        download.display_name = "display"
+        adapter = FakeAdapter.instances[0]
+        day = datetime.date(2024, 1, 2)
+
+        for prefix, get_day in self.daily_stat_downloads(download):
+            adapter.connectapi_calls = []
+            get_day(day, False)
+            self.assertEqual(len(adapter.connectapi_calls), 1, f"{prefix}: missing file not requested")
+            self.assertTrue(os.path.isfile(os.path.join(self.temp_dir.name, f"{prefix}{day}.json")))
+
+    def test_recent_existing_days_are_downloaded_again(self):
+        download = self.create_download()
+        download.display_name = "display"
+        adapter = FakeAdapter.instances[0]
+        today = datetime.datetime.now().date()
+        old_day = today - datetime.timedelta(days=Download.download_days_overlap + 5)
+        for day in (old_day, today):
+            with open(os.path.join(self.temp_dir.name, f"sleep_{day}.json"), "w", encoding="utf-8") as file:
+                file.write("{}")
+
+        with patch("garmindb.download.time.sleep"):
+            download.get_sleep(self.temp_dir.name, old_day, (today - old_day).days + 1, False)
+
+        requested = [kwargs["params"]["date"] for _path, kwargs in adapter.connectapi_calls]
+        self.assertNotIn(old_day.strftime("%Y-%m-%d"), requested)
+        self.assertIn(today.strftime("%Y-%m-%d"), requested)
+
+    def test_get_stat_only_pauses_after_requests(self):
+        download = self.create_download()
+        download.display_name = "display"
+        adapter = FakeAdapter.instances[0]
+        start_date = datetime.date(2024, 1, 1)
+        for day in range(0, 5):
+            with open(os.path.join(self.temp_dir.name, f"sleep_{start_date + datetime.timedelta(days=day)}.json"), "w", encoding="utf-8") as file:
+                file.write("{}")
+
+        with patch("garmindb.download.time.sleep") as sleep:
+            download.get_sleep(self.temp_dir.name, start_date, 8, False)
+
+        self.assertEqual(len(adapter.connectapi_calls), 3)
+        self.assertEqual(sleep.call_count, 3)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
