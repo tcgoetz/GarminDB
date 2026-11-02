@@ -9,6 +9,7 @@ import tempfile
 import unittest
 
 from garminconnect import GarminConnectAuthenticationError
+from garminconnect import GarminConnectTooManyRequestsError
 
 from garmindb.garmin_connect_auth_adapter import GarminConnectAuthAdapter, GarminConnectAuthError
 
@@ -104,6 +105,23 @@ class TestGarminConnectAuthAdapter(unittest.TestCase):
             any(token_store_file in r.getMessage() and "falling back to credential login" in r.getMessage() for r in warnings),
             f"expected WARNING mentioning {token_store_file} and fallback, got {[r.getMessage() for r in warnings]}",
         )
+
+    def test_rate_limited_cached_token_does_not_fall_back_to_credentials(self):
+        token_store_file = self.config.get_token_store_file()
+        with open(token_store_file, "w", encoding="utf-8") as file:
+            file.write("{}")
+
+        class RateLimitedGarmin(FakeGarmin):
+            def connectapi(self, path, **kwargs):
+                raise GarminConnectTooManyRequestsError("429 Too Many Requests")
+
+        adapter = GarminConnectAuthAdapter(self.config, garmin_factory=RateLimitedGarmin)
+
+        with self.assertRaisesRegex(GarminConnectAuthError, "not falling back to credential login"):
+            adapter.login()
+        self.assertEqual(len(FakeGarmin.instances), 1)
+        self.assertNotIn("password", FakeGarmin.instances[0].kwargs)
+        self.assertIsNone(adapter.client)
 
     def test_missing_credentials_raise_auth_error(self):
         config = FakeConfig(self.temp_dir.name, user="", password="")
