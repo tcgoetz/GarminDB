@@ -12,6 +12,7 @@ import unittest
 from unittest.mock import patch
 
 from garmindb.download import Download
+from garmindb.garmin_connect_auth_adapter import GarminConnectRateLimitError
 
 
 class FakeConfig:
@@ -31,6 +32,7 @@ class FakeAdapter:
         self.full_name = "Full Name"
         self.connectapi_calls = []
         self.download_calls = []
+        self.rate_limited = False
         FakeAdapter.instances.append(self)
 
     def login(self):
@@ -38,6 +40,8 @@ class FakeAdapter:
 
     def connectapi(self, path, **kwargs):
         self.connectapi_calls.append((path, kwargs))
+        if self.rate_limited:
+            raise GarminConnectRateLimitError("too many requests (HTTP 429)")
         return {"path": path, "kwargs": kwargs}
 
     def download(self, path):
@@ -57,6 +61,43 @@ class TestDownloadAuthAdapter(unittest.TestCase):
     def create_download(self):
         with patch("garmindb.download.GarminConnectAuthAdapter", FakeAdapter):
             return Download(self.config)
+
+    def test_daily_downloads_stop_at_first_rate_limit(self):
+        download = self.create_download()
+        download.display_name = "display"
+        adapter = FakeAdapter.instances[0]
+        adapter.rate_limited = True
+        start_date = datetime.date(2024, 1, 1)
+        directory = self.temp_dir.name
+
+        def year_dir(_year):
+            return directory
+
+        stats = [
+            lambda: download.get_sleep(directory, start_date, 10, False),
+            lambda: download.get_rhr(directory, start_date, 10, False),
+            lambda: download.get_hrv(directory, start_date, 10, False),
+            lambda: download.get_weight(directory, start_date, 10, False),
+            lambda: download.get_daily_summaries(year_dir, start_date, 10, False),
+            lambda: download.get_hydration(year_dir, start_date, 10, False),
+            lambda: download.get_lifestyle_logging(directory, start_date, 10, False),
+        ]
+        with patch("garmindb.download.time.sleep"):
+            for get_stat in stats:
+                adapter.connectapi_calls = []
+                with self.assertRaises(GarminConnectRateLimitError):
+                    get_stat()
+                self.assertEqual(len(adapter.connectapi_calls), 1)
+
+    def test_activity_download_stops_at_rate_limit(self):
+        download = self.create_download()
+        adapter = FakeAdapter.instances[0]
+        adapter.rate_limited = True
+
+        with patch("garmindb.download.time.sleep"):
+            with self.assertRaises(GarminConnectRateLimitError):
+                download.get_activities(self.temp_dir.name, 10)
+        self.assertEqual(len(adapter.connectapi_calls), 1)
 
     def test_login_uses_adapter_and_saves_profile_files(self):
         download = self.create_download()

@@ -9,6 +9,7 @@ import unittest
 from unittest import mock
 
 from garmindb.download import Download
+from garmindb.garmin_connect_auth_adapter import GarminConnectRateLimitError
 
 
 class FakeConfig:
@@ -53,6 +54,21 @@ class TestDownload(unittest.TestCase):
             self.download._Download__get_stat(always_fail, "/tmp/hrv", start_date, 1, False)
 
         self.assertEqual(len(attempts), 5)
+
+    def test_get_stat_stops_on_rate_limit_without_retry(self):
+        attempts = []
+
+        def rate_limited(directory, day, overwrite):
+            attempts.append(day)
+            raise GarminConnectRateLimitError("too many requests (HTTP 429)")
+
+        start_date = datetime.date(2026, 3, 1)
+        with mock.patch("garmindb.download.time.sleep") as sleep:
+            with self.assertRaises(GarminConnectRateLimitError):
+                self.download._Download__get_stat(rate_limited, "/tmp/hrv", start_date, 10, False)
+
+        self.assertEqual(attempts, [start_date])
+        sleep.assert_not_called()
 
 
 if __name__ == "__main__":

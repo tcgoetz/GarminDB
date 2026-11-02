@@ -28,6 +28,14 @@ class GarminConnectAuthError(Exception):
     """Garmin Connect authentication or request failed."""
 
 
+class GarminConnectRateLimitError(Exception):
+    """Garmin Connect rejected a request with HTTP 429 (too many requests).
+
+    Not a subclass of GarminConnectAuthError on purpose: the download code catches that error per request and
+    moves on, while further requests during a rate limit will almost certainly be rejected as well.
+    """
+
+
 class GarminConnectAuthAdapter:
     """Small GarminDB boundary around garminconnect.Garmin."""
 
@@ -109,6 +117,8 @@ class GarminConnectAuthAdapter:
             raise GarminConnectAuthError("Garmin Connect client is not authenticated.")
         try:
             return self.client.connectapi(path, **kwargs)
+        except GarminConnectTooManyRequestsError as e:
+            raise GarminConnectRateLimitError(f"Garmin Connect API request rate limited, too many requests (HTTP 429): {e}") from e
         except _GARMINCONNECT_ERRORS as e:
             raise GarminConnectAuthError(f"Garmin Connect API request failed: {e}") from e
 
@@ -118,5 +128,7 @@ class GarminConnectAuthAdapter:
             raise GarminConnectAuthError("Garmin Connect client is not authenticated.")
         try:
             return self.client.download(path, **kwargs)
+        except GarminConnectTooManyRequestsError as e:
+            raise GarminConnectRateLimitError(f"Garmin Connect download rate limited, too many requests (HTTP 429): {e}") from e
         except _GARMINCONNECT_ERRORS as e:
             raise GarminConnectAuthError(f"Garmin Connect download failed: {e}") from e
