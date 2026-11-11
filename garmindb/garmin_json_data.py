@@ -236,16 +236,21 @@ class GarminJsonDetailsData(GarminJsonActivityData):
         logger.info("Processing activities detail data")
         super().__init__(db_params, r'activity_details_\d*\.json', input_dir, latest, measurement_system, debug, simple_output=simple_output)
 
+    def _speed_to_pace(self, speed):
+        """Return the pace per kilometer or per mile, following the measurement system, for a speed."""
+        if speed is not None and speed.value:
+            return fitfile.conversions.perhour_speed_to_pace(speed.kph_or_mph(self.measurement_system, precision=None))
+
     def _process_steps_activity(self, sub_sport, activity_id, json_data):
         summary_dto = json_data['summaryDTO']
-        avg_speed = fitfile.conversions.mps_to_mph(summary_dto.get('averageSpeed'))
-        avg_moving_speed = fitfile.conversions.mps_to_mph(summary_dto.get('averageMovingSpeed'))
-        max_speed = fitfile.conversions.mps_to_mph(summary_dto.get('maxSpeed'))
+        avg_speed = self._get_field_obj(summary_dto, 'averageSpeed', fitfile.Speed.from_mps)
+        avg_moving_speed = self._get_field_obj(summary_dto, 'averageMovingSpeed', fitfile.Speed.from_mps)
+        max_speed = self._get_field_obj(summary_dto, 'maxSpeed', fitfile.Speed.from_mps)
         run = {
             'activity_id'       : activity_id,
-            'avg_pace'          : fitfile.conversions.perhour_speed_to_pace(avg_speed) if avg_speed else None,
-            'avg_moving_pace'   : fitfile.conversions.perhour_speed_to_pace(avg_moving_speed) if avg_moving_speed else None,
-            'max_pace'          : fitfile.conversions.perhour_speed_to_pace(max_speed) if max_speed else None,
+            'avg_pace'          : self._speed_to_pace(avg_speed),
+            'avg_moving_pace'   : self._speed_to_pace(avg_moving_speed),
+            'max_pace'          : self._speed_to_pace(max_speed),
         }
         root_logger.debug("steps_activity for %d: %r", activity_id, run)
         StepsActivities.s_insert_or_update(self.garmin_act_db_session, run, ignore_none=True)
