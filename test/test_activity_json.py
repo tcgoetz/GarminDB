@@ -14,10 +14,11 @@ import fitfile
 from idbutils import DbParams
 
 from garmindb import GarminJsonSummaryData, GarminJsonDetailsData
-from garmindb.garmindb import ActivitiesDb, Activities
+from garmindb.garmindb import ActivitiesDb, Activities, StepsActivities
 
 
 STRENGTH_TRAINING = {'typeId': 13, 'typeKey': 'strength_training', 'parentTypeId': 29}
+RUNNING = {'typeId': 1, 'typeKey': 'running', 'parentTypeId': 17}
 
 
 class TestActivityJson(unittest.TestCase):
@@ -27,11 +28,12 @@ class TestActivityJson(unittest.TestCase):
         self.db_params = DbParams(db_type='sqlite', db_path=tempfile.mkdtemp())
         self.input_dir = tempfile.mkdtemp()
         self.activities_db = ActivitiesDb(self.db_params)
+        self.measurement_system = fitfile.MeasurementSystem.metric
 
     def __import(self, importer_class, file_name, activity):
         with open(os.path.join(self.input_dir, file_name), 'w') as file:
             json.dump(activity, file)
-        importer = importer_class(self.db_params, self.input_dir, False, fitfile.MeasurementSystem.metric, 0, simple_output=True)
+        importer = importer_class(self.db_params, self.input_dir, False, self.measurement_system, 0, simple_output=True)
         importer.process()
         return importer.total_updates
 
@@ -65,6 +67,33 @@ class TestActivityJson(unittest.TestCase):
         activity = Activities.get(self.activities_db, '3')
         self.assertEqual(activity.start_time, datetime.datetime(2024, 10, 12, 10, 0))
         self.assertEqual(activity.distance, 5.0)
+
+    def __import_running_details(self, activity_id, measurement_system):
+        # 10 km/h: 6:00 per kilometer, 9:39 per mile
+        speed_mps = 10 / 3.6
+        details = {
+            'activityId': activity_id,
+            'activityTypeDTO': RUNNING,
+            'metadataDTO': {},
+            'summaryDTO': {'averageSpeed': speed_mps, 'averageMovingSpeed': speed_mps, 'maxSpeed': speed_mps}
+        }
+        self.measurement_system = measurement_system
+        self.assertEqual(self.__import(GarminJsonDetailsData, f'activity_details_{activity_id}.json', details), 1)
+        return StepsActivities.get(self.activities_db, str(activity_id))
+
+    @staticmethod
+    def __seconds(pace):
+        return pace.hour * 3600 + pace.minute * 60 + pace.second + pace.microsecond / 1000000
+
+    def test_details_pace_metric(self):
+        steps = self.__import_running_details(4, fitfile.MeasurementSystem.metric)
+        for pace in (steps.avg_pace, steps.avg_moving_pace, steps.max_pace):
+            self.assertAlmostEqual(self.__seconds(pace), 360, delta=0.5)
+
+    def test_details_pace_statute(self):
+        steps = self.__import_running_details(5, fitfile.MeasurementSystem.statute)
+        for pace in (steps.avg_pace, steps.avg_moving_pace, steps.max_pace):
+            self.assertAlmostEqual(self.__seconds(pace), 579.4, delta=0.5)
 
 
 if __name__ == '__main__':
