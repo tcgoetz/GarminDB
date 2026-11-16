@@ -26,8 +26,11 @@ class TestActivityFitFile(TestFitFile):
 
     def check_activity_file(self, filename):
         logger.info('parsing %s', filename)
-        fit_file = fitfile.file.File(filename, self.measurement_system)
-        logger.info('%s (%s) activity file message types: %s', filename, fit_file.time_created_local, fit_file.message_types)
+        try:
+            fit_file = fitfile.file.File(filename, self.measurement_system)
+            logger.info('%s (%s) activity file message types: %s', filename, fit_file.time_created_local, fit_file.message_types)
+        except Exception as e:
+            self.fail('Failed to parse %s: %s', filename, e)
         self.check_message_types(fit_file, dump_message=True)
         self.check_file_id(fit_file, fitfile.FileType.activity)
         (sport, sub_sport) = self.check_sport(fit_file)
