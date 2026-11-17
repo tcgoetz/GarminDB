@@ -9,9 +9,10 @@ import tempfile
 import unittest
 
 from garminconnect import GarminConnectAuthenticationError
+from garminconnect import GarminConnectNotFoundError as GarminConnectAPINotFoundError
 from garminconnect import GarminConnectTooManyRequestsError
 
-from garmindb.garmin_connect_auth_adapter import GarminConnectAuthAdapter, GarminConnectAuthError, GarminConnectRateLimitError
+from garmindb.garmin_connect_auth_adapter import GarminConnectAuthAdapter, GarminConnectAuthError, GarminConnectNotFoundError, GarminConnectRateLimitError
 
 
 class FakeConfig:
@@ -165,6 +166,25 @@ class TestGarminConnectAuthAdapter(unittest.TestCase):
         with self.assertRaisesRegex(GarminConnectRateLimitError, "too many requests"):
             adapter.download("/file")
         self.assertFalse(issubclass(GarminConnectRateLimitError, GarminConnectAuthError))
+
+    def test_not_found_requests_raise_not_found_error(self):
+        class NotFoundGarmin(FakeGarmin):
+            def connectapi(self, path, **kwargs):
+                if path == "/userprofile-service/socialProfile":
+                    return super().connectapi(path, **kwargs)
+                raise GarminConnectAPINotFoundError("404 Client Error: Not Found")
+
+            def download(self, path, **kwargs):
+                raise GarminConnectAPINotFoundError("404 Client Error: Not Found")
+
+        adapter = GarminConnectAuthAdapter(self.config, garmin_factory=NotFoundGarmin)
+        adapter.login()
+
+        with self.assertRaises(GarminConnectNotFoundError):
+            adapter.connectapi("/usersummary-service/usersummary/daily/display")
+        with self.assertRaises(GarminConnectNotFoundError):
+            adapter.download("/download-service/files/wellness/2019-01-01")
+        self.assertTrue(issubclass(GarminConnectNotFoundError, GarminConnectAuthError))
 
 
 if __name__ == "__main__":

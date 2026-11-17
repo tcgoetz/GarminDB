@@ -10,6 +10,7 @@ import os
 from garminconnect import (
     GarminConnectAuthenticationError,
     GarminConnectConnectionError,
+    GarminConnectNotFoundError as GarminConnectAPINotFoundError,
     GarminConnectTooManyRequestsError,
 )
 
@@ -26,6 +27,10 @@ _GARMINCONNECT_ERRORS = (
 
 class GarminConnectAuthError(Exception):
     """Garmin Connect authentication or request failed."""
+
+
+class GarminConnectNotFoundError(GarminConnectAuthError):
+    """Garmin Connect has no data for the requested resource (HTTP 404)."""
 
 
 class GarminConnectRateLimitError(Exception):
@@ -117,6 +122,8 @@ class GarminConnectAuthAdapter:
             raise GarminConnectAuthError("Garmin Connect client is not authenticated.")
         try:
             return self.client.connectapi(path, **kwargs)
+        except GarminConnectAPINotFoundError as e:
+            raise GarminConnectNotFoundError(f"Garmin Connect API request not found: {e}") from e
         except GarminConnectTooManyRequestsError as e:
             raise GarminConnectRateLimitError(f"Garmin Connect API request rate limited, too many requests (HTTP 429): {e}") from e
         except _GARMINCONNECT_ERRORS as e:
@@ -128,6 +135,8 @@ class GarminConnectAuthAdapter:
             raise GarminConnectAuthError("Garmin Connect client is not authenticated.")
         try:
             return self.client.download(path, **kwargs)
+        except GarminConnectAPINotFoundError as e:
+            raise GarminConnectNotFoundError(f"Garmin Connect download not found: {e}") from e
         except GarminConnectTooManyRequestsError as e:
             raise GarminConnectRateLimitError(f"Garmin Connect download rate limited, too many requests (HTTP 429): {e}") from e
         except _GARMINCONNECT_ERRORS as e:
