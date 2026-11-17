@@ -16,7 +16,7 @@ import json
 
 import fitfile.conversions as conversions
 
-from .garmin_connect_auth_adapter import GarminConnectAuthAdapter, GarminConnectAuthError, GarminConnectRateLimitError
+from .garmin_connect_auth_adapter import GarminConnectAuthAdapter, GarminConnectAuthError, GarminConnectNotFoundError, GarminConnectRateLimitError
 from .progress import progress
 
 
@@ -144,6 +144,9 @@ class Download():
                 except GarminConnectRateLimitError:
                     # Unlike the transient failures retried below, a rate limit doesn't clear within the backoff.
                     raise
+                except GarminConnectNotFoundError:
+                    # A 404 means there is no data for that day yet (e.g. before the device was used); retrying will not help.
+                    break
                 except Exception as e:
                     if attempt == 5:
                         root_logger.error("Failed to download %s after %d attempts: %s", download_date, attempt, e)
@@ -169,6 +172,8 @@ class Download():
             return False
         try:
             self.save_json_to_file(json_filename, self.garmin.connectapi(url, params=params), overwrite)
+        except GarminConnectNotFoundError:
+            root_logger.debug("No daily summary data for %s", date_str)
         except GarminConnectAuthError as e:
             root_logger.error("Exception getting daily summary: %s", e)
         return True
@@ -184,6 +189,8 @@ class Download():
         url = f'{self.garmin_connect_download_service_url}/wellness/{date.strftime("%Y-%m-%d")}'
         try:
             self.save_binary_file(zip_filename, url)
+        except GarminConnectNotFoundError:
+            root_logger.debug("No monitoring data for %s", date)
         except GarminConnectAuthError as e:
             root_logger.error("Exception getting daily summary: %s", e)
 
@@ -212,6 +219,8 @@ class Download():
             return False
         try:
             self.save_json_to_file(json_filename, self.garmin.connectapi(self.garmin_connect_weight_url, params=params), overwrite)
+        except GarminConnectNotFoundError:
+            root_logger.debug("No weight data for %s", date_str)
         except GarminConnectAuthError as e:
             root_logger.error("Exception getting daily summary: %s", e)
         return True
@@ -310,6 +319,8 @@ class Download():
         url = f'{self.garmin_connect_sleep_daily_url}/{self.display_name}'
         try:
             self.save_json_to_file(json_filename, self.garmin.connectapi(url, params=params), overwrite)
+        except GarminConnectNotFoundError:
+            root_logger.debug("No sleep data for %s", date)
         except GarminConnectAuthError as e:
             root_logger.error("Exception getting daily summary: %s", e)
         return True
@@ -334,6 +345,8 @@ class Download():
         try:
             self.save_json_to_file(json_filename, self.garmin.connectapi(
                 url, params=params), overwrite)
+        except GarminConnectNotFoundError:
+            root_logger.debug("No resting heart rate data for %s", date_str)
         except GarminConnectAuthError as e:
             root_logger.error("Exception getting daily summary %s", e)
         return True
@@ -352,6 +365,8 @@ class Download():
         url = f'{self.garmin_connect_daily_hydration_url}/{date_str}'
         try:
             self.save_json_to_file(json_filename, self.garmin.connectapi(url), overwrite)
+        except GarminConnectNotFoundError:
+            root_logger.debug("No hydration data for %s", date_str)
         except GarminConnectAuthError as e:
             root_logger.error("Exception getting hydration: %s", e)
         return True
@@ -389,6 +404,8 @@ class Download():
         url = f'{self.garmin_connect_liestyle_logging_url}/{date_str}'
         try:
             self.save_json_to_file(json_filename, self.garmin.connectapi(url), overwrite)
+        except GarminConnectNotFoundError:
+            root_logger.debug("No lifestyle logging data for %s", date_str)
         except GarminConnectAuthError as e:
             root_logger.error("Exception getting hydration: %s", e)
         return True

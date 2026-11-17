@@ -13,10 +13,11 @@ DB_OBJECTS_TEST_GROUPS=garmin_db_objects climbing_split sleep_json activity_type
 FIT_FILE_TEST_GROUPS=activity_fit_file hrv_fit_file metrics_fit_file monitoring_fit_file skin_temp_fit_file sleep_disruptions_fit_file sleep_fit_file unknown_fit_file
 FILE_PARSE_TEST_GROUPS=tcx_loop tcx_file profile_file
 OUTPUT_TEST_GROUPS=progress simple_output
-ALL_TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS) $(FIT_FILE_TEST_GROUPS) $(OUTPUT_TEST_GROUPS)
+DOWNLOAD_TEST_GROUPS=download download_auth_adapter
+ALL_TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS) $(FIT_FILE_TEST_GROUPS) $(OUTPUT_TEST_GROUPS) $(DOWNLOAD_TEST_GROUPS)
 MANUAL_TEST_GROUPS=copy
 BASE_TESTGROUP=config module_versions
-TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS) $(FIT_FILE_TEST_GROUPS) $(MANUAL_TEST_GROUPS) $(BASE_TESTGROUP) $(OUTPUT_TEST_GROUPS)
+TEST_GROUPS=$(DB_TEST_GROUPS) $(DB_OBJECTS_TEST_GROUPS) $(FILE_PARSE_TEST_GROUPS) $(FIT_FILE_TEST_GROUPS) $(MANUAL_TEST_GROUPS) $(BASE_TESTGROUP) $(OUTPUT_TEST_GROUPS) $(DOWNLOAD_TEST_GROUPS)
 
 #
 # Over all targets
@@ -33,7 +34,7 @@ fit_file: $(FIT_FILE_TEST_GROUPS)
 
 db_objects: $(DB_OBJECTS_TEST_GROUPS)
 
-verify_commit: module_versions db_objects fit_file $(OUTPUT_TEST_GROUPS)
+verify_commit: module_versions $(DOWNLOAD_TEST_GROUPS) db_objects fit_file $(OUTPUT_TEST_GROUPS)
 
 clean:
 	echo "Cleaning test"
