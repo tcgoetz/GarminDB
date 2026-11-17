@@ -385,6 +385,8 @@ class Download():
         url = f'{self.garmin_connect_hrv_url}/{date_str}'
         try:
             self.save_json_to_file(json_filename, self.garmin.connectapi(url), overwrite)
+        except GarminConnectNotFoundError:
+            root_logger.debug("No HRV data for %s", date_str)
         except Exception as e:
             root_logger.error("Exception getting hrv for %s: %s", date_str, e)
             raise

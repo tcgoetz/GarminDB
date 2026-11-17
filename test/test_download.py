@@ -104,6 +104,23 @@ class TestDownload(unittest.TestCase):
         self.assertEqual([r for r in captured.records if r.levelno >= logging.WARNING], [])
         self.assertTrue(any("No daily summary data for 2019-01-01" in r.getMessage() for r in captured.records))
 
+    def test_hrv_day_logs_not_found_at_debug(self):
+        class NotFoundGarmin:
+            display_name = "display"
+
+            def connectapi(self, path, **kwargs):
+                raise GarminConnectNotFoundError("404 Client Error: Not Found")
+
+        self.download.garmin = NotFoundGarmin()
+        self.download.display_name = "display"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with self.assertLogs(level=logging.DEBUG) as captured:
+                requested = self.download._Download__get_hrv_day(temp_dir, datetime.date(2019, 1, 1), False)
+
+        self.assertTrue(requested)
+        self.assertEqual([r for r in captured.records if r.levelno >= logging.WARNING], [])
+        self.assertTrue(any("No HRV data for 2019-01-01" in r.getMessage() for r in captured.records))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
