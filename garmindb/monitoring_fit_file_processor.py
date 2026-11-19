@@ -52,6 +52,10 @@ class MonitoringFitFileProcessor(FitFileProcessor):
         activity_types = message_fields.activity_type
         if isinstance(activity_types, list):
             for index, activity_type in enumerate(activity_types):
+                # Not in the FIT profile yet: the enum column would raise and roll back the whole file.
+                if isinstance(activity_type, fitfile.UnknownEnumValue):
+                    logger.debug("skipping unknown activity type %s in %s", activity_type, fit_file.filename)
+                    continue
                 entry = {
                     'file_id'                   : File.s_get_id(self.garmin_db_session, fit_file.filename),
                     'timestamp'                 : message_fields.local_timestamp,
