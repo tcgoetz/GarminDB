@@ -4,14 +4,17 @@ __author__ = "Tom Goetz"
 __copyright__ = "Copyright Tom Goetz"
 __license__ = "GPL"
 
-import unittest
+import datetime
 import logging
+import unittest
+from types import SimpleNamespace
 
 import fitfile
 from idbutils import FileProcessor
 
-from test_fit_file import TestFitFile
+from garmindb.monitoring_fit_file_processor import MonitoringFitFileProcessor
 
+from test_fit_file import TestFitFile
 
 
 root_logger = logging.getLogger()
@@ -59,6 +62,30 @@ class TestMonitoringFitFile(TestFitFile):
                 self.check_monitoring_file(file_name)
         else:
             logger.error("Add test files to %s", monitoring_path)
+
+
+class MessageFields(dict):
+    """Message fields with attribute access, like the objects returned by the FIT parser."""
+
+    def __getattr__(self, name):
+        return self[name]
+
+
+class TestUnknownActivityType(unittest.TestCase):
+    """An activity type missing from the FIT profile must not fail the whole monitoring import."""
+
+    def test_unknown_activity_type_is_skipped(self):
+        # Sessions are None so that any database access in the unknown type path fails the test.
+        processor = SimpleNamespace(garmin_db_session=None, garmin_mon_db_session=None)
+        fit_file = SimpleNamespace(filename='unknown_activity_type.fit')
+        message_fields = MessageFields(
+            activity_type=[fitfile.UnknownEnumValue(13)],
+            local_timestamp=datetime.datetime(2026, 1, 1),
+            resting_metabolic_rate=1000,
+            cycles_to_distance=[1.0],
+            cycles_to_calories=[1.0]
+        )
+        MonitoringFitFileProcessor._write_monitoring_info_entry(processor, fit_file, message_fields)
 
 
 if __name__ == '__main__':
