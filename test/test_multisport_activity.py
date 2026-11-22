@@ -37,6 +37,23 @@ EXPECTED_SPORTS = [
     ('transition', 'generic'),
     ('swimming', 'lap_swimming'),
 ]
+# Seconds in HR zones 1-5 per leg, from each session's time_in_zone message, rounded. Index 0 of
+# time_in_hr_zone is the time below zone 1 and is not stored (it is 7 s for the first swim).
+EXPECTED_SESSION_HR_ZONE_SECONDS = [
+    [40, 419, 519, 231, 0],
+    [0, 16, 144, 2, 0],
+    [0, 39, 815, 1091, 7],
+    [0, 8, 68, 35, 7],
+    [0, 252, 187, 0, 0],
+]
+# First lap of the run leg (the file's 16th lap message).
+EXPECTED_RUN_LAP_0_HR_ZONE_SECONDS = [0, 39, 214, 127, 0]
+
+
+def zone_seconds(row):
+    """Return the hrz_1_time .. hrz_5_time columns of a row as rounded seconds."""
+    times = [getattr(row, f'hrz_{zone}_time') for zone in range(1, 6)]
+    return [round(t.hour * 3600 + t.minute * 60 + t.second + t.microsecond / 1e6) for t in times]
 
 
 class TestMultisportActivity(unittest.TestCase):
@@ -101,6 +118,20 @@ class TestMultisportActivity(unittest.TestCase):
                 self.assertIsNotNone(lap.elapsed_time, f'{run_id} lap {lap.lap}: elapsed_time missing')
                 self.assertIsNotNone(lap.distance, f'{run_id} lap {lap.lap}: distance missing')
                 self.assertGreater(lap.distance, 0, f'{run_id} lap {lap.lap}: distance should be > 0')
+
+    def test_hr_zone_times_per_session(self):
+        """Zone N must come from time_in_hr_zone[N]; index 0 is the time below zone 1."""
+        with self.act_db.managed_session() as session:
+            for i, expected in enumerate(EXPECTED_SESSION_HR_ZONE_SECONDS, start=1):
+                activity_id = f'{PARENT_ID}_{i}'
+                row = session.query(Activities).filter(Activities.activity_id == activity_id).one()
+                self.assertEqual(zone_seconds(row), expected, f'{activity_id}: seconds in HR zones 1-5')
+
+    def test_hr_zone_times_per_lap(self):
+        run_id = f'{PARENT_ID}_3'
+        with self.act_db.managed_session() as session:
+            lap = session.query(ActivityLaps).filter(ActivityLaps.activity_id == run_id, ActivityLaps.lap == 0).one()
+            self.assertEqual(zone_seconds(lap), EXPECTED_RUN_LAP_0_HR_ZONE_SECONDS, f'{run_id} lap 0: seconds in HR zones 1-5')
 
     def test_records_partitioned_by_session(self):
         with self.act_db.managed_session() as session:
