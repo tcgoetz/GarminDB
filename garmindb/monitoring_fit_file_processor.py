@@ -53,18 +53,18 @@ class MonitoringFitFileProcessor(FitFileProcessor):
         if isinstance(activity_types, list):
             for index, activity_type in enumerate(activity_types):
                 # Not in the FIT profile yet: the enum column would raise and roll back the whole file.
-                if isinstance(activity_type, fitfile.UnknownEnumValue):
+                if not isinstance(activity_type, fitfile.UnknownEnumValue):
+                    entry = {
+                        'file_id'                   : File.s_get_id(self.garmin_db_session, fit_file.filename),
+                        'timestamp'                 : message_fields.local_timestamp,
+                        'activity_type'             : activity_type,
+                        'resting_metabolic_rate'    : message_fields.get('resting_metabolic_rate')
+                    }
+                    self.__unpack_tuple(entry, 'cycles_to_distance', message_fields.cycles_to_distance, index)
+                    self.__unpack_tuple(entry, 'cycles_to_calories', message_fields.cycles_to_calories, index)
+                    MonitoringInfo.s_insert_or_update(self.garmin_mon_db_session, entry)
+                else:
                     logger.debug("skipping unknown activity type %s in %s", activity_type, fit_file.filename)
-                    continue
-                entry = {
-                    'file_id'                   : File.s_get_id(self.garmin_db_session, fit_file.filename),
-                    'timestamp'                 : message_fields.local_timestamp,
-                    'activity_type'             : activity_type,
-                    'resting_metabolic_rate'    : message_fields.get('resting_metabolic_rate')
-                }
-                self.__unpack_tuple(entry, 'cycles_to_distance', message_fields.cycles_to_distance, index)
-                self.__unpack_tuple(entry, 'cycles_to_calories', message_fields.cycles_to_calories, index)
-                MonitoringInfo.s_insert_or_update(self.garmin_mon_db_session, entry)
 
     def _write_monitoring_entry(self, fit_file, message_fields):
         # Only include not None values so that we match and update only if a table's columns if it has values.
