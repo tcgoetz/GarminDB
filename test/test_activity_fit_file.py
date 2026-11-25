@@ -10,6 +10,8 @@ import logging
 import fitfile
 from idbutils import FileProcessor
 
+from garmindb.activity_fit_file_processor import ActivityFitFileProcessor
+
 from test_fit_file import TestFitFile
 
 
@@ -49,6 +51,22 @@ class TestActivityFitFile(TestFitFile):
                 self.check_activity_file(file_name)
         else:
             logger.error("Add test files to %s", activity_path)
+
+
+class TestHrZoneData(unittest.TestCase):
+    """hrz_N_time must be time_in_hr_zone[N]: index 0 is the time below zone 1."""
+
+    def test_hr_zone_times_skip_time_below_zone_1(self):
+        fit_file = fitfile.file.File('test_files/fit/activity/10000000001_ACTIVITY.fit')
+        # Run leg session: time_in_hr_zone is 0:00 below zone 1, then 0:00, 0:39, 13:34, 18:11, 0:07 in zones 1-5, then 0:00 above.
+        message = next(m for m in fit_file.time_in_zone
+                       if m.fields.get('hr_zones_timer_type') is fitfile.fields.HeartRateZonesTimerType.session
+                       and m.fields.get('reference_index') == 2)
+        # __hr_zone_data does not use the processor, so no database is needed.
+        zone_data = ActivityFitFileProcessor._ActivityFitFileProcessor__hr_zone_data(None, message.fields)
+        seconds = [round(t.hour * 3600 + t.minute * 60 + t.second + t.microsecond / 1e6)
+                   for t in (zone_data[f'hrz_{zone}_time'] for zone in range(1, 6))]
+        self.assertEqual(seconds, [0, 39, 815, 1091, 7])
 
 
 if __name__ == '__main__':

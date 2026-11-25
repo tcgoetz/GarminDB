@@ -565,14 +565,16 @@ class ActivityFitFileProcessor(FitFileProcessor):
             self._write_time_in_zone_session_entry(fit_file, message_fields)
 
     def __hr_zone_data(self, message_fields):
+        # time_in_hr_zone has 7 entries for the 6 values in hr_zone_high_boundary: the time below
+        # zone 1, zones 1-5, and the time above the top boundary. Only zones 1-5 are stored.
         time_in_hr_zone = message_fields.get('time_in_hr_zone')
         zone_data = {
             'hr_calc_type'      : message_fields.get('hr_calc_type'),
-            'hrz_1_time'        : time_in_hr_zone[0],
-            'hrz_2_time'        : time_in_hr_zone[1],
-            'hrz_3_time'        : time_in_hr_zone[2],
-            'hrz_4_time'        : time_in_hr_zone[3],
-            'hrz_5_time'        : time_in_hr_zone[4]
+            'hrz_1_time'        : time_in_hr_zone[1],
+            'hrz_2_time'        : time_in_hr_zone[2],
+            'hrz_3_time'        : time_in_hr_zone[3],
+            'hrz_4_time'        : time_in_hr_zone[4],
+            'hrz_5_time'        : time_in_hr_zone[5]
         }
         hr_zones = message_fields.get('hr_zone_high_boundary')
         if hr_zones:
